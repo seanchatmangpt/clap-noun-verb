@@ -56,3 +56,10 @@ script = '''
 echo "Proc-macro crate - skipping documentation"
 '''
 description = "Skip documentation for proc-macro crate"
+
+# Publishing tasks (handled by main crate)
+[tasks.publish-all]
+script = '''
+echo "Publishing is handled by the main crate (clap-noun-verb)"
+'''
+description = "Skip publish-all for macros crate (handled by main crate)"

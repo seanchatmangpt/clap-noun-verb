@@ -33,7 +33,7 @@ pub struct HandlerInput {
 ///
 /// In v3, output is automatically serialized to JSON for agent/MCP consumption.
 /// The `data` field contains any type that implements `Serialize`.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HandlerOutput {
     /// Result data (auto-serialized to JSON)
     pub data: serde_json::Value,

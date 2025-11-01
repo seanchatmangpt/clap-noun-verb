@@ -18,6 +18,7 @@ pub struct CommandRouter {
     /// Nouns registered with the router
     nouns: HashMap<String, Box<dyn NounCommand>>,
     /// Executor for running commands with interceptors
+    #[allow(dead_code)] // Reserved for future use
     executor: Executor,
 }
 

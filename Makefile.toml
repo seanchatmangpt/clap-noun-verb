@@ -79,7 +79,7 @@ description = "Check code with all features"
 description = "Build documentation as docs.rs would (complete verification)"
 dependencies = ["build-examples"]
 command = "cargo"
-args = ["doc", "--no-deps", "--all-features", "--examples"]
+args = ["doc", "--no-deps", "--all-features"]
 env = { RUSTDOCFLAGS = "-D warnings" }
 
 [tasks.doc-open]

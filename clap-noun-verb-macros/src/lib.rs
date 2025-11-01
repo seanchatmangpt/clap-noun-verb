@@ -168,14 +168,17 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
     // If verb name was auto-inferred and noun name was auto-detected,
     // strip the noun name from the verb name if it appears in the function name
     // Example: show_collector_status() with noun="collector" -> verb="status" (not "collector_status")
-    let verb_name = if args_vec.is_empty() && noun_name.is_some() {
-        let noun = noun_name.as_ref().unwrap();
-        // Check if verb_name starts with noun_name (e.g., "collector_status" starts with "collector")
-        if verb_name.starts_with(noun) && verb_name.len() > noun.len() {
-            // Check if there's a separator (underscore) after the noun
-            if verb_name.as_bytes()[noun.len()] == b'_' {
-                // Strip noun_ prefix (e.g., "collector_status" -> "status")
-                verb_name[noun.len() + 1..].to_string()
+    let verb_name = if args_vec.is_empty() {
+        if let Some(noun) = noun_name.as_ref() {
+            // Check if verb_name starts with noun_name (e.g., "collector_status" starts with "collector")
+            if verb_name.starts_with(noun) && verb_name.len() > noun.len() {
+                // Check if there's a separator (underscore) after the noun
+                if verb_name.as_bytes()[noun.len()] == b'_' {
+                    // Strip noun_ prefix (e.g., "collector_status" -> "status")
+                    verb_name[noun.len() + 1..].to_string()
+                } else {
+                    verb_name
+                }
             } else {
                 verb_name
             }
@@ -268,21 +271,18 @@ fn extract_noun_name_from_attributes(input_fn: &ItemFn) -> Option<String> {
         };
 
         if is_noun_attr {
-            match &attr.meta {
-                syn::Meta::List(meta_list) => {
-                    let parser =
-                        syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
-                    if let Ok(args_vec) = parser.parse2(meta_list.tokens.clone()) {
-                        if !args_vec.is_empty() {
-                            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) =
-                                &args_vec[0]
-                            {
-                                return Some(s.value());
-                            }
+            if let syn::Meta::List(meta_list) = &attr.meta {
+                let parser =
+                    syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+                if let Ok(args_vec) = parser.parse2(meta_list.tokens.clone()) {
+                    if !args_vec.is_empty() {
+                        if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) =
+                            &args_vec[0]
+                        {
+                            return Some(s.value());
                         }
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -466,7 +466,7 @@ fn generate_verb_registration(
 
             // Get inner type for validation (unwrap Option if needed)
             let inner_ty =
-                if is_option { extract_inner_type(&*pat_type.ty) } else { (*pat_type.ty).clone() };
+                if is_option { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
 
             // Auto-infer validation from type
             let (mut min_val, mut max_val, mut min_len, mut max_len) =
@@ -537,8 +537,8 @@ fn generate_verb_registration(
     }
 
     // Generate wrapper function
-    let noun_name_str = noun_name.as_ref().map(|s| s.as_str()).unwrap_or("__auto__");
-    let about_str = about.as_ref().map(|s| s.as_str()).unwrap_or("");
+    let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
+    let about_str = about.as_deref().unwrap_or("");
 
     // Remove #[noun] attribute from output if it was detected (to avoid it being processed again)
     let mut output_fn = input_fn.clone();
@@ -664,61 +664,60 @@ struct ValidationConstraints {
 fn parse_validation_attributes(attrs: &[syn::Attribute]) -> Option<ValidationConstraints> {
     for attr in attrs {
         if attr.path().is_ident("validate") {
-            match &attr.meta {
-                syn::Meta::List(list) => {
-                    let parser = syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
-                    if let Ok(meta_list) = parser.parse2(list.tokens.clone()) {
-                        let mut constraints = ValidationConstraints {
-                            min_value: None,
-                            max_value: None,
-                            min_length: None,
-                            max_length: None,
-                        };
+            if let syn::Meta::List(list) = &attr.meta {
+                let parser = syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+                if let Ok(meta_list) = parser.parse2(list.tokens.clone()) {
+                    let mut constraints = ValidationConstraints {
+                        min_value: None,
+                        max_value: None,
+                        min_length: None,
+                        max_length: None,
+                    };
 
-                        for meta in meta_list {
-                            let ident = meta.path.get_ident()?.to_string();
-                            let value = match &meta.value {
-                                syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(i), .. }) => {
-                                    if ident == "min" || ident == "min_value" {
-                                        constraints.min_value = Some(i.base10_digits().to_string());
-                                    } else if ident == "max" || ident == "max_value" {
-                                        constraints.max_value = Some(i.base10_digits().to_string());
-                                    } else if ident == "min_length" {
-                                        if let Ok(v) = i.base10_parse::<usize>() {
-                                            constraints.min_length = Some(v);
-                                        }
-                                    } else if ident == "max_length" {
-                                        if let Ok(v) = i.base10_parse::<usize>() {
-                                            constraints.max_length = Some(v);
-                                        }
+                    for meta in meta_list {
+                        let ident = meta.path.get_ident()?.to_string();
+                        let value = match &meta.value {
+                            syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(i), .. }) => {
+                                if ident == "min" || ident == "min_value" {
+                                    constraints.min_value = Some(i.base10_digits().to_string());
+                                } else if ident == "max" || ident == "max_value" {
+                                    constraints.max_value = Some(i.base10_digits().to_string());
+                                } else if ident == "min_length" {
+                                    if let Ok(v) = i.base10_parse::<usize>() {
+                                        constraints.min_length = Some(v);
                                     }
+                                } else if ident == "max_length" {
+                                    if let Ok(v) = i.base10_parse::<usize>() {
+                                        constraints.max_length = Some(v);
+                                    }
+                                }
+                                None
+                            }
+                            syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => {
+                                if ident == "min"
+                                    || ident == "min_value"
+                                    || ident == "max"
+                                    || ident == "max_value"
+                                {
+                                    Some(s.value())
+                                } else {
                                     None
                                 }
-                                syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => {
-                                    if ident == "min" || ident == "min_value" {
-                                        Some(s.value())
-                                    } else if ident == "max" || ident == "max_value" {
-                                        Some(s.value())
-                                    } else {
-                                        None
-                                    }
-                                }
-                                _ => None,
-                            };
+                            }
+                            _ => None,
+                        };
 
-                            if let Some(val) = value {
-                                if ident == "min" || ident == "min_value" {
-                                    constraints.min_value = Some(val);
-                                } else if ident == "max" || ident == "max_value" {
-                                    constraints.max_value = Some(val);
-                                }
+                        if let Some(val) = value {
+                            if ident == "min" || ident == "min_value" {
+                                constraints.min_value = Some(val);
+                            } else if ident == "max" || ident == "max_value" {
+                                constraints.max_value = Some(val);
                             }
                         }
-
-                        return Some(constraints);
                     }
+
+                    return Some(constraints);
                 }
-                _ => {}
             }
         }
     }

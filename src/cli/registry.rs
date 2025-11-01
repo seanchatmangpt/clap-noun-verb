@@ -69,6 +69,7 @@ pub struct CommandRegistry {
 
 /// Metadata for a registered noun
 struct NounMetadata {
+    #[allow(dead_code)] // Reserved for future use
     name: String,
     about: String,
 }
@@ -88,7 +89,9 @@ pub struct ArgMetadata {
 
 /// Metadata for a registered verb
 struct VerbMetadata {
+    #[allow(dead_code)] // Reserved for future use
     noun_name: String,
+    #[allow(dead_code)] // Reserved for future use
     verb_name: String,
     about: String,
     args: Vec<ArgMetadata>,
@@ -103,14 +106,9 @@ impl CommandRegistry {
         // which will call register_noun/register_verb_with_args
         // These will call REGISTRY.get() which will return None
         // until initialization completes, so we need a different approach
-        REGISTRY.get_or_init(|| {
+        let registry = REGISTRY.get_or_init(|| {
             // Create empty registry
-            let registry =
-                Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() });
-
-            // Store it temporarily so registration functions can access it
-            // We'll return it at the end
-            registry
+            Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
         });
 
         // After registry is stored, run registration functions
@@ -122,8 +120,8 @@ impl CommandRegistry {
             init_fn();
         }
 
-        // Return the stored registry
-        REGISTRY.get().expect("Registry should be initialized")
+        // Return the stored registry (get_or_init guarantees it's Some)
+        registry
     }
 
     /// Get the global registry instance
@@ -138,7 +136,8 @@ impl CommandRegistry {
         let registry = REGISTRY.get_or_init(|| {
             Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
         });
-        let mut reg = registry.lock().unwrap();
+        // Lock poisoning should not happen in practice, but handle it gracefully
+        let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
         reg.nouns.insert(
             name.to_string(),
             NounMetadata { name: name.to_string(), about: about.to_string() },
@@ -172,8 +171,9 @@ impl CommandRegistry {
         let registry = REGISTRY.get_or_init(|| {
             Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
         });
-        let mut reg = registry.lock().unwrap();
-        reg.verbs.entry(noun_name.to_string()).or_insert_with(HashMap::new).insert(
+        // Lock poisoning should not happen in practice, but handle it gracefully
+        let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
+        reg.verbs.entry(noun_name.to_string()).or_default().insert(
             verb_name.to_string(),
             VerbMetadata {
                 noun_name: noun_name.to_string(),

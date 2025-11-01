@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1762034700384,
@@ -20,6 +20,10 @@
                 {
                     "date": 1762037364876,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -92,29 +92,40 @@\n description = \"Verify code quality: format, clippy, and tests\"\n dependencies = [\"format-check\", \"clippy\", \"test-timeout\"]\n \n [tasks.ci]\n-dependencies = [\"format-check\", \"clippy\", \"test-timeout\", \"build-examples\", \"check-all\"]\n+dependencies = [\n+    \"format-check\",\n+    \"clippy\",\n+    \"test-timeout\",\n+    \"build-examples\",\n+    \"check-all\",\n+]\n description = \"Run all CI checks\"\n \n # Release\n [tasks.release-check]\n description = \"Run all checks before release\"\n dependencies = [\n-  \"format-check\",\n-  \"clippy\",\n-  \"test-all\",\n-  \"build-release\",\n-  \"build-examples\",\n-  \"check-all\",\n-  \"doc\",\n+    \"format-check\",\n+    \"clippy\",\n+    \"test-all\",\n+    \"build-release\",\n+    \"build-examples\",\n+    \"check-all\",\n+    \"doc\",\n ]\n \n # Publishing\n [tasks.publish-dry-run-macros]\n description = \"Dry-run publish macros crate to crates.io\"\n command = \"cargo\"\n-args = [\"publish\", \"--dry-run\", \"--manifest-path\", \"clap-noun-verb-macros/Cargo.toml\"]\n+args = [\n+    \"publish\",\n+    \"--dry-run\",\n+    \"--manifest-path\",\n+    \"clap-noun-verb-macros/Cargo.toml\",\n+]\n \n [tasks.publish-macros]\n description = \"Publish macros crate to crates.io\"\n command = \"cargo\"\n@@ -133,13 +144,13 @@\n \n [tasks.publish-all]\n description = \"Complete publish workflow: checks + publish both crates\"\n dependencies = [\n-  \"release-check\",\n-  \"publish-dry-run-macros\",\n-  \"publish-macros\",\n-  \"publish-dry-run\",\n-  \"publish\",\n+    \"release-check\",\n+    \"publish-dry-run-macros\",\n+    \"publish-macros\",\n+    \"publish-dry-run\",\n+    \"publish\",\n ]\n \n [tasks.verify-publish]\n description = \"Verify publication by searching crates.io\"\n"
+                },
+                {
+                    "date": 1762037648306,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,9 +78,9 @@\n [tasks.doc]\n description = \"Build documentation as docs.rs would (complete verification)\"\n dependencies = [\"build-examples\"]\n command = \"cargo\"\n-args = [\"doc\", \"--no-deps\", \"--all-features\", \"--examples\"]\n+args = [\"doc\", \"--no-deps\", \"--all-features\"]\n env = { RUSTDOCFLAGS = \"-D warnings\" }\n \n [tasks.doc-open]\n command = \"cargo\"\n"
                 }
             ],
             "date": 1762034700384,

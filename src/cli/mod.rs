@@ -26,7 +26,9 @@ pub use validator::ArgValidator;
 /// These attribute macros are provided by the `clap-noun-verb-macros` crate.
 pub fn run() -> crate::error::Result<()> {
     let registry = registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    })?;
     let args: Vec<String> = std::env::args().collect();
     registry.run(args)
 }

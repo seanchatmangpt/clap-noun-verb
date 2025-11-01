@@ -26,15 +26,12 @@ use std::collections::HashMap;
 ///
 /// ```rust,no_run
 /// use clap_noun_verb::cli::builder::CliBuilder;
-/// use clap_noun_verb::logic::{HandlerInput, HandlerOutput, OutputData};
+/// use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
 /// use clap_noun_verb::Result;
 ///
 /// // Business logic (reusable)
 /// fn show_status(_input: HandlerInput) -> Result<HandlerOutput> {
-///     Ok(HandlerOutput {
-///         data: OutputData::Text("All services running".to_string()),
-///         message: None,
-///     })
+///     Ok(HandlerOutput::from_data("All services running")?)
 /// }
 ///
 /// // CLI (validation + delegation only)
@@ -56,6 +53,7 @@ pub struct CliBuilder {
     /// Nouns registered with the CLI
     nouns: HashMap<String, Box<dyn NounCommand>>,
     /// Executor for running commands
+    #[allow(dead_code)] // Reserved for future use
     executor: Executor,
 }
 
@@ -147,14 +145,11 @@ impl CliBuilder {
     ///
     /// ```rust
     /// use clap_noun_verb::cli::builder::CliBuilder;
-    /// use clap_noun_verb::logic::{HandlerInput, HandlerOutput, OutputData};
+    /// use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
     /// use clap_noun_verb::Result;
     ///
     /// fn show_status(_input: HandlerInput) -> Result<HandlerOutput> {
-    ///     Ok(HandlerOutput {
-    ///         data: OutputData::Text("All services running".to_string()),
-    ///         message: None,
-    ///     })
+    ///     Ok(HandlerOutput::from_data("All services running")?)
     /// }
     ///
     /// let cli = CliBuilder::new("myapp")
@@ -219,7 +214,7 @@ impl CliBuilder {
     ///
     /// Returns an error if execution fails.
     pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
-        let cmd = self.build_command()?;
+        let cmd = self.build_command();
         let matches = cmd
             .try_get_matches_from(args)
             .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
@@ -236,7 +231,8 @@ impl CliBuilder {
     ///
     /// This method builds the complete clap command structure
     /// with opinionated defaults.
-    fn build_command(&self) -> Result<Command> {
+    #[cfg_attr(not(test), allow(dead_code))] // Used by tests
+    pub fn build_command(&self) -> Command {
         // Leak strings to get static lifetime for clap
         // This is acceptable for CLI construction (happens once per run)
         let name: &'static str = Box::leak(self.name.clone().into_boxed_str());
@@ -258,7 +254,7 @@ impl CliBuilder {
             cmd = cmd.subcommand(noun.build_command());
         }
 
-        Ok(cmd)
+        cmd
     }
 }
 
@@ -270,6 +266,7 @@ impl CliBuilder {
 struct SimpleNoun {
     name: &'static str,
     about: &'static str,
+    #[allow(dead_code)] // Reserved for future verb integration
     verbs: Vec<Box<dyn crate::verb::VerbCommand>>,
 }
 
@@ -307,13 +304,11 @@ impl NounCommand for SimpleNoun {
     }
 
     fn build_command(&self) -> Command {
-        let cmd = Command::new(self.name).about(self.about);
-
         // Verbs will be added when verb integration is complete
         // for verb in &self.verbs {
         //     cmd = cmd.subcommand(verb.build_command());
         // }
 
-        cmd
+        Command::new(self.name).about(self.about)
     }
 }

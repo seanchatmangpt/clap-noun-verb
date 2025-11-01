@@ -14,10 +14,7 @@ struct Status {
 }
 
 fn get_service_status() -> Status {
-    Status {
-        services: vec!["api".to_string(), "worker".to_string()],
-        healthy: true,
-    }
+    Status { services: vec!["api".to_string(), "worker".to_string()], healthy: true }
 }
 
 /// Show service status
@@ -29,4 +26,3 @@ fn show_status() -> Result<Status> {
 fn main() -> Result<()> {
     clap_noun_verb::run()
 }
-
