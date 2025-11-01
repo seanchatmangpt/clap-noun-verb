@@ -1,0 +1,49 @@
+@startuml command-execution-flow
+!theme plain
+autonumber
+
+title Command Execution Flow: CLI as Interface Layer
+
+actor User
+participant "CLI Layer" as CLI
+participant "ArgValidator" as Validator
+participant "Business Logic" as Logic
+participant "Runtime" as Runtime
+
+User -> CLI: execute command with args
+activate CLI
+
+CLI -> CLI: Parse arguments (clap)
+CLI -> Validator: Validate args/opts
+activate Validator
+
+alt Validation fails
+    Validator --> CLI: Return error
+    CLI --> User: Display error
+    deactivate Validator
+    deactivate CLI
+else Validation succeeds
+    Validator -> Validator: Extract validated args
+    Validator --> CLI: Validated args
+    deactivate Validator
+    
+    CLI -> Logic: Call business logic function
+    activate Logic
+    
+    Note over Logic: Pure function, reusable\nby CLI, API, Web, etc.
+    
+    Logic -> Runtime: Execute with interceptors
+    activate Runtime
+    Runtime -> Logic: Return result
+    deactivate Runtime
+    
+    Logic --> CLI: Return result
+    deactivate Logic
+    
+    CLI --> User: Display result or error
+end
+
+deactivate CLI
+
+@enduml
+

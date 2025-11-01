@@ -1,0 +1,14 @@
+[package]
+name = "clap-noun-verb-macros"
+version = "3.0.0"
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "parsing"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+

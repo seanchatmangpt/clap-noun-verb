@@ -1,0 +1,48 @@
+@startuml enforcement-pattern
+!theme plain
+skinparam classStyle rectangle
+
+title Pattern Enforcement: CLI Code Only Validates
+
+interface "VerbCommand" {
+    + name(): str
+    + about(): str
+    + validate(args): Result<ValidatedArgs>
+    + delegate(validated): Result<()>
+}
+
+class "ArgValidator" {
+    + validate<T>(args, spec): Result<T>
+    + extract(args): ValidatedArgs
+}
+
+class "BusinessLogic" {
+    + execute(input): Result<Output>
+    note right: Pure function,\nreusable by any interface
+}
+
+class "VerbImplementation" {
+    + validate()
+    + delegate()
+    note right
+        **Enforced:**
+        Can only call
+        validate() and
+        delegate().
+        NO logic here.
+    end note
+}
+
+VerbCommand <|.. VerbImplementation
+VerbImplementation --> ArgValidator : uses
+VerbImplementation --> BusinessLogic : delegates to
+
+note bottom
+    Type system enforces pattern:
+    - VerbCommand::run() removed
+    - Only validate() + delegate() allowed
+    - BusinessLogic separated completely
+end note
+
+@enduml
+

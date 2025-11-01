@@ -1,0 +1,175 @@
+[config]
+skip_core_tasks = false
+on_error_task = "notification"
+
+[tasks.default]
+dependencies = ["format-check", "clippy", "test"]
+description = "Default task: format check, clippy, and tests"
+
+# Formatting
+[tasks.format]
+command = "cargo"
+args = ["fmt"]
+description = "Format code with rustfmt"
+
+[tasks.format-check]
+command = "cargo"
+args = ["fmt", "--", "--check"]
+description = "Check code formatting"
+
+# Linting
+[tasks.clippy]
+command = "cargo"
+args = ["clippy", "--", "-D", "warnings"]
+description = "Run clippy linter"
+
+[tasks.lint]
+dependencies = ["format-check", "clippy"]
+description = "Run all linting checks"
+
+# Testing
+[tasks.test]
+command = "cargo"
+args = ["test", "--quiet"]
+description = "Run tests (quiet mode)"
+
+[tasks.test-timeout]
+command = "timeout"
+args = ["1s", "cargo", "test", "--quiet"]
+description = "Run tests with 1s timeout to prevent freezing"
+
+[tasks.test-all]
+command = "cargo"
+args = ["test", "--all-features"]
+description = "Run all tests with all features"
+
+[tasks.test-integration]
+command = "cargo"
+args = ["test", "--test", "integration_examples", "--", "--ignored"]
+description = "Run integration tests for examples"
+
+# Building
+[tasks.build]
+command = "cargo"
+args = ["build"]
+description = "Build the project"
+
+[tasks.build-release]
+command = "cargo"
+args = ["build", "--release"]
+description = "Build in release mode"
+
+[tasks.build-examples]
+command = "cargo"
+args = ["build", "--examples"]
+description = "Build all examples"
+
+[tasks.check]
+command = "cargo"
+args = ["check"]
+description = "Check code compilation"
+
+[tasks.check-all]
+command = "cargo"
+args = ["check", "--all-features"]
+description = "Check code with all features"
+
+# Documentation
+[tasks.doc]
+description = "Build documentation as docs.rs would (complete verification)"
+dependencies = ["build-examples"]
+command = "cargo"
+args = ["doc", "--no-deps", "--all-features", "--examples"]
+env = { RUSTDOCFLAGS = "-D warnings" }
+
+[tasks.doc-open]
+command = "cargo"
+args = ["doc", "--open", "--no-deps"]
+description = "Build and open documentation"
+
+# Verification & CI
+[tasks.verify]
+description = "Verify code quality: format, clippy, and tests"
+dependencies = ["format-check", "clippy", "test-timeout"]
+
+[tasks.ci]
+dependencies = [
+    "format-check",
+    "clippy",
+    "test-timeout",
+    "build-examples",
+    "check-all",
+]
+description = "Run all CI checks"
+
+# Release
+[tasks.release-check]
+description = "Run all checks before release"
+dependencies = [
+    "format-check",
+    "clippy",
+    "test-all",
+    "build-release",
+    "build-examples",
+    "check-all",
+    "doc",
+]
+
+# Publishing
+[tasks.publish-dry-run-macros]
+description = "Dry-run publish macros crate to crates.io"
+command = "cargo"
+args = [
+    "publish",
+    "--dry-run",
+    "--manifest-path",
+    "clap-noun-verb-macros/Cargo.toml",
+]
+
+[tasks.publish-macros]
+description = "Publish macros crate to crates.io"
+command = "cargo"
+args = ["publish", "--manifest-path", "clap-noun-verb-macros/Cargo.toml"]
+
+[tasks.publish-dry-run]
+description = "Dry-run publish main crate to crates.io"
+command = "cargo"
+args = ["publish", "--dry-run"]
+
+[tasks.publish]
+description = "Publish main crate to crates.io (after macros)"
+dependencies = ["publish-macros"]
+command = "cargo"
+args = ["publish"]
+
+[tasks.publish-all]
+description = "Complete publish workflow: checks + publish both crates"
+dependencies = [
+    "release-check",
+    "publish-dry-run-macros",
+    "publish-macros",
+    "publish-dry-run",
+    "publish",
+]
+
+[tasks.verify-publish]
+description = "Verify publication by searching crates.io"
+command = "cargo"
+args = ["search", "clap-noun-verb"]
+
+# Utilities
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+description = "Clean build artifacts"
+
+[tasks.audit]
+command = "cargo"
+args = ["audit"]
+description = "Run security audit"
+
+[tasks.notification]
+script = '''
+echo "Task failed - check output above"
+'''
+description = "Error notification task"

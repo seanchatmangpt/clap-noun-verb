@@ -1,0 +1,794 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Migration Checklist - Porting ggen from clap to clap-noun-verb</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="A comprehensive guide for porting the ggen CLI application from regular clap to clap-noun-verb framework">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="analyzing-structure.html">Analyzing ggen's Current Structure</a></li><li class="chapter-item expanded affix "><a href="getting-started.html">Getting Started with Porting</a></li><li class="chapter-item expanded affix "><a href="porting-commands.html">Porting Commands Step-by-Step</a></li><li class="chapter-item expanded affix "><a href="advanced-patterns.html">Advanced Patterns</a></li><li class="chapter-item expanded affix "><a href="testing-validation.html">Testing and Validation</a></li><li class="chapter-item expanded affix "><a href="migration-checklist.html" class="active">Migration Checklist</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Porting ggen from clap to clap-noun-verb</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/seanchatmangpt/clap-noun-verb" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/seanchatmangpt/clap-noun-verb/edit/main/docs/book/src/migration-checklist.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="migration-checklist"><a class="header" href="#migration-checklist">Migration Checklist</a></h1>
+<p>This chapter provides a comprehensive checklist for completing the migration from regular clap to clap-noun-verb, including common pitfalls, solutions, and best practices.</p>
+<h2 id="step-by-step-checklist"><a class="header" href="#step-by-step-checklist">Step-by-step checklist</a></h2>
+<h3 id="phase-1-preparation"><a class="header" href="#phase-1-preparation">Phase 1: Preparation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Analyze current CLI structure</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Map all commands to noun-verb pattern</li>
+<li><input disabled="" type="checkbox"/>
+Identify command groupings</li>
+<li><input disabled="" type="checkbox"/>
+Document argument requirements</li>
+<li><input disabled="" type="checkbox"/>
+Note any special behaviors</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Set up development environment</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Add <code>clap-noun-verb</code> to <code>Cargo.toml</code></li>
+<li><input disabled="" type="checkbox"/>
+Verify clap version compatibility (4.x)</li>
+<li><input disabled="" type="checkbox"/>
+Create feature branch for migration</li>
+<li><input disabled="" type="checkbox"/>
+Set up test infrastructure</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Plan the migration</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Decide on command grouping strategy</li>
+<li><input disabled="" type="checkbox"/>
+Plan module structure</li>
+<li><input disabled="" type="checkbox"/>
+Identify which commands to port first (start with simple ones)</li>
+<li><input disabled="" type="checkbox"/>
+Set migration timeline</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-2-implementation"><a class="header" href="#phase-2-implementation">Phase 2: Implementation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port base structure</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Create <code>CliBuilder</code> with basic setup</li>
+<li><input disabled="" type="checkbox"/>
+Add global arguments (--verbose, --config, etc.)</li>
+<li><input disabled="" type="checkbox"/>
+Test CLI builds without errors</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port simple commands first</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port commands with no arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with simple arguments</li>
+<li><input disabled="" type="checkbox"/>
+Test each ported command individually</li>
+<li><input disabled="" type="checkbox"/>
+Verify help output matches</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port complex commands</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port commands with multiple arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with optional arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with complex validation</li>
+<li><input disabled="" type="checkbox"/>
+Test all argument combinations</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port nested structures</strong> (if applicable)</p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port compound nouns</li>
+<li><input disabled="" type="checkbox"/>
+Test nested command routing</li>
+<li><input disabled="" type="checkbox"/>
+Verify nested help output</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-3-testing-and-validation"><a class="header" href="#phase-3-testing-and-validation">Phase 3: Testing and Validation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Unit tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Test all handlers individually</li>
+<li><input disabled="" type="checkbox"/>
+Test argument extraction</li>
+<li><input disabled="" type="checkbox"/>
+Test error cases</li>
+<li><input disabled="" type="checkbox"/>
+Test edge cases</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Integration tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Test complete command workflows</li>
+<li><input disabled="" type="checkbox"/>
+Test multiple commands in sequence</li>
+<li><input disabled="" type="checkbox"/>
+Test with various argument combinations</li>
+<li><input disabled="" type="checkbox"/>
+Test help output</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Backward compatibility</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Verify all existing command invocations work</li>
+<li><input disabled="" type="checkbox"/>
+Verify argument parsing matches</li>
+<li><input disabled="" type="checkbox"/>
+Verify help text matches</li>
+<li><input disabled="" type="checkbox"/>
+Test with existing scripts/workflows</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Validation</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Enable <code>auto_validate(true)</code></li>
+<li><input disabled="" type="checkbox"/>
+Run manual validation</li>
+<li><input disabled="" type="checkbox"/>
+Fix any validation errors</li>
+<li><input disabled="" type="checkbox"/>
+Verify no duplicate names</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-4-code-quality"><a class="header" href="#phase-4-code-quality">Phase 4: Code Quality</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Code organization</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Organize commands into modules</li>
+<li><input disabled="" type="checkbox"/>
+Separate handlers from CLI structure</li>
+<li><input disabled="" type="checkbox"/>
+Follow consistent naming conventions</li>
+<li><input disabled="" type="checkbox"/>
+Add appropriate documentation</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Error handling</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Replace all <code>unwrap()</code> with proper error handling</li>
+<li><input disabled="" type="checkbox"/>
+Use <code>NounVerbError</code> for all errors</li>
+<li><input disabled="" type="checkbox"/>
+Add context to error messages</li>
+<li><input disabled="" type="checkbox"/>
+Test error messages are helpful</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Documentation</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Update command documentation</li>
+<li><input disabled="" type="checkbox"/>
+Update README with new structure</li>
+<li><input disabled="" type="checkbox"/>
+Add examples for each command</li>
+<li><input disabled="" type="checkbox"/>
+Document any breaking changes</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-5-final-verification"><a class="header" href="#phase-5-final-verification">Phase 5: Final Verification</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Smoke tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Run full test suite</li>
+<li><input disabled="" type="checkbox"/>
+Test with real-world scenarios</li>
+<li><input disabled="" type="checkbox"/>
+Test with various users/workflows</li>
+<li><input disabled="" type="checkbox"/>
+Performance testing</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Review</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Code review</li>
+<li><input disabled="" type="checkbox"/>
+Verify all tests pass</li>
+<li><input disabled="" type="checkbox"/>
+Verify no regressions</li>
+<li><input disabled="" type="checkbox"/>
+Check for any remaining old clap code</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Deployment</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Update version number</li>
+<li><input disabled="" type="checkbox"/>
+Write migration notes (if needed)</li>
+<li><input disabled="" type="checkbox"/>
+Update release notes</li>
+<li><input disabled="" type="checkbox"/>
+Deploy and verify in production</li>
+</ul>
+</li>
+</ul>
+<h2 id="common-pitfalls-and-solutions"><a class="header" href="#common-pitfalls-and-solutions">Common pitfalls and solutions</a></h2>
+<h3 id="pitfall-1-forgetting-global-arguments"><a class="header" href="#pitfall-1-forgetting-global-arguments">Pitfall 1: Forgetting Global Arguments</a></h3>
+<p><strong>Problem</strong>: Global arguments not accessible in handlers.</p>
+<p><strong>Solution</strong>: Always pass <code>VerbArgs</code> to handlers, use <code>get_global_*</code> methods:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Global args not accessible
+verb!("project", ..., |args: &amp;VerbArgs| {
+    // Can't access --verbose, --config
+})
+
+// ✅ Good: Access global args
+verb!("project", ..., |args: &amp;VerbArgs| {
+    let verbose = args.get_global_flag_count("verbose");
+    let config = args.get_global_str("config");
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-2-not-handling-required-arguments"><a class="header" href="#pitfall-2-not-handling-required-arguments">Pitfall 2: Not Handling Required Arguments</a></h3>
+<p><strong>Problem</strong>: Panic when required argument is missing.</p>
+<p><strong>Solution</strong>: Use <code>get_one_str()</code> which returns <code>Result&lt;String&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Will panic if missing
+let name = args.get_one_str("name").unwrap();
+
+// ✅ Good: Proper error handling
+let name = args.get_one_str("name")?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-3-ignoring-error-propagation"><a class="header" href="#pitfall-3-ignoring-error-propagation">Pitfall 3: Ignoring Error Propagation</a></h3>
+<p><strong>Problem</strong>: Errors not properly propagated.</p>
+<p><strong>Solution</strong>: Always use <code>?</code> operator or handle errors explicitly:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Errors swallowed
+verb!("project", ..., |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name").unwrap_or_default();
+    create_project(&amp;name);  // Error ignored
+    Ok(())
+})
+
+// ✅ Good: Errors propagated
+verb!("project", ..., |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;
+    create_project(&amp;name)?;  // Errors propagated
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-4-duplicate-names"><a class="header" href="#pitfall-4-duplicate-names">Pitfall 4: Duplicate Names</a></h3>
+<p><strong>Problem</strong>: Validation fails due to duplicate command names.</p>
+<p><strong>Solution</strong>: Use unique names, enable auto-validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Duplicate names
+.noun(noun!("ai", ..., [...]))
+.noun(noun!("ai", ..., [...]))  // Duplicate!
+
+// ✅ Good: Unique names
+.noun(noun!("ai", ..., [...]))
+.noun(noun!("marketplace", ..., [...]))
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-5-incorrect-argument-definitions"><a class="header" href="#pitfall-5-incorrect-argument-definitions">Pitfall 5: Incorrect Argument Definitions</a></h3>
+<p><strong>Problem</strong>: Arguments not parsed correctly.</p>
+<p><strong>Solution</strong>: Match argument definitions exactly:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Mismatched argument name
+verb!("generate", ..., |args: &amp;VerbArgs| {
+    let desc = args.get_one_str("description")?;  // Looking for "description"
+}, args: [
+    Arg::new("desc"),  // But defined as "desc"
+])
+
+// ✅ Good: Matched names
+verb!("generate", ..., |args: &amp;VerbArgs| {
+    let desc = args.get_one_str("description")?;
+}, args: [
+    Arg::new("description").short('d').long("description").required(true),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-6-not-testing-all-argument-combinations"><a class="header" href="#pitfall-6-not-testing-all-argument-combinations">Pitfall 6: Not Testing All Argument Combinations</a></h3>
+<p><strong>Problem</strong>: Some argument combinations fail in production.</p>
+<p><strong>Solution</strong>: Test all combinations:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_all_argument_combinations() -&gt; Result&lt;()&gt; {
+    // Test with all flags
+    test_command(vec!["ggen", "ai", "project", "name", "--rust"])?;
+    
+    // Test without flags
+    test_command(vec!["ggen", "ai", "project", "name"])?;
+    
+    // Test with optional args
+    test_command(vec!["ggen", "ai", "generate", "-d", "desc", "-o", "out"])?;
+    
+    // Test without optional args
+    test_command(vec!["ggen", "ai", "generate", "-d", "desc"])?;
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-7-breaking-backward-compatibility"><a class="header" href="#pitfall-7-breaking-backward-compatibility">Pitfall 7: Breaking Backward Compatibility</a></h3>
+<p><strong>Problem</strong>: Existing scripts/workflows break.</p>
+<p><strong>Solution</strong>: Maintain command structure and argument names:</p>
+<pre><code class="language-bash"># ✅ Good: Same command structure
+ggen ai project my-project  # Works before and after
+
+# ❌ Bad: Changed structure
+ggen project my-project ai  # Breaks existing scripts
+</code></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best practices</a></h2>
+<h3 id="1-start-simple-build-up"><a class="header" href="#1-start-simple-build-up">1. Start Simple, Build Up</a></h3>
+<p>Port simple commands first, then progressively add complexity:</p>
+<ol>
+<li>Commands with no arguments</li>
+<li>Commands with simple arguments</li>
+<li>Commands with optional arguments</li>
+<li>Commands with complex validation</li>
+<li>Nested structures</li>
+</ol>
+<h3 id="2-test-incrementally"><a class="header" href="#2-test-incrementally">2. Test Incrementally</a></h3>
+<p>Test each command as you port it:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// After porting each command
+#[test]
+fn test_ai_project_works() -&gt; Result&lt;()&gt; {
+    // Test immediately
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-use-type-safe-extraction"><a class="header" href="#3-use-type-safe-extraction">3. Use Type-Safe Extraction</a></h3>
+<p>Always use type-safe methods:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good
+let name = args.get_one_str("name")?;
+let port = args.get_one::&lt;u16&gt;("port")?;
+
+// ❌ Bad: Direct access without type safety
+let name = args.matches.get_one::&lt;String&gt;("name").unwrap();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-organize-code-logically"><a class="header" href="#4-organize-code-logically">4. Organize Code Logically</a></h3>
+<p>Group related commands:</p>
+<pre><code>commands/
+├── ai.rs          # All AI commands
+├── marketplace.rs # All marketplace commands
+└── template.rs    # All template commands
+</code></pre>
+<h3 id="5-document-command-structure"><a class="header" href="#5-document-command-structure">5. Document Command Structure</a></h3>
+<p>Add clear documentation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Generate complete projects using AI.
+///
+/// # Examples
+///
+/// ```bash
+/// ggen ai project my-app
+/// ggen ai project my-app --rust
+/// ```
+verb!("project", "Generate complete projects", ...)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="6-enable-validation"><a class="header" href="#6-enable-validation">6. Enable Validation</a></h3>
+<p>Always enable structure validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.auto_validate(true)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="7-handle-errors-gracefully"><a class="header" href="#7-handle-errors-gracefully">7. Handle Errors Gracefully</a></h3>
+<p>Provide helpful error messages:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let name = args.get_one_str("name")
+    .map_err(|_| NounVerbError::argument_error(
+        "Project name is required. Usage: ggen ai project &lt;name&gt;"
+    ))?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="8-maintain-consistency"><a class="header" href="#8-maintain-consistency">8. Maintain Consistency</a></h3>
+<p>Use consistent patterns across commands:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good: Consistent argument patterns
+Arg::new("description").short('d').long("description").required(true)
+Arg::new("output").short('o').long("output")
+
+// ❌ Bad: Inconsistent
+Arg::new("desc").short('d').required(true)  // Different name
+Arg::new("output").long("output-file")  // Different name
+<span class="boring">}</span></code></pre></pre>
+<h3 id="9-test-real-world-scenarios"><a class="header" href="#9-test-real-world-scenarios">9. Test Real-World Scenarios</a></h3>
+<p>Test with actual usage patterns:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_real_world_workflow() -&gt; Result&lt;()&gt; {
+    // Search for package
+    run_cli_with_args(vec!["ggen", "marketplace", "search", "rust"], build_cli)?;
+    
+    // Add package
+    run_cli_with_args(vec!["ggen", "marketplace", "add", "io.ggen.rust.axum"], build_cli)?;
+    
+    // Generate project using package
+    run_cli_with_args(vec!["ggen", "ai", "project", "my-app", "--rust"], build_cli)?;
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="10-review-help-output"><a class="header" href="#10-review-help-output">10. Review Help Output</a></h3>
+<p>Ensure help is clear and consistent:</p>
+<pre><code class="language-bash"># Check root help
+ggen --help
+
+# Check noun help
+ggen ai --help
+
+# Check verb help
+ggen ai project --help
+</code></pre>
+<h2 id="verification-steps"><a class="header" href="#verification-steps">Verification steps</a></h2>
+<p>Before considering the migration complete:</p>
+<h3 id="1-command-coverage"><a class="header" href="#1-command-coverage">1. Command Coverage</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+All commands ported</li>
+<li><input disabled="" type="checkbox"/>
+All arguments supported</li>
+<li><input disabled="" type="checkbox"/>
+All flags work</li>
+<li><input disabled="" type="checkbox"/>
+All combinations tested</li>
+</ul>
+<h3 id="2-functionality"><a class="header" href="#2-functionality">2. Functionality</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+All commands produce same results</li>
+<li><input disabled="" type="checkbox"/>
+All edge cases handled</li>
+<li><input disabled="" type="checkbox"/>
+All error cases handled</li>
+<li><input disabled="" type="checkbox"/>
+Performance acceptable</li>
+</ul>
+<h3 id="3-compatibility"><a class="header" href="#3-compatibility">3. Compatibility</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Backward compatible (if required)</li>
+<li><input disabled="" type="checkbox"/>
+Help text matches (if required)</li>
+<li><input disabled="" type="checkbox"/>
+Scripts still work</li>
+<li><input disabled="" type="checkbox"/>
+Workflows still work</li>
+</ul>
+<h3 id="4-code-quality"><a class="header" href="#4-code-quality">4. Code Quality</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+No <code>unwrap()</code> or <code>expect()</code> in production code</li>
+<li><input disabled="" type="checkbox"/>
+Proper error handling everywhere</li>
+<li><input disabled="" type="checkbox"/>
+All tests pass</li>
+<li><input disabled="" type="checkbox"/>
+Code reviewed</li>
+<li><input disabled="" type="checkbox"/>
+Documentation updated</li>
+</ul>
+<h3 id="5-deployment"><a class="header" href="#5-deployment">5. Deployment</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Version updated</li>
+<li><input disabled="" type="checkbox"/>
+Release notes written</li>
+<li><input disabled="" type="checkbox"/>
+Migration guide written (if needed)</li>
+<li><input disabled="" type="checkbox"/>
+Ready for deployment</li>
+</ul>
+<h2 id="final-checklist"><a class="header" href="#final-checklist">Final checklist</a></h2>
+<p>Before merging/deploying:</p>
+<pre><code>Migration Completion Checklist
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+□ All commands ported and tested
+□ All arguments working correctly
+□ Global arguments accessible everywhere
+□ Error handling implemented properly
+□ All tests passing (unit, integration, compatibility)
+□ Help output verified
+□ Code organized and documented
+□ No breaking changes (or documented if intentional)
+□ Performance acceptable
+□ Code review completed
+□ Ready for production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+</code></pre>
+<h2 id="conclusion"><a class="header" href="#conclusion">Conclusion</a></h2>
+<p>Migrating from regular clap to clap-noun-verb provides:</p>
+<ul>
+<li><strong>Cleaner code structure</strong> - Commands organized by functionality</li>
+<li><strong>Better maintainability</strong> - Easier to add new commands</li>
+<li><strong>Type safety</strong> - Compile-time verification</li>
+<li><strong>Less boilerplate</strong> - Macros handle repetitive patterns</li>
+<li><strong>Better UX</strong> - Intuitive command structure</li>
+</ul>
+<p>Following this checklist ensures a smooth migration with minimal risk.</p>
+<h3 id="next-steps-after-migration"><a class="header" href="#next-steps-after-migration">Next Steps After Migration</a></h3>
+<ol>
+<li><strong>Monitor usage</strong> - Watch for any issues in production</li>
+<li><strong>Gather feedback</strong> - Collect user feedback on new structure</li>
+<li><strong>Iterate</strong> - Make improvements based on feedback</li>
+<li><strong>Document</strong> - Keep documentation updated</li>
+<li><strong>Share</strong> - Share migration experience with community</li>
+</ol>
+<p>Good luck with your migration!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="testing-validation.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="testing-validation.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

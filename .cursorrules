@@ -15,7 +15,7 @@
 // ❌ Bad: Using unwrap() - can cause panics
 let result = some_operation().unwrap();
 
-// ❌ Bad: Using expect() - can cause panics  
+// ❌ Bad: Using expect() - can cause panics
 let result = some_operation().expect("This should not fail");
 
 // ✅ Good: Proper error handling
@@ -91,7 +91,7 @@ fn test_registry_builds_valid_command() -> Result<()> {
         .register_noun(noun!("services", "Manage services", [
             verb!("status", "Show status", |_args| Ok(()))
         ]));
-    
+
     let command = registry.build_command();
     assert!(command.get_subcommands().any(|cmd| cmd.get_name() == "services"));
     Ok(())
@@ -111,13 +111,13 @@ fn test_verb_executes_with_valid_args() -> Result<()> {
     }, args: [
         Arg::new("value").required(true)
     ]);
-    
+
     // Act - Execute the code under test
     let matches = Command::new("test")
         .arg(Arg::new("value").required(true))
         .get_matches_from(vec!["test", "test"]);
     let verb_args = VerbArgs::new(matches);
-    
+
     // Assert - Verify the results
     verb.run(&verb_args)?;
     Ok(())
@@ -136,6 +136,57 @@ fn test_registry_validation_catches_duplicate_noun_names() -> Result<()> {}
 // ❌ Bad: Vague test names
 #[test]
 fn test_verb() {}
+```
+
+### ⚡ Test Performance Requirements
+**The ENTIRE test suite MUST complete within 1 second. If the test suite takes longer, optimize with concurrency or other performance improvements.**
+
+- Run tests with timeout: `timeout 1s cargo test && echo "Tests completed in <1s"` (uses shell timeout command)
+- The complete test suite (all tests combined) must finish in under 1 second
+- Use parallel test execution (cargo test default, or `--test-threads=N` to explicitly set concurrency) to maximize speed
+- For slow test suites, refactor tests to use concurrent execution, optimize test code, or reduce test coverage to essential behaviors only
+- Individual tests should be fast (<100ms each) to allow the full suite to complete in <1s with parallel execution
+- Note: `--test-threads=1` forces sequential execution (slower) - avoid unless testing sequential behavior
+
+```rust
+// ❌ Bad: Slow test suite that takes >1s total
+#[test]
+fn test_slow_operation() -> Result<()> {
+    // Sequential operations that make the suite too slow
+    for i in 0..10000 {
+        expensive_operation(i)?;
+    }
+    Ok(())
+}
+
+// ✅ Good: Fast test that completes quickly
+#[test]
+fn test_fast_operation() -> Result<()> {
+    use std::sync::Arc;
+    use std::thread;
+
+    // Parallel execution for independent operations within the test
+    let handles: Vec<_> = (0..10000)
+        .map(|i| {
+            thread::spawn(move || {
+                expensive_operation(i)
+            })
+        })
+        .collect();
+
+    for handle in handles {
+        handle.join().unwrap()?;
+    }
+    Ok(())
+}
+
+// ✅ Good: Optimized test that contributes to fast suite completion
+#[test]
+fn test_optimized_operation() -> Result<()> {
+    // Refactored to use efficient algorithms/data structures
+    batch_operation(0..10000)?;
+    Ok(())
+}
 ```
 
 ## 📦 Module Organization Best Practices
@@ -284,7 +335,7 @@ pub trait VerbCommand: Send + Sync {
 // ✅ Good: Add new methods, deprecate old ones
 pub trait VerbCommand: Send + Sync {
     fn run(&self, args: &VerbArgs) -> Result<()>; // Keep for compatibility
-    
+
     #[deprecated(note = "Use run_with_context instead")]
     fn run_with_context(&self, args: &VerbArgs, context: &Context) -> Result<()> {
         self.run(args) // Default implementation
@@ -325,19 +376,22 @@ pub trait VerbCommand: Send + Sync {
 3. **✅ Trait Compatibility**: All traits remain `dyn` compatible (no async trait methods)
 4. **✅ Backward Compatibility**: No breaking changes without migration plan
 5. **✅ All Tests Pass**: Every test in the codebase passes
-6. **✅ No Linting Errors**: Zero linting errors or warnings
-7. **✅ Proper Error Handling**: All functions use Result types with meaningful errors
-8. **✅ API Design**: Follows framework philosophy - composable and extensible
-9. **✅ Documentation**: All public APIs have documentation with examples
+6. **✅ Test Performance**: The ENTIRE test suite completes in <1 second (use concurrency or optimization if needed)
+7. **✅ No Linting Errors**: Zero linting errors or warnings
+8. **✅ Proper Error Handling**: All functions use Result types with meaningful errors
+9. **✅ API Design**: Follows framework philosophy - composable and extensible
+10. **✅ Documentation**: All public APIs have documentation with examples
 
 ### Validation Checklist:
 - [ ] `cargo test` passes completely
+- [ ] `timeout 1s cargo test && echo "Tests completed in <1s"` passes (entire test suite completes in <1s with parallel execution)
 - [ ] `cargo clippy` shows no warnings
 - [ ] No `unwrap()` or `expect()` in production code
 - [ ] All traits are `dyn` compatible
 - [ ] No breaking changes to public APIs
 - [ ] All error paths use proper Result types
 - [ ] All public APIs have documentation with examples
+- [ ] Entire test suite completes in <1s (add concurrency or optimization if needed)
 
 ### If ANY of these fail, the code is NOT ready for production.
 

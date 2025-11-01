@@ -1,0 +1,58 @@
+[config]
+skip_core_tasks = false
+
+[tasks.notification]
+script = '''
+echo "Task failed - check output above"
+'''
+description = "Error notification task"
+
+[tasks.verify]
+description = "Verify code quality: format, clippy, and tests"
+dependencies = ["format-check", "clippy", "test"]
+
+[tasks.format-check]
+command = "cargo"
+args = ["fmt", "--", "--check"]
+
+[tasks.clippy]
+command = "cargo"
+args = ["clippy", "--", "-D", "warnings"]
+
+[tasks.test]
+command = "cargo"
+args = ["test", "--quiet"]
+
+[tasks.format]
+command = "cargo"
+args = ["fmt"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.check]
+command = "cargo"
+args = ["check"]
+
+[tasks.test-timeout]
+command = "timeout"
+args = ["1s", "cargo", "test", "--quiet"]
+description = "Run tests with 1s timeout to prevent freezing"
+
+[tasks.ci]
+dependencies = ["format-check", "clippy", "test-timeout", "build", "check"]
+
+[tasks.pre-release]
+dependencies = ["format-check", "clippy", "test", "build", "check"]
+
+[tasks.release-check]
+description = "Run all checks before release (macros crate)"
+dependencies = ["format-check", "clippy", "test", "build", "check"]
+
+# Documentation tasks (proc-macro crates don't typically document on docs.rs)
+[tasks.doc]
+script = '''
+echo "Proc-macro crate - skipping documentation"
+'''
+description = "Skip documentation for proc-macro crate"

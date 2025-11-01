@@ -1,0 +1,550 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Getting Started with Porting - Porting ggen from clap to clap-noun-verb</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="A comprehensive guide for porting the ggen CLI application from regular clap to clap-noun-verb framework">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="analyzing-structure.html">Analyzing ggen's Current Structure</a></li><li class="chapter-item expanded affix "><a href="getting-started.html" class="active">Getting Started with Porting</a></li><li class="chapter-item expanded affix "><a href="porting-commands.html">Porting Commands Step-by-Step</a></li><li class="chapter-item expanded affix "><a href="advanced-patterns.html">Advanced Patterns</a></li><li class="chapter-item expanded affix "><a href="testing-validation.html">Testing and Validation</a></li><li class="chapter-item expanded affix "><a href="migration-checklist.html">Migration Checklist</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Porting ggen from clap to clap-noun-verb</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/seanchatmangpt/clap-noun-verb" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/seanchatmangpt/clap-noun-verb/edit/main/docs/book/src/getting-started.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="getting-started-with-porting"><a class="header" href="#getting-started-with-porting">Getting Started with Porting</a></h1>
+<p>This chapter covers the initial setup for porting ggen from regular clap to clap-noun-verb, including dependency management and understanding the framework APIs.</p>
+<h2 id="adding-clap-noun-verb-dependency"><a class="header" href="#adding-clap-noun-verb-dependency">Adding clap-noun-verb dependency</a></h2>
+<h3 id="1-update-cargotoml"><a class="header" href="#1-update-cargotoml">1. Update Cargo.toml</a></h3>
+<p>Add <code>clap-noun-verb</code> to your <code>Cargo.toml</code> dependencies:</p>
+<pre><code class="language-toml">[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+clap-noun-verb = "3.0.0"
+# ... your other dependencies
+</code></pre>
+<h3 id="2-verify-compatibility"><a class="header" href="#2-verify-compatibility">2. Verify Compatibility</a></h3>
+<p>Ensure your <code>clap</code> version is compatible with <code>clap-noun-verb</code> (requires clap 4.x):</p>
+<pre><code class="language-toml">[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+clap-noun-verb = "3.0.0"
+</code></pre>
+<h3 id="3-optional-update-dev-dependencies"><a class="header" href="#3-optional-update-dev-dependencies">3. Optional: Update Dev Dependencies</a></h3>
+<p>If you have CLI tests, ensure they use compatible versions:</p>
+<pre><code class="language-toml">[dev-dependencies]
+clap-noun-verb = "3.0.0"
+# ... other dev dependencies
+</code></pre>
+<h2 id="project-structure"><a class="header" href="#project-structure">Project structure</a></h2>
+<p>A typical clap-noun-verb project structure looks like:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI entry point
+│   ├── commands/            # Command implementations
+│   │   ├── mod.rs
+│   │   ├── ai.rs            # AI commands
+│   │   ├── marketplace.rs   # Marketplace commands
+│   │   └── template.rs      # Template commands (if applicable)
+│   ├── handlers/            # Command handlers
+│   │   ├── mod.rs
+│   │   ├── ai_handlers.rs
+│   │   └── marketplace_handlers.rs
+│   └── utils.rs             # Utilities
+└── tests/
+    └── cli_tests.rs         # CLI integration tests
+</code></pre>
+<h3 id="alternative-structure-flat"><a class="header" href="#alternative-structure-flat">Alternative Structure (Flat)</a></h3>
+<p>For smaller projects, you might prefer a flatter structure:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI entry point with all commands
+│   ├── handlers.rs          # Command handlers
+│   └── utils.rs             # Utilities
+</code></pre>
+<h3 id="recommended-approach"><a class="header" href="#recommended-approach">Recommended Approach</a></h3>
+<p>For ggen, we recommend a <strong>modular structure</strong> to keep commands organized:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI builder
+│   ├── cli.rs               # CLI structure definition
+│   ├── commands/
+│   │   ├── mod.rs
+│   │   ├── ai.rs
+│   │   └── marketplace.rs
+│   └── handlers/
+│       ├── mod.rs
+│       ├── ai_handlers.rs
+│       └── marketplace_handlers.rs
+</code></pre>
+<h2 id="understanding-the-framework-apis"><a class="header" href="#understanding-the-framework-apis">Understanding the framework APIs</a></h2>
+<h3 id="core-types"><a class="header" href="#core-types">Core Types</a></h3>
+<h4 id="clibuilder"><a class="header" href="#clibuilder">CliBuilder</a></h4>
+<p>The main builder for creating CLI applications:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs, Result};
+
+let cli = CliBuilder::new("ggen")
+    .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+    .noun("services", "Manage services")
+<span class="boring">}</span></code></pre></pre>
+<h4 id="nouncommand-trait"><a class="header" href="#nouncommand-trait">NounCommand Trait</a></h4>
+<p>Nouns implement the <code>NounCommand</code> trait:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait NounCommand: Send + Sync {
+    fn name(&amp;self) -&gt; &amp;'static str;
+    fn about(&amp;self) -&gt; &amp;'static str;
+    fn verbs(&amp;self) -&gt; Vec&lt;Box&lt;dyn VerbCommand&gt;&gt;;
+    fn sub_nouns(&amp;self) -&gt; Vec&lt;Box&lt;dyn NounCommand&gt;&gt; { Vec::new() }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>In practice, you'll use the <code>noun!</code> macro rather than implementing manually.</p>
+<h4 id="verbcommand-trait"><a class="header" href="#verbcommand-trait">VerbCommand Trait</a></h4>
+<p>Verbs implement the <code>VerbCommand</code> trait:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait VerbCommand: Send + Sync {
+    fn name(&amp;self) -&gt; &amp;'static str;
+    fn about(&amp;self) -&gt; &amp;'static str;
+    fn run(&amp;self, args: &amp;VerbArgs) -&gt; Result&lt;()&gt;;
+    fn build_command(&amp;self) -&gt; Command { /* default */ }
+    fn additional_args(&amp;self) -&gt; Vec&lt;clap::Arg&gt; { Vec::new() }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>In practice, you'll use the <code>verb!</code> macro rather than implementing manually.</p>
+<h4 id="verbargs"><a class="header" href="#verbargs">VerbArgs</a></h4>
+<p>Arguments passed to verb handlers:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct VerbArgs {
+    pub matches: ArgMatches,              // Verb-specific arguments
+    pub parent_matches: Option&lt;ArgMatches&gt;, // Global arguments
+    pub context: VerbContext,              // Command context
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Helper methods for argument extraction:</p>
+<ul>
+<li><code>get_one_str(name)</code> - Required string argument</li>
+<li><code>get_one_str_opt(name)</code> - Optional string argument</li>
+<li><code>get_one&lt;T&gt;(name)</code> - Required typed argument</li>
+<li><code>get_one_opt&lt;T&gt;(name)</code> - Optional typed argument</li>
+<li><code>get_many&lt;T&gt;(name)</code> - Multiple values</li>
+<li><code>get_path(name)</code> - PathBuf convenience method</li>
+<li><code>is_flag_set(name)</code> - Check flag</li>
+<li><code>get_flag_count(name)</code> - Flag count (for -v, -vv, -vvv)</li>
+<li><code>get_global_str(name)</code> - Access global arguments</li>
+<li><code>is_global_flag_set(name)</code> - Check global flag</li>
+</ul>
+<h3 id="convenience-macros"><a class="header" href="#convenience-macros">Convenience Macros</a></h3>
+<h4 id="noun-macro"><a class="header" href="#noun-macro"><code>noun!</code> Macro</a></h4>
+<p>Creates a noun command with verbs:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::noun;
+
+let ai_noun = noun!("ai", "AI-powered generation", [
+    verb!("project", "Generate complete projects", handler),
+    verb!("generate", "Generate templates", handler),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h4 id="verb-macro"><a class="header" href="#verb-macro"><code>verb!</code> Macro</a></h4>
+<p>Creates a verb command with handler:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{verb, VerbArgs};
+use clap::Arg;
+
+let project_verb = verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;
+    let rust = args.is_flag_set("rust");
+    
+    println!("Generating project: {}", name);
+    if rust {
+        println!("Creating Rust project structure...");
+    }
+    println!("✓ Project '{}' generated", name);
+    Ok(())
+}, args: [
+    Arg::new("name").required(true),
+    Arg::new("rust").long("rust"),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h4 id="app-macro-declarative"><a class="header" href="#app-macro-declarative"><code>app!</code> Macro (Declarative)</a></h4>
+<p>Declarative CLI composition:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{app, noun, verb, VerbArgs, Result};
+
+let cli = app! {
+    name: "ggen",
+    about: "Rust Template Generator",
+    commands: [
+        noun!("ai", "AI-powered generation", [
+            verb!("project", "Generate projects", handler),
+        ]),
+    ]
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="convenience-functions"><a class="header" href="#convenience-functions">Convenience Functions</a></h3>
+<h4 id="run_cli"><a class="header" href="#run_cli"><code>run_cli</code></a></h4>
+<p>Runs CLI with process arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::run_cli;
+
+run_cli(|cli| {
+    cli.name("ggen")
+        .noun(/* ... */)
+})
+<span class="boring">}</span></code></pre></pre>
+<h4 id="run_cli_with_args"><a class="header" href="#run_cli_with_args"><code>run_cli_with_args</code></a></h4>
+<p>Runs CLI with custom arguments (useful for testing):</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::run_cli_with_args;
+
+run_cli_with_args(vec!["ggen", "ai", "project", "my-project"], |cli| {
+    cli.name("ggen")
+        .noun(/* ... */)
+})
+<span class="boring">}</span></code></pre></pre>
+<h2 id="basic-concepts"><a class="header" href="#basic-concepts">Basic concepts</a></h2>
+<h3 id="1-nouns-group-related-verbs"><a class="header" href="#1-nouns-group-related-verbs">1. Nouns Group Related Verbs</a></h3>
+<p>Nouns are containers for related actions:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("ai", "AI-powered generation", [
+    verb!("project", ...),
+    verb!("generate", ...),
+    verb!("graph", ...),
+])
+<span class="boring">}</span></code></pre></pre>
+<p>This creates:</p>
+<ul>
+<li><code>ggen ai project</code></li>
+<li><code>ggen ai generate</code></li>
+<li><code>ggen ai graph</code></li>
+</ul>
+<h3 id="2-verbs-perform-actions"><a class="header" href="#2-verbs-perform-actions">2. Verbs Perform Actions</a></h3>
+<p>Verbs execute specific actions on nouns:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;
+    
+    use std::fs;
+    use std::path::PathBuf;
+    
+    let project_dir = PathBuf::from(&amp;name);
+    fs::create_dir_all(&amp;project_dir)?;
+    println!("✓ Project '{}' created", name);
+    
+    Ok(())
+}, args: [
+    Arg::new("name").required(true),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-arguments-are-type-safe"><a class="header" href="#3-arguments-are-type-safe">3. Arguments Are Type-Safe</a></h3>
+<p>Extract arguments with type safety:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>|args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;  // Required string
+    let rust = args.is_flag_set("rust");   // Flag
+    let output = args.get_one_str_opt("output"); // Optional string
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-global-arguments-are-accessible"><a class="header" href="#4-global-arguments-are-accessible">4. Global Arguments Are Accessible</a></h3>
+<p>Global arguments are available to all verbs:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.global_args(vec![
+    Arg::new("verbose").short('v').long("verbose").action(clap::ArgAction::Count),
+    Arg::new("config").short('c').long("config"),
+])
+.noun(noun!("ai", ..., [
+    verb!("project", ..., |args: &amp;VerbArgs| {
+        let verbose = args.get_global_flag_count("verbose");
+        let config = args.get_global_str("config");
+        // ...
+    }),
+]))
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-error-handling-uses-result"><a class="header" href="#5-error-handling-uses-result">5. Error Handling Uses Result</a></h3>
+<p>All handlers return <code>Result&lt;()&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", ..., |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;  // Returns Result&lt;String&gt;
+    // If error, return early with ?
+    do_something()?;
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="6-structure-validation-optional"><a class="header" href="#6-structure-validation-optional">6. Structure Validation (Optional)</a></h3>
+<p>Enable automatic structure validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.auto_validate(true)
+<span class="boring">}</span></code></pre></pre>
+<p>This catches:</p>
+<ul>
+<li>Duplicate noun names</li>
+<li>Empty nouns (no verbs or sub-nouns)</li>
+<li>Duplicate verb names within a noun</li>
+<li>Duplicate sub-noun names</li>
+<li>Verb/sub-noun name conflicts</li>
+</ul>
+<h2 id="example-minimal-setup"><a class="header" href="#example-minimal-setup">Example: Minimal Setup</a></h2>
+<p>Here's a minimal example to get started:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">// src/main.rs
+use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    println!("Generating project: {}", name);
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true),
+                ]),
+            ]))
+    })
+}</code></pre></pre>
+<p>This creates a CLI with:</p>
+<pre><code class="language-bash">ggen ai project &lt;name&gt;
+</code></pre>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Now that you understand the basics, you're ready to:</p>
+<ol>
+<li><a href="porting-commands.html">Porting Commands Step-by-Step</a> - Port each command group with detailed examples</li>
+<li><a href="advanced-patterns.html">Advanced Patterns</a> - Learn advanced techniques for complex scenarios</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="analyzing-structure.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="porting-commands.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="analyzing-structure.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="porting-commands.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

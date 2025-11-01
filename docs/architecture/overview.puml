@@ -1,0 +1,59 @@
+@startuml overview
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title clap-noun-verb: CLI as Interface Layer
+
+package "Application Layer" {
+    component [CLI] as CLI
+    component [API] as API
+    component [Web] as Web
+    note right of API
+        Business logic can be used
+        by any interface
+    end note
+}
+
+package "CLI Layer (Validation Only)" {
+    component [CliBuilder] as Builder
+    component [Router] as Router
+    component [ArgValidator] as Validator
+    note right of Validator
+        CLI code ONLY validates
+        arguments/options.
+        NO business logic.
+    end note
+}
+
+package "Business Logic Layer (Reusable)" {
+    component [CommandHandlers] as Handlers
+    component [CoreLogic] as Core
+    note right of Core
+        Pure functions that can
+        be called from any interface:
+        CLI, API, Web, etc.
+    end note
+}
+
+package "Runtime Layer" {
+    component [Executor] as Executor
+    component [Interceptor] as Interceptor
+}
+
+CLI --> Builder : uses
+Builder --> Router : routes
+Router --> Validator : validates args
+Validator --> Handlers : delegates to
+Handlers --> Core : uses
+Handlers --> Executor : executes through
+Executor --> Interceptor : hooks
+
+API --> Handlers : calls directly
+Web --> Handlers : calls directly
+
+CLI -[hidden]dotted-> API
+CLI -[hidden]dotted-> Web
+
+@enduml
+

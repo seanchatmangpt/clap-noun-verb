@@ -1,0 +1,71 @@
+@startuml architecture
+!theme plain
+skinparam componentStyle rectangle
+
+title clap-noun-verb: Layered Architecture
+
+package "Interface Layer" {
+    [CLI Interface] as CLI
+    [API Interface] as API
+    [Web Interface] as Web
+}
+
+package "CLI Layer (src/cli/)" {
+    component "CliBuilder" as Builder {
+        + build()
+        + run()
+    }
+    component "Router" as Router {
+        + route()
+        + parse()
+    }
+    component "ArgValidator" as Validator {
+        + validate()
+        + extract()
+    }
+    note right of Validator
+        **Enforced Pattern:**
+        CLI code ONLY validates
+        args/opts and delegates.
+        NO business logic allowed.
+    end note
+}
+
+package "Business Logic Layer (src/logic/)" {
+    component "CommandHandlers" as Handlers {
+        + execute()
+    }
+    component "CoreFunctions" as Core {
+        + pure functions
+    }
+    note right of Core
+        Pure, reusable functions
+        that can be called from
+        any interface (CLI, API, Web)
+    end note
+}
+
+package "Runtime Layer (src/runtime/)" {
+    component "Executor" as Executor {
+        + execute()
+    }
+    component "Interceptor" as Interceptor {
+        + pre_hook()
+        + post_hook()
+    }
+}
+
+CLI --> Builder
+Builder --> Router
+Router --> Validator
+Validator --> Handlers : delegates to\n(validated args)
+
+Handlers --> Core : uses
+Handlers --> Executor : executes via
+Executor --> Interceptor : hooks
+
+API --> Handlers : direct calls
+Web --> Handlers : direct calls
+
+@enduml
+

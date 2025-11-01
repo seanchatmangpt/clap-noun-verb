@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib.rs",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762032999870,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762032999870,
+            "name": "Commit-0",
+            "content": "//! clap-noun-verb - A framework for building composable CLI patterns\n//!\n//! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns\n//! on top of clap, similar to how Python's Typer provides a simpler interface over Click.\n//!\n//! ## Version 3.0.0 Architecture\n//!\n//! Version 3.0.0 introduces attribute macros for zero-boilerplate command registration:\n//!\n//! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[noun]` and `#[verb]` for declarative command registration\n//! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices\n//! - **Type Inference** - Arguments automatically inferred from function signatures\n//! - **JSON Output** - All output automatically serialized to JSON\n//!\n//! ### Key Principles\n//!\n//! 1. **Zero Boilerplate** - Just add `#[noun]` and `#[verb]` attributes to functions\n//! 2. **Auto-Discovery** - Commands automatically discovered at compile time\n//! 3. **Type Inference** - Arguments inferred from function signatures\n//! 4. **JSON by Default** - Perfect for agents, MCP, and modern tooling\n//!\n//! ## Framework Philosophy\n//!\n//! Instead of providing specific compositions, this crate provides a framework that allows\n//! users to compose their own CLI patterns. Key features:\n//!\n//! - **Composable Command Structure**: Easy composition of nouns and verbs\n//! - **Separation of Concerns**: CLI validates, logic is separate and reusable\n//! - **Type-Safe Composition**: Compile-time verification of command structure\n//! - **Zero-Cost Abstractions**: Thin wrapper over clap with no runtime overhead\n//!\n//! ## API Stability\n//!\n//! This crate follows [Semantic Versioning](https://semver.org/). Version 3.0.0 and above\n//! provide API stability guarantees:\n//!\n//! - **Public APIs** are stable and will not change in a breaking way within the same major version\n//! - **Breaking changes** will only occur in major version bumps (4.0.0, 5.0.0, etc.)\n//! - **Deprecations** will be announced at least one minor version before removal\n//! - **Private APIs** (non-pub items) are not subject to stability guarantees\n//!\n//! All public types, traits, and functions documented in this crate are considered stable.\n\npub mod builder;\npub mod cli;\npub mod error;\npub mod logic;\npub mod macros;\npub mod noun;\npub mod registry;\npub mod router;\npub mod runtime;\npub mod tree;\npub mod verb;\n\n// Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]\n// They don't need to be re-exported - they're used directly as attributes\n\n// Re-export CLI run function for convenience\npub use cli::run;\n\n// Core framework types\npub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};\npub use error::{NounVerbError, Result};\npub use noun::{CompoundNounCommand, NounCommand, NounContext};\npub use registry::CommandRegistry;\npub use router::CommandRouter;\npub use tree::{CommandTree, CommandTreeBuilder};\npub use verb::{VerbArgs, VerbCommand, VerbContext};\n\n// Macros are exported at crate root via #[macro_export]\n\n// Framework-level re-exports for easy composition\npub use builder::CliBuilder as Cli;\npub use registry::CommandRegistry as Registry;\npub use tree::CommandTree as Tree;\n"
+        }
+    ]
+}

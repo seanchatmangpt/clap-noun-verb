@@ -1,0 +1,3678 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Porting ggen from clap to clap-noun-verb</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="A comprehensive guide for porting the ggen CLI application from regular clap to clap-noun-verb framework">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded affix "><a href="analyzing-structure.html">Analyzing ggen's Current Structure</a></li><li class="chapter-item expanded affix "><a href="getting-started.html">Getting Started with Porting</a></li><li class="chapter-item expanded affix "><a href="porting-commands.html">Porting Commands Step-by-Step</a></li><li class="chapter-item expanded affix "><a href="advanced-patterns.html">Advanced Patterns</a></li><li class="chapter-item expanded affix "><a href="testing-validation.html">Testing and Validation</a></li><li class="chapter-item expanded affix "><a href="migration-checklist.html">Migration Checklist</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Porting ggen from clap to clap-noun-verb</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/seanchatmangpt/clap-noun-verb" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>This guide provides a comprehensive walkthrough for porting the <code>ggen</code> CLI application from regular <code>clap</code> to the <code>clap-noun-verb</code> framework. Whether you're new to <code>clap-noun-verb</code> or an experienced Rust developer, this guide will help you understand the porting process step-by-step.</p>
+<h2 id="what-is-clap-noun-verb"><a class="header" href="#what-is-clap-noun-verb">What is clap-noun-verb?</a></h2>
+<p><code>clap-noun-verb</code> is a framework for building composable CLI patterns on top of <code>clap</code>. It provides a high-level, ergonomic API that organizes commands using the <strong>noun-verb pattern</strong> (e.g., <code>services status</code>, <code>collector up</code>), similar to how Python's Typer provides a simpler interface over Click.</p>
+<h3 id="key-features"><a class="header" href="#key-features">Key Features</a></h3>
+<ul>
+<li><strong>Composable Command Structure</strong>: Easy composition of nouns and verbs</li>
+<li><strong>Framework-Level APIs</strong>: APIs that make it easy to build CLI frameworks</li>
+<li><strong>Type-Safe Composition</strong>: Compile-time verification of command structure</li>
+<li><strong>Zero-Cost Abstractions</strong>: Thin wrapper over clap with no runtime overhead</li>
+<li><strong>Convenience Macros</strong>: Reduce boilerplate with <code>noun!</code> and <code>verb!</code> macros</li>
+<li><strong>Multiple Composition Methods</strong>: Choose the approach that fits your needs</li>
+</ul>
+<h3 id="the-noun-verb-pattern"><a class="header" href="#the-noun-verb-pattern">The Noun-Verb Pattern</a></h3>
+<p>The noun-verb pattern structures commands hierarchically:</p>
+<pre><code>myapp
+├── services
+│   ├── status
+│   ├── logs
+│   └── restart
+├── collector
+│   ├── up
+│   ├── down
+│   └── status
+└── dev
+    ├── test
+    │   ├── run
+    │   └── watch
+    └── lint
+        ├── check
+        └── fix
+</code></pre>
+<p>Where:</p>
+<ul>
+<li><strong>Nouns</strong> are entities or concepts (e.g., <code>services</code>, <code>collector</code>, <code>dev</code>)</li>
+<li><strong>Verbs</strong> are actions performed on nouns (e.g., <code>status</code>, <code>logs</code>, <code>up</code>)</li>
+</ul>
+<p>This creates an intuitive, scalable command structure that's easy to understand and extend.</p>
+<h2 id="why-port-from-regular-clap"><a class="header" href="#why-port-from-regular-clap">Why port from regular clap?</a></h2>
+<p>While <code>clap</code> is powerful and flexible, building complex CLI structures with traditional <code>clap</code> often results in:</p>
+<ol>
+<li><strong>Verbose enum-based structures</strong>: Deeply nested enums and match statements</li>
+<li><strong>Boilerplate code</strong>: Repetitive command definitions and handlers</li>
+<li><strong>Scattered logic</strong>: Command definitions spread across multiple files</li>
+<li><strong>Less intuitive organization</strong>: Commands don't naturally group related functionality</li>
+<li><strong>Harder maintenance</strong>: Adding new commands requires touching multiple places</li>
+</ol>
+<h3 id="example-before-regular-clap"><a class="header" href="#example-before-regular-clap">Example: Before (Regular clap)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Ai {
+        #[command(subcommand)]
+        command: AiCommands,
+    },
+    Search { query: String },
+    Add { package: String },
+    List,
+    Update,
+}
+
+#[derive(Subcommand)]
+enum AiCommands {
+    Project {
+        name: String,
+        #[arg(long)]
+        rust: bool,
+    },
+    Generate {
+        #[arg(short, long)]
+        description: String,
+        #[arg(short, long)]
+        output: Option&lt;String&gt;,
+    },
+    Graph {
+        #[arg(short, long)]
+        description: String,
+        #[arg(short, long)]
+        output: Option&lt;String&gt;,
+    },
+    Sparql {
+        #[arg(short, long)]
+        description: String,
+        #[arg(short, long)]
+        graph: String,
+        #[arg(short, long)]
+        output: Option&lt;String&gt;,
+    },
+}
+
+fn main() {
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Ai { command } =&gt; match command {
+            AiCommands::Project { name, rust } =&gt; {
+                // Handle ai project
+            }
+            AiCommands::Generate { description, output } =&gt; {
+                // Handle ai generate
+            }
+            // ... more matches
+        },
+        Commands::Search { query } =&gt; {
+            // Handle search
+        },
+        // ... more matches
+    }
+}</code></pre></pre>
+<h3 id="example-after-clap-noun-verb"><a class="header" href="#example-after-clap-noun-verb">Example: After (clap-noun-verb)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    let rust = args.is_flag_set("rust");
+                    // Handle project generation
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true),
+                    Arg::new("rust").long("rust"),
+                ]),
+                verb!("generate", "Generate templates from descriptions", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let output = args.get_one_str_opt("output");
+                    // Handle generation
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+            ]))
+            .noun(noun!("marketplace", "Template marketplace", [
+                verb!("search", "Find packages", |args: &amp;VerbArgs| {
+                    let query = args.get_one_str("query")?;
+                    // Handle search
+                    Ok(())
+                }, args: [
+                    Arg::new("query").required(true),
+                ]),
+                verb!("add", "Install package", |args: &amp;VerbArgs| {
+                    let package = args.get_one_str("package")?;
+                    // Handle add
+                    Ok(())
+                }, args: [
+                    Arg::new("package").required(true),
+                ]),
+            ]))
+    })
+}</code></pre></pre>
+<h3 id="benefits"><a class="header" href="#benefits">Benefits</a></h3>
+<p>The <code>clap-noun-verb</code> approach provides:</p>
+<ul>
+<li><strong>Cleaner structure</strong>: Commands naturally group by functionality</li>
+<li><strong>Less boilerplate</strong>: Macros handle repetitive patterns</li>
+<li><strong>Better organization</strong>: Related commands are co-located</li>
+<li><strong>Easier to extend</strong>: Adding new verbs to a noun is simple</li>
+<li><strong>Type safety</strong>: Compile-time verification of command structure</li>
+<li><strong>Multiple composition methods</strong>: Choose what fits your project</li>
+</ul>
+<h2 id="about-ggen"><a class="header" href="#about-ggen">About ggen</a></h2>
+<p><code>ggen</code> is a Rust Template Generator with Frontmatter &amp; RDF Support. It provides:</p>
+<ul>
+<li><strong>AI-Powered Generation</strong>: Generate templates, projects, and ontologies using LLMs</li>
+<li><strong>Deterministic &amp; Reproducible</strong>: Generate byte-identical output every time</li>
+<li><strong>Knowledge Graph-Driven</strong>: Embed RDF and query with SPARQL</li>
+<li><strong>Marketplace Integration</strong>: Reusable template packages (gpacks)</li>
+<li><strong>Production-Ready Testing</strong>: Hermetic, deterministic test environments</li>
+</ul>
+<p>From the ggen documentation, we can see it has commands like:</p>
+<pre><code class="language-bash"># AI commands
+ggen ai project "E-commerce API with Stripe" --name shop-api --rust
+ggen ai generate -d "Database repository pattern" -o repo.tmpl
+ggen ai graph -d "User management ontology" -o users.ttl
+ggen ai sparql -d "Find all active users" -g schema.ttl
+
+# Marketplace commands
+ggen search "rust web"
+ggen add io.ggen.rust.axum
+ggen list
+ggen update
+</code></pre>
+<p>This is a perfect candidate for the noun-verb pattern, as commands naturally group into:</p>
+<ul>
+<li><code>ai</code> noun with <code>project</code>, <code>generate</code>, <code>graph</code>, <code>sparql</code> verbs</li>
+<li><code>marketplace</code> noun with <code>search</code>, <code>add</code>, <code>list</code>, <code>update</code> verbs</li>
+<li>And potentially other groups</li>
+</ul>
+<h2 id="benefits-of-the-noun-verb-pattern"><a class="header" href="#benefits-of-the-noun-verb-pattern">Benefits of the noun-verb pattern</a></h2>
+<p>The noun-verb pattern provides several advantages for CLI applications:</p>
+<h3 id="1-intuitive-structure"><a class="header" href="#1-intuitive-structure">1. Intuitive Structure</a></h3>
+<p>Users quickly understand the command hierarchy:</p>
+<pre><code class="language-bash">ggen ai project &lt;name&gt;        # Generate an AI project
+ggen ai generate &lt;description&gt; # Generate a template
+ggen marketplace search &lt;query&gt; # Search marketplace
+</code></pre>
+<p>The structure is self-documenting and follows natural language patterns.</p>
+<h3 id="2-scalable-organization"><a class="header" href="#2-scalable-organization">2. Scalable Organization</a></h3>
+<p>Adding new commands is straightforward:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("ai", "AI-powered generation", [
+    verb!("project", ...),
+    verb!("generate", ...),
+    verb!("new-command", ...), // Easy to add!
+])
+<span class="boring">}</span></code></pre></pre>
+<p>No need to modify enums or add match cases—just add the verb to the appropriate noun.</p>
+<h3 id="3-consistent-ux"><a class="header" href="#3-consistent-ux">3. Consistent UX</a></h3>
+<p>Users learn one pattern and can apply it everywhere. Once they understand <code>noun verb</code>, they can predict how new commands work.</p>
+<h3 id="4-type-safety"><a class="header" href="#4-type-safety">4. Type Safety</a></h3>
+<p>The framework provides compile-time verification of command structure, catching errors before runtime.</p>
+<h3 id="5-better-code-organization"><a class="header" href="#5-better-code-organization">5. Better Code Organization</a></h3>
+<p>Commands are organized by functionality, making the codebase easier to navigate and maintain.</p>
+<h2 id="next-steps"><a class="header" href="#next-steps">Next Steps</a></h2>
+<p>Now that you understand the motivation and benefits, let's proceed to:</p>
+<ol>
+<li><a href="analyzing-structure.html">Analyzing ggen's Current Structure</a> - Understanding how to map ggen's commands to the noun-verb pattern</li>
+<li><a href="getting-started.html">Getting Started with Porting</a> - Setting up the project and understanding the framework APIs</li>
+<li><a href="porting-commands.html">Porting Commands Step-by-Step</a> - Detailed examples of porting each command group</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="analyzing-ggens-current-structure"><a class="header" href="#analyzing-ggens-current-structure">Analyzing ggen's Current Structure</a></h1>
+<p>Before porting, we need to understand ggen's current CLI structure and map it to the noun-verb pattern. This chapter analyzes the existing commands and identifies how they should be organized.</p>
+<h2 id="overview-of-ggen-commands"><a class="header" href="#overview-of-ggen-commands">Overview of ggen commands</a></h2>
+<p>Based on the ggen documentation, here are the main command categories:</p>
+<h3 id="ai-commands"><a class="header" href="#ai-commands">AI Commands</a></h3>
+<pre><code class="language-bash">ggen ai project "E-commerce API with Stripe" --name shop-api --rust
+ggen ai generate -d "Database repository pattern" -o repo.tmpl
+ggen ai graph -d "User management ontology" -o users.ttl
+ggen ai sparql -d "Find all active users" -g schema.ttl
+</code></pre>
+<h3 id="marketplace-commands"><a class="header" href="#marketplace-commands">Marketplace Commands</a></h3>
+<pre><code class="language-bash">ggen search "rust web"
+ggen add io.ggen.rust.axum
+ggen list
+ggen update
+</code></pre>
+<h3 id="template-generation-commands"><a class="header" href="#template-generation-commands">Template Generation Commands</a></h3>
+<pre><code class="language-bash">ggen gen example.tmpl --vars name=my_module
+</code></pre>
+<h3 id="utility-commands"><a class="header" href="#utility-commands">Utility Commands</a></h3>
+<p>There may be additional commands like:</p>
+<ul>
+<li><code>ggen --help</code></li>
+<li><code>ggen --version</code></li>
+<li><code>ggen doctor</code> (diagnostics)</li>
+<li><code>ggen help-me</code> (tips)</li>
+</ul>
+<h2 id="identifying-nouns"><a class="header" href="#identifying-nouns">Identifying nouns</a></h2>
+<p><strong>Nouns</strong> are entities or concepts that group related actions. In ggen's case, we can identify:</p>
+<h3 id="1-ai---ai-powered-generation"><a class="header" href="#1-ai---ai-powered-generation">1. <code>ai</code> - AI-powered generation</a></h3>
+<p>This groups all AI-related commands:</p>
+<ul>
+<li><code>project</code> - Generate complete projects</li>
+<li><code>generate</code> - Generate templates from descriptions</li>
+<li><code>graph</code> - Generate RDF ontologies</li>
+<li><code>sparql</code> - Generate SPARQL queries</li>
+</ul>
+<h3 id="2-marketplace---template-marketplace"><a class="header" href="#2-marketplace---template-marketplace">2. <code>marketplace</code> - Template marketplace</a></h3>
+<p>This groups marketplace-related operations:</p>
+<ul>
+<li><code>search</code> - Find packages</li>
+<li><code>add</code> - Install package</li>
+<li><code>list</code> - List installed packages</li>
+<li><code>update</code> - Update packages</li>
+</ul>
+<h3 id="3-template---template-operations-potential"><a class="header" href="#3-template---template-operations-potential">3. <code>template</code> - Template operations (potential)</a></h3>
+<p>If there are template-specific commands beyond generation:</p>
+<ul>
+<li><code>generate</code> - Generate from template</li>
+<li><code>validate</code> - Validate template</li>
+<li><code>list</code> - List templates</li>
+</ul>
+<h3 id="4-root-level-commands"><a class="header" href="#4-root-level-commands">4. Root-level commands</a></h3>
+<p>Some commands might not need a noun wrapper if they're standalone:</p>
+<ul>
+<li><code>doctor</code> - Diagnostics</li>
+<li><code>help-me</code> - Get tips</li>
+</ul>
+<p>However, we could group them under:</p>
+<ul>
+<li><code>utils</code> - Utility commands</li>
+</ul>
+<p>Or keep them as root-level if that makes more sense.</p>
+<h2 id="identifying-verbs"><a class="header" href="#identifying-verbs">Identifying verbs</a></h2>
+<p><strong>Verbs</strong> are actions performed on nouns. For each noun identified above, here are the verbs:</p>
+<h3 id="ai-verbs"><a class="header" href="#ai-verbs">AI Verbs</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Description</th><th>Arguments</th></tr></thead><tbody>
+<tr><td><code>project</code></td><td>Generate complete projects</td><td><code>name</code>, <code>--rust</code> flag</td></tr>
+<tr><td><code>generate</code></td><td>Generate templates</td><td><code>-d/--description</code>, <code>-o/--output</code></td></tr>
+<tr><td><code>graph</code></td><td>Generate RDF ontologies</td><td><code>-d/--description</code>, <code>-o/--output</code></td></tr>
+<tr><td><code>sparql</code></td><td>Generate SPARQL queries</td><td><code>-d/--description</code>, <code>-g/--graph</code>, <code>-o/--output</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="marketplace-verbs"><a class="header" href="#marketplace-verbs">Marketplace Verbs</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Description</th><th>Arguments</th></tr></thead><tbody>
+<tr><td><code>search</code></td><td>Find packages</td><td><code>query</code> (required)</td></tr>
+<tr><td><code>add</code></td><td>Install package</td><td><code>package</code> (required)</td></tr>
+<tr><td><code>list</code></td><td>List installed packages</td><td>None</td></tr>
+<tr><td><code>update</code></td><td>Update packages</td><td>None</td></tr>
+</tbody></table>
+</div>
+<h3 id="template-verbs-if-applicable"><a class="header" href="#template-verbs-if-applicable">Template Verbs (if applicable)</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Description</th><th>Arguments</th></tr></thead><tbody>
+<tr><td><code>generate</code></td><td>Generate from template</td><td><code>template</code>, <code>--vars</code></td></tr>
+<tr><td><code>validate</code></td><td>Validate template</td><td><code>template</code></td></tr>
+<tr><td><code>list</code></td><td>List templates</td><td>None</td></tr>
+</tbody></table>
+</div>
+<h2 id="command-hierarchy-analysis"><a class="header" href="#command-hierarchy-analysis">Command hierarchy analysis</a></h2>
+<p>Let's analyze the current structure and how it maps to noun-verb:</p>
+<h3 id="current-structure-regular-clap"><a class="header" href="#current-structure-regular-clap">Current Structure (Regular clap)</a></h3>
+<p>Assuming a typical clap structure, ggen likely uses:</p>
+<pre><code>ggen (root)
+├── ai (subcommand)
+│   ├── project (subcommand)
+│   ├── generate (subcommand)
+│   ├── graph (subcommand)
+│   └── sparql (subcommand)
+├── search (subcommand)
+├── add (subcommand)
+├── list (subcommand)
+└── update (subcommand)
+</code></pre>
+<h3 id="target-structure-clap-noun-verb"><a class="header" href="#target-structure-clap-noun-verb">Target Structure (clap-noun-verb)</a></h3>
+<pre><code>ggen (root)
+├── ai (noun)
+│   ├── project (verb)
+│   ├── generate (verb)
+│   ├── graph (verb)
+│   └── sparql (verb)
+├── marketplace (noun)
+│   ├── search (verb)
+│   ├── add (verb)
+│   ├── list (verb)
+│   └── update (verb)
+└── template (noun, optional)
+    ├── generate (verb)
+    ├── validate (verb)
+    └── list (verb)
+</code></pre>
+<h3 id="decisions-to-make"><a class="header" href="#decisions-to-make">Decisions to Make</a></h3>
+<ol>
+<li>
+<p><strong>Marketplace grouping</strong>: Should <code>search</code>, <code>add</code>, <code>list</code>, <code>update</code> be grouped under <code>marketplace</code> noun, or stay as root-level commands?</p>
+<p><strong>Recommendation</strong>: Group under <code>marketplace</code> for consistency and scalability. If users prefer root-level, we can alias them.</p>
+</li>
+<li>
+<p><strong>Template vs Generation</strong>: Is there a distinction between AI generation (<code>ai generate</code>) and template generation (<code>gen</code>), or should they be unified?</p>
+<p><strong>Recommendation</strong>: Keep separate - <code>ai generate</code> uses LLMs, while <code>gen</code> uses existing templates.</p>
+</li>
+<li>
+<p><strong>Global arguments</strong>: What global arguments does ggen support?</p>
+<ul>
+<li><code>--verbose</code> / <code>-v</code> (verbosity)</li>
+<li><code>--config</code> / <code>-c</code> (config file)</li>
+<li>Potentially others</li>
+</ul>
+</li>
+</ol>
+<h2 id="mapping-commands-to-noun-verb-structure"><a class="header" href="#mapping-commands-to-noun-verb-structure">Mapping commands to noun-verb structure</a></h2>
+<p>Here's the complete mapping:</p>
+<h3 id="ai-commands-1"><a class="header" href="#ai-commands-1">AI Commands</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("ai", "AI-powered generation", [
+    verb!("project", "Generate complete projects", handler, args: [
+        Arg::new("name").required(true),
+        Arg::new("rust").long("rust"),
+        // ... project description, etc.
+    ]),
+    verb!("generate", "Generate templates from descriptions", handler, args: [
+        Arg::new("description").short('d').long("description").required(true),
+        Arg::new("output").short('o').long("output"),
+    ]),
+    verb!("graph", "Generate RDF ontologies", handler, args: [
+        Arg::new("description").short('d').long("description").required(true),
+        Arg::new("output").short('o').long("output"),
+    ]),
+    verb!("sparql", "Generate SPARQL queries", handler, args: [
+        Arg::new("description").short('d').long("description").required(true),
+        Arg::new("graph").short('g').long("graph").required(true),
+        Arg::new("output").short('o').long("output"),
+    ]),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="marketplace-commands-1"><a class="header" href="#marketplace-commands-1">Marketplace Commands</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("marketplace", "Template marketplace", [
+    verb!("search", "Find packages", handler, args: [
+        Arg::new("query").required(true),
+    ]),
+    verb!("add", "Install package", handler, args: [
+        Arg::new("package").required(true),
+    ]),
+    verb!("list", "List installed packages", handler),
+    verb!("update", "Update packages", handler),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="template-commands-if-applicable"><a class="header" href="#template-commands-if-applicable">Template Commands (if applicable)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("template", "Template operations", [
+    verb!("generate", "Generate from template", handler, args: [
+        Arg::new("template").required(true),
+        Arg::new("vars").long("vars").num_args(1..),
+    ]),
+    verb!("validate", "Validate template", handler, args: [
+        Arg::new("template").required(true),
+    ]),
+    verb!("list", "List templates", handler),
+])
+<span class="boring">}</span></code></pre></pre>
+<h2 id="command-grouping-strategy"><a class="header" href="#command-grouping-strategy">Command grouping strategy</a></h2>
+<p>When grouping commands, consider:</p>
+<h3 id="1-semantic-cohesion"><a class="header" href="#1-semantic-cohesion">1. Semantic Cohesion</a></h3>
+<p>Commands should naturally belong together:</p>
+<ul>
+<li>✅ <code>ai project</code>, <code>ai generate</code> - All use AI/LLMs</li>
+<li>✅ <code>marketplace search</code>, <code>marketplace add</code> - All manage marketplace packages</li>
+<li>❌ Don't force unrelated commands into the same noun</li>
+</ul>
+<h3 id="2-user-mental-model"><a class="header" href="#2-user-mental-model">2. User Mental Model</a></h3>
+<p>How do users think about the commands?</p>
+<ul>
+<li>"I want to use AI to generate something" → <code>ai</code> noun</li>
+<li>"I want to manage marketplace packages" → <code>marketplace</code> noun</li>
+</ul>
+<h3 id="3-scalability"><a class="header" href="#3-scalability">3. Scalability</a></h3>
+<p>Consider future commands:</p>
+<ul>
+<li><code>ai</code> might get <code>refine</code>, <code>explain</code>, <code>debug</code> verbs</li>
+<li><code>marketplace</code> might get <code>remove</code>, <code>info</code>, <code>publish</code> verbs</li>
+</ul>
+<h3 id="4-consistency"><a class="header" href="#4-consistency">4. Consistency</a></h3>
+<p>Use consistent naming patterns:</p>
+<ul>
+<li>All verbs within a noun should follow similar patterns</li>
+<li>Similar verbs across nouns should have similar behavior</li>
+</ul>
+<h2 id="next-steps-1"><a class="header" href="#next-steps-1">Next Steps</a></h2>
+<p>Now that we've analyzed the structure, we're ready to:</p>
+<ol>
+<li><a href="getting-started.html">Getting Started with Porting</a> - Set up the project and understand the framework APIs</li>
+<li><a href="porting-commands.html">Porting Commands Step-by-Step</a> - Implement each command group</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="getting-started-with-porting"><a class="header" href="#getting-started-with-porting">Getting Started with Porting</a></h1>
+<p>This chapter covers the initial setup for porting ggen from regular clap to clap-noun-verb, including dependency management and understanding the framework APIs.</p>
+<h2 id="adding-clap-noun-verb-dependency"><a class="header" href="#adding-clap-noun-verb-dependency">Adding clap-noun-verb dependency</a></h2>
+<h3 id="1-update-cargotoml"><a class="header" href="#1-update-cargotoml">1. Update Cargo.toml</a></h3>
+<p>Add <code>clap-noun-verb</code> to your <code>Cargo.toml</code> dependencies:</p>
+<pre><code class="language-toml">[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+clap-noun-verb = "3.0.0"
+# ... your other dependencies
+</code></pre>
+<h3 id="2-verify-compatibility"><a class="header" href="#2-verify-compatibility">2. Verify Compatibility</a></h3>
+<p>Ensure your <code>clap</code> version is compatible with <code>clap-noun-verb</code> (requires clap 4.x):</p>
+<pre><code class="language-toml">[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+clap-noun-verb = "3.0.0"
+</code></pre>
+<h3 id="3-optional-update-dev-dependencies"><a class="header" href="#3-optional-update-dev-dependencies">3. Optional: Update Dev Dependencies</a></h3>
+<p>If you have CLI tests, ensure they use compatible versions:</p>
+<pre><code class="language-toml">[dev-dependencies]
+clap-noun-verb = "3.0.0"
+# ... other dev dependencies
+</code></pre>
+<h2 id="project-structure"><a class="header" href="#project-structure">Project structure</a></h2>
+<p>A typical clap-noun-verb project structure looks like:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI entry point
+│   ├── commands/            # Command implementations
+│   │   ├── mod.rs
+│   │   ├── ai.rs            # AI commands
+│   │   ├── marketplace.rs   # Marketplace commands
+│   │   └── template.rs      # Template commands (if applicable)
+│   ├── handlers/            # Command handlers
+│   │   ├── mod.rs
+│   │   ├── ai_handlers.rs
+│   │   └── marketplace_handlers.rs
+│   └── utils.rs             # Utilities
+└── tests/
+    └── cli_tests.rs         # CLI integration tests
+</code></pre>
+<h3 id="alternative-structure-flat"><a class="header" href="#alternative-structure-flat">Alternative Structure (Flat)</a></h3>
+<p>For smaller projects, you might prefer a flatter structure:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI entry point with all commands
+│   ├── handlers.rs          # Command handlers
+│   └── utils.rs             # Utilities
+</code></pre>
+<h3 id="recommended-approach"><a class="header" href="#recommended-approach">Recommended Approach</a></h3>
+<p>For ggen, we recommend a <strong>modular structure</strong> to keep commands organized:</p>
+<pre><code>ggen/
+├── Cargo.toml
+├── src/
+│   ├── main.rs              # CLI builder
+│   ├── cli.rs               # CLI structure definition
+│   ├── commands/
+│   │   ├── mod.rs
+│   │   ├── ai.rs
+│   │   └── marketplace.rs
+│   └── handlers/
+│       ├── mod.rs
+│       ├── ai_handlers.rs
+│       └── marketplace_handlers.rs
+</code></pre>
+<h2 id="understanding-the-framework-apis"><a class="header" href="#understanding-the-framework-apis">Understanding the framework APIs</a></h2>
+<h3 id="core-types"><a class="header" href="#core-types">Core Types</a></h3>
+<h4 id="clibuilder"><a class="header" href="#clibuilder">CliBuilder</a></h4>
+<p>The main builder for creating CLI applications:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs, Result};
+
+let cli = CliBuilder::new("ggen")
+    .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+    .noun("services", "Manage services")
+<span class="boring">}</span></code></pre></pre>
+<h4 id="nouncommand-trait"><a class="header" href="#nouncommand-trait">NounCommand Trait</a></h4>
+<p>Nouns implement the <code>NounCommand</code> trait:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait NounCommand: Send + Sync {
+    fn name(&amp;self) -&gt; &amp;'static str;
+    fn about(&amp;self) -&gt; &amp;'static str;
+    fn verbs(&amp;self) -&gt; Vec&lt;Box&lt;dyn VerbCommand&gt;&gt;;
+    fn sub_nouns(&amp;self) -&gt; Vec&lt;Box&lt;dyn NounCommand&gt;&gt; { Vec::new() }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>In practice, you'll use the <code>noun!</code> macro rather than implementing manually.</p>
+<h4 id="verbcommand-trait"><a class="header" href="#verbcommand-trait">VerbCommand Trait</a></h4>
+<p>Verbs implement the <code>VerbCommand</code> trait:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait VerbCommand: Send + Sync {
+    fn name(&amp;self) -&gt; &amp;'static str;
+    fn about(&amp;self) -&gt; &amp;'static str;
+    fn run(&amp;self, args: &amp;VerbArgs) -&gt; Result&lt;()&gt;;
+    fn build_command(&amp;self) -&gt; Command { /* default */ }
+    fn additional_args(&amp;self) -&gt; Vec&lt;clap::Arg&gt; { Vec::new() }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>In practice, you'll use the <code>verb!</code> macro rather than implementing manually.</p>
+<h4 id="verbargs"><a class="header" href="#verbargs">VerbArgs</a></h4>
+<p>Arguments passed to verb handlers:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct VerbArgs {
+    pub matches: ArgMatches,              // Verb-specific arguments
+    pub parent_matches: Option&lt;ArgMatches&gt;, // Global arguments
+    pub context: VerbContext,              // Command context
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Helper methods for argument extraction:</p>
+<ul>
+<li><code>get_one_str(name)</code> - Required string argument</li>
+<li><code>get_one_str_opt(name)</code> - Optional string argument</li>
+<li><code>get_one&lt;T&gt;(name)</code> - Required typed argument</li>
+<li><code>get_one_opt&lt;T&gt;(name)</code> - Optional typed argument</li>
+<li><code>get_many&lt;T&gt;(name)</code> - Multiple values</li>
+<li><code>get_path(name)</code> - PathBuf convenience method</li>
+<li><code>is_flag_set(name)</code> - Check flag</li>
+<li><code>get_flag_count(name)</code> - Flag count (for -v, -vv, -vvv)</li>
+<li><code>get_global_str(name)</code> - Access global arguments</li>
+<li><code>is_global_flag_set(name)</code> - Check global flag</li>
+</ul>
+<h3 id="convenience-macros"><a class="header" href="#convenience-macros">Convenience Macros</a></h3>
+<h4 id="noun-macro"><a class="header" href="#noun-macro"><code>noun!</code> Macro</a></h4>
+<p>Creates a noun command with verbs:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::noun;
+
+let ai_noun = noun!("ai", "AI-powered generation", [
+    verb!("project", "Generate complete projects", handler),
+    verb!("generate", "Generate templates", handler),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h4 id="verb-macro"><a class="header" href="#verb-macro"><code>verb!</code> Macro</a></h4>
+<p>Creates a verb command with handler:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{verb, VerbArgs};
+use clap::Arg;
+
+let project_verb = verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;
+    let rust = args.is_flag_set("rust");
+    
+    println!("Generating project: {}", name);
+    if rust {
+        println!("Creating Rust project structure...");
+    }
+    println!("✓ Project '{}' generated", name);
+    Ok(())
+}, args: [
+    Arg::new("name").required(true),
+    Arg::new("rust").long("rust"),
+]);
+<span class="boring">}</span></code></pre></pre>
+<h4 id="app-macro-declarative"><a class="header" href="#app-macro-declarative"><code>app!</code> Macro (Declarative)</a></h4>
+<p>Declarative CLI composition:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{app, noun, verb, VerbArgs, Result};
+
+let cli = app! {
+    name: "ggen",
+    about: "Rust Template Generator",
+    commands: [
+        noun!("ai", "AI-powered generation", [
+            verb!("project", "Generate projects", handler),
+        ]),
+    ]
+};
+<span class="boring">}</span></code></pre></pre>
+<h3 id="convenience-functions"><a class="header" href="#convenience-functions">Convenience Functions</a></h3>
+<h4 id="run_cli"><a class="header" href="#run_cli"><code>run_cli</code></a></h4>
+<p>Runs CLI with process arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::run_cli;
+
+run_cli(|cli| {
+    cli.name("ggen")
+        .noun(/* ... */)
+})
+<span class="boring">}</span></code></pre></pre>
+<h4 id="run_cli_with_args"><a class="header" href="#run_cli_with_args"><code>run_cli_with_args</code></a></h4>
+<p>Runs CLI with custom arguments (useful for testing):</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::run_cli_with_args;
+
+run_cli_with_args(vec!["ggen", "ai", "project", "my-project"], |cli| {
+    cli.name("ggen")
+        .noun(/* ... */)
+})
+<span class="boring">}</span></code></pre></pre>
+<h2 id="basic-concepts"><a class="header" href="#basic-concepts">Basic concepts</a></h2>
+<h3 id="1-nouns-group-related-verbs"><a class="header" href="#1-nouns-group-related-verbs">1. Nouns Group Related Verbs</a></h3>
+<p>Nouns are containers for related actions:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("ai", "AI-powered generation", [
+    verb!("project", ...),
+    verb!("generate", ...),
+    verb!("graph", ...),
+])
+<span class="boring">}</span></code></pre></pre>
+<p>This creates:</p>
+<ul>
+<li><code>ggen ai project</code></li>
+<li><code>ggen ai generate</code></li>
+<li><code>ggen ai graph</code></li>
+</ul>
+<h3 id="2-verbs-perform-actions"><a class="header" href="#2-verbs-perform-actions">2. Verbs Perform Actions</a></h3>
+<p>Verbs execute specific actions on nouns:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;
+    
+    use std::fs;
+    use std::path::PathBuf;
+    
+    let project_dir = PathBuf::from(&amp;name);
+    fs::create_dir_all(&amp;project_dir)?;
+    println!("✓ Project '{}' created", name);
+    
+    Ok(())
+}, args: [
+    Arg::new("name").required(true),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-arguments-are-type-safe"><a class="header" href="#3-arguments-are-type-safe">3. Arguments Are Type-Safe</a></h3>
+<p>Extract arguments with type safety:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>|args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;  // Required string
+    let rust = args.is_flag_set("rust");   // Flag
+    let output = args.get_one_str_opt("output"); // Optional string
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-global-arguments-are-accessible"><a class="header" href="#4-global-arguments-are-accessible">4. Global Arguments Are Accessible</a></h3>
+<p>Global arguments are available to all verbs:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.global_args(vec![
+    Arg::new("verbose").short('v').long("verbose").action(clap::ArgAction::Count),
+    Arg::new("config").short('c').long("config"),
+])
+.noun(noun!("ai", ..., [
+    verb!("project", ..., |args: &amp;VerbArgs| {
+        let verbose = args.get_global_flag_count("verbose");
+        let config = args.get_global_str("config");
+        // ...
+    }),
+]))
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-error-handling-uses-result"><a class="header" href="#5-error-handling-uses-result">5. Error Handling Uses Result</a></h3>
+<p>All handlers return <code>Result&lt;()&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", ..., |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;  // Returns Result&lt;String&gt;
+    // If error, return early with ?
+    do_something()?;
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="6-structure-validation-optional"><a class="header" href="#6-structure-validation-optional">6. Structure Validation (Optional)</a></h3>
+<p>Enable automatic structure validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.auto_validate(true)
+<span class="boring">}</span></code></pre></pre>
+<p>This catches:</p>
+<ul>
+<li>Duplicate noun names</li>
+<li>Empty nouns (no verbs or sub-nouns)</li>
+<li>Duplicate verb names within a noun</li>
+<li>Duplicate sub-noun names</li>
+<li>Verb/sub-noun name conflicts</li>
+</ul>
+<h2 id="example-minimal-setup"><a class="header" href="#example-minimal-setup">Example: Minimal Setup</a></h2>
+<p>Here's a minimal example to get started:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">// src/main.rs
+use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    println!("Generating project: {}", name);
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true),
+                ]),
+            ]))
+    })
+}</code></pre></pre>
+<p>This creates a CLI with:</p>
+<pre><code class="language-bash">ggen ai project &lt;name&gt;
+</code></pre>
+<h2 id="next-steps-2"><a class="header" href="#next-steps-2">Next Steps</a></h2>
+<p>Now that you understand the basics, you're ready to:</p>
+<ol>
+<li><a href="porting-commands.html">Porting Commands Step-by-Step</a> - Port each command group with detailed examples</li>
+<li><a href="advanced-patterns.html">Advanced Patterns</a> - Learn advanced techniques for complex scenarios</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="porting-commands-step-by-step"><a class="header" href="#porting-commands-step-by-step">Porting Commands Step-by-Step</a></h1>
+<p>This chapter provides detailed examples of porting each command group from regular clap to clap-noun-verb, with before/after comparisons.</p>
+<h2 id="porting-ai-commands"><a class="header" href="#porting-ai-commands">Porting AI commands</a></h2>
+<p>The AI commands are perfect candidates for the noun-verb pattern. They all share the <code>ai</code> prefix and perform related actions.</p>
+<h3 id="ai-project-command"><a class="header" href="#ai-project-command">AI project command</a></h3>
+<h4 id="before-regular-clap"><a class="header" href="#before-regular-clap">Before (Regular clap)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap::{Parser, Subcommand, Arg};
+
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Ai {
+        #[command(subcommand)]
+        command: AiCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum AiCommands {
+    Project {
+        name: String,
+        description: Option&lt;String&gt;,
+        #[arg(long)]
+        rust: bool,
+    },
+}
+
+fn main() {
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Ai { command } =&gt; match command {
+            AiCommands::Project { name, description, rust } =&gt; {
+                handle_ai_project(name, description, rust);
+            }
+            // ... other commands
+        },
+        // ... other commands
+    }
+}
+
+fn handle_ai_project(name: String, description: Option&lt;String&gt;, rust: bool) {
+    println!("Generating AI project: {}", name);
+    if let Some(desc) = description {
+        println!("Description: {}", desc);
+    }
+    if rust {
+        println!("Generating Rust project structure...");
+    }
+    println!("Project '{}' generated successfully!", name);
+}</code></pre></pre>
+<h4 id="after-clap-noun-verb"><a class="header" href="#after-clap-noun-verb">After (clap-noun-verb)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    let description = args.get_one_str_opt("description");
+                    let rust = args.is_flag_set("rust");
+                    
+                    handle_ai_project(name, description, rust)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true).help("Project name"),
+                    Arg::new("description").help("Project description"),
+                    Arg::new("rust").long("rust").help("Generate Rust project"),
+                ]),
+            ]))
+    })
+}
+
+fn handle_ai_project(name: String, description: Option&lt;String&gt;, rust: bool) -&gt; Result&lt;()&gt; {
+    use std::fs;
+    use std::path::PathBuf;
+    
+    println!("Generating AI project: {}", name);
+    
+    // Create project directory
+    let project_dir = PathBuf::from(&amp;name);
+    fs::create_dir_all(&amp;project_dir)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create project directory: {}", e)
+        ))?;
+    
+    // Write project description if provided
+    if let Some(desc) = description {
+        let desc_file = project_dir.join("DESCRIPTION.txt");
+        fs::write(&amp;desc_file, format!("Project: {}\nDescription: {}", name, desc))
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write description file: {}", e)
+            ))?;
+    }
+    
+    // Generate Rust project structure if requested
+    if rust {
+        let cargo_toml = project_dir.join("Cargo.toml");
+        fs::write(&amp;cargo_toml, format!(
+            r#"[package]
+name = "{}"
+version = "0.1.0"
+edition = "2021"
+"#, name
+        )).map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create Cargo.toml: {}", e)
+        ))?;
+        
+        let src_dir = project_dir.join("src");
+        fs::create_dir_all(&amp;src_dir)?;
+        
+        let main_rs = src_dir.join("main.rs");
+        fs::write(&amp;main_rs, "fn main() {\n    println!(\"Hello, world!\");\n}\n")?;
+    }
+    
+    println!("✓ Project '{}' generated successfully!", name);
+    Ok(())
+}</code></pre></pre>
+<h4 id="key-changes"><a class="header" href="#key-changes">Key Changes</a></h4>
+<ol>
+<li><strong>Eliminated nested enums</strong>: No need for <code>Commands</code> and <code>AiCommands</code> enums</li>
+<li><strong>Co-located handler</strong>: Handler is defined inline with the command</li>
+<li><strong>Type-safe argument extraction</strong>: <code>get_one_str()</code> returns <code>Result&lt;String&gt;</code>, preventing panics</li>
+<li><strong>Cleaner structure</strong>: Related commands grouped together</li>
+</ol>
+<h3 id="ai-generate-command"><a class="header" href="#ai-generate-command">AI generate command</a></h3>
+<h4 id="before-regular-clap-1"><a class="header" href="#before-regular-clap-1">Before (Regular clap)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">#[derive(Subcommand)]
+enum AiCommands {
+    // ...
+    Generate {
+        #[arg(short, long)]
+        description: String,
+        #[arg(short, long)]
+        output: Option&lt;String&gt;,
+    },
+}
+
+fn main() {
+    // ...
+    match command {
+        AiCommands::Generate { description, output } =&gt; {
+            handle_ai_generate(description, output);
+        }
+        // ...
+    }
+}</code></pre></pre>
+<h4 id="after-clap-noun-verb-1"><a class="header" href="#after-clap-noun-verb-1">After (clap-noun-verb)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("ai", "AI-powered generation", [
+    // ... project verb
+    verb!("generate", "Generate templates from descriptions", |args: &amp;VerbArgs| {
+        let description = args.get_one_str("description")?;
+        let output = args.get_one_str_opt("output");
+        
+        // Generate template content
+        let template_content = format!(
+            "// Generated template\n// Description: {}\n\nTemplate code here...\n",
+            description
+        );
+        
+        // Write to output file or stdout
+        if let Some(output_path) = output {
+            use std::fs;
+            fs::write(&amp;output_path, &amp;template_content)
+                .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                    format!("Failed to write output file: {}", e)
+                ))?;
+            println!("✓ Template written to: {}", output_path);
+        } else {
+            println!("{}", template_content);
+        }
+        
+        Ok(())
+    }, args: [
+        Arg::new("description")
+            .short('d')
+            .long("description")
+            .required(true)
+            .help("Template description"),
+        Arg::new("output")
+            .short('o')
+            .long("output")
+            .help("Output file path"),
+    ]),
+])
+<span class="boring">}</span></code></pre></pre>
+<h4 id="complete-ai-commands-example"><a class="header" href="#complete-ai-commands-example">Complete AI Commands Example</a></h4>
+<p>Here's the complete AI noun with all verbs:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    let description = args.get_one_str_opt("description");
+                    let rust = args.is_flag_set("rust");
+                    handle_ai_project(name, description, rust)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true),
+                    Arg::new("description"),
+                    Arg::new("rust").long("rust"),
+                ]),
+    verb!("generate", "Generate templates from descriptions", |args: &amp;VerbArgs| {
+        let description = args.get_one_str("description")?;
+        let output = args.get_one_str_opt("output");
+        
+        // Generate template content
+        let template_content = format!(
+            "// Generated template\n// Description: {}\n\nTemplate code here...\n",
+            description
+        );
+        
+        // Write to output file or stdout
+        if let Some(output_path) = output {
+            use std::fs;
+            fs::write(&amp;output_path, &amp;template_content)
+                .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                    format!("Failed to write output file: {}", e)
+                ))?;
+            println!("✓ Template written to: {}", output_path);
+        } else {
+            println!("{}", template_content);
+        }
+        
+        Ok(())
+    }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+                verb!("graph", "Generate RDF ontologies", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let output = args.get_one_str_opt("output");
+                    // Generate RDF/Turtle content
+        let rdf_content = format!(
+            r#"@prefix ex: &lt;http://example.org/&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+
+<span class="boring">Generated ontology
+</span><span class="boring">Description: {}
+</span>
+ex:ontology rdf:type ex:KnowledgeGraph ;
+    ex:description "{}" .
+"#, description, description
+        );
+        
+        // Write to output file or stdout
+        if let Some(output_path) = output {
+            use std::fs;
+            fs::write(&amp;output_path, rdf_content)
+                .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                    format!("Failed to write RDF file: {}", e)
+                ))?;
+            println!("✓ RDF ontology written to: {}", output_path);
+        } else {
+            println!("{}", rdf_content);
+        }
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+                verb!("sparql", "Generate SPARQL queries", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let graph = args.get_one_str("graph")?;
+                    let output = args.get_one_str_opt("output");
+                    // Generate SPARQL query
+        let sparql_query = format!(
+            r#"# Generated SPARQL query
+<span class="boring">Description: {}
+</span><span class="boring">Graph: {}
+</span>
+PREFIX ex: &lt;http://example.org/&gt;
+SELECT ?subject ?predicate ?object
+WHERE {{
+    GRAPH &lt;{}&gt; {{
+        ?subject ?predicate ?object .
+    }}
+}}
+"#, description, graph, graph
+        );
+        
+        // Write to output file or stdout
+        if let Some(output_path) = output {
+            use std::fs;
+            fs::write(&amp;output_path, sparql_query)
+                .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                    format!("Failed to write SPARQL file: {}", e)
+                ))?;
+            println!("✓ SPARQL query written to: {}", output_path);
+        } else {
+            println!("{}", sparql_query);
+        }
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("graph").short('g').long("graph").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+            ]))
+    })
+}</code></pre></pre>
+<h3 id="ai-graph-command"><a class="header" href="#ai-graph-command">AI graph command</a></h3>
+<p>Similar pattern to <code>generate</code>, but for RDF graph generation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("graph", "Generate RDF ontologies", |args: &amp;VerbArgs| {
+    let description = args.get_one_str("description")?;
+    let output = args.get_one_str_opt("output");
+    
+    // Generate RDF/Turtle content
+    let rdf_content = format!(
+        r#"@prefix ex: &lt;http://example.org/&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+
+<span class="boring">Generated ontology
+</span><span class="boring">Description: {}
+</span>
+ex:ontology rdf:type ex:KnowledgeGraph ;
+    ex:description "{}" .
+"#, description, description
+    );
+    
+    // Write to output file or stdout
+    if let Some(output_path) = output {
+        use std::fs;
+        fs::write(&amp;output_path, rdf_content)
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write RDF file: {}", e)
+            ))?;
+        println!("✓ RDF ontology written to: {}", output_path);
+    } else {
+        println!("{}", rdf_content);
+    }
+    
+    Ok(())
+}, args: [
+    Arg::new("description").short('d').long("description").required(true),
+    Arg::new("output").short('o').long("output"),
+]),
+<span class="boring">}</span></code></pre></pre>
+<h3 id="ai-sparql-command"><a class="header" href="#ai-sparql-command">AI sparql command</a></h3>
+<p>Includes an additional required <code>graph</code> argument:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("sparql", "Generate SPARQL queries", |args: &amp;VerbArgs| {
+    let description = args.get_one_str("description")?;
+    let graph = args.get_one_str("graph")?;
+    let output = args.get_one_str_opt("output");
+    
+    // Generate SPARQL query
+    let sparql_query = format!(
+        r#"# Generated SPARQL query
+<span class="boring">Description: {}
+</span><span class="boring">Graph: {}
+</span>
+PREFIX ex: &lt;http://example.org/&gt;
+SELECT ?subject ?predicate ?object
+WHERE {{
+    GRAPH &lt;{}&gt; {{
+        ?subject ?predicate ?object .
+    }}
+}}
+"#, description, graph, graph
+    );
+    
+    // Write to output file or stdout
+    if let Some(output_path) = output {
+        use std::fs;
+        fs::write(&amp;output_path, sparql_query)
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write SPARQL file: {}", e)
+            ))?;
+        println!("✓ SPARQL query written to: {}", output_path);
+    } else {
+        println!("{}", sparql_query);
+    }
+    
+    Ok(())
+}, args: [
+    Arg::new("description").short('d').long("description").required(true),
+    Arg::new("graph").short('g').long("graph").required(true),
+    Arg::new("output").short('o').long("output"),
+]),
+<span class="boring">}</span></code></pre></pre>
+<h2 id="porting-marketplace-commands"><a class="header" href="#porting-marketplace-commands">Porting marketplace commands</a></h2>
+<p>Marketplace commands manage template packages. They naturally group under a <code>marketplace</code> noun.</p>
+<h3 id="search-command"><a class="header" href="#search-command">Search command</a></h3>
+<h4 id="before-regular-clap-2"><a class="header" href="#before-regular-clap-2">Before (Regular clap)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">#[derive(Subcommand)]
+enum Commands {
+    // ...
+    Search {
+        query: String,
+    },
+}
+
+fn main() {
+    match cli.command {
+        Commands::Search { query } =&gt; {
+            handle_search(query);
+        }
+        // ...
+    }
+}</code></pre></pre>
+<h4 id="after-clap-noun-verb-2"><a class="header" href="#after-clap-noun-verb-2">After (clap-noun-verb)</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("marketplace", "Template marketplace", [
+    verb!("search", "Find packages", |args: &amp;VerbArgs| {
+        let query = args.get_one_str("query")?;
+        // Search marketplace packages (simulated)
+        println!("Searching marketplace for: '{}'", query);
+        println!("");
+        println!("Found packages:");
+        println!("  1. io.ggen.rust.axum - Rust Axum web framework template");
+        println!("  2. io.ggen.rust.cli - Rust CLI application template");
+        println!("  3. io.ggen.python.flask - Python Flask web application");
+        println!("");
+        println!("Use 'ggen marketplace add &lt;package&gt;' to install a package");
+        Ok(())
+    }, args: [
+        Arg::new("query").required(true).help("Search query"),
+    ]),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="add-command"><a class="header" href="#add-command">Add command</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("add", "Install package", |args: &amp;VerbArgs| {
+    let package = args.get_one_str("package")?;
+    // Install package from marketplace
+    println!("Installing package: {}", package);
+    
+    // In real implementation, download and install package
+    use std::path::PathBuf;
+    let package_dir = PathBuf::from("~/.ggen/packages").join(&amp;package);
+    println!("  Package location: {}", package_dir.display());
+    println!("✓ Package '{}' installed successfully", package);
+    Ok(())
+}, args: [
+    Arg::new("package").required(true).help("Package name (e.g., io.ggen.rust.axum)"),
+]),
+<span class="boring">}</span></code></pre></pre>
+<h3 id="list-command"><a class="header" href="#list-command">List command</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("list", "List installed packages", |args: &amp;VerbArgs| {
+    // List installed packages
+    println!("Installed packages:");
+    println!("  io.ggen.rust.axum - v1.2.0");
+    println!("  io.ggen.rust.cli - v2.0.1");
+    println!("");
+    println!("Use 'ggen marketplace update' to update packages");
+    Ok(())
+}),
+<span class="boring">}</span></code></pre></pre>
+<h3 id="update-command"><a class="header" href="#update-command">Update command</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("update", "Update packages", |args: &amp;VerbArgs| {
+    // Update installed packages
+    println!("Checking for package updates...");
+    println!("  io.ggen.rust.axum: v1.2.0 -&gt; v1.3.0 (update available)");
+    println!("  io.ggen.rust.cli: v2.0.1 -&gt; v2.0.1 (up to date)");
+    println!("");
+    println!("✓ Package update check complete");
+    Ok(())
+}),
+<span class="boring">}</span></code></pre></pre>
+<h4 id="complete-marketplace-commands-example"><a class="header" href="#complete-marketplace-commands-example">Complete Marketplace Commands Example</a></h4>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("marketplace", "Template marketplace", [
+    verb!("search", "Find packages", |args: &amp;VerbArgs| {
+        let query = args.get_one_str("query")?;
+        // Search marketplace packages (simulated)
+        println!("Searching marketplace for: '{}'", query);
+        println!("");
+        println!("Found packages:");
+        println!("  1. io.ggen.rust.axum - Rust Axum web framework template");
+        println!("  2. io.ggen.rust.cli - Rust CLI application template");
+        println!("  3. io.ggen.python.flask - Python Flask web application");
+        println!("");
+        println!("Use 'ggen marketplace add &lt;package&gt;' to install a package");
+        Ok(())
+    }, args: [
+        Arg::new("query").required(true),
+    ]),
+    verb!("add", "Install package", |args: &amp;VerbArgs| {
+        let package = args.get_one_str("package")?;
+        
+        // Install package from marketplace
+        println!("Installing package: {}", package);
+        
+        // In real implementation, download and install package
+        use std::path::PathBuf;
+        let package_dir = PathBuf::from("~/.ggen/packages").join(&amp;package);
+        println!("  Package location: {}", package_dir.display());
+        println!("✓ Package '{}' installed successfully", package);
+        
+        Ok(())
+    }, args: [
+        Arg::new("package").required(true),
+    ]),
+    verb!("list", "List installed packages", |args: &amp;VerbArgs| {
+        // List installed packages
+        println!("Installed packages:");
+        println!("  io.ggen.rust.axum - v1.2.0");
+        println!("  io.ggen.rust.cli - v2.0.1");
+        println!("");
+        println!("Use 'ggen marketplace update' to update packages");
+        
+        Ok(())
+    }),
+    verb!("update", "Update packages", |args: &amp;VerbArgs| {
+        // Update installed packages
+        println!("Checking for package updates...");
+        println!("  io.ggen.rust.axum: v1.2.0 -&gt; v1.3.0 (update available)");
+        println!("  io.ggen.rust.cli: v2.0.1 -&gt; v2.0.1 (up to date)");
+        println!("");
+        println!("✓ Package update check complete");
+        
+        Ok(())
+    }),
+])
+<span class="boring">}</span></code></pre></pre>
+<h2 id="porting-template-commands"><a class="header" href="#porting-template-commands">Porting template commands</a></h2>
+<p>If ggen has template-specific commands (separate from AI generation), they can be grouped under a <code>template</code> noun:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("template", "Template operations", [
+    verb!("generate", "Generate from template", |args: &amp;VerbArgs| {
+        let template = args.get_one_str("template")?;
+        let vars = args.get_many_opt::&lt;String&gt;("vars");
+        handle_template_generate(template, vars)?;
+        Ok(())
+    }, args: [
+        Arg::new("template").required(true),
+        Arg::new("vars").long("vars").num_args(1..),
+    ]),
+    verb!("validate", "Validate template", |args: &amp;VerbArgs| {
+        let template = args.get_one_str("template")?;
+        handle_template_validate(template)?;
+        Ok(())
+    }, args: [
+        Arg::new("template").required(true),
+    ]),
+    verb!("list", "List templates", |args: &amp;VerbArgs| {
+        handle_template_list()?;
+        Ok(())
+    }),
+])
+<span class="boring">}</span></code></pre></pre>
+<h2 id="handling-global-arguments"><a class="header" href="#handling-global-arguments">Handling global arguments</a></h2>
+<p>Global arguments (like <code>--verbose</code> and <code>--config</code>) are available to all verbs through <code>VerbArgs</code>.</p>
+<h3 id="before-regular-clap-3"><a class="header" href="#before-regular-clap-3">Before (Regular clap)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">#[derive(Parser)]
+struct Cli {
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    verbose: u8,
+    
+    #[arg(short, long)]
+    config: Option&lt;String&gt;,
+    
+    #[command(subcommand)]
+    command: Commands,
+}
+
+fn main() {
+    let cli = Cli::parse();
+    // Pass verbose/config to handlers manually
+}</code></pre></pre>
+<h3 id="after-clap-noun-verb-3"><a class="header" href="#after-clap-noun-verb-3">After (clap-noun-verb)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap::Arg;
+
+run_cli(|cli| {
+    cli.name("ggen")
+        .global_args(vec![
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .action(clap::ArgAction::Count)
+                .help("Increase verbosity"),
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .value_name("FILE")
+                .help("Configuration file"),
+        ])
+        .noun(noun!("ai", "AI-powered generation", [
+            verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                // Access global arguments
+                let verbose = args.get_global_flag_count("verbose");
+                let config = args.get_global_str("config");
+                
+                // Access verb-specific arguments
+                let name = args.get_one_str("name")?;
+                
+                if verbose &gt; 1 {
+                    println!("[DEBUG] Config: {:?}", config);
+                }
+                
+                // Project generation logic would go here
+                println!("Generating project: {} (verbose: {}, config: {:?})", name, verbose, config);
+                Ok(())
+            }, args: [
+                Arg::new("name").required(true),
+            ]),
+        ]))
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="using-global-arguments-in-handlers"><a class="header" href="#using-global-arguments-in-handlers">Using Global Arguments in Handlers</a></h3>
+<p>All verbs can access global arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("generate", "Generate templates", |args: &amp;VerbArgs| {
+    // Verb-specific
+    let description = args.get_one_str("description")?;
+    
+    // Global arguments
+    let verbose = args.get_global_flag_count("verbose");
+    let config = args.get_global_str("config");
+    
+    if verbose &gt; 0 {
+        println!("[Verbose] Generating: {}", description);
+    }
+    
+    if let Some(config_file) = config {
+        load_config(config_file)?;
+    }
+    
+    // Generate template content
+    let template_content = format!(
+        "// Generated template\n// Description: {}\n\nTemplate code here...\n",
+        description
+    );
+    
+    // Write to output file or stdout
+    if let Some(output_path) = output {
+        use std::fs;
+        fs::write(&amp;output_path, template_content)
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write output file: {}", e)
+            ))?;
+        println!("✓ Template written to: {}", output_path);
+    } else {
+        println!("{}", template_content);
+    }
+    
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h2 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h2>
+<p>Here's a complete example combining all command groups:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
+use clap::Arg;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator with Frontmatter &amp; RDF Support")
+            .version(env!("CARGO_PKG_VERSION"))
+            .global_args(vec![
+                Arg::new("verbose")
+                    .short('v')
+                    .long("verbose")
+                    .action(clap::ArgAction::Count)
+                    .help("Increase verbosity"),
+                Arg::new("config")
+                    .short('c')
+                    .long("config")
+                    .value_name("FILE")
+                    .help("Configuration file"),
+            ])
+            .noun(noun!("ai", "AI-powered generation", [
+                verb!("project", "Generate complete projects", |args: &amp;VerbArgs| {
+                    let name = args.get_one_str("name")?;
+                    let description = args.get_one_str_opt("description");
+                    let rust = args.is_flag_set("rust");
+                    // Use the complete implementation shown below
+                    // This calls the full handle_ai_project function
+                    handle_ai_project(name, description, rust, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("name").required(true),
+                    Arg::new("description"),
+                    Arg::new("rust").long("rust"),
+                ]),
+                verb!("generate", "Generate templates from descriptions", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let output = args.get_one_str_opt("output");
+                    handle_ai_generate(description, output, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+                verb!("graph", "Generate RDF ontologies", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let output = args.get_one_str_opt("output");
+                    handle_ai_graph(description, output, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+                verb!("sparql", "Generate SPARQL queries", |args: &amp;VerbArgs| {
+                    let description = args.get_one_str("description")?;
+                    let graph = args.get_one_str("graph")?;
+                    let output = args.get_one_str_opt("output");
+                    handle_ai_sparql(description, graph, output, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("description").short('d').long("description").required(true),
+                    Arg::new("graph").short('g').long("graph").required(true),
+                    Arg::new("output").short('o').long("output"),
+                ]),
+            ]))
+            .noun(noun!("marketplace", "Template marketplace", [
+                verb!("search", "Find packages", |args: &amp;VerbArgs| {
+                    let query = args.get_one_str("query")?;
+                    handle_search(query, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("query").required(true),
+                ]),
+                verb!("add", "Install package", |args: &amp;VerbArgs| {
+                    let package = args.get_one_str("package")?;
+                    handle_add(package, args)?;
+                    Ok(())
+                }, args: [
+                    Arg::new("package").required(true),
+                ]),
+                verb!("list", "List installed packages", |args: &amp;VerbArgs| {
+                    handle_list(args)?;
+                    Ok(())
+                }),
+                verb!("update", "Update packages", |args: &amp;VerbArgs| {
+                    handle_update(args)?;
+                    Ok(())
+                }),
+            ]))
+    })
+}
+
+// Handler functions receive VerbArgs for global argument access
+fn handle_ai_project(name: String, description: Option&lt;String&gt;, rust: bool, args: &amp;VerbArgs) -&gt; Result&lt;()&gt; {
+    use std::fs;
+    use std::path::PathBuf;
+    
+    let verbose = args.get_global_flag_count("verbose");
+    let config = args.get_global_str("config");
+    
+    if verbose &gt; 0 {
+        println!("[Verbose level {}] Starting project generation", verbose);
+        println!("  Project name: {}", name);
+        if let Some(ref desc) = description {
+            println!("  Description: {}", desc);
+        }
+        println!("  Rust project: {}", rust);
+        if let Some(ref cfg) = config {
+            println!("  Using config: {}", cfg);
+        }
+    }
+    
+    // Load config if provided
+    if let Some(config_file) = config {
+        // In real implementation, load and parse config file
+        if verbose &gt; 1 {
+            println!("[DEBUG] Loading config from: {}", config_file);
+        }
+    }
+    
+    // Create project directory
+    let project_dir = PathBuf::from(&amp;name);
+    if verbose &gt; 0 {
+        println!("Creating project directory: {}", project_dir.display());
+    }
+    
+    fs::create_dir_all(&amp;project_dir)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create project directory: {}", e)
+        ))?;
+    
+    // Write project description if provided
+    if let Some(desc) = description {
+        let desc_file = project_dir.join("DESCRIPTION.txt");
+        fs::write(&amp;desc_file, format!("Project: {}\nDescription: {}", name, desc))
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write description file: {}", e)
+            ))?;
+        
+        if verbose &gt; 0 {
+            println!("✓ Wrote description file");
+        }
+    }
+    
+    // Generate Rust project structure if requested
+    if rust {
+        let cargo_toml = project_dir.join("Cargo.toml");
+        fs::write(&amp;cargo_toml, format!(
+            r#"[package]
+name = "{}"
+version = "0.1.0"
+edition = "2021"
+"#, name
+        )).map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create Cargo.toml: {}", e)
+        ))?;
+        
+        let src_dir = project_dir.join("src");
+        fs::create_dir_all(&amp;src_dir)?;
+        
+        let main_rs = src_dir.join("main.rs");
+        fs::write(&amp;main_rs, "fn main() {\n    println!(\"Hello, world!\");\n}\n")?;
+        
+        if verbose &gt; 0 {
+            println!("✓ Created Rust project structure");
+        }
+    }
+    
+    println!("✓ Project '{}' generated successfully!", name);
+    Ok(())
+}</code></pre></pre>
+<h2 id="next-steps-3"><a class="header" href="#next-steps-3">Next Steps</a></h2>
+<p>Now that you've seen how to port commands, learn about:</p>
+<ol>
+<li><a href="advanced-patterns.html">Advanced Patterns</a> - Nested commands, custom implementations, and more</li>
+<li><a href="testing-validation.html">Testing and Validation</a> - How to test your ported CLI</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="advanced-patterns"><a class="header" href="#advanced-patterns">Advanced Patterns</a></h1>
+<p>This chapter covers advanced patterns for porting complex CLI structures, including nested commands, error handling, custom implementations, and conditional command registration.</p>
+<h2 id="nested-command-structures"><a class="header" href="#nested-command-structures">Nested command structures</a></h2>
+<p>For complex CLI hierarchies, <code>clap-noun-verb</code> supports nested noun structures using the compound noun pattern.</p>
+<h3 id="example-dev-tools-with-nested-structure"><a class="header" href="#example-dev-tools-with-nested-structure">Example: Dev Tools with Nested Structure</a></h3>
+<p>If ggen has development tools that need nesting:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("dev", "Development tools", {
+    noun!("test", "Testing utilities", [
+        verb!("run", "Run tests", |args: &amp;VerbArgs| {
+            println!("Running tests...");
+            // In real implementation: run test suite
+            println!("✓ Tests completed");
+            Ok(())
+        }),
+        verb!("watch", "Watch for changes", |args: &amp;VerbArgs| {
+            println!("Watching for test changes...");
+            // In real implementation: start file watcher
+            println!("✓ File watcher started");
+            Ok(())
+        }),
+    ]),
+    noun!("lint", "Code linting", [
+        verb!("check", "Check code style", |args: &amp;VerbArgs| {
+            println!("Checking code style...");
+            // In real implementation: run linter
+            println!("✓ Code style check complete");
+            Ok(())
+        }),
+        verb!("fix", "Auto-fix issues", |args: &amp;VerbArgs| {
+            println!("Auto-fixing linting issues...");
+            // In real implementation: run auto-fix
+            println!("✓ Linting issues fixed");
+            Ok(())
+        }),
+    ]),
+})
+<span class="boring">}</span></code></pre></pre>
+<p>This creates commands like:</p>
+<ul>
+<li><code>ggen dev test run</code></li>
+<li><code>ggen dev test watch</code></li>
+<li><code>ggen dev lint check</code></li>
+<li><code>ggen dev lint fix</code></li>
+</ul>
+<h3 id="when-to-use-nested-nouns"><a class="header" href="#when-to-use-nested-nouns">When to Use Nested Nouns</a></h3>
+<p>Use nested nouns when:</p>
+<ol>
+<li><strong>Natural hierarchy exists</strong>: Commands naturally group into sub-categories</li>
+<li><strong>Scalability needed</strong>: Anticipate many commands that need organization</li>
+<li><strong>Consistency</strong>: Similar patterns exist elsewhere in the CLI</li>
+</ol>
+<h3 id="before-regular-clap-4"><a class="header" href="#before-regular-clap-4">Before (Regular clap)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Subcommand)]
+enum Commands {
+    Dev {
+        #[command(subcommand)]
+        command: DevCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum DevCommands {
+    Test {
+        #[command(subcommand)]
+        command: TestCommands,
+    },
+    Lint {
+        #[command(subcommand)]
+        command: LintCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum TestCommands {
+    Run,
+    Watch,
+}
+
+#[derive(Subcommand)]
+enum LintCommands {
+    Check,
+    Fix,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="after-clap-noun-verb-4"><a class="header" href="#after-clap-noun-verb-4">After (clap-noun-verb)</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>noun!("dev", "Development tools", {
+    noun!("test", "Testing utilities", [
+        verb!("run", "Run tests", |_args: &amp;VerbArgs| Ok(())),
+        verb!("watch", "Watch for changes", |_args: &amp;VerbArgs| Ok(())),
+    ]),
+    noun!("lint", "Code linting", [
+        verb!("check", "Check code style", |_args: &amp;VerbArgs| Ok(())),
+        verb!("fix", "Auto-fix issues", |_args: &amp;VerbArgs| Ok(())),
+    ]),
+})
+<span class="boring">}</span></code></pre></pre>
+<p>Much cleaner and more maintainable!</p>
+<h2 id="argument-extraction-and-validation"><a class="header" href="#argument-extraction-and-validation">Argument extraction and validation</a></h2>
+<h3 id="type-safe-argument-extraction"><a class="header" href="#type-safe-argument-extraction">Type-Safe Argument Extraction</a></h3>
+<p>The <code>VerbArgs</code> type provides type-safe methods for extracting arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| {
+    // Required string
+    let name = args.get_one_str("name")?;
+    
+    // Optional string
+    let description = args.get_one_str_opt("description");
+    
+    // Required typed argument (usize, PathBuf, etc.)
+    let port = args.get_one::&lt;u16&gt;("port")?;
+    
+    // Optional typed argument
+    let timeout = args.get_one_opt::&lt;u64&gt;("timeout");
+    
+    // Multiple values
+    let tags = args.get_many::&lt;String&gt;("tags")?;
+    
+    // Optional multiple values (returns empty vec if missing)
+    let keywords = args.get_many_opt::&lt;String&gt;("keywords");
+    
+    // PathBuf convenience methods
+    let config_path = args.get_path("config")?;
+    let output_dir = args.get_path_opt("output");
+    
+    // Flags
+    let force = args.is_flag_set("force");
+    let verbose_count = args.get_flag_count("verbose");  // For -v, -vv, -vvv
+    
+    // Context access
+    let verb_name = args.verb();  // "project"
+    let noun_name = args.noun();  // Some("ai")
+    
+    Ok(())
+}, args: [
+    Arg::new("name").required(true),
+    Arg::new("description"),
+    Arg::new("port").value_parser(clap::value_parser!(u16)),
+    Arg::new("timeout").value_parser(clap::value_parser!(u64)),
+    Arg::new("tags").num_args(1..),
+    Arg::new("keywords").num_args(1..),
+    Arg::new("config").value_name("FILE"),
+    Arg::new("output").value_name("DIR"),
+    Arg::new("force").short('f').long("force"),
+    Arg::new("verbose").short('v').action(clap::ArgAction::Count),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-validation"><a class="header" href="#custom-validation">Custom Validation</a></h3>
+<p>For complex validation, perform checks in the handler:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name")?;
+    
+    // Custom validation
+    if name.len() &lt; 3 {
+        return Err(NounVerbError::argument_error(
+            "Project name must be at least 3 characters"
+        ));
+    }
+    
+    if !name.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        return Err(NounVerbError::argument_error(
+            "Project name can only contain alphanumeric characters, dashes, and underscores"
+        ));
+    }
+    
+    // Continue with validated input
+    handle_project(name)?;
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="using-clap-validators"><a class="header" href="#using-clap-validators">Using clap Validators</a></h3>
+<p>You can use clap's built-in validators:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| {
+    // Validation already done by clap
+    let name = args.get_one_str("name")?;
+    let port = args.get_one::&lt;u16&gt;("port")?;
+    // ...
+}, args: [
+    Arg::new("name")
+        .required(true)
+        .value_parser(clap::builder::NonEmptyStringValueParser::new()),
+    Arg::new("port")
+        .value_parser(clap::value_parser!(u16).range(1..=65535)),
+])
+<span class="boring">}</span></code></pre></pre>
+<h2 id="error-handling-with-nounverberror"><a class="header" href="#error-handling-with-nounverberror">Error handling with NounVerbError</a></h2>
+<p>The framework uses <code>NounVerbError</code> for structured error handling.</p>
+<h3 id="error-types"><a class="header" href="#error-types">Error Types</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum NounVerbError {
+    CommandNotFound(String),
+    VerbNotFound(String, String),  // (noun, verb)
+    InvalidStructure(String),
+    ExecutionError(String),
+    ArgumentError(String),
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="creating-errors"><a class="header" href="#creating-errors">Creating Errors</a></h3>
+<p>Use the convenience constructors:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::NounVerbError;
+
+// Command not found
+return Err(NounVerbError::command_not_found("nonexistent"));
+
+// Verb not found
+return Err(NounVerbError::verb_not_found("ai", "unknown"));
+
+// Invalid structure
+return Err(NounVerbError::invalid_structure(
+    "Duplicate noun name: ai"
+));
+
+// Execution error
+return Err(NounVerbError::execution_error(
+    format!("Failed to generate project: {}", error)
+));
+
+// Argument error
+return Err(NounVerbError::argument_error(
+    "Required argument 'name' is missing"
+));
+<span class="boring">}</span></code></pre></pre>
+<h3 id="error-propagation"><a class="header" href="#error-propagation">Error Propagation</a></h3>
+<p>Handler functions should propagate errors:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;
+    
+    // Operations that return Result propagate automatically with ?
+    let project_dir = create_project_dir(&amp;name)?;
+    generate_files(&amp;project_dir)?;
+    initialize_git(&amp;project_dir)?;
+    
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-error-context"><a class="header" href="#custom-error-context">Custom Error Context</a></h3>
+<p>Add context to errors:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;
+    
+    match generate_project(&amp;name) {
+        Ok(_) =&gt; Ok(()),
+        Err(e) =&gt; Err(NounVerbError::execution_error(
+            format!("Failed to generate project '{}': {}", name, e)
+        )),
+    }
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="error-display"><a class="header" href="#error-display">Error Display</a></h3>
+<p>Errors are automatically formatted for display. Users see helpful messages:</p>
+<pre><code>Error: Command not found: nonexistent
+
+Usage: ggen &lt;COMMAND&gt;
+
+For more information, try 'ggen --help'
+</code></pre>
+<h2 id="custom-command-implementations"><a class="header" href="#custom-command-implementations">Custom command implementations</a></h2>
+<p>For advanced use cases, you can implement the traits directly instead of using macros.</p>
+<h3 id="custom-noun-implementation"><a class="header" href="#custom-noun-implementation">Custom Noun Implementation</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{NounCommand, VerbCommand, VerbArgs, Result};
+
+struct AiNoun {
+    config: AiConfig,
+}
+
+impl NounCommand for AiNoun {
+    fn name(&amp;self) -&gt; &amp;'static str {
+        "ai"
+    }
+    
+    fn about(&amp;self) -&gt; &amp;'static str {
+        "AI-powered generation"
+    }
+    
+    fn verbs(&amp;self) -&gt; Vec&lt;Box&lt;dyn VerbCommand&gt;&gt; {
+        vec![
+            Box::new(ProjectVerb { config: self.config.clone() }),
+            Box::new(GenerateVerb { config: self.config.clone() }),
+        ]
+    }
+}
+
+struct ProjectVerb {
+    config: AiConfig,
+}
+
+impl VerbCommand for ProjectVerb {
+    fn name(&amp;self) -&gt; &amp;'static str {
+        "project"
+    }
+    
+    fn about(&amp;self) -&gt; &amp;'static str {
+        "Generate complete projects"
+    }
+    
+    fn run(&amp;self, args: &amp;VerbArgs) -&gt; Result&lt;()&gt; {
+        let name = args.get_one_str("name")?;
+        generate_project_with_config(&amp;name, &amp;self.config)?;
+        Ok(())
+    }
+    
+    fn build_command(&amp;self) -&gt; clap::Command {
+        let mut cmd = clap::Command::new(self.name())
+            .about(self.about());
+        
+        // Custom argument configuration
+        cmd = cmd.arg(
+            clap::Arg::new("name")
+                .required(true)
+                .help("Project name")
+        );
+        
+        if self.config.allow_rust_option {
+            cmd = cmd.arg(
+                clap::Arg::new("rust")
+                    .long("rust")
+                    .help("Generate Rust project")
+            );
+        }
+        
+        cmd
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-verb-with-advanced-arguments"><a class="header" href="#custom-verb-with-advanced-arguments">Custom Verb with Advanced Arguments</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct CustomGenerateVerb;
+
+impl VerbCommand for CustomGenerateVerb {
+    fn name(&amp;self) -&gt; &amp;'static str {
+        "generate"
+    }
+    
+    fn about(&amp;self) -&gt; &amp;'static str {
+        "Generate templates from descriptions"
+    }
+    
+    fn additional_args(&amp;self) -&gt; Vec&lt;clap::Arg&gt; {
+        vec![
+            clap::Arg::new("description")
+                .short('d')
+                .long("description")
+                .required(true)
+                .help("Template description"),
+            clap::Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_name("FILE")
+                .help("Output file path"),
+            clap::Arg::new("template")
+                .short('t')
+                .long("template")
+                .value_name("TEMPLATE")
+                .help("Base template to use"),
+        ]
+    }
+    
+    fn run(&amp;self, args: &amp;VerbArgs) -&gt; Result&lt;()&gt; {
+        use std::fs;
+        
+        let description = args.get_one_str("description")?;
+        let output = args.get_one_str_opt("output");
+        let template = args.get_one_str_opt("template");
+        
+        println!("Generating template from description: {}", description);
+        if let Some(ref t) = template {
+            println!("Using base template: {}", t);
+        }
+        
+        let content = format!("// Generated from: {}\n// Template: {:?}\n\nCode here...\n", 
+            description, template);
+        
+        if let Some(output_path) = output {
+            fs::write(&amp;output_path, content)?;
+            println!("✓ Template written to: {}", output_path);
+        } else {
+            println!("{}", content);
+        }
+        
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="when-to-use-custom-implementations"><a class="header" href="#when-to-use-custom-implementations">When to Use Custom Implementations</a></h3>
+<p>Use custom implementations when:</p>
+<ol>
+<li><strong>Complex configuration</strong>: Commands need configuration passed from outside</li>
+<li><strong>Conditional arguments</strong>: Arguments depend on runtime state</li>
+<li><strong>Shared state</strong>: Multiple commands need shared state</li>
+<li><strong>Advanced clap features</strong>: Need fine-grained control over command building</li>
+</ol>
+<h2 id="global-arguments-pattern"><a class="header" href="#global-arguments-pattern">Global arguments pattern</a></h2>
+<p>Global arguments are available to all verbs through <code>VerbArgs</code>.</p>
+<h3 id="defining-global-arguments"><a class="header" href="#defining-global-arguments">Defining Global Arguments</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>run_cli(|cli| {
+    cli.name("ggen")
+        .global_args(vec![
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .action(clap::ArgAction::Count)
+                .help("Increase verbosity"),
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .value_name("FILE")
+                .help("Configuration file"),
+            Arg::new("dry-run")
+                .long("dry-run")
+                .help("Show what would be done without making changes"),
+        ])
+        // ... nouns
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="accessing-global-arguments"><a class="header" href="#accessing-global-arguments">Accessing Global Arguments</a></h3>
+<p>All verbs can access global arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>verb!("project", "Generate project", |args: &amp;VerbArgs| {
+    // Verb-specific arguments
+    let name = args.get_one_str("name")?;
+    
+    // Global arguments
+    let verbose = args.get_global_flag_count("verbose");
+    let config = args.get_global_str("config");
+    let dry_run = args.is_global_flag_set("dry-run");
+    
+    if verbose &gt; 0 {
+        println!("[Verbose level: {}] Generating project: {}", verbose, name);
+    }
+    
+    if let Some(config_file) = config {
+        load_config(config_file)?;
+    }
+    
+    if dry_run {
+        println!("[DRY RUN] Would generate project: {}", name);
+        return Ok(());
+    }
+    
+    // Actual generation
+    generate_project(&amp;name)?;
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="common-global-arguments"><a class="header" href="#common-global-arguments">Common Global Arguments</a></h3>
+<p>Common patterns for global arguments:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Verbosity (multiple levels)
+Arg::new("verbose")
+    .short('v')
+    .long("verbose")
+    .action(clap::ArgAction::Count)
+    .help("Increase verbosity (-v, -vv, -vvv)")
+
+// Configuration file
+Arg::new("config")
+    .short('c')
+    .long("config")
+    .value_name("FILE")
+    .help("Configuration file path")
+
+// Output directory
+Arg::new("output")
+    .short('o')
+    .long("output")
+    .value_name("DIR")
+    .help("Output directory")
+
+// Quiet mode
+Arg::new("quiet")
+    .short('q')
+    .long("quiet")
+    .help("Suppress output")
+
+// Debug mode
+Arg::new("debug")
+    .long("debug")
+    .help("Enable debug output")
+<span class="boring">}</span></code></pre></pre>
+<h2 id="conditional-command-registration"><a class="header" href="#conditional-command-registration">Conditional command registration</a></h2>
+<p>You can conditionally register commands based on features or configuration.</p>
+<h3 id="feature-based-commands"><a class="header" href="#feature-based-commands">Feature-Based Commands</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn build_cli() -&gt; CliBuilder {
+    let mut cli = CliBuilder::new()
+        .name("ggen")
+        .about("Rust Template Generator");
+    
+    // Always available
+    cli = cli.noun(noun!("marketplace", "Template marketplace", [
+        // ... verbs
+    ]));
+    
+    // Only if AI feature is enabled
+    #[cfg(feature = "ai")]
+    {
+        cli = cli.noun(build_ai_noun());
+    }
+    
+    // Only if template feature is enabled
+    #[cfg(feature = "templates")]
+    {
+        cli = cli.noun(noun!("template", "Template operations", [
+            // ... verbs
+        ]));
+    }
+    
+    cli
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="runtime-configuration-based-commands"><a class="header" href="#runtime-configuration-based-commands">Runtime Configuration-Based Commands</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn build_cli_with_config(config: &amp;AppConfig) -&gt; CliBuilder {
+    let mut cli = CliBuilder::new()
+        .name("ggen")
+        .about("Rust Template Generator");
+    
+    // Always available
+    cli = cli.noun(noun!("marketplace", "Template marketplace", [
+        // ... verbs
+    ]));
+    
+    // Conditional based on config
+    if config.enable_ai {
+        cli = cli.noun(build_ai_noun_with_config(&amp;config.ai_config));
+    }
+    
+    if config.enable_dev_tools {
+        cli = cli.noun(noun!("dev", "Development tools", [
+            // ... verbs
+        ]));
+    }
+    
+    cli
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="plugin-based-commands"><a class="header" href="#plugin-based-commands">Plugin-Based Commands</a></h3>
+<p>For dynamic command loading:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn build_cli_with_plugins(plugins: &amp;[Plugin]) -&gt; CliBuilder {
+    let mut cli = CliBuilder::new()
+        .name("ggen")
+        .about("Rust Template Generator");
+    
+    // Base commands
+    cli = cli.noun(noun!("marketplace", "Template marketplace", [
+        // ... verbs
+    ]));
+    
+    // Load commands from plugins
+    for plugin in plugins {
+        if let Some(noun) = plugin.build_noun() {
+            cli = cli.noun(noun);
+        }
+    }
+    
+    cli
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="organizing-code-with-modules"><a class="header" href="#organizing-code-with-modules">Organizing code with modules</a></h2>
+<p>For large CLIs, organize code into modules:</p>
+<h3 id="project-structure-1"><a class="header" href="#project-structure-1">Project Structure</a></h3>
+<pre><code>src/
+├── main.rs           # CLI builder
+├── commands/
+│   ├── mod.rs        # Re-export all commands
+│   ├── ai.rs         # AI noun implementation
+│   ├── marketplace.rs # Marketplace noun implementation
+│   └── template.rs   # Template noun implementation
+└── handlers/
+    ├── mod.rs        # Re-export all handlers
+    ├── ai_handlers.rs # AI command handlers
+    └── marketplace_handlers.rs # Marketplace handlers
+</code></pre>
+<h3 id="module-example"><a class="header" href="#module-example">Module Example</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021">// src/commands/ai.rs
+use clap_noun_verb::{noun, verb, VerbArgs, Result};
+use clap::Arg;
+use crate::handlers::ai_handlers;
+
+pub fn build_ai_noun() -&gt; impl NounCommand + 'static {
+    noun!("ai", "AI-powered generation", [
+        verb!("project", "Generate complete projects", ai_handlers::handle_project, args: [
+            Arg::new("name").required(true),
+        ]),
+        verb!("generate", "Generate templates", ai_handlers::handle_generate, args: [
+            Arg::new("description").short('d').long("description").required(true),
+            Arg::new("output").short('o').long("output"),
+        ]),
+    ])
+}
+
+// src/handlers/ai_handlers.rs
+use clap_noun_verb::{VerbArgs, Result};
+
+pub fn handle_project(args: &amp;VerbArgs) -&gt; Result&lt;()&gt; {
+    use std::fs;
+    use std::path::PathBuf;
+    
+    let name = args.get_one_str("name")?;
+    let project_dir = PathBuf::from(&amp;name);
+    
+    println!("Generating project: {}", name);
+    fs::create_dir_all(&amp;project_dir)?;
+    
+    // Create Cargo.toml for Rust project
+    let cargo_toml = project_dir.join("Cargo.toml");
+    fs::write(&amp;cargo_toml, format!(
+        r#"[package]
+name = "{}"
+version = "0.1.0"
+edition = "2021"
+"#, name
+    ))?;
+    
+    println!("✓ Project '{}' generated", name);
+    Ok(())
+}
+
+pub fn handle_generate(args: &amp;VerbArgs) -&gt; Result&lt;()&gt; {
+    use std::fs;
+    
+    let description = args.get_one_str("description")?;
+    let output = args.get_one_str_opt("output");
+    
+    println!("Generating template: {}", description);
+    
+    let content = format!("// Generated template\n// Description: {}\n\nCode here...\n", description);
+    
+    if let Some(output_path) = output {
+        fs::write(&amp;output_path, content)?;
+        println!("✓ Template written to: {}", output_path);
+    } else {
+        println!("{}", content);
+    }
+    
+    Ok(())
+}
+
+// src/main.rs
+mod commands;
+mod handlers;
+
+use clap_noun_verb::run_cli;
+
+fn main() -&gt; Result&lt;()&gt; {
+    run_cli(|cli| {
+        cli.name("ggen")
+            .about("Rust Template Generator")
+            .noun(commands::ai::build_ai_noun())
+            .noun(commands::marketplace::build_marketplace_noun())
+    })
+}</code></pre></pre>
+<h2 id="next-steps-4"><a class="header" href="#next-steps-4">Next Steps</a></h2>
+<p>Now that you understand advanced patterns, proceed to:</p>
+<ol>
+<li><a href="testing-validation.html">Testing and Validation</a> - Learn how to test your ported CLI</li>
+<li><a href="migration-checklist.html">Migration Checklist</a> - Final checklist before completing the migration</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="testing-and-validation"><a class="header" href="#testing-and-validation">Testing and Validation</a></h1>
+<p>This chapter covers testing strategies for ported CLI commands, ensuring backward compatibility, validating CLI structure, and integration testing.</p>
+<h2 id="testing-ported-commands"><a class="header" href="#testing-ported-commands">Testing ported commands</a></h2>
+<p>Testing CLI commands requires validating both the command structure and the handler logic.</p>
+<h3 id="unit-testing-handlers"><a class="header" href="#unit-testing-handlers">Unit Testing Handlers</a></h3>
+<p>Test handlers directly without CLI parsing:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap_noun_verb::{VerbArgs, VerbContext};
+    use clap::ArgMatches;
+    use std::collections::HashMap;
+
+    fn create_test_args(arg_map: HashMap&lt;&amp;str, &amp;str&gt;) -&gt; VerbArgs {
+        // Create minimal ArgMatches for testing
+        let matches = ArgMatches::default();
+        let context = VerbContext::new("test_verb").with_noun("test_noun");
+        VerbArgs::new(matches).with_context(context)
+    }
+
+    #[test]
+    fn test_handle_project() -&gt; Result&lt;()&gt; {
+        // Arrange
+        let args = create_test_args([("name", "my-project")].iter().cloned().collect());
+        
+        // Act
+        let result = handle_project(&amp;args);
+        
+        // Assert
+        assert!(result.is_ok());
+        // Verify project was created, etc.
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-with-run_cli_with_args"><a class="header" href="#testing-with-run_cli_with_args">Testing with run_cli_with_args</a></h3>
+<p>Use <code>run_cli_with_args</code> to test the full CLI flow:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(test)]
+mod tests {
+    use clap_noun_verb::run_cli_with_args;
+
+    #[test]
+    fn test_ai_project_command() -&gt; Result&lt;()&gt; {
+        // Arrange &amp; Act
+        let result = run_cli_with_args(
+            vec!["ggen", "ai", "project", "test-project"],
+            |cli| {
+                cli.name("ggen")
+                    .noun(noun!("ai", "AI-powered generation", [
+                        verb!("project", "Generate project", |args: &amp;VerbArgs| {
+                            let name = args.get_one_str("name")?;
+                            assert_eq!(name, "test-project");
+                            Ok(())
+                        }, args: [
+                            Arg::new("name").required(true),
+                        ]),
+                    ]))
+            }
+        );
+        
+        // Assert
+        assert!(result.is_ok());
+        Ok(())
+    }
+
+    #[test]
+    fn test_ai_project_with_rust_flag() -&gt; Result&lt;()&gt; {
+        let result = run_cli_with_args(
+            vec!["ggen", "ai", "project", "test-project", "--rust"],
+            |cli| {
+                cli.name("ggen")
+                    .noun(noun!("ai", "AI-powered generation", [
+                        verb!("project", "Generate project", |args: &amp;VerbArgs| {
+                            let name = args.get_one_str("name")?;
+                            let rust = args.is_flag_set("rust");
+                            assert_eq!(name, "test-project");
+                            assert!(rust);
+                            Ok(())
+                        }, args: [
+                            Arg::new("name").required(true),
+                            Arg::new("rust").long("rust"),
+                        ]),
+                    ]))
+            }
+        );
+        
+        assert!(result.is_ok());
+        Ok(())
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-argument-extraction"><a class="header" href="#testing-argument-extraction">Testing Argument Extraction</a></h3>
+<p>Test all argument extraction methods:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_argument_extraction() -&gt; Result&lt;()&gt; {
+    run_cli_with_args(
+        vec![
+            "ggen", "ai", "generate",
+            "-d", "test description",
+            "-o", "output.tmpl",
+        ],
+        |cli| {
+            cli.name("ggen")
+                .noun(noun!("ai", "AI-powered generation", [
+                    verb!("generate", "Generate template", |args: &amp;VerbArgs| {
+                        // Test required string
+                        let description = args.get_one_str("description")?;
+                        assert_eq!(description, "test description");
+                        
+                        // Test optional string
+                        let output = args.get_one_str_opt("output");
+                        assert_eq!(output, Some("output.tmpl".to_string()));
+                        
+                        Ok(())
+                    }, args: [
+                        Arg::new("description").short('d').long("description").required(true),
+                        Arg::new("output").short('o').long("output"),
+                    ]),
+                ]))
+        }
+    )?;
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-global-arguments"><a class="header" href="#testing-global-arguments">Testing Global Arguments</a></h3>
+<p>Test that global arguments are accessible:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_global_arguments() -&gt; Result&lt;()&gt; {
+    run_cli_with_args(
+        vec![
+            "ggen",
+            "-vv",  // Global verbose flag
+            "--config", "config.toml",  // Global config
+            "ai", "project", "test-project",
+        ],
+        |cli| {
+            cli.name("ggen")
+                .global_args(vec![
+                    Arg::new("verbose")
+                        .short('v')
+                        .long("verbose")
+                        .action(clap::ArgAction::Count),
+                    Arg::new("config")
+                        .short('c')
+                        .long("config"),
+                ])
+                .noun(noun!("ai", "AI-powered generation", [
+                    verb!("project", "Generate project", |args: &amp;VerbArgs| {
+                        // Test global flag count
+                        let verbose = args.get_global_flag_count("verbose");
+                        assert_eq!(verbose, 2);
+                        
+                        // Test global string
+                        let config = args.get_global_str("config");
+                        assert_eq!(config, Some("config.toml".to_string()));
+                        
+                        Ok(())
+                    }, args: [
+                        Arg::new("name").required(true),
+                    ]),
+                ]))
+        }
+    )?;
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-error-cases"><a class="header" href="#testing-error-cases">Testing Error Cases</a></h3>
+<p>Test error handling:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_missing_required_argument() {
+    let result = run_cli_with_args(
+        vec!["ggen", "ai", "project"],  // Missing required "name"
+        |cli| {
+            cli.name("ggen")
+                .noun(noun!("ai", "AI-powered generation", [
+                    verb!("project", "Generate project", |args: &amp;VerbArgs| {
+                        let _name = args.get_one_str("name")?;
+                        Ok(())
+                    }, args: [
+                        Arg::new("name").required(true),
+                    ]),
+                ]))
+        }
+    );
+    
+    // Should fail with argument error
+    assert!(result.is_err());
+    if let Err(e) = result {
+        assert!(e.to_string().contains("name") || e.to_string().contains("required"));
+    }
+}
+
+#[test]
+fn test_invalid_command() {
+    let result = run_cli_with_args(
+        vec!["ggen", "nonexistent", "command"],
+        |cli| {
+            cli.name("ggen")
+                .noun(noun!("ai", "AI-powered generation", [
+                    // ... verbs
+                ]))
+        }
+    );
+    
+    // Should fail with command not found
+    assert!(result.is_err());
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="ensuring-backward-compatibility"><a class="header" href="#ensuring-backward-compatibility">Ensuring backward compatibility</a></h2>
+<p>When porting, ensure existing command invocations still work.</p>
+<h3 id="command-structure-compatibility"><a class="header" href="#command-structure-compatibility">Command Structure Compatibility</a></h3>
+<p>Ensure the command structure matches:</p>
+<pre><code class="language-bash"># Before (regular clap)
+ggen ai project my-project
+
+# After (clap-noun-verb) - Must work the same way
+ggen ai project my-project
+</code></pre>
+<h3 id="argument-compatibility"><a class="header" href="#argument-compatibility">Argument Compatibility</a></h3>
+<p>Ensure all arguments work the same way:</p>
+<pre><code class="language-bash"># Short flags
+ggen ai generate -d "description" -o output.tmpl
+
+# Long flags
+ggen ai generate --description "description" --output output.tmpl
+
+# Mixed
+ggen ai generate -d "description" --output output.tmpl
+</code></pre>
+<h3 id="help-text-compatibility"><a class="header" href="#help-text-compatibility">Help Text Compatibility</a></h3>
+<p>Verify help output matches expected format:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_help_output() -&gt; Result&lt;()&gt; {
+    // Test that help text is generated correctly
+    let cli = CliBuilder::new()
+        .name("ggen")
+        .noun(/* ... */)
+        .build_command();
+    
+    let help_text = cli.render_help().to_string();
+    
+    // Verify expected content
+    assert!(help_text.contains("AI-powered generation"));
+    assert!(help_text.contains("project"));
+    assert!(help_text.contains("generate"));
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="behavior-compatibility"><a class="header" href="#behavior-compatibility">Behavior Compatibility</a></h3>
+<p>Ensure command behavior matches:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_command_behavior_matches() -&gt; Result&lt;()&gt; {
+    // Test that the new implementation produces the same results
+    // as the old implementation for the same inputs
+    
+    let inputs = vec![
+        ("test-project", false),
+        ("my-app", true),
+    ];
+    
+    for (name, rust_flag) in inputs {
+        // Run old implementation (if available)
+        // let old_result = old_handle_project(name, rust_flag)?;
+        
+        // Run new implementation
+        let new_result = run_cli_with_args(
+            vec!["ggen", "ai", "project", name]
+                .into_iter()
+                .chain(if rust_flag { vec!["--rust"] } else { vec![] })
+                .collect(),
+            |cli| {
+                cli.name("ggen")
+                    .noun(noun!("ai", "AI-powered generation", [
+                        verb!("project", "Generate project", handle_project, args: [
+                            Arg::new("name").required(true),
+                            Arg::new("rust").long("rust"),
+                        ]),
+                    ]))
+            }
+        )?;
+        
+        // Assert results match (compare outputs, file creation, etc.)
+        // assert_eq!(old_result, new_result);
+    }
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="validating-cli-structure"><a class="header" href="#validating-cli-structure">Validating CLI structure</a></h2>
+<p>Use <code>auto_validate</code> to catch structural issues early:</p>
+<h3 id="enable-auto-validation"><a class="header" href="#enable-auto-validation">Enable Auto-Validation</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>run_cli(|cli| {
+    cli.name("ggen")
+        .auto_validate(true)  // Enable automatic validation
+        .noun(/* ... */)
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="manual-validation"><a class="header" href="#manual-validation">Manual Validation</a></h3>
+<p>You can also validate manually:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use clap_noun_verb::{CliBuilder, CommandRegistry};
+
+let registry = CliBuilder::new()
+    .name("ggen")
+    .noun(/* ... */)
+    .registry();
+
+// Manual validation
+registry.validate()?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="what-validation-catches"><a class="header" href="#what-validation-catches">What Validation Catches</a></h3>
+<ul>
+<li><strong>Duplicate noun names</strong>: Multiple nouns with the same name</li>
+<li><strong>Empty nouns</strong>: Nouns with no verbs or sub-nouns</li>
+<li><strong>Duplicate verb names</strong>: Multiple verbs with the same name within a noun</li>
+<li><strong>Duplicate sub-noun names</strong>: Multiple sub-nouns with the same name</li>
+<li><strong>Verb/sub-noun conflicts</strong>: Name conflicts between verbs and sub-nouns</li>
+</ul>
+<h3 id="testing-validation"><a class="header" href="#testing-validation">Testing Validation</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_validation_catches_duplicate_nouns() {
+    let result = CliBuilder::new()
+        .name("ggen")
+        .auto_validate(true)
+        .noun(noun!("ai", "AI commands", [/* ... */]))
+        .noun(noun!("ai", "Duplicate AI", [/* ... */]))  // Duplicate!
+        .run();
+    
+    assert!(result.is_err());
+    if let Err(e) = result {
+        assert!(e.to_string().to_lowercase().contains("duplicate"));
+    }
+}
+
+#[test]
+fn test_validation_catches_duplicate_verbs() {
+    let result = CliBuilder::new()
+        .name("ggen")
+        .auto_validate(true)
+        .noun(noun!("ai", "AI commands", [
+            verb!("project", "Generate project", |_| Ok(())),
+            verb!("project", "Duplicate project", |_| Ok(())),  // Duplicate!
+        ]))
+        .run();
+    
+    assert!(result.is_err());
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="integration-testing"><a class="header" href="#integration-testing">Integration testing</a></h2>
+<p>Test the full CLI end-to-end:</p>
+<h3 id="basic-integration-test"><a class="header" href="#basic-integration-test">Basic Integration Test</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_full_cli_workflow() -&gt; Result&lt;()&gt; {
+    // Test complete workflow
+    run_cli_with_args(
+        vec!["ggen", "marketplace", "search", "rust"],
+        |cli| {
+            cli.name("ggen")
+                .noun(noun!("marketplace", "Template marketplace", [
+                    verb!("search", "Find packages", |args: &amp;VerbArgs| {
+                        let query = args.get_one_str("query")?;
+                        // Verify search works
+                        assert_eq!(query, "rust");
+                        Ok(())
+                    }, args: [
+                        Arg::new("query").required(true),
+                    ]),
+                ]))
+        }
+    )?;
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="multi-command-integration-test"><a class="header" href="#multi-command-integration-test">Multi-Command Integration Test</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_multiple_commands_in_sequence() -&gt; Result&lt;()&gt; {
+    // Test marketplace search
+    run_cli_with_args(
+        vec!["ggen", "marketplace", "search", "rust"],
+        build_cli
+    )?;
+    
+    // Test marketplace add
+    run_cli_with_args(
+        vec!["ggen", "marketplace", "add", "io.ggen.rust.axum"],
+        build_cli
+    )?;
+    
+    // Test AI project with added package
+    run_cli_with_args(
+        vec!["ggen", "ai", "project", "test-app", "--rust"],
+        build_cli
+    )?;
+    
+    Ok(())
+}
+
+fn build_cli(cli: CliBuilder) -&gt; CliBuilder {
+    cli.name("ggen")
+        .noun(/* ... */)
+        // ... all commands
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="testing-help-output"><a class="header" href="#testing-help-output">Testing Help Output</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_help_display() -&gt; Result&lt;()&gt; {
+    let cli = CliBuilder::new()
+        .name("ggen")
+        .about("Rust Template Generator")
+        .noun(/* ... */)
+        .build_command();
+    
+    // Test root help
+    let root_help = cli.render_help().to_string();
+    assert!(root_help.contains("ggen"));
+    assert!(root_help.contains("Rust Template Generator"));
+    assert!(root_help.contains("AI-powered generation"));
+    
+    // Test noun help
+    let ai_cmd = cli
+        .get_subcommands()
+        .find(|c| c.get_name() == "ai")
+        .expect("AI command should exist");
+    
+    let ai_help = ai_cmd.render_help().to_string();
+    assert!(ai_help.contains("AI-powered generation"));
+    assert!(ai_help.contains("project"));
+    assert!(ai_help.contains("generate"));
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="performance-testing"><a class="header" href="#performance-testing">Performance testing</a></h2>
+<p>Ensure the port doesn't introduce performance regressions:</p>
+<h3 id="cli-building-performance"><a class="header" href="#cli-building-performance">CLI Building Performance</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Instant;
+
+#[test]
+fn test_cli_build_performance() {
+    let start = Instant::now();
+    
+    let _cli = CliBuilder::new()
+        .name("ggen")
+        .noun(/* ... */)
+        // ... all commands
+        .build_command();
+    
+    let duration = start.elapsed();
+    
+    // Should build quickly (adjust threshold as needed)
+    assert!(duration.as_millis() &lt; 100, "CLI build took too long: {:?}", duration);
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="command-parsing-performance"><a class="header" href="#command-parsing-performance">Command Parsing Performance</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_command_parsing_performance() {
+    let cli = build_cli().build_command();
+    
+    let start = Instant::now();
+    
+    // Parse multiple times
+    for _ in 0..1000 {
+        let _matches = cli.clone().try_get_matches_from(vec![
+            "ggen", "ai", "project", "test"
+        ]).unwrap();
+    }
+    
+    let duration = start.elapsed();
+    
+    // Average should be fast (adjust as needed)
+    let avg = duration.as_millis() as f64 / 1000.0;
+    assert!(avg &lt; 1.0, "Average parsing took too long: {}ms", avg);
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="testing-best-practices"><a class="header" href="#testing-best-practices">Testing best practices</a></h2>
+<h3 id="1-test-behavior-not-implementation"><a class="header" href="#1-test-behavior-not-implementation">1. Test Behavior, Not Implementation</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good: Test what the command does
+#[test]
+fn test_project_generation_creates_files() -&gt; Result&lt;()&gt; {
+    // Verify files are created
+}
+
+// ❌ Bad: Test implementation details
+#[test]
+fn test_project_uses_generator_function() {
+    // Don't test internal function calls
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="2-use-descriptive-test-names"><a class="header" href="#2-use-descriptive-test-names">2. Use Descriptive Test Names</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good
+#[test]
+fn test_ai_project_with_rust_flag_generates_rust_project() -&gt; Result&lt;()&gt; {
+    // Clear what is being tested
+}
+
+// ❌ Bad
+#[test]
+fn test_project() {
+    // Too vague
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-test-both-success-and-error-cases"><a class="header" href="#3-test-both-success-and-error-cases">3. Test Both Success and Error Cases</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_valid_input() -&gt; Result&lt;()&gt; {
+    // Test valid inputs
+    Ok(())
+}
+
+#[test]
+fn test_invalid_input_returns_error() {
+    // Test error cases
+    assert!(result.is_err());
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-use-helper-functions"><a class="header" href="#4-use-helper-functions">4. Use Helper Functions</a></h3>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn create_test_cli() -&gt; CliBuilder {
+    CliBuilder::new()
+        .name("ggen")
+        .noun(/* ... */)
+}
+
+#[test]
+fn test_command_1() -&gt; Result&lt;()&gt; {
+    run_cli_with_args(vec!["ggen", "command1"], create_test_cli)?;
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="5-test-incrementally"><a class="header" href="#5-test-incrementally">5. Test Incrementally</a></h3>
+<p>Start with simple commands and build up:</p>
+<ol>
+<li>Test individual handlers</li>
+<li>Test simple commands</li>
+<li>Test commands with arguments</li>
+<li>Test global arguments</li>
+<li>Test complex nested structures</li>
+<li>Test integration scenarios</li>
+</ol>
+<h2 id="next-steps-5"><a class="header" href="#next-steps-5">Next Steps</a></h2>
+<p>With testing complete, proceed to:</p>
+<ol>
+<li><a href="migration-checklist.html">Migration Checklist</a> - Final checklist and best practices for completing the migration</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="migration-checklist"><a class="header" href="#migration-checklist">Migration Checklist</a></h1>
+<p>This chapter provides a comprehensive checklist for completing the migration from regular clap to clap-noun-verb, including common pitfalls, solutions, and best practices.</p>
+<h2 id="step-by-step-checklist"><a class="header" href="#step-by-step-checklist">Step-by-step checklist</a></h2>
+<h3 id="phase-1-preparation"><a class="header" href="#phase-1-preparation">Phase 1: Preparation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Analyze current CLI structure</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Map all commands to noun-verb pattern</li>
+<li><input disabled="" type="checkbox"/>
+Identify command groupings</li>
+<li><input disabled="" type="checkbox"/>
+Document argument requirements</li>
+<li><input disabled="" type="checkbox"/>
+Note any special behaviors</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Set up development environment</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Add <code>clap-noun-verb</code> to <code>Cargo.toml</code></li>
+<li><input disabled="" type="checkbox"/>
+Verify clap version compatibility (4.x)</li>
+<li><input disabled="" type="checkbox"/>
+Create feature branch for migration</li>
+<li><input disabled="" type="checkbox"/>
+Set up test infrastructure</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Plan the migration</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Decide on command grouping strategy</li>
+<li><input disabled="" type="checkbox"/>
+Plan module structure</li>
+<li><input disabled="" type="checkbox"/>
+Identify which commands to port first (start with simple ones)</li>
+<li><input disabled="" type="checkbox"/>
+Set migration timeline</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-2-implementation"><a class="header" href="#phase-2-implementation">Phase 2: Implementation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port base structure</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Create <code>CliBuilder</code> with basic setup</li>
+<li><input disabled="" type="checkbox"/>
+Add global arguments (--verbose, --config, etc.)</li>
+<li><input disabled="" type="checkbox"/>
+Test CLI builds without errors</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port simple commands first</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port commands with no arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with simple arguments</li>
+<li><input disabled="" type="checkbox"/>
+Test each ported command individually</li>
+<li><input disabled="" type="checkbox"/>
+Verify help output matches</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port complex commands</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port commands with multiple arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with optional arguments</li>
+<li><input disabled="" type="checkbox"/>
+Port commands with complex validation</li>
+<li><input disabled="" type="checkbox"/>
+Test all argument combinations</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Port nested structures</strong> (if applicable)</p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Port compound nouns</li>
+<li><input disabled="" type="checkbox"/>
+Test nested command routing</li>
+<li><input disabled="" type="checkbox"/>
+Verify nested help output</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-3-testing-and-validation"><a class="header" href="#phase-3-testing-and-validation">Phase 3: Testing and Validation</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Unit tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Test all handlers individually</li>
+<li><input disabled="" type="checkbox"/>
+Test argument extraction</li>
+<li><input disabled="" type="checkbox"/>
+Test error cases</li>
+<li><input disabled="" type="checkbox"/>
+Test edge cases</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Integration tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Test complete command workflows</li>
+<li><input disabled="" type="checkbox"/>
+Test multiple commands in sequence</li>
+<li><input disabled="" type="checkbox"/>
+Test with various argument combinations</li>
+<li><input disabled="" type="checkbox"/>
+Test help output</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Backward compatibility</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Verify all existing command invocations work</li>
+<li><input disabled="" type="checkbox"/>
+Verify argument parsing matches</li>
+<li><input disabled="" type="checkbox"/>
+Verify help text matches</li>
+<li><input disabled="" type="checkbox"/>
+Test with existing scripts/workflows</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Validation</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Enable <code>auto_validate(true)</code></li>
+<li><input disabled="" type="checkbox"/>
+Run manual validation</li>
+<li><input disabled="" type="checkbox"/>
+Fix any validation errors</li>
+<li><input disabled="" type="checkbox"/>
+Verify no duplicate names</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-4-code-quality"><a class="header" href="#phase-4-code-quality">Phase 4: Code Quality</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Code organization</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Organize commands into modules</li>
+<li><input disabled="" type="checkbox"/>
+Separate handlers from CLI structure</li>
+<li><input disabled="" type="checkbox"/>
+Follow consistent naming conventions</li>
+<li><input disabled="" type="checkbox"/>
+Add appropriate documentation</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Error handling</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Replace all <code>unwrap()</code> with proper error handling</li>
+<li><input disabled="" type="checkbox"/>
+Use <code>NounVerbError</code> for all errors</li>
+<li><input disabled="" type="checkbox"/>
+Add context to error messages</li>
+<li><input disabled="" type="checkbox"/>
+Test error messages are helpful</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Documentation</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Update command documentation</li>
+<li><input disabled="" type="checkbox"/>
+Update README with new structure</li>
+<li><input disabled="" type="checkbox"/>
+Add examples for each command</li>
+<li><input disabled="" type="checkbox"/>
+Document any breaking changes</li>
+</ul>
+</li>
+</ul>
+<h3 id="phase-5-final-verification"><a class="header" href="#phase-5-final-verification">Phase 5: Final Verification</a></h3>
+<ul>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Smoke tests</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Run full test suite</li>
+<li><input disabled="" type="checkbox"/>
+Test with real-world scenarios</li>
+<li><input disabled="" type="checkbox"/>
+Test with various users/workflows</li>
+<li><input disabled="" type="checkbox"/>
+Performance testing</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Review</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Code review</li>
+<li><input disabled="" type="checkbox"/>
+Verify all tests pass</li>
+<li><input disabled="" type="checkbox"/>
+Verify no regressions</li>
+<li><input disabled="" type="checkbox"/>
+Check for any remaining old clap code</li>
+</ul>
+</li>
+<li>
+<p><input disabled="" type="checkbox"/>
+<strong>Deployment</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Update version number</li>
+<li><input disabled="" type="checkbox"/>
+Write migration notes (if needed)</li>
+<li><input disabled="" type="checkbox"/>
+Update release notes</li>
+<li><input disabled="" type="checkbox"/>
+Deploy and verify in production</li>
+</ul>
+</li>
+</ul>
+<h2 id="common-pitfalls-and-solutions"><a class="header" href="#common-pitfalls-and-solutions">Common pitfalls and solutions</a></h2>
+<h3 id="pitfall-1-forgetting-global-arguments"><a class="header" href="#pitfall-1-forgetting-global-arguments">Pitfall 1: Forgetting Global Arguments</a></h3>
+<p><strong>Problem</strong>: Global arguments not accessible in handlers.</p>
+<p><strong>Solution</strong>: Always pass <code>VerbArgs</code> to handlers, use <code>get_global_*</code> methods:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Global args not accessible
+verb!("project", ..., |args: &amp;VerbArgs| {
+    // Can't access --verbose, --config
+})
+
+// ✅ Good: Access global args
+verb!("project", ..., |args: &amp;VerbArgs| {
+    let verbose = args.get_global_flag_count("verbose");
+    let config = args.get_global_str("config");
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-2-not-handling-required-arguments"><a class="header" href="#pitfall-2-not-handling-required-arguments">Pitfall 2: Not Handling Required Arguments</a></h3>
+<p><strong>Problem</strong>: Panic when required argument is missing.</p>
+<p><strong>Solution</strong>: Use <code>get_one_str()</code> which returns <code>Result&lt;String&gt;</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Will panic if missing
+let name = args.get_one_str("name").unwrap();
+
+// ✅ Good: Proper error handling
+let name = args.get_one_str("name")?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-3-ignoring-error-propagation"><a class="header" href="#pitfall-3-ignoring-error-propagation">Pitfall 3: Ignoring Error Propagation</a></h3>
+<p><strong>Problem</strong>: Errors not properly propagated.</p>
+<p><strong>Solution</strong>: Always use <code>?</code> operator or handle errors explicitly:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Errors swallowed
+verb!("project", ..., |args: &amp;VerbArgs| {
+    let name = args.get_one_str("name").unwrap_or_default();
+    create_project(&amp;name);  // Error ignored
+    Ok(())
+})
+
+// ✅ Good: Errors propagated
+verb!("project", ..., |args: &amp;VerbArgs| -&gt; Result&lt;()&gt; {
+    let name = args.get_one_str("name")?;
+    create_project(&amp;name)?;  // Errors propagated
+    Ok(())
+})
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-4-duplicate-names"><a class="header" href="#pitfall-4-duplicate-names">Pitfall 4: Duplicate Names</a></h3>
+<p><strong>Problem</strong>: Validation fails due to duplicate command names.</p>
+<p><strong>Solution</strong>: Use unique names, enable auto-validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Duplicate names
+.noun(noun!("ai", ..., [...]))
+.noun(noun!("ai", ..., [...]))  // Duplicate!
+
+// ✅ Good: Unique names
+.noun(noun!("ai", ..., [...]))
+.noun(noun!("marketplace", ..., [...]))
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-5-incorrect-argument-definitions"><a class="header" href="#pitfall-5-incorrect-argument-definitions">Pitfall 5: Incorrect Argument Definitions</a></h3>
+<p><strong>Problem</strong>: Arguments not parsed correctly.</p>
+<p><strong>Solution</strong>: Match argument definitions exactly:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ❌ Bad: Mismatched argument name
+verb!("generate", ..., |args: &amp;VerbArgs| {
+    let desc = args.get_one_str("description")?;  // Looking for "description"
+}, args: [
+    Arg::new("desc"),  // But defined as "desc"
+])
+
+// ✅ Good: Matched names
+verb!("generate", ..., |args: &amp;VerbArgs| {
+    let desc = args.get_one_str("description")?;
+}, args: [
+    Arg::new("description").short('d').long("description").required(true),
+])
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-6-not-testing-all-argument-combinations"><a class="header" href="#pitfall-6-not-testing-all-argument-combinations">Pitfall 6: Not Testing All Argument Combinations</a></h3>
+<p><strong>Problem</strong>: Some argument combinations fail in production.</p>
+<p><strong>Solution</strong>: Test all combinations:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_all_argument_combinations() -&gt; Result&lt;()&gt; {
+    // Test with all flags
+    test_command(vec!["ggen", "ai", "project", "name", "--rust"])?;
+    
+    // Test without flags
+    test_command(vec!["ggen", "ai", "project", "name"])?;
+    
+    // Test with optional args
+    test_command(vec!["ggen", "ai", "generate", "-d", "desc", "-o", "out"])?;
+    
+    // Test without optional args
+    test_command(vec!["ggen", "ai", "generate", "-d", "desc"])?;
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="pitfall-7-breaking-backward-compatibility"><a class="header" href="#pitfall-7-breaking-backward-compatibility">Pitfall 7: Breaking Backward Compatibility</a></h3>
+<p><strong>Problem</strong>: Existing scripts/workflows break.</p>
+<p><strong>Solution</strong>: Maintain command structure and argument names:</p>
+<pre><code class="language-bash"># ✅ Good: Same command structure
+ggen ai project my-project  # Works before and after
+
+# ❌ Bad: Changed structure
+ggen project my-project ai  # Breaks existing scripts
+</code></pre>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best practices</a></h2>
+<h3 id="1-start-simple-build-up"><a class="header" href="#1-start-simple-build-up">1. Start Simple, Build Up</a></h3>
+<p>Port simple commands first, then progressively add complexity:</p>
+<ol>
+<li>Commands with no arguments</li>
+<li>Commands with simple arguments</li>
+<li>Commands with optional arguments</li>
+<li>Commands with complex validation</li>
+<li>Nested structures</li>
+</ol>
+<h3 id="2-test-incrementally"><a class="header" href="#2-test-incrementally">2. Test Incrementally</a></h3>
+<p>Test each command as you port it:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// After porting each command
+#[test]
+fn test_ai_project_works() -&gt; Result&lt;()&gt; {
+    // Test immediately
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="3-use-type-safe-extraction"><a class="header" href="#3-use-type-safe-extraction">3. Use Type-Safe Extraction</a></h3>
+<p>Always use type-safe methods:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good
+let name = args.get_one_str("name")?;
+let port = args.get_one::&lt;u16&gt;("port")?;
+
+// ❌ Bad: Direct access without type safety
+let name = args.matches.get_one::&lt;String&gt;("name").unwrap();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="4-organize-code-logically"><a class="header" href="#4-organize-code-logically">4. Organize Code Logically</a></h3>
+<p>Group related commands:</p>
+<pre><code>commands/
+├── ai.rs          # All AI commands
+├── marketplace.rs # All marketplace commands
+└── template.rs    # All template commands
+</code></pre>
+<h3 id="5-document-command-structure"><a class="header" href="#5-document-command-structure">5. Document Command Structure</a></h3>
+<p>Add clear documentation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Generate complete projects using AI.
+///
+/// # Examples
+///
+/// ```bash
+/// ggen ai project my-app
+/// ggen ai project my-app --rust
+/// ```
+verb!("project", "Generate complete projects", ...)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="6-enable-validation"><a class="header" href="#6-enable-validation">6. Enable Validation</a></h3>
+<p>Always enable structure validation:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>cli.auto_validate(true)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="7-handle-errors-gracefully"><a class="header" href="#7-handle-errors-gracefully">7. Handle Errors Gracefully</a></h3>
+<p>Provide helpful error messages:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let name = args.get_one_str("name")
+    .map_err(|_| NounVerbError::argument_error(
+        "Project name is required. Usage: ggen ai project &lt;name&gt;"
+    ))?;
+<span class="boring">}</span></code></pre></pre>
+<h3 id="8-maintain-consistency"><a class="header" href="#8-maintain-consistency">8. Maintain Consistency</a></h3>
+<p>Use consistent patterns across commands:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// ✅ Good: Consistent argument patterns
+Arg::new("description").short('d').long("description").required(true)
+Arg::new("output").short('o').long("output")
+
+// ❌ Bad: Inconsistent
+Arg::new("desc").short('d').required(true)  // Different name
+Arg::new("output").long("output-file")  // Different name
+<span class="boring">}</span></code></pre></pre>
+<h3 id="9-test-real-world-scenarios"><a class="header" href="#9-test-real-world-scenarios">9. Test Real-World Scenarios</a></h3>
+<p>Test with actual usage patterns:</p>
+<pre><pre class="playground"><code class="language-rust no_run edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[test]
+fn test_real_world_workflow() -&gt; Result&lt;()&gt; {
+    // Search for package
+    run_cli_with_args(vec!["ggen", "marketplace", "search", "rust"], build_cli)?;
+    
+    // Add package
+    run_cli_with_args(vec!["ggen", "marketplace", "add", "io.ggen.rust.axum"], build_cli)?;
+    
+    // Generate project using package
+    run_cli_with_args(vec!["ggen", "ai", "project", "my-app", "--rust"], build_cli)?;
+    
+    Ok(())
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="10-review-help-output"><a class="header" href="#10-review-help-output">10. Review Help Output</a></h3>
+<p>Ensure help is clear and consistent:</p>
+<pre><code class="language-bash"># Check root help
+ggen --help
+
+# Check noun help
+ggen ai --help
+
+# Check verb help
+ggen ai project --help
+</code></pre>
+<h2 id="verification-steps"><a class="header" href="#verification-steps">Verification steps</a></h2>
+<p>Before considering the migration complete:</p>
+<h3 id="1-command-coverage"><a class="header" href="#1-command-coverage">1. Command Coverage</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+All commands ported</li>
+<li><input disabled="" type="checkbox"/>
+All arguments supported</li>
+<li><input disabled="" type="checkbox"/>
+All flags work</li>
+<li><input disabled="" type="checkbox"/>
+All combinations tested</li>
+</ul>
+<h3 id="2-functionality"><a class="header" href="#2-functionality">2. Functionality</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+All commands produce same results</li>
+<li><input disabled="" type="checkbox"/>
+All edge cases handled</li>
+<li><input disabled="" type="checkbox"/>
+All error cases handled</li>
+<li><input disabled="" type="checkbox"/>
+Performance acceptable</li>
+</ul>
+<h3 id="3-compatibility"><a class="header" href="#3-compatibility">3. Compatibility</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Backward compatible (if required)</li>
+<li><input disabled="" type="checkbox"/>
+Help text matches (if required)</li>
+<li><input disabled="" type="checkbox"/>
+Scripts still work</li>
+<li><input disabled="" type="checkbox"/>
+Workflows still work</li>
+</ul>
+<h3 id="4-code-quality"><a class="header" href="#4-code-quality">4. Code Quality</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+No <code>unwrap()</code> or <code>expect()</code> in production code</li>
+<li><input disabled="" type="checkbox"/>
+Proper error handling everywhere</li>
+<li><input disabled="" type="checkbox"/>
+All tests pass</li>
+<li><input disabled="" type="checkbox"/>
+Code reviewed</li>
+<li><input disabled="" type="checkbox"/>
+Documentation updated</li>
+</ul>
+<h3 id="5-deployment"><a class="header" href="#5-deployment">5. Deployment</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+Version updated</li>
+<li><input disabled="" type="checkbox"/>
+Release notes written</li>
+<li><input disabled="" type="checkbox"/>
+Migration guide written (if needed)</li>
+<li><input disabled="" type="checkbox"/>
+Ready for deployment</li>
+</ul>
+<h2 id="final-checklist"><a class="header" href="#final-checklist">Final checklist</a></h2>
+<p>Before merging/deploying:</p>
+<pre><code>Migration Completion Checklist
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+□ All commands ported and tested
+□ All arguments working correctly
+□ Global arguments accessible everywhere
+□ Error handling implemented properly
+□ All tests passing (unit, integration, compatibility)
+□ Help output verified
+□ Code organized and documented
+□ No breaking changes (or documented if intentional)
+□ Performance acceptable
+□ Code review completed
+□ Ready for production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+</code></pre>
+<h2 id="conclusion"><a class="header" href="#conclusion">Conclusion</a></h2>
+<p>Migrating from regular clap to clap-noun-verb provides:</p>
+<ul>
+<li><strong>Cleaner code structure</strong> - Commands organized by functionality</li>
+<li><strong>Better maintainability</strong> - Easier to add new commands</li>
+<li><strong>Type safety</strong> - Compile-time verification</li>
+<li><strong>Less boilerplate</strong> - Macros handle repetitive patterns</li>
+<li><strong>Better UX</strong> - Intuitive command structure</li>
+</ul>
+<p>Following this checklist ensures a smooth migration with minimal risk.</p>
+<h3 id="next-steps-after-migration"><a class="header" href="#next-steps-after-migration">Next Steps After Migration</a></h3>
+<ol>
+<li><strong>Monitor usage</strong> - Watch for any issues in production</li>
+<li><strong>Gather feedback</strong> - Collect user feedback on new structure</li>
+<li><strong>Iterate</strong> - Make improvements based on feedback</li>
+<li><strong>Document</strong> - Keep documentation updated</li>
+<li><strong>Share</strong> - Share migration experience with community</li>
+</ol>
+<p>Good luck with your migration!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>

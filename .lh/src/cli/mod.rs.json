@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/cli/mod.rs",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762023224263,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762023224263,
+            "name": "Commit-0",
+            "content": "//! CLI layer - argument validation and routing only\n//!\n//! This module contains the CLI interface layer that validates arguments\n//! and delegates to business logic. It contains NO business logic.\n//!\n//! ## Design Principle\n//!\n//! CLI code ONLY validates arguments and options, then delegates to\n//! business logic functions. No business logic is allowed in this layer.\n\npub mod builder;\npub mod router;\npub mod validator;\n\npub use builder::CliBuilder;\npub use router::CommandRouter;\npub use validator::ArgValidator;\n\n"
+        }
+    ]
+}

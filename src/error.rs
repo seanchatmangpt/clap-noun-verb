@@ -60,6 +60,66 @@ impl NounVerbError {
     pub fn missing_argument(name: impl Into<String>) -> Self {
         Self::ArgumentError { message: format!("Required argument '{}' is missing", name.into()) }
     }
+
+    /// Create a validation error with constraints
+    pub fn validation_error(
+        name: impl Into<String>,
+        value: impl Into<String>,
+        constraints: Option<&str>,
+    ) -> Self {
+        let name = name.into();
+        let value = value.into();
+        if let Some(constraints) = constraints {
+            Self::ArgumentError {
+                message: format!(
+                    "Invalid value '{}' for argument '{}'. {}",
+                    value, name, constraints
+                ),
+            }
+        } else {
+            Self::ArgumentError {
+                message: format!("Invalid value '{}' for argument '{}'", value, name),
+            }
+        }
+    }
+
+    /// Create a validation error with range constraints
+    pub fn validation_range_error(
+        name: impl Into<String>,
+        value: impl Into<String>,
+        min: Option<&str>,
+        max: Option<&str>,
+    ) -> Self {
+        let name = name.into();
+        let value = value.into();
+        let constraint_msg = match (min, max) {
+            (Some(min), Some(max)) => format!("Must be between {} and {}", min, max),
+            (Some(min), None) => format!("Must be >= {}", min),
+            (None, Some(max)) => format!("Must be <= {}", max),
+            (None, None) => "Invalid value".to_string(),
+        };
+        Self::validation_error(name, value, Some(&constraint_msg))
+    }
+
+    /// Create a validation error with length constraints
+    pub fn validation_length_error(
+        name: impl Into<String>,
+        value: impl Into<String>,
+        min: Option<usize>,
+        max: Option<usize>,
+    ) -> Self {
+        let name = name.into();
+        let value = value.into();
+        let constraint_msg = match (min, max) {
+            (Some(min), Some(max)) => {
+                format!("Length must be between {} and {} characters", min, max)
+            }
+            (Some(min), None) => format!("Length must be at least {} characters", min),
+            (None, Some(max)) => format!("Length must be at most {} characters", max),
+            (None, None) => "Invalid length".to_string(),
+        };
+        Self::validation_error(name, value, Some(&constraint_msg))
+    }
 }
 
 /// Result type alias for noun-verb operations

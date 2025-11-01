@@ -3,37 +3,61 @@
 //! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns
 //! on top of clap, similar to how Python's Typer provides a simpler interface over Click.
 //!
+//! ## Version 3.0.0 Architecture
+//!
+//! Version 3.0.0 introduces attribute macros for zero-boilerplate command registration:
+//!
+//! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[noun]` and `#[verb]` for declarative command registration
+//! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
+//! - **Type Inference** - Arguments automatically inferred from function signatures
+//! - **JSON Output** - All output automatically serialized to JSON
+//!
+//! ### Key Principles
+//!
+//! 1. **Zero Boilerplate** - Just add `#[noun]` and `#[verb]` attributes to functions
+//! 2. **Auto-Discovery** - Commands automatically discovered at compile time
+//! 3. **Type Inference** - Arguments inferred from function signatures
+//! 4. **JSON by Default** - Perfect for agents, MCP, and modern tooling
+//!
 //! ## Framework Philosophy
 //!
 //! Instead of providing specific compositions, this crate provides a framework that allows
 //! users to compose their own CLI patterns. Key features:
 //!
 //! - **Composable Command Structure**: Easy composition of nouns and verbs
-//! - **Framework-Level APIs**: APIs that make it easy to build CLI frameworks
-//! - **Extensible Traits**: Traits that can be easily extended and customized
-//! - **Hierarchical Command Support**: Support for complex nested command structures
+//! - **Separation of Concerns**: CLI validates, logic is separate and reusable
 //! - **Type-Safe Composition**: Compile-time verification of command structure
+//! - **Zero-Cost Abstractions**: Thin wrapper over clap with no runtime overhead
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 1.0.0 and above
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 3.0.0 and above
 //! provide API stability guarantees:
 //!
 //! - **Public APIs** are stable and will not change in a breaking way within the same major version
-//! - **Breaking changes** will only occur in major version bumps (2.0.0, 3.0.0, etc.)
+//! - **Breaking changes** will only occur in major version bumps (4.0.0, 5.0.0, etc.)
 //! - **Deprecations** will be announced at least one minor version before removal
 //! - **Private APIs** (non-pub items) are not subject to stability guarantees
 //!
 //! All public types, traits, and functions documented in this crate are considered stable.
 
 pub mod builder;
+pub mod cli;
 pub mod error;
+pub mod logic;
 pub mod macros;
 pub mod noun;
 pub mod registry;
 pub mod router;
+pub mod runtime;
 pub mod tree;
 pub mod verb;
+
+// Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
+// They don't need to be re-exported - they're used directly as attributes
+
+// Re-export CLI run function for convenience
+pub use cli::run;
 
 // Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};

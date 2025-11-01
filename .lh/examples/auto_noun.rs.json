@@ -1,0 +1,18 @@
+{
+    "sourceFile": "examples/auto_noun.rs",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762036014671,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762036014671,
+            "name": "Commit-0",
+            "content": "//! Manage services automatically\n//!\n//! This module demonstrates auto-inference of noun name from filename\n//! and noun about from module doc comments.\n\nuse clap_noun_verb::Result;\nuse clap_noun_verb_macros::verb;\nuse serde::Serialize;\n\n#[derive(Serialize, Debug)]\nstruct Status {\n    services: Vec<String>,\n    healthy: bool,\n}\n\nfn get_service_status() -> Status {\n    Status {\n        services: vec![\"api\".to_string(), \"worker\".to_string()],\n        healthy: true,\n    }\n}\n\n/// Show service status\n#[verb] // Noun name \"auto_noun\" auto-inferred from filename, about from module doc\nfn show_status() -> Result<Status> {\n    Ok(get_service_status())\n}\n\nfn main() -> Result<()> {\n    clap_noun_verb::run()\n}\n\n"
+        }
+    ]
+}

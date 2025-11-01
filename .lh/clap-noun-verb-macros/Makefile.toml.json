@@ -1,0 +1,18 @@
+{
+    "sourceFile": "clap-noun-verb-macros/Makefile.toml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762037364875,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762037364875,
+            "name": "Commit-0",
+            "content": "[config]\nskip_core_tasks = false\n\n[tasks.notification]\nscript = '''\necho \"Task failed - check output above\"\n'''\ndescription = \"Error notification task\"\n\n[tasks.verify]\ndescription = \"Verify code quality: format, clippy, and tests\"\ndependencies = [\"format-check\", \"clippy\", \"test\"]\n\n[tasks.format-check]\ncommand = \"cargo\"\nargs = [\"fmt\", \"--\", \"--check\"]\n\n[tasks.clippy]\ncommand = \"cargo\"\nargs = [\"clippy\", \"--\", \"-D\", \"warnings\"]\n\n[tasks.test]\ncommand = \"cargo\"\nargs = [\"test\", \"--quiet\"]\n\n[tasks.format]\ncommand = \"cargo\"\nargs = [\"fmt\"]\n\n[tasks.build]\ncommand = \"cargo\"\nargs = [\"build\"]\n\n[tasks.check]\ncommand = \"cargo\"\nargs = [\"check\"]\n\n[tasks.test-timeout]\ncommand = \"timeout\"\nargs = [\"1s\", \"cargo\", \"test\", \"--quiet\"]\ndescription = \"Run tests with 1s timeout to prevent freezing\"\n\n[tasks.ci]\ndependencies = [\n    \"format-check\",\n    \"clippy\",\n    \"test-timeout\",\n    \"build\",\n    \"check\",\n]\n\n[tasks.pre-release]\ndependencies = [\n    \"format-check\",\n    \"clippy\",\n    \"test\",\n    \"build\",\n    \"check\",\n]\n\n[tasks.release-check]\ndescription = \"Run all checks before release (macros crate)\"\ndependencies = [\n    \"format-check\",\n    \"clippy\",\n    \"test\",\n    \"build\",\n    \"check\",\n]\n\n# Documentation tasks (proc-macro crates don't typically document on docs.rs)\n[tasks.doc]\nscript = '''\necho \"Proc-macro crate - skipping documentation\"\n'''\ndescription = \"Skip documentation for proc-macro crate\"\n"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 [package]
 name = "clap-noun-verb"
-version = "1.0.0"
+version = "3.0.0"
 edition = "2021"
 rust-version = "1.70"
 license = "MIT OR Apache-2.0"
@@ -20,10 +20,19 @@ path = "src/lib.rs"
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
 thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+linkme = "0.3"
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "3.0.0" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
+cargo-make = "0.37"
+
+[workspace.metadata.make]
+# Cargo-make configuration
+verbose = false
 
 [[example]]
 name = "basic"
@@ -49,6 +58,21 @@ path = "examples/framework.rs"
 name = "nested"
 path = "examples/nested.rs"
 
+[[example]]
+name = "attribute_macro"
+path = "examples/attribute_macro.rs"
+
+[[example]]
+name = "validation"
+path = "examples/validation.rs"
+
+[package.metadata.docs.rs]
+# docs.rs build configuration
+# All features are enabled by default for documentation
+# If you add features in the future, list them here:
+# features = ["feature1", "feature2"]
+# rustdoc-args = ["--cfg", "docsrs"]
+
 [lints.rust]
 # Core team best practices - deny unsafe patterns
 unsafe_code = "deny"
@@ -72,7 +96,3 @@ unnecessary_wraps = "warn"
 too_many_arguments = "warn"
 too_many_lines = "warn"
 cognitive_complexity = "warn"
-
-
-
-
