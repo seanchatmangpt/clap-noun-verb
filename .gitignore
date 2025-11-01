@@ -51,3 +51,4 @@ Thumbs.db
 .hive-mind/sessions/
 .hive-mind/*.db-wal
 .hive-mind/*.db-shm
+.lh/
