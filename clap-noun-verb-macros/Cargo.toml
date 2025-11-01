@@ -8,7 +8,7 @@ description = "Procedural macros for clap-noun-verb - attribute macros for zero-
 repository = "https://github.com/seanchatmangpt/clap-noun-verb"
 documentation = "https://docs.rs/clap-noun-verb"
 homepage = "https://github.com/seanchatmangpt/clap-noun-verb"
-keywords = ["cli", "clap", "noun-verb", "command-line", "macro", "proc-macro"]
+keywords = ["cli", "clap", "noun-verb", "command-line", "proc-macro"]
 categories = ["command-line-utilities", "development-tools"]
 
 [lib]
