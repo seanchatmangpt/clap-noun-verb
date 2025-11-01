@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1762023224263,
@@ -12,6 +12,10 @@
                 {
                     "date": 1762037367690,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,11 +8,25 @@\n //! CLI code ONLY validates arguments and options, then delegates to\n //! business logic functions. No business logic is allowed in this layer.\n \n pub mod builder;\n+pub mod registry;\n pub mod router;\n pub mod validator;\n \n pub use builder::CliBuilder;\n+pub use registry::CommandRegistry;\n pub use router::CommandRouter;\n pub use validator::ArgValidator;\n \n+/// Auto-run CLI with all registered commands\n+///\n+/// This function automatically discovers all functions marked with\n+/// `#[noun]` and `#[verb]` attributes and runs the CLI.\n+///\n+/// These attribute macros are provided by the `clap-noun-verb-macros` crate.\n+pub fn run() -> crate::error::Result<()> {\n+    let registry = registry::CommandRegistry::get();\n+    let registry = registry.lock().unwrap();\n+    let args: Vec<String> = std::env::args().collect();\n+    registry.run(args)\n+}\n"
+                },
+                {
+                    "date": 1762037755645,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,8 +25,10 @@\n ///\n /// These attribute macros are provided by the `clap-noun-verb-macros` crate.\n pub fn run() -> crate::error::Result<()> {\n     let registry = registry::CommandRegistry::get();\n-    let registry = registry.lock().unwrap();\n+    let registry = registry.lock().map_err(|e| {\n+        crate::error::NounVerbError::execution_error(format!(\"Failed to lock registry: {}\", e))\n+    })?;\n     let args: Vec<String> = std::env::args().collect();\n     registry.run(args)\n }\n"
                 }
             ],
             "date": 1762023224263,

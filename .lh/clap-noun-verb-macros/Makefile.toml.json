@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1762037364875,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1762037755611,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,37 +40,26 @@\n args = [\"1s\", \"cargo\", \"test\", \"--quiet\"]\n description = \"Run tests with 1s timeout to prevent freezing\"\n \n [tasks.ci]\n-dependencies = [\n-    \"format-check\",\n-    \"clippy\",\n-    \"test-timeout\",\n-    \"build\",\n-    \"check\",\n-]\n+dependencies = [\"format-check\", \"clippy\", \"test-timeout\", \"build\", \"check\"]\n \n [tasks.pre-release]\n-dependencies = [\n-    \"format-check\",\n-    \"clippy\",\n-    \"test\",\n-    \"build\",\n-    \"check\",\n-]\n+dependencies = [\"format-check\", \"clippy\", \"test\", \"build\", \"check\"]\n \n [tasks.release-check]\n description = \"Run all checks before release (macros crate)\"\n-dependencies = [\n-    \"format-check\",\n-    \"clippy\",\n-    \"test\",\n-    \"build\",\n-    \"check\",\n-]\n+dependencies = [\"format-check\", \"clippy\", \"test\", \"build\", \"check\"]\n \n # Documentation tasks (proc-macro crates don't typically document on docs.rs)\n [tasks.doc]\n script = '''\n echo \"Proc-macro crate - skipping documentation\"\n '''\n description = \"Skip documentation for proc-macro crate\"\n+\n+# Publishing tasks (handled by main crate)\n+[tasks.publish-all]\n+script = '''\n+echo \"Publishing is handled by the main crate (clap-noun-verb)\"\n+'''\n+description = \"Skip publish-all for macros crate (handled by main crate)\"\n"
                 }
             ],
             "date": 1762037364875,
