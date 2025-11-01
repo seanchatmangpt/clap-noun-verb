@@ -1,0 +1,17 @@
+# rustfmt configuration
+# https://rust-lang.github.io/rustfmt/
+
+# Edition
+edition = "2021"
+
+# Formatting options (stable features only)
+max_width = 100
+tab_spaces = 4
+use_small_heuristics = "Max"
+use_field_init_shorthand = true
+
+# Imports (stable features only)
+reorder_imports = true
+
+# Other stable features
+use_try_shorthand = true

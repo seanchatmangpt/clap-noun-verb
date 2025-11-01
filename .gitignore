@@ -1,0 +1,53 @@
+# Rust build artifacts
+/target/
+**/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+/target/doc/
+
+# Test artifacts
+*.profraw
+coverage/
+*.gcda
+*.gcno
+
+# Temporary files
+*.tmp
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.backup
+*.bak
+
+# Benchmark results
+/benches/target/
+
+# Hive Mind session artifacts (if any)
+.hive-mind/sessions/
+.hive-mind/*.db-wal
+.hive-mind/*.db-shm

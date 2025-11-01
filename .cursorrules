@@ -1,0 +1,441 @@
+# Core Team Best Practices for clap-noun-verb
+
+## 🎯 Project Overview
+
+**clap-noun-verb** is a framework for building composable CLI patterns on top of clap. This library focuses on:
+- **Composable Command Structure**: Easy composition of nouns and verbs
+- **Type-Safe APIs**: Compile-time verification of command structure
+- **Zero-Cost Abstractions**: Thin wrapper over clap with no runtime overhead
+- **Framework Philosophy**: Provide tools for composition, not pre-built patterns
+
+## 🎯 Error Handling Best Practices
+
+### ❌ NEVER use unwrap() or expect() in production code
+```rust
+// ❌ Bad: Using unwrap() - can cause panics
+let result = some_operation().unwrap();
+
+// ❌ Bad: Using expect() - can cause panics  
+let result = some_operation().expect("This should not fail");
+
+// ✅ Good: Proper error handling
+let result = some_operation()?;
+
+// ✅ Good: Proper error handling with context
+let result = some_operation().map_err(|e| {
+    NounVerbError::argument_error(format!("Operation failed: {}", e))
+})?;
+```
+
+### ✅ Use structured error types with context
+```rust
+// ✅ Good: Using NounVerbError with context
+fn my_function() -> Result<MyType> {
+    some_operation().map_err(|e| {
+        NounVerbError::execution_error(format!("Command execution failed: {}", e))
+    })?;
+}
+```
+
+## 🔄 Async/Sync Best Practices
+
+### ❌ NEVER make trait methods async - breaks dyn compatibility
+```rust
+// ❌ Bad: Async trait methods break dyn compatibility
+pub trait VerbCommand: Send + Sync {
+    async fn run(&self, args: &VerbArgs) -> Result<()>; // BREAKS dyn VerbCommand!
+}
+
+// ✅ Good: Keep trait methods sync, use sync operations
+pub trait VerbCommand: Send + Sync {
+    fn run(&self, args: &VerbArgs) -> Result<()>; // dyn compatible
+    fn name(&self) -> &'static str;
+    fn about(&self) -> &'static str;
+}
+```
+
+### ✅ Use sync for CLI framework operations
+```rust
+// ✅ Good: Sync for CLI parsing and routing
+pub fn route_command(matches: &ArgMatches) -> Result<()> {
+    // CLI operations are synchronous
+    Ok(())
+}
+
+// ✅ Good: Sync for argument extraction
+pub fn extract_argument<T: Clone>(matches: &ArgMatches, name: &str) -> Option<T> {
+    matches.get_one::<T>(name).cloned()
+}
+```
+
+## 🧪 Testing Best Practices
+
+### 🎯 Core Testing Philosophy
+**Test behaviors, not implementation details. The best test suite is the smallest one that still catches all bugs.**
+
+Focus on testing what the code does (behavior) rather than how it does it (implementation).
+
+```rust
+// ❌ Bad: Testing implementation details
+#[test]
+fn test_registry_uses_hashmap() {
+    let registry = CommandRegistry::new();
+    assert_eq!(registry.nouns.len(), 0); // Implementation detail!
+}
+
+// ✅ Good: Testing behavior
+#[test]
+fn test_registry_builds_valid_command() -> Result<()> {
+    let registry = CommandRegistry::new()
+        .name("test")
+        .register_noun(noun!("services", "Manage services", [
+            verb!("status", "Show status", |_args| Ok(()))
+        ]));
+    
+    let command = registry.build_command();
+    assert!(command.get_subcommands().any(|cmd| cmd.get_name() == "services"));
+    Ok(())
+}
+```
+
+### ✅ Follow AAA pattern (Arrange, Act, Assert)
+```rust
+// ✅ Good: Clear AAA structure
+#[test]
+fn test_verb_executes_with_valid_args() -> Result<()> {
+    // Arrange - Set up test data
+    let verb = verb!("test", "Test command", |args: &VerbArgs| {
+        let value = args.get_one_str("value")?;
+        assert_eq!(value, "test");
+        Ok(())
+    }, args: [
+        Arg::new("value").required(true)
+    ]);
+    
+    // Act - Execute the code under test
+    let matches = Command::new("test")
+        .arg(Arg::new("value").required(true))
+        .get_matches_from(vec!["test", "test"]);
+    let verb_args = VerbArgs::new(matches);
+    
+    // Assert - Verify the results
+    verb.run(&verb_args)?;
+    Ok(())
+}
+```
+
+### ✅ Use descriptive test names
+```rust
+// ✅ Good: Descriptive test names
+#[test]
+fn test_verb_command_executes_successfully_with_required_args() -> Result<()> {}
+
+#[test]
+fn test_registry_validation_catches_duplicate_noun_names() -> Result<()> {}
+
+// ❌ Bad: Vague test names
+#[test]
+fn test_verb() {}
+```
+
+## 📦 Module Organization Best Practices
+
+### ✅ Use proper module structure
+```rust
+// ✅ Good: Clear module organization
+pub mod builder {
+    // CLI builder implementation
+}
+
+pub mod registry {
+    // Command registry implementation
+}
+
+pub mod error {
+    // Error types
+}
+```
+
+### ✅ Use proper imports and avoid wildcard imports in production code
+```rust
+// ✅ Good: Specific imports
+use crate::error::{NounVerbError, Result};
+use crate::builder::CliBuilder;
+use crate::registry::CommandRegistry;
+
+// ❌ Bad: Wildcard imports in production code
+use crate::*;
+```
+
+## 🏗️ Architecture Guidelines
+
+### ✅ Trait Design
+- Keep traits `dyn` compatible (no async trait methods)
+- Use static string lifetimes (`&'static str`) for trait methods
+- Provide sensible defaults where possible
+- Document trait contracts clearly
+
+```rust
+// ✅ Good: Dyn-compatible trait design
+pub trait VerbCommand: Send + Sync {
+    fn name(&self) -> &'static str;
+    fn about(&self) -> &'static str;
+    fn run(&self, args: &VerbArgs) -> Result<()>;
+    fn build_command(&self) -> Command {
+        Command::new(self.name()).about(self.about())
+    }
+}
+```
+
+### ✅ Builder Pattern
+- Use method chaining for ergonomic APIs
+- Provide sensible defaults
+- Allow configuration at any point in the chain
+- Make the API intuitive and discoverable
+
+```rust
+// ✅ Good: Ergonomic builder API
+let cli = Cli::new()
+    .name("myapp")
+    .about("My application")
+    .global_args(vec![/* ... */])
+    .noun(noun!("services", "Manage services", [/* ... */]))
+    .auto_validate(true);
+```
+
+### ✅ Macro Design
+- Keep macros simple and focused
+- Provide clear error messages for macro misuse
+- Use proper hygiene to avoid name conflicts
+- Document macro syntax and behavior
+
+## 🚫 Code Quality Anti-Patterns
+
+### ❌ Avoid printing/logging in production code
+```rust
+// ❌ Bad: Printing in production code
+fn process_command(args: &VerbArgs) -> Result<()> {
+    println!("Processing command..."); // Don't do this!
+    Ok(())
+}
+
+// ✅ Good: Use proper error handling - no logging needed for CLI framework
+fn process_command(args: &VerbArgs) -> Result<()> {
+    // Framework logic - errors are returned via Result
+    Ok(())
+}
+```
+
+### ❌ NEVER use unwrap() or expect() anywhere in production code
+```rust
+// ❌ Bad: Even in helper functions
+fn get_argument<T>(matches: &ArgMatches, name: &str) -> T {
+    matches.get_one::<T>(name).unwrap() // Don't do this!
+}
+
+// ✅ Good: Proper error handling
+fn get_argument<T: Clone>(matches: &ArgMatches, name: &str) -> Result<T> {
+    matches.get_one::<T>(name)
+        .cloned()
+        .ok_or_else(|| NounVerbError::missing_argument(name))
+}
+```
+
+## 🎯 API Design Principles
+
+### ✅ Framework Philosophy
+**clap-noun-verb** is designed as a **framework** rather than a library of specific compositions:
+
+1. **Composable by Design** - Users compose their own CLI patterns
+2. **Multiple Composition Methods** - Choose the approach that fits your needs
+3. **Extensible Architecture** - Easy to extend and customize for specific use cases
+4. **Framework-Level APIs** - APIs that make it easy to build CLI frameworks
+
+### ✅ Type Safety
+- Use compile-time verification where possible
+- Leverage Rust's type system for safety
+- Provide helpful error messages when validation fails
+
+```rust
+// ✅ Good: Compile-time type safety
+pub fn get_one<T: Clone>(&self, name: &str) -> Result<T> {
+    self.matches.get_one::<T>(name)
+        .cloned()
+        .ok_or_else(|| NounVerbError::missing_argument(name))
+}
+```
+
+### ✅ Zero-Cost Abstractions
+- Thin wrapper over clap
+- No runtime overhead
+- Maintain clap's performance characteristics
+
+## 🚫 Breaking Changes and Compatibility
+
+### ❌ NEVER make breaking changes without migration plan
+```rust
+// ❌ Bad: Changing trait signatures breaks all implementations
+pub trait VerbCommand: Send + Sync {
+    fn run(&self, args: &VerbArgs) -> Result<()>; // Original
+    // Later changed to:
+    fn run(&self, args: &VerbArgs, context: &Context) -> Result<()>; // BREAKS ALL IMPLEMENTATIONS!
+}
+
+// ✅ Good: Add new methods, deprecate old ones
+pub trait VerbCommand: Send + Sync {
+    fn run(&self, args: &VerbArgs) -> Result<()>; // Keep for compatibility
+    
+    #[deprecated(note = "Use run_with_context instead")]
+    fn run_with_context(&self, args: &VerbArgs, context: &Context) -> Result<()> {
+        self.run(args) // Default implementation
+    }
+}
+```
+
+### ✅ Always maintain backward compatibility
+- Add new methods instead of changing existing ones
+- Use deprecation warnings for old methods
+- Provide migration guides for breaking changes
+- Test all existing implementations still work
+
+## 🎯 Core Team Standards Summary
+
+1. **Error Handling**: Never use `.unwrap()` or `.expect()` in production code. Always use proper `Result<T, E>` types with meaningful error messages.
+
+2. **Trait Design**: Keep traits `dyn` compatible. Use sync methods in traits. No async trait methods.
+
+3. **Breaking Changes**: Never make breaking changes without migration plan. Maintain backward compatibility.
+
+4. **Testing**: Follow AAA pattern, use descriptive names, proper test functions, and test behaviors not implementation.
+
+5. **Code Quality**: Proper module organization, avoid wildcard imports, use structured error types, no false positives.
+
+6. **API Design**: Framework philosophy - composable, extensible, type-safe, zero-cost abstractions.
+
+7. **Performance**: Thin wrapper over clap, maintain clap's performance characteristics.
+
+8. **Documentation**: Comprehensive documentation with examples for all public APIs.
+
+## ✅ Definition of Done - Core Team Standards
+
+### Before any code is considered complete, ALL of these must be true:
+
+1. **✅ Compilation**: Code compiles without errors or warnings
+2. **✅ No unwrap()/expect()**: Zero usage of unwrap() or expect() in production code
+3. **✅ Trait Compatibility**: All traits remain `dyn` compatible (no async trait methods)
+4. **✅ Backward Compatibility**: No breaking changes without migration plan
+5. **✅ All Tests Pass**: Every test in the codebase passes
+6. **✅ No Linting Errors**: Zero linting errors or warnings
+7. **✅ Proper Error Handling**: All functions use Result types with meaningful errors
+8. **✅ API Design**: Follows framework philosophy - composable and extensible
+9. **✅ Documentation**: All public APIs have documentation with examples
+
+### Validation Checklist:
+- [ ] `cargo test` passes completely
+- [ ] `cargo clippy` shows no warnings
+- [ ] No `unwrap()` or `expect()` in production code
+- [ ] All traits are `dyn` compatible
+- [ ] No breaking changes to public APIs
+- [ ] All error paths use proper Result types
+- [ ] All public APIs have documentation with examples
+
+### If ANY of these fail, the code is NOT ready for production.
+
+## 🤖 AI Code Generation Guidelines
+
+### ✅ Generate production-ready code for clap-noun-verb
+```rust
+// ✅ Good: Real implementations with proper error handling
+pub fn register_noun(&mut self, noun: Box<dyn NounCommand>) -> Result<()> {
+    let name = noun.name();
+    if self.nouns.contains_key(name) {
+        return Err(NounVerbError::invalid_structure(
+            format!("Duplicate noun name: {}", name)
+        ));
+    }
+    self.nouns.insert(name.to_string(), noun);
+    Ok(())
+}
+
+// ✅ Good: Proper argument extraction
+pub fn get_one_str(&self, name: &str) -> Result<String> {
+    self.matches.get_one::<String>(name)
+        .cloned()
+        .ok_or_else(|| NounVerbError::missing_argument(name))
+}
+```
+
+### ✅ Code Generation Checklist
+Before generating any code file, ensure:
+- [ ] No `unimplemented!()`, `todo!()`, or `panic!()` macros in production code
+- [ ] No `.unwrap()` or `.expect()` - use proper error handling
+- [ ] All functions return `Result<T>` types
+- [ ] All traits are `dyn` compatible
+- [ ] Code compiles without warnings
+- [ ] Passes `cargo clippy` checks
+- [ ] All public APIs have documentation with examples
+- [ ] Follows framework philosophy (composable, extensible)
+
+## 📚 Documentation Standards
+
+### ✅ Public API Documentation
+All public types, traits, and functions must have comprehensive documentation:
+
+```rust
+/// A builder for creating composable CLI applications.
+///
+/// This builder allows you to construct CLI applications using the
+/// noun-verb pattern, where commands follow the structure `noun verb`
+/// (e.g., `services status`, `collector up`).
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use clap_noun_verb::{Cli, noun, verb, VerbArgs, Result};
+///
+/// fn main() -> Result<()> {
+///     let cli = Cli::new()
+///         .name("myapp")
+///         .noun(noun!("services", "Manage services", [
+///             verb!("status", "Show status", |_args: &VerbArgs| Ok(())),
+///         ]));
+///     cli.run()
+/// }
+/// ```
+pub struct CliBuilder {
+    // ...
+}
+```
+
+### ✅ Trait Documentation
+Traits should document their contracts and provide usage examples:
+
+```rust
+/// A command that represents a noun (group of verbs).
+///
+/// Nouns are the first level of the noun-verb pattern (e.g., `services`,
+/// `collector`). Each noun contains one or more verbs that can be executed.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use clap_noun_verb::{NounCommand, VerbCommand, VerbArgs, Result};
+///
+/// struct MyNoun;
+///
+/// impl NounCommand for MyNoun {
+///     fn name(&self) -> &'static str { "mynoun" }
+///     fn about(&self) -> &'static str { "My noun command" }
+///     fn verbs(&self) -> Vec<Box<dyn VerbCommand>> { vec![] }
+/// }
+/// ```
+pub trait NounCommand: Send + Sync {
+    // ...
+}
+```
+
+These rules ensure FAANG-level code quality, reliability, and maintainability while following the framework's composable design philosophy.
+
+
+
+

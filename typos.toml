@@ -1,0 +1,24 @@
+# typos: Source Code Spell Checker
+# https://github.com/crate-ci/typos
+
+[default]
+extended = true
+
+[files]
+extend-exclude = [
+  "Cargo.lock",
+  "target",
+  ".git",
+]
+
+[default.extend-words]
+clap = "clap"
+noun = "noun"
+verb = "verb"
+clippy = "clippy"
+toml = "toml"
+rustfmt = "rustfmt"
+github = "github"
+crates = "crates"
+cargo = "cargo"
+
