@@ -7,6 +7,11 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, parse_macro_input, ItemFn};
 
+// Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
+// because Rust doesn't allow proc_macro_attribute on parameters - only on items.
+// The #[verb] macro parses #[arg(...)] attributes directly from pat_type.attrs.
+// Users should use #[allow(unknown_attributes)] if they get compiler warnings.
+
 /// Attribute macro for registering a noun command
 ///
 /// Usage:
@@ -421,6 +426,8 @@ fn generate_verb_registration(
             let is_option = is_option_type(&pat_type.ty);
             let inner_type = extract_inner_type(&pat_type.ty);
             let is_flag = is_bool_type(&pat_type.ty);
+            let is_vec = is_vec_type(&pat_type.ty);
+            let vec_inner_type = if is_vec { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
 
             if is_flag {
                 // Boolean flags
@@ -428,6 +435,23 @@ fn generate_verb_registration(
                     let #arg_name = input.opts.get(#arg_name_str)
                         .map(|v| v.parse::<bool>().unwrap_or(false))
                         .unwrap_or(false);
+                });
+                arg_calls.push(quote! { #arg_name });
+            } else if is_vec {
+                // Vec<T> types - extract from input.args as comma-separated string, then parse
+                // The registry extracts multiple values and joins them
+                arg_extractions.push(quote! {
+                    let #arg_name: #pat_type.ty = if let Some(value_str) = input.args.get(#arg_name_str) {
+                        // Parse comma-separated values
+                        value_str.split(',')
+                            .map(|s| s.trim().parse::<#vec_inner_type>())
+                            .collect::<Result<Vec<_>, _>>()
+                            .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
+                                format!("Invalid value for argument '{}'", #arg_name_str)
+                            ))?
+                    } else {
+                        Vec::new()
+                    };
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_option {
@@ -489,6 +513,13 @@ fn generate_verb_registration(
                 }
             }
 
+            // Parse argument attributes (e.g., #[arg(short = 'v', default_value = "50")])
+            let arg_config = parse_arg_attributes(&pat_type.attrs);
+
+            // Auto-detect multiple values from Vec<T> type
+            let is_vec_type = is_vec_type(&inner_ty);
+            let multiple_values = arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
+
             let min_value_token = if let Some(min) = min_val {
                 quote! { Some(#min.to_string()) }
             } else {
@@ -521,6 +552,58 @@ fn generate_verb_registration(
                 quote! { None }
             };
 
+            // Generate tokens for argument attributes
+            let short_token = if let Some(config) = &arg_config {
+                if let Some(s) = config.short {
+                    quote! { Some(#s) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let default_value_token = if let Some(config) = &arg_config {
+                if let Some(ref dv) = config.default_value {
+                    quote! { Some(#dv.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let env_token = if let Some(config) = &arg_config {
+                if let Some(ref e) = config.env {
+                    quote! { Some(#e.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let value_name_token = if let Some(config) = &arg_config {
+                if let Some(ref vn) = config.value_name {
+                    quote! { Some(#vn.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let aliases_token = if let Some(config) = &arg_config {
+                if !config.aliases.is_empty() {
+                    let aliases_vec = &config.aliases;
+                    quote! { vec![#(#aliases_vec.to_string()),*] }
+                } else {
+                    quote! { vec![] }
+                }
+            } else {
+                quote! { vec![] }
+            };
+
             arg_metadata.push(quote! {
                 ::clap_noun_verb::cli::registry::ArgMetadata {
                     name: #arg_name.to_string(),
@@ -531,6 +614,12 @@ fn generate_verb_registration(
                     max_value: #max_value_token,
                     min_length: #min_length_token,
                     max_length: #max_length_token,
+                    short: #short_token,
+                    default_value: #default_value_token,
+                    env: #env_token,
+                    multiple: #multiple_values,
+                    value_name: #value_name_token,
+                    aliases: #aliases_token,
                 }
             });
         }
@@ -540,12 +629,18 @@ fn generate_verb_registration(
     let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
     let about_str = about.as_deref().unwrap_or("");
 
-    // Remove #[noun] attribute from output if it was detected (to avoid it being processed again)
+    // Remove #[noun] attribute from output (it's been processed)
+    // Keep #[arg] attributes - they're handled by the #[arg] proc macro (pass-through)
+    // The #[verb] macro parses them from pat_type.attrs before output
     let mut output_fn = input_fn.clone();
     output_fn.attrs.retain(|attr| {
-        !attr.path().is_ident("noun")
-            && attr.path().segments.last().map(|seg| seg.ident != "noun").unwrap_or(true)
+        let is_noun = attr.path().is_ident("noun")
+            || attr.path().segments.last().map(|seg| seg.ident == "noun").unwrap_or(false);
+        !is_noun
     });
+
+    // Keep #[arg] attributes on parameters - the #[arg] proc macro will handle them
+    // and the #[verb] macro has already parsed them for metadata generation
 
     let expanded = quote! {
         #output_fn
@@ -650,12 +745,155 @@ fn is_bool_type(ty: &syn::Type) -> bool {
     }
 }
 
+/// Check if type is Vec<T>
+fn is_vec_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            segment.ident == "Vec"
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
 /// Validation constraints parsed from attributes
 struct ValidationConstraints {
     min_value: Option<String>,
     max_value: Option<String>,
     min_length: Option<usize>,
     max_length: Option<usize>,
+}
+
+/// Argument configuration parsed from #[arg(...)] attributes
+struct ArgConfig {
+    short: Option<char>,
+    default_value: Option<String>,
+    env: Option<String>,
+    multiple: bool,
+    value_name: Option<String>,
+    aliases: Vec<String>,
+}
+
+/// Parse argument attributes from parameter attributes
+///
+/// Parses `#[arg(short = 'v', default_value = "50", env = "PORT", multiple, value_name = "FILE")]` attributes
+fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
+    for attr in attrs {
+        if attr.path().is_ident("arg") {
+            if let syn::Meta::List(list) = &attr.meta {
+                // Parse tokens manually to handle both flags (just names) and key-value pairs
+                let mut config = ArgConfig {
+                    short: None,
+                    default_value: None,
+                    env: None,
+                    multiple: false,
+                    value_name: None,
+                    aliases: Vec::new(),
+                };
+
+                // Try parsing as MetaList first (handles key=value pairs)
+                let parser =
+                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated;
+                if let Ok(meta_list) = parser.parse2(list.tokens.clone()) {
+                    for meta in meta_list {
+                        match &meta {
+                            syn::Meta::NameValue(nv) => {
+                                let ident = nv.path.get_ident()?.to_string();
+                                match ident.as_str() {
+                                    "short" => {
+                                        // Parse short = 'v' or short = "v"
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Char(c),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.short = Some(c.value());
+                                        } else if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            let s_val = s.value();
+                                            if s_val.len() == 1 {
+                                                config.short = s_val.chars().next();
+                                            }
+                                        }
+                                    }
+                                    "default_value" => {
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.default_value = Some(s.value());
+                                        }
+                                    }
+                                    "env" => {
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.env = Some(s.value());
+                                        }
+                                    }
+                                    "value_name" => {
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.value_name = Some(s.value());
+                                        }
+                                    }
+                                    "aliases" => {
+                                        // Parse aliases = ["verbose", "v"]
+                                        if let syn::Expr::Array(arr) = &nv.value {
+                                            for expr in &arr.elems {
+                                                if let syn::Expr::Lit(syn::ExprLit {
+                                                    lit: syn::Lit::Str(s),
+                                                    ..
+                                                }) = expr
+                                                {
+                                                    config.aliases.push(s.value());
+                                                }
+                                            }
+                                        }
+                                    }
+                                    "alias" => {
+                                        // Parse alias = "verbose" (single alias)
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.aliases.push(s.value());
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            syn::Meta::Path(path) => {
+                                // Handle flag attributes like `multiple`
+                                if let Some(ident) = path.get_ident() {
+                                    match ident.to_string().as_str() {
+                                        "multiple" => config.multiple = true,
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    return Some(config);
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Parse validation attributes from parameter attributes
@@ -756,11 +994,11 @@ fn get_type_validation(
     }
 }
 
-/// Extract inner type from Option<T> or return original
+/// Extract inner type from Option<T>, Vec<T>, or return original
 fn extract_inner_type(ty: &syn::Type) -> syn::Type {
     if let syn::Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {
-            if segment.ident == "Option" {
+            if segment.ident == "Option" || segment.ident == "Vec" {
                 if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
                     if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
                         return inner_ty.clone();

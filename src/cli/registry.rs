@@ -85,6 +85,18 @@ pub struct ArgMetadata {
     pub max_value: Option<String>,
     pub min_length: Option<usize>,
     pub max_length: Option<usize>,
+    /// Short flag character (e.g., 'v' for -v)
+    pub short: Option<char>,
+    /// Default value as string (will be parsed by clap)
+    pub default_value: Option<String>,
+    /// Environment variable name
+    pub env: Option<String>,
+    /// Whether this argument accepts multiple values
+    pub multiple: bool,
+    /// Custom value name for help text (e.g., "FILE", "PORT")
+    pub value_name: Option<String>,
+    /// Aliases for the argument (e.g., ["verbose", "v"])
+    pub aliases: Vec<String>,
 }
 
 /// Metadata for a registered verb
@@ -241,14 +253,50 @@ impl CommandRegistry {
                     for arg_meta in &verb_meta.args {
                         let arg_name: &'static str =
                             Box::leak(arg_meta.name.clone().into_boxed_str());
-                        let value_name: &'static str =
+                        let default_value_name: &'static str =
                             Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
                         let mut arg = clap::Arg::new(arg_name).long(arg_name);
+
+                        // Apply short flag if specified
+                        if let Some(short_char) = arg_meta.short {
+                            arg = arg.short(short_char);
+                        }
+
+                        // Apply aliases if specified
+                        for alias in &arg_meta.aliases {
+                            let alias_static: &'static str = Box::leak(alias.clone().into_boxed_str());
+                            arg = arg.alias(alias_static);
+                        }
+
+                        // Apply environment variable if specified
+                        if let Some(ref env_var) = arg_meta.env {
+                            let env_static: &'static str = Box::leak(env_var.clone().into_boxed_str());
+                            arg = arg.env(env_static);
+                        }
+
+                        // Apply default value if specified
+                        if let Some(ref default_val) = arg_meta.default_value {
+                            let default_static: &'static str =
+                                Box::leak(default_val.clone().into_boxed_str());
+                            arg = arg.default_value(default_static);
+                        }
 
                         if arg_meta.is_flag {
                             arg = arg.action(clap::ArgAction::SetTrue);
                         } else {
+                            // Apply value_name (custom if specified, otherwise default)
+                            let value_name: &'static str = if let Some(ref vn) = arg_meta.value_name {
+                                Box::leak(vn.clone().into_boxed_str())
+                            } else {
+                                default_value_name
+                            };
                             arg = arg.value_name(value_name);
+
+                            // Apply multiple values if specified or detected from Vec<T>
+                            if arg_meta.multiple {
+                                arg = arg.action(clap::ArgAction::Append);
+                            }
+
                             if arg_meta.required {
                                 arg = arg.required(true);
                             }
