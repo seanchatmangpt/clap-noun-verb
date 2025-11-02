@@ -15,28 +15,27 @@ ggen ai graph -d "User management ontology" -o users.ttl
 ggen ai sparql -d "Find all active users" -g schema.ttl
 ```
 
-### Marketplace Commands
+### Marketplace Commands (v2.0: market → marketplace)
 
 ```bash
-ggen search "rust web"
-ggen add io.ggen.rust.axum
-ggen list
-ggen update
+ggen marketplace search "rust web"    # v2.0: market → marketplace
+ggen marketplace add io.ggen.rust.axum
+ggen marketplace list
+ggen marketplace update
 ```
 
-### Template Generation Commands
+### Template Generation Commands (v2.0: gen → template generate)
 
 ```bash
-ggen gen example.tmpl --vars name=my_module
+ggen template generate --template example.tmpl --rdf domain.ttl  # v2.0: gen → template generate, --vars → --rdf
 ```
 
-### Utility Commands
+### Utility Commands (v2.0: root-level → utils noun)
 
-There may be additional commands like:
-- `ggen --help`
-- `ggen --version`
-- `ggen doctor` (diagnostics)
-- `ggen help-me` (tips)
+```bash
+ggen utils doctor      # v2.0: doctor → utils doctor
+ggen utils help-me     # v2.0: help-me → utils help-me
+```
 
 ## Identifying nouns
 
@@ -98,11 +97,11 @@ Or keep them as root-level if that makes more sense.
 | `list` | List installed packages | None |
 | `update` | Update packages | None |
 
-### Template Verbs (if applicable)
+### Template Verbs (v2.0)
 
 | Verb | Description | Arguments |
 |------|-------------|-----------|
-| `generate` | Generate from template | `template`, `--vars` |
+| `generate` | Generate from template | `--template`, `--rdf` (v2.0: `--vars` → `--rdf`) |
 | `validate` | Validate template | `template` |
 | `list` | List templates | None |
 
@@ -121,10 +120,16 @@ ggen (root)
 │   ├── generate (subcommand)
 │   ├── graph (subcommand)
 │   └── sparql (subcommand)
-├── search (subcommand)
-├── add (subcommand)
-├── list (subcommand)
-└── update (subcommand)
+├── marketplace (subcommand)  # v2.0: market → marketplace
+│   ├── search (subcommand)
+│   ├── add (subcommand)
+│   ├── list (subcommand)
+│   └── update (subcommand)
+├── utils (subcommand)        # v2.0: root-level → utils noun
+│   ├── doctor (subcommand)
+│   └── help-me (subcommand)
+└── template (subcommand)     # v2.0: gen → template generate
+    └── generate (subcommand)
 ```
 
 ### Target Structure (clap-noun-verb)
@@ -153,9 +158,9 @@ ggen (root)
 
    **Recommendation**: Group under `marketplace` for consistency and scalability. If users prefer root-level, we can alias them.
 
-2. **Template vs Generation**: Is there a distinction between AI generation (`ai generate`) and template generation (`gen`), or should they be unified?
+2. **Template vs Generation**: Is there a distinction between AI generation (`ai generate`) and template generation (`template generate`), or should they be unified?
 
-   **Recommendation**: Keep separate - `ai generate` uses LLMs, while `gen` uses existing templates.
+   **Recommendation**: Keep separate - `ai generate` uses LLMs, while `template generate` uses existing templates with RDF data.
 
 3. **Global arguments**: What global arguments does ggen support?
    - `--verbose` / `-v` (verbosity)
@@ -164,61 +169,139 @@ ggen (root)
 
 ## Mapping commands to noun-verb structure
 
-Here's the complete mapping:
+Here's the complete mapping using v3.0.0 attribute macro API:
 
 ### AI Commands
 
 ```rust,no_run
-noun!("ai", "AI-powered generation", [
-    verb!("project", "Generate complete projects", handler, args: [
-        Arg::new("name").required(true),
-        Arg::new("rust").long("rust"),
-        // ... project description, etc.
-    ]),
-    verb!("generate", "Generate templates from descriptions", handler, args: [
-        Arg::new("description").short('d').long("description").required(true),
-        Arg::new("output").short('o').long("output"),
-    ]),
-    verb!("graph", "Generate RDF ontologies", handler, args: [
-        Arg::new("description").short('d').long("description").required(true),
-        Arg::new("output").short('o').long("output"),
-    ]),
-    verb!("sparql", "Generate SPARQL queries", handler, args: [
-        Arg::new("description").short('d').long("description").required(true),
-        Arg::new("graph").short('g').long("graph").required(true),
-        Arg::new("output").short('o').long("output"),
-    ]),
-])
+// ai.rs
+//! AI-powered generation
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct ProjectOutput {
+    name: String,
+    rust: bool,
+}
+
+// Business Logic Layer
+fn create_project(name: String, rust: bool) -> ProjectOutput {
+    ProjectOutput { name, rust }
+}
+
+// CLI Layer
+#[verb] // Verb "project" auto-inferred, noun "ai" auto-inferred from filename
+fn ai_project(name: String, rust: bool) -> Result<ProjectOutput> {
+    // Arguments automatically inferred: --name (required), --rust (flag)
+    Ok(create_project(name, rust))
+}
+
+#[verb] // Verb "generate" auto-inferred, noun "ai" auto-inferred
+fn ai_generate(description: String, output: Option<String>) -> Result<String> {
+    // --description (required), --output (optional)
+    Ok(format!("Generated: {}", description))
+}
+
+#[verb] // Verb "graph" auto-inferred, noun "ai" auto-inferred
+fn ai_graph(description: String, output: Option<String>) -> Result<String> {
+    // --description (required), --output (optional)
+    Ok(format!("RDF graph generated: {}", description))
+}
+
+#[verb] // Verb "sparql" auto-inferred, noun "ai" auto-inferred
+fn ai_sparql(description: String, graph: String, output: Option<String>) -> Result<String> {
+    // --description (required), --graph (required), --output (optional)
+    Ok(format!("SPARQL query generated: {} for graph: {}", description, graph))
+}
 ```
 
 ### Marketplace Commands
 
 ```rust,no_run
-noun!("marketplace", "Template marketplace", [
-    verb!("search", "Find packages", handler, args: [
-        Arg::new("query").required(true),
-    ]),
-    verb!("add", "Install package", handler, args: [
-        Arg::new("package").required(true),
-    ]),
-    verb!("list", "List installed packages", handler),
-    verb!("update", "Update packages", handler),
-])
+// marketplace.rs
+//! Template marketplace
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct SearchResult {
+    packages: Vec<String>,
+}
+
+// Business Logic Layer
+fn search_packages(query: String) -> SearchResult {
+    SearchResult { packages: vec!["package1".to_string(), "package2".to_string()] }
+}
+
+// CLI Layer
+#[verb] // Verb "search" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_search(query: String) -> Result<SearchResult> {
+    Ok(search_packages(query))
+}
+
+#[verb] // Verb "add" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_add(package: String) -> Result<String> {
+    Ok(format!("Added: {}", package))
+}
+
+#[verb] // Verb "list" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_list() -> Result<Vec<String>> {
+    Ok(vec!["package1".to_string(), "package2".to_string()])
+}
+
+#[verb] // Verb "update" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_update() -> Result<String> {
+    Ok("Packages updated".to_string())
+}
 ```
 
-### Template Commands (if applicable)
+### Template Commands (v2.0: Pure RDF-Driven)
 
 ```rust,no_run
-noun!("template", "Template operations", [
-    verb!("generate", "Generate from template", handler, args: [
-        Arg::new("template").required(true),
-        Arg::new("vars").long("vars").num_args(1..),
-    ]),
-    verb!("validate", "Validate template", handler, args: [
-        Arg::new("template").required(true),
-    ]),
-    verb!("list", "List templates", handler),
-])
+// template.rs
+//! Template operations (v2.0: Pure RDF-driven)
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+// Business Logic Layer (Async - Reusable)
+async fn generate_from_template_async(template: String, rdf: String) -> Result<TemplateOutput> {
+    // v2.0: All data comes from RDF, no --vars
+    // Load RDF, execute SPARQL queries, generate from template
+    Ok(TemplateOutput {
+        template,
+        rdf,
+        files_generated: vec![],
+    })
+}
+
+// CLI Layer (Sync Wrapper - Delegates to Async Business Logic)
+#[verb("generate", "template")] // Verb "generate", noun "template"
+fn template_generate(template: String, rdf: String) -> Result<TemplateOutput> {
+    // v2.0: --template and --rdf required (no --vars)
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    rt.block_on(async {
+        crate::domain::template::generate_from_template(template, rdf).await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
+}
+
+#[derive(Serialize)]
+struct TemplateOutput {
+    template: String,
+    rdf: String,
+    files_generated: Vec<String>,
+}
 ```
 
 ## Command grouping strategy

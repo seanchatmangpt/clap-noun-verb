@@ -62,10 +62,10 @@ fn handle_ai_project(name: String, description: Option<String>, rust: bool) {
 }
 ```
 
-#### After (clap-noun-verb v3.0.0)
+#### After (clap-noun-verb v3.0.0 with async/sync pattern)
 
 ```rust,no_run
-// ai.rs
+// commands/ai.rs - CLI Layer (Sync Wrappers)
 //! AI-powered generation
 
 use clap_noun_verb_macros::verb;
@@ -79,30 +79,42 @@ struct ProjectOutput {
     rust: bool,
 }
 
-#[verb] // Verb "project" auto-inferred, noun "ai" auto-inferred from filename
+// CLI Layer (Sync Wrapper - Delegates to Async Business Logic)
+#[verb("project", "ai")] // Verb "project", noun "ai"
 fn ai_project(name: String, description: Option<String>, rust: bool) -> Result<ProjectOutput> {
-    // Arguments automatically inferred from function signature
-    handle_ai_project(name.clone(), description.clone(), rust)?;
-    Ok(ProjectOutput { name, description, rust })
+    // Create runtime for async operations
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    // Block on async business logic
+    rt.block_on(async {
+        crate::domain::ai::generate_project(name, description, rust).await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
 }
 
-fn handle_ai_project(name: String, description: Option<String>, rust: bool) -> Result<()> {
-    use std::fs;
-    use std::path::PathBuf;
-    
-    println!("Generating AI project: {}", name);
-    
-    // Create project directory
+// domain/ai.rs - Business Logic Layer (Async - Reusable)
+use tokio::fs;
+use std::path::PathBuf;
+
+pub async fn generate_project(
+    name: String,
+    description: Option<String>,
+    rust: bool
+) -> Result<ProjectOutput> {
+    // Async business logic here - can be I/O, network, AI APIs, etc.
     let project_dir = PathBuf::from(&name);
-    fs::create_dir_all(&project_dir)
+    fs::create_dir_all(&project_dir).await
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
             format!("Failed to create project directory: {}", e)
         ))?;
     
     // Write project description if provided
-    if let Some(desc) = description {
+    if let Some(desc) = &description {
         let desc_file = project_dir.join("DESCRIPTION.txt");
-        fs::write(&desc_file, format!("Project: {}\nDescription: {}", name, desc))
+        fs::write(&desc_file, format!("Project: {}\nDescription: {}", name, desc)).await
             .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
                 format!("Failed to write description file: {}", e)
             ))?;
@@ -117,19 +129,25 @@ name = "{}"
 version = "0.1.0"
 edition = "2021"
 "#, name
-        )).map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+        )).await
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
             format!("Failed to create Cargo.toml: {}", e)
         ))?;
         
         let src_dir = project_dir.join("src");
-        fs::create_dir_all(&src_dir)?;
+        fs::create_dir_all(&src_dir).await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to create src directory: {}", e)
+            ))?;
         
         let main_rs = src_dir.join("main.rs");
-        fs::write(&main_rs, "fn main() {\n    println!(\"Hello, world!\");\n}\n")?;
+        fs::write(&main_rs, "fn main() {\n    println!(\"Hello, world!\");\n}\n").await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to create main.rs: {}", e)
+            ))?;
     }
     
-    println!("✓ Project '{}' generated successfully!", name);
-    Ok(())
+    Ok(ProjectOutput { name, description, rust })
 }
 ```
 
@@ -167,46 +185,39 @@ fn main() {
 }
 ```
 
-#### After (clap-noun-verb)
+#### After (clap-noun-verb v3.0.0)
 
 ```rust,no_run
-noun!("ai", "AI-powered generation", [
-    // ... project verb
-    verb!("generate", "Generate templates from descriptions", |args: &VerbArgs| {
-        let description = args.get_one_str("description")?;
-        let output = args.get_one_str_opt("output");
-        
-        // Generate template content
-        let template_content = format!(
-            "// Generated template\n// Description: {}\n\nTemplate code here...\n",
-            description
-        );
-        
-        // Write to output file or stdout
-        if let Some(output_path) = output {
-            use std::fs;
-            fs::write(&output_path, &template_content)
-                .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
-                    format!("Failed to write output file: {}", e)
-                ))?;
-            println!("✓ Template written to: {}", output_path);
-        } else {
-            println!("{}", template_content);
-        }
-        
-        Ok(())
-    }, args: [
-        Arg::new("description")
-            .short('d')
-            .long("description")
-            .required(true)
-            .help("Template description"),
-        Arg::new("output")
-            .short('o')
-            .long("output")
-            .help("Output file path"),
-    ]),
-])
+// ai.rs
+//! AI-powered generation
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+// Business Logic Layer
+fn generate_template(description: String) -> String {
+    format!("// Generated template\n// Description: {}\n\nTemplate code here...\n", description)
+}
+
+// CLI Layer
+#[verb] // Verb "generate" auto-inferred, noun "ai" auto-inferred from filename
+fn ai_generate(description: String, output: Option<String>) -> Result<String> {
+    // Arguments automatically inferred: --description (required), --output (optional)
+    let template_content = generate_template(description.clone());
+    
+    // Write to output file or return for JSON output
+    if let Some(output_path) = output {
+        use std::fs;
+        fs::write(&output_path, &template_content)
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+                format!("Failed to write output file: {}", e)
+            ))?;
+        Ok(format!("Template written to: {}", output_path))
+    } else {
+        Ok(template_content)
+    }
+}
 ```
 
 #### Complete AI Commands Example (v3.0.0)
@@ -262,12 +273,11 @@ fn main() -> Result<()> {
 Similar pattern to `generate`, but for RDF graph generation:
 
 ```rust,no_run
-verb!("graph", "Generate RDF ontologies", |args: &VerbArgs| {
-    let description = args.get_one_str("description")?;
-    let output = args.get_one_str_opt("output");
-    
-    // Generate RDF/Turtle content
-    let rdf_content = format!(
+// ai.rs (continued)
+
+// Business Logic Layer
+fn generate_rdf_graph(description: String) -> String {
+    format!(
         r#"@prefix ex: <http://example.org/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
@@ -277,25 +287,26 @@ verb!("graph", "Generate RDF ontologies", |args: &VerbArgs| {
 ex:ontology rdf:type ex:KnowledgeGraph ;
     ex:description "{}" .
 "#, description, description
-    );
+    )
+}
+
+// CLI Layer
+#[verb] // Verb "graph" auto-inferred, noun "ai" auto-inferred
+fn ai_graph(description: String, output: Option<String>) -> Result<String> {
+    // Arguments automatically inferred: --description (required), --output (optional)
+    let rdf_content = generate_rdf_graph(description);
     
-    // Write to output file or stdout
     if let Some(output_path) = output {
         use std::fs;
-        fs::write(&output_path, rdf_content)
+        fs::write(&output_path, &rdf_content)
             .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
                 format!("Failed to write RDF file: {}", e)
             ))?;
-        println!("✓ RDF ontology written to: {}", output_path);
+        Ok(format!("RDF ontology written to: {}", output_path))
     } else {
-        println!("{}", rdf_content);
+        Ok(rdf_content)
     }
-    
-    Ok(())
-}, args: [
-    Arg::new("description").short('d').long("description").required(true),
-    Arg::new("output").short('o').long("output"),
-]),
+}
 ```
 
 ### AI sparql command
@@ -303,13 +314,11 @@ ex:ontology rdf:type ex:KnowledgeGraph ;
 Includes an additional required `graph` argument:
 
 ```rust,no_run
-verb!("sparql", "Generate SPARQL queries", |args: &VerbArgs| {
-    let description = args.get_one_str("description")?;
-    let graph = args.get_one_str("graph")?;
-    let output = args.get_one_str_opt("output");
-    
-    // Generate SPARQL query
-    let sparql_query = format!(
+// ai.rs (continued)
+
+// Business Logic Layer
+fn generate_sparql_query(description: String, graph: String) -> String {
+    format!(
         r#"# Generated SPARQL query
 # Description: {}
 # Graph: {}
@@ -322,26 +331,26 @@ WHERE {{
     }}
 }}
 "#, description, graph, graph
-    );
+    )
+}
+
+// CLI Layer
+#[verb] // Verb "sparql" auto-inferred, noun "ai" auto-inferred
+fn ai_sparql(description: String, graph: String, output: Option<String>) -> Result<String> {
+    // Arguments automatically inferred: --description (required), --graph (required), --output (optional)
+    let sparql_query = generate_sparql_query(description, graph.clone());
     
-    // Write to output file or stdout
     if let Some(output_path) = output {
         use std::fs;
-        fs::write(&output_path, sparql_query)
+        fs::write(&output_path, &sparql_query)
             .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
                 format!("Failed to write SPARQL file: {}", e)
             ))?;
-        println!("✓ SPARQL query written to: {}", output_path);
+        Ok(format!("SPARQL query written to: {}", output_path))
     } else {
-        println!("{}", sparql_query);
+        Ok(sparql_query)
     }
-    
-    Ok(())
-}, args: [
-    Arg::new("description").short('d').long("description").required(true),
-    Arg::new("graph").short('g').long("graph").required(true),
-    Arg::new("output").short('o').long("output"),
-]),
+}
 ```
 
 ## Porting marketplace commands
@@ -371,448 +380,475 @@ fn main() {
 }
 ```
 
-#### After (clap-noun-verb)
+#### After (clap-noun-verb v3.0.0 with async/sync pattern - v2.0: market → marketplace)
 
 ```rust,no_run
-noun!("marketplace", "Template marketplace", [
-    verb!("search", "Find packages", |args: &VerbArgs| {
-        let query = args.get_one_str("query")?;
-        // Search marketplace packages (simulated)
-        println!("Searching marketplace for: '{}'", query);
-        println!("");
-        println!("Found packages:");
-        println!("  1. io.ggen.rust.axum - Rust Axum web framework template");
-        println!("  2. io.ggen.rust.cli - Rust CLI application template");
-        println!("  3. io.ggen.python.flask - Python Flask web application");
-        println!("");
-        println!("Use 'ggen marketplace add <package>' to install a package");
-        Ok(())
-    }, args: [
-        Arg::new("query").required(true).help("Search query"),
-    ]),
-])
+// commands/marketplace.rs - CLI Layer (Sync Wrappers)
+//! Template marketplace (v2.0: market → marketplace)
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct SearchResult {
+    packages: Vec<String>,
+}
+
+// CLI Layer (Sync Wrapper - Delegates to Async Business Logic)
+#[verb("search", "marketplace")] // Verb "search", noun "marketplace" (v2.0: market → marketplace)
+fn marketplace_search(query: String) -> Result<SearchResult> {
+    // Create runtime for async operations
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    // Block on async business logic
+    rt.block_on(async {
+        crate::domain::marketplace::search_packages(query).await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
+}
+
+// domain/marketplace.rs - Business Logic Layer (Async - Reusable)
+pub async fn search_packages(query: String) -> Result<SearchResult> {
+    // Async business logic here - can be network, database, etc.
+    // In real implementation: query marketplace API
+    Ok(SearchResult {
+        packages: vec![
+            "io.ggen.rust.axum - Rust Axum web framework template".to_string(),
+            "io.ggen.rust.cli - Rust CLI application template".to_string(),
+            "io.ggen.python.flask - Python Flask web application".to_string(),
+        ],
+    })
+}
 ```
 
 ### Add command
 
 ```rust,no_run
-verb!("add", "Install package", |args: &VerbArgs| {
-    let package = args.get_one_str("package")?;
-    // Install package from marketplace
-    println!("Installing package: {}", package);
-    
-    // In real implementation, download and install package
+// marketplace.rs (continued)
+
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct AddResult {
+    package: String,
+    location: String,
+    success: bool,
+}
+
+// Business Logic Layer
+fn add_package(package: String) -> AddResult {
     use std::path::PathBuf;
     let package_dir = PathBuf::from("~/.ggen/packages").join(&package);
-    println!("  Package location: {}", package_dir.display());
-    println!("✓ Package '{}' installed successfully", package);
-    Ok(())
-}, args: [
-    Arg::new("package").required(true).help("Package name (e.g., io.ggen.rust.axum)"),
-]),
+    AddResult {
+        package: package.clone(),
+        location: package_dir.display().to_string(),
+        success: true,
+    }
+}
+
+// CLI Layer
+#[verb] // Verb "add" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_add(package: String) -> Result<AddResult> {
+    // Arguments automatically inferred: --package (required)
+    Ok(add_package(package))
+}
 ```
 
 ### List command
 
 ```rust,no_run
-verb!("list", "List installed packages", |args: &VerbArgs| {
-    // List installed packages
-    println!("Installed packages:");
-    println!("  io.ggen.rust.axum - v1.2.0");
-    println!("  io.ggen.rust.cli - v2.0.1");
-    println!("");
-    println!("Use 'ggen marketplace update' to update packages");
-    Ok(())
-}),
+// marketplace.rs (continued)
+
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct PackageInfo {
+    name: String,
+    version: String,
+}
+
+#[derive(Serialize)]
+struct ListResult {
+    packages: Vec<PackageInfo>,
+}
+
+// Business Logic Layer
+fn list_packages() -> ListResult {
+    ListResult {
+        packages: vec![
+            PackageInfo { name: "io.ggen.rust.axum".to_string(), version: "v1.2.0".to_string() },
+            PackageInfo { name: "io.ggen.rust.cli".to_string(), version: "v2.0.1".to_string() },
+        ],
+    }
+}
+
+// CLI Layer
+#[verb] // Verb "list" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_list() -> Result<ListResult> {
+    Ok(list_packages())
+}
 ```
 
 ### Update command
 
 ```rust,no_run
-verb!("update", "Update packages", |args: &VerbArgs| {
-    // Update installed packages
-    println!("Checking for package updates...");
-    println!("  io.ggen.rust.axum: v1.2.0 -> v1.3.0 (update available)");
-    println!("  io.ggen.rust.cli: v2.0.1 -> v2.0.1 (up to date)");
-    println!("");
-    println!("✓ Package update check complete");
-    Ok(())
-}),
+// marketplace.rs (continued)
+
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct UpdateResult {
+    checked: usize,
+    updated: usize,
+    message: String,
+}
+
+// Business Logic Layer
+fn update_packages() -> UpdateResult {
+    UpdateResult {
+        checked: 2,
+        updated: 1,
+        message: "Package update check complete".to_string(),
+    }
+}
+
+// CLI Layer
+#[verb] // Verb "update" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_update() -> Result<UpdateResult> {
+    Ok(update_packages())
+}
 ```
 
 #### Complete Marketplace Commands Example
 
 ```rust,no_run
-noun!("marketplace", "Template marketplace", [
-    verb!("search", "Find packages", |args: &VerbArgs| {
-        let query = args.get_one_str("query")?;
-        // Search marketplace packages (simulated)
-        println!("Searching marketplace for: '{}'", query);
-        println!("");
-        println!("Found packages:");
-        println!("  1. io.ggen.rust.axum - Rust Axum web framework template");
-        println!("  2. io.ggen.rust.cli - Rust CLI application template");
-        println!("  3. io.ggen.python.flask - Python Flask web application");
-        println!("");
-        println!("Use 'ggen marketplace add <package>' to install a package");
-        Ok(())
-    }, args: [
-        Arg::new("query").required(true),
-    ]),
-    verb!("add", "Install package", |args: &VerbArgs| {
-        let package = args.get_one_str("package")?;
-        
-        // Install package from marketplace
-        println!("Installing package: {}", package);
-        
-        // In real implementation, download and install package
-        use std::path::PathBuf;
-        let package_dir = PathBuf::from("~/.ggen/packages").join(&package);
-        println!("  Package location: {}", package_dir.display());
-        println!("✓ Package '{}' installed successfully", package);
-        
-        Ok(())
-    }, args: [
-        Arg::new("package").required(true),
-    ]),
-    verb!("list", "List installed packages", |args: &VerbArgs| {
-        // List installed packages
-        println!("Installed packages:");
-        println!("  io.ggen.rust.axum - v1.2.0");
-        println!("  io.ggen.rust.cli - v2.0.1");
-        println!("");
-        println!("Use 'ggen marketplace update' to update packages");
-        
-        Ok(())
-    }),
-    verb!("update", "Update packages", |args: &VerbArgs| {
-        // Update installed packages
-        println!("Checking for package updates...");
-        println!("  io.ggen.rust.axum: v1.2.0 -> v1.3.0 (update available)");
-        println!("  io.ggen.rust.cli: v2.0.1 -> v2.0.1 (up to date)");
-        println!("");
-        println!("✓ Package update check complete");
-        
-        Ok(())
-    }),
-])
+// marketplace.rs
+//! Template marketplace
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+// Business Logic Layer (Pure Functions - Reusable)
+fn search_packages(query: String) -> Vec<String> {
+    vec![
+        "io.ggen.rust.axum - Rust Axum web framework template".to_string(),
+        "io.ggen.rust.cli - Rust CLI application template".to_string(),
+        "io.ggen.python.flask - Python Flask web application".to_string(),
+    ]
+}
+
+fn add_package(package: String) -> String {
+    format!("Package '{}' installed successfully", package)
+}
+
+fn list_packages() -> Vec<(String, String)> {
+    vec![
+        ("io.ggen.rust.axum".to_string(), "v1.2.0".to_string()),
+        ("io.ggen.rust.cli".to_string(), "v2.0.1".to_string()),
+    ]
+}
+
+fn update_packages() -> String {
+    "Package update check complete".to_string()
+}
+
+// CLI Layer (Input Validation + Output Shaping Only)
+#[verb] // Verb "search" auto-inferred, noun "marketplace" auto-inferred from filename
+fn marketplace_search(query: String) -> Result<Vec<String>> {
+    Ok(search_packages(query))
+}
+
+#[verb] // Verb "add" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_add(package: String) -> Result<String> {
+    Ok(add_package(package))
+}
+
+#[verb] // Verb "list" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_list() -> Result<Vec<(String, String)>> {
+    Ok(list_packages())
+}
+
+#[verb] // Verb "update" auto-inferred, noun "marketplace" auto-inferred
+fn marketplace_update() -> Result<String> {
+    Ok(update_packages())
+}
+
+fn main() -> Result<()> {
+    clap_noun_verb::run() // Auto-discovers all commands!
+}
 ```
 
-## Porting template commands
+## Porting template commands (v2.0: Pure RDF-Driven)
 
-If ggen has template-specific commands (separate from AI generation), they can be grouped under a `template` noun:
+Template commands in v2.0 are **pure RDF-driven** - all data comes from RDF ontologies via SPARQL queries. No `--vars` flags - use `--rdf` instead.
 
 ```rust,no_run
-noun!("template", "Template operations", [
-    verb!("generate", "Generate from template", |args: &VerbArgs| {
-        let template = args.get_one_str("template")?;
-        let vars = args.get_many_opt::<String>("vars");
-        handle_template_generate(template, vars)?;
-        Ok(())
-    }, args: [
-        Arg::new("template").required(true),
-        Arg::new("vars").long("vars").num_args(1..),
-    ]),
-    verb!("validate", "Validate template", |args: &VerbArgs| {
-        let template = args.get_one_str("template")?;
-        handle_template_validate(template)?;
-        Ok(())
-    }, args: [
-        Arg::new("template").required(true),
-    ]),
-    verb!("list", "List templates", |args: &VerbArgs| {
-        handle_template_list()?;
-        Ok(())
-    }),
-])
+// commands/template.rs - CLI Layer (Sync Wrappers)
+//! Template operations (v2.0: Pure RDF-driven)
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct TemplateGenerateOutput {
+    template: String,
+    rdf: String,
+    files_generated: Vec<String>,
+}
+
+// CLI Layer (Sync Wrapper - Delegates to Async Business Logic)
+#[verb("generate", "template")] // Verb "generate", noun "template" (v2.0: gen → template generate)
+fn template_generate(template: String, rdf: String) -> Result<TemplateGenerateOutput> {
+    // v2.0: --template and --rdf required (no --vars)
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    rt.block_on(async {
+        crate::domain::template::generate_from_template(template, rdf).await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
+}
+
+// domain/template.rs - Business Logic Layer (Async - Reusable)
+pub async fn generate_from_template(
+    template: String,
+    rdf: String
+) -> Result<TemplateGenerateOutput> {
+    // v2.0: All data comes from RDF
+    // 1. Load RDF file into graph store
+    // 2. Execute SPARQL queries from template
+    // 3. Generate files from template with RDF data
+    
+    Ok(TemplateGenerateOutput {
+        template,
+        rdf,
+        files_generated: vec!["generated_code.rs".to_string()],
+    })
+}
+
+// Additional template commands
+#[verb("validate", "template")]
+fn template_validate(template: String) -> Result<bool> {
+    // Sync validation - no async needed
+    Ok(true)
+}
+
+#[verb("list", "template")]
+fn template_list() -> Result<Vec<String>> {
+    // Sync listing - no async needed
+    Ok(vec!["template1".to_string(), "template2".to_string()])
+}
 ```
 
 ## Handling global arguments
 
-Global arguments (like `--verbose` and `--config`) are available to all verbs through `VerbArgs`.
+**Note:** Global arguments are not directly supported in v3.0.0 attribute macro API with `clap_noun_verb::run()`. If you need global arguments, you would need to use the builder API instead of auto-discovery.
 
-### Before (Regular clap)
+However, the framework automatically provides JSON output, which is often more useful than global verbosity flags.
+
+### After (clap-noun-verb v3.0.0)
+
+With the attribute macro API, commands automatically return structured data as JSON:
 
 ```rust,no_run
-#[derive(Parser)]
-struct Cli {
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    verbose: u8,
-    
-    #[arg(short, long)]
-    config: Option<String>,
-    
-    #[command(subcommand)]
-    command: Commands,
+// ai.rs
+//! AI-powered generation
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct ProjectOutput {
+    name: String,
+    rust: bool,
+    success: bool,
+    message: String,
 }
 
-fn main() {
-    let cli = Cli::parse();
-    // Pass verbose/config to handlers manually
+// Business Logic Layer
+fn create_project(name: String, rust: bool) -> ProjectOutput {
+    // Business logic here
+    ProjectOutput {
+        name: name.clone(),
+        rust,
+        success: true,
+        message: format!("Project '{}' created successfully", name),
+    }
+}
+
+// CLI Layer
+#[verb] // Verb "project" auto-inferred, noun "ai" auto-inferred from filename
+fn ai_project(name: String, rust: bool) -> Result<ProjectOutput> {
+    // Arguments automatically inferred: --name (required), --rust (flag)
+    // Output automatically serialized to JSON
+    Ok(create_project(name, rust))
+}
+
+fn main() -> Result<()> {
+    clap_noun_verb::run() // Auto-discovers all commands!
 }
 ```
 
-### After (clap-noun-verb)
-
-```rust,no_run
-use clap::Arg;
-
-run_cli(|cli| {
-    cli.name("ggen")
-        .global_args(vec![
-            Arg::new("verbose")
-                .short('v')
-                .long("verbose")
-                .action(clap::ArgAction::Count)
-                .help("Increase verbosity"),
-            Arg::new("config")
-                .short('c')
-                .long("config")
-                .value_name("FILE")
-                .help("Configuration file"),
-        ])
-        .noun(noun!("ai", "AI-powered generation", [
-            verb!("project", "Generate complete projects", |args: &VerbArgs| {
-                // Access global arguments
-                let verbose = args.get_global_flag_count("verbose");
-                let config = args.get_global_str("config");
-                
-                // Access verb-specific arguments
-                let name = args.get_one_str("name")?;
-                
-                if verbose > 1 {
-                    println!("[DEBUG] Config: {:?}", config);
-                }
-                
-                // Project generation logic would go here
-                println!("Generating project: {} (verbose: {}, config: {:?})", name, verbose, config);
-                Ok(())
-            }, args: [
-                Arg::new("name").required(true),
-            ]),
-        ]))
-})
+**Usage:**
+```bash
+$ ggen ai project my-app --rust
+{"name":"my-app","rust":true,"success":true,"message":"Project 'my-app' created successfully"}
 ```
 
-### Using Global Arguments in Handlers
+The structured JSON output provides all information, eliminating the need for verbose flags in most cases.
 
-All verbs can access global arguments:
+### Structured Output Instead of Global Arguments
+
+Instead of global verbosity flags, use structured return types:
 
 ```rust,no_run
-verb!("generate", "Generate templates", |args: &VerbArgs| {
-    // Verb-specific
-    let description = args.get_one_str("description")?;
-    
-    // Global arguments
-    let verbose = args.get_global_flag_count("verbose");
-    let config = args.get_global_str("config");
-    
-    if verbose > 0 {
-        println!("[Verbose] Generating: {}", description);
-    }
-    
-    if let Some(config_file) = config {
-        load_config(config_file)?;
-    }
-    
-    // Generate template content
-    let template_content = format!(
+// ai.rs (continued)
+
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct GenerateOutput {
+    description: String,
+    content: String,
+    output_path: Option<String>,
+    success: bool,
+}
+
+// Business Logic Layer
+fn generate_template(description: String, output: Option<String>) -> GenerateOutput {
+    let content = format!(
         "// Generated template\n// Description: {}\n\nTemplate code here...\n",
         description
     );
     
-    // Write to output file or stdout
-    if let Some(output_path) = output {
-        use std::fs;
-        fs::write(&output_path, template_content)
-            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
-                format!("Failed to write output file: {}", e)
-            ))?;
-        println!("✓ Template written to: {}", output_path);
-    } else {
-        println!("{}", template_content);
+    GenerateOutput {
+        description: description.clone(),
+        content: content.clone(),
+        output_path: output.clone(),
+        success: true,
     }
-    
-    Ok(())
-})
+}
+
+// CLI Layer
+#[verb] // Verb "generate" auto-inferred, noun "ai" auto-inferred
+fn ai_generate(description: String, output: Option<String>) -> Result<GenerateOutput> {
+    // Arguments automatically inferred: --description (required), --output (optional)
+    // Output automatically serialized to JSON with all information
+    Ok(generate_template(description, output))
+}
 ```
+
+**Usage:**
+```bash
+$ ggen ai generate -d "Database pattern" -o output.tmpl
+{"description":"Database pattern","content":"// Generated template...","output_path":"output.tmpl","success":true}
+```
+
+All information is available in the structured JSON output, providing better integration with scripts and automation tools.
 
 ## Complete Example
 
-Here's a complete example combining all command groups:
+Here's a complete example combining all command groups using v3.0.0 attribute macro API:
 
+**File Structure:**
+```
+src/
+├── main.rs          # Entry point
+├── ai.rs            # AI commands
+├── marketplace.rs   # Marketplace commands
+└── template.rs      # Template commands
+```
+
+**src/ai.rs:**
 ```rust,no_run
-use clap_noun_verb::{noun, run_cli, verb, VerbArgs, Result};
-use clap::Arg;
+//! AI-powered generation
 
-fn main() -> Result<()> {
-    run_cli(|cli| {
-        cli.name("ggen")
-            .about("Rust Template Generator with Frontmatter & RDF Support")
-            .version(env!("CARGO_PKG_VERSION"))
-            .global_args(vec![
-                Arg::new("verbose")
-                    .short('v')
-                    .long("verbose")
-                    .action(clap::ArgAction::Count)
-                    .help("Increase verbosity"),
-                Arg::new("config")
-                    .short('c')
-                    .long("config")
-                    .value_name("FILE")
-                    .help("Configuration file"),
-            ])
-            .noun(noun!("ai", "AI-powered generation", [
-                verb!("project", "Generate complete projects", |args: &VerbArgs| {
-                    let name = args.get_one_str("name")?;
-                    let description = args.get_one_str_opt("description");
-                    let rust = args.is_flag_set("rust");
-                    // Use the complete implementation shown below
-                    // This calls the full handle_ai_project function
-                    handle_ai_project(name, description, rust, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("name").required(true),
-                    Arg::new("description"),
-                    Arg::new("rust").long("rust"),
-                ]),
-                verb!("generate", "Generate templates from descriptions", |args: &VerbArgs| {
-                    let description = args.get_one_str("description")?;
-                    let output = args.get_one_str_opt("output");
-                    handle_ai_generate(description, output, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("description").short('d').long("description").required(true),
-                    Arg::new("output").short('o').long("output"),
-                ]),
-                verb!("graph", "Generate RDF ontologies", |args: &VerbArgs| {
-                    let description = args.get_one_str("description")?;
-                    let output = args.get_one_str_opt("output");
-                    handle_ai_graph(description, output, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("description").short('d').long("description").required(true),
-                    Arg::new("output").short('o').long("output"),
-                ]),
-                verb!("sparql", "Generate SPARQL queries", |args: &VerbArgs| {
-                    let description = args.get_one_str("description")?;
-                    let graph = args.get_one_str("graph")?;
-                    let output = args.get_one_str_opt("output");
-                    handle_ai_sparql(description, graph, output, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("description").short('d').long("description").required(true),
-                    Arg::new("graph").short('g').long("graph").required(true),
-                    Arg::new("output").short('o').long("output"),
-                ]),
-            ]))
-            .noun(noun!("marketplace", "Template marketplace", [
-                verb!("search", "Find packages", |args: &VerbArgs| {
-                    let query = args.get_one_str("query")?;
-                    handle_search(query, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("query").required(true),
-                ]),
-                verb!("add", "Install package", |args: &VerbArgs| {
-                    let package = args.get_one_str("package")?;
-                    handle_add(package, args)?;
-                    Ok(())
-                }, args: [
-                    Arg::new("package").required(true),
-                ]),
-                verb!("list", "List installed packages", |args: &VerbArgs| {
-                    handle_list(args)?;
-                    Ok(())
-                }),
-                verb!("update", "Update packages", |args: &VerbArgs| {
-                    handle_update(args)?;
-                    Ok(())
-                }),
-            ]))
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+// Business Logic Layer
+fn create_project(name: String, rust: bool) -> ProjectOutput {
+    ProjectOutput { name, rust, success: true }
+}
+
+// CLI Layer
+#[verb] // Auto-inferred: verb="project", noun="ai"
+fn ai_project(name: String, rust: bool) -> Result<ProjectOutput> {
+    Ok(create_project(name, rust))
+}
+
+#[derive(Serialize)]
+struct ProjectOutput {
+    name: String,
+    rust: bool,
+    success: bool,
+}
+```
+
+**src/marketplace.rs:**
+```rust,no_run
+//! Template marketplace
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct SearchResult {
+    packages: Vec<String>,
+}
+
+#[verb] // Auto-inferred: verb="search", noun="marketplace"
+fn marketplace_search(query: String) -> Result<SearchResult> {
+    Ok(SearchResult {
+        packages: vec!["package1".to_string(), "package2".to_string()],
     })
 }
 
-// Handler functions receive VerbArgs for global argument access
-fn handle_ai_project(name: String, description: Option<String>, rust: bool, args: &VerbArgs) -> Result<()> {
-    use std::fs;
-    use std::path::PathBuf;
-    
-    let verbose = args.get_global_flag_count("verbose");
-    let config = args.get_global_str("config");
-    
-    if verbose > 0 {
-        println!("[Verbose level {}] Starting project generation", verbose);
-        println!("  Project name: {}", name);
-        if let Some(ref desc) = description {
-            println!("  Description: {}", desc);
-        }
-        println!("  Rust project: {}", rust);
-        if let Some(ref cfg) = config {
-            println!("  Using config: {}", cfg);
-        }
-    }
-    
-    // Load config if provided
-    if let Some(config_file) = config {
-        // In real implementation, load and parse config file
-        if verbose > 1 {
-            println!("[DEBUG] Loading config from: {}", config_file);
-        }
-    }
-    
-    // Create project directory
-    let project_dir = PathBuf::from(&name);
-    if verbose > 0 {
-        println!("Creating project directory: {}", project_dir.display());
-    }
-    
-    fs::create_dir_all(&project_dir)
-        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
-            format!("Failed to create project directory: {}", e)
-        ))?;
-    
-    // Write project description if provided
-    if let Some(desc) = description {
-        let desc_file = project_dir.join("DESCRIPTION.txt");
-        fs::write(&desc_file, format!("Project: {}\nDescription: {}", name, desc))
-            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
-                format!("Failed to write description file: {}", e)
-            ))?;
-        
-        if verbose > 0 {
-            println!("✓ Wrote description file");
-        }
-    }
-    
-    // Generate Rust project structure if requested
-    if rust {
-        let cargo_toml = project_dir.join("Cargo.toml");
-        fs::write(&cargo_toml, format!(
-            r#"[package]
-name = "{}"
-version = "0.1.0"
-edition = "2021"
-"#, name
-        )).map_err(|e| clap_noun_verb::NounVerbError::execution_error(
-            format!("Failed to create Cargo.toml: {}", e)
-        ))?;
-        
-        let src_dir = project_dir.join("src");
-        fs::create_dir_all(&src_dir)?;
-        
-        let main_rs = src_dir.join("main.rs");
-        fs::write(&main_rs, "fn main() {\n    println!(\"Hello, world!\");\n}\n")?;
-        
-        if verbose > 0 {
-            println!("✓ Created Rust project structure");
-        }
-    }
-    
-    println!("✓ Project '{}' generated successfully!", name);
-    Ok(())
+#[verb] // Auto-inferred: verb="add", noun="marketplace"
+fn marketplace_add(package: String) -> Result<String> {
+    Ok(format!("Added: {}", package))
 }
 ```
+
+**src/main.rs:**
+```rust,no_run
+mod ai;
+mod marketplace;
+
+use clap_noun_verb::Result;
+
+fn main() -> Result<()> {
+    // Auto-discovers all #[verb] functions in ai.rs and marketplace.rs
+    clap_noun_verb::run()
+}
+```
+
+**Usage:**
+```bash
+$ ggen ai project my-app --rust
+{"name":"my-app","rust":true,"success":true}
+
+$ ggen marketplace search rust
+{"packages":["package1","package2"]}
+```
+
+**Key Features:**
+1. **Auto-discovery**: All `#[verb]` functions automatically discovered
+2. **Auto-inference**: Verb and noun names inferred from function names and filenames
+3. **Type inference**: Arguments inferred from function signatures
+4. **JSON output**: All return types automatically serialized to JSON
+5. **Separation of concerns**: Business logic separated from CLI layer
 
 ## Next Steps
 

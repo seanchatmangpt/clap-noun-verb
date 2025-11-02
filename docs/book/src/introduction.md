@@ -8,12 +8,13 @@ This guide provides a comprehensive walkthrough for porting the `ggen` CLI appli
 
 ### Key Features
 
+- **Attribute Macros**: `#[verb]` attribute for zero-boilerplate command registration
+- **Auto-Discovery**: Commands automatically discovered at compile time
+- **Auto-Inference**: Verb names from function names, noun names from filenames
+- **Type Inference**: Arguments inferred from function signatures
+- **JSON Output**: All output automatically serialized to JSON (perfect for agents/MCP)
 - **Composable Command Structure**: Easy composition of nouns and verbs
-- **Framework-Level APIs**: APIs that make it easy to build CLI frameworks
-- **Type-Safe Composition**: Compile-time verification of command structure
-- **Zero-Cost Abstractions**: Thin wrapper over clap with no runtime overhead
-- **Convenience Macros**: Reduce boilerplate with `noun!` and `verb!` macros
-- **Multiple Composition Methods**: Choose the approach that fits your needs
+- **Separation of Concerns**: Business logic separated from CLI layer
 
 ### The Noun-Verb Pattern
 
@@ -142,11 +143,18 @@ struct ProjectOutput {
     rust: bool,
 }
 
+// Business Logic Layer (Pure Functions - Reusable)
+fn create_project(name: String, rust: bool) -> ProjectOutput {
+    ProjectOutput { name, rust }
+}
+
+// CLI Layer (Input Validation + Output Shaping Only)
 #[verb] // Verb "project" auto-inferred, noun "ai" auto-inferred from filename
 fn ai_project(name: String, rust: bool) -> Result<ProjectOutput> {
     // name: String → Required argument --name
     // rust: bool → Flag --rust
-    Ok(ProjectOutput { name, rust })
+    // Output automatically serialized to JSON
+    Ok(create_project(name, rust))
 }
 
 #[verb] // Verb "generate" auto-inferred, noun "ai" auto-inferred from filename
@@ -157,9 +165,18 @@ fn ai_generate(description: String, output: Option<String>) -> Result<String> {
 // marketplace.rs
 //! Template marketplace
 
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+
+// Business Logic Layer
+fn search_packages(query: String) -> Vec<String> {
+    vec!["package1".to_string(), "package2".to_string()]
+}
+
+// CLI Layer
 #[verb] // Verb "search" auto-inferred, noun "marketplace" auto-inferred from filename
 fn marketplace_search(query: String) -> Result<Vec<String>> {
-    Ok(vec!["package1".to_string(), "package2".to_string()])
+    Ok(search_packages(query))
 }
 
 #[verb] // Verb "add" auto-inferred, noun "marketplace" auto-inferred from filename
@@ -174,45 +191,59 @@ fn main() -> Result<()> {
 
 ### Benefits
 
-The `clap-noun-verb` approach provides:
+The `clap-noun-verb` v3.0.0 approach provides:
 
+- **Auto-discovery**: No manual registration needed - commands are discovered automatically
+- **Auto-inference**: Verb and noun names inferred from function names and filenames
+- **Type inference**: Arguments inferred from function signatures automatically
+- **JSON output**: All output automatically serialized to JSON (perfect for agents/MCP servers)
 - **Cleaner structure**: Commands naturally group by functionality
-- **Less boilerplate**: Macros handle repetitive patterns
-- **Better organization**: Related commands are co-located
-- **Easier to extend**: Adding new verbs to a noun is simple
+- **Less boilerplate**: Attribute macros handle repetitive patterns
+- **Better organization**: Related commands are co-located in files
+- **Separation of concerns**: Business logic separated from CLI layer
+- **Easier to extend**: Just add a function with `#[verb]` attribute
 - **Type safety**: Compile-time verification of command structure
-- **Multiple composition methods**: Choose what fits your project
 
-## About ggen
+## About ggen v2.0
 
-`ggen` is a Rust Template Generator with Frontmatter & RDF Support. It provides:
+`ggen` is a Rust Template Generator with Pure RDF-Driven Architecture (v2.0). It provides:
 
+- **Pure RDF-Driven Templates**: All data comes from RDF ontologies via SPARQL queries
 - **AI-Powered Generation**: Generate templates, projects, and ontologies using LLMs
+- **Business Logic Separation**: CLI layer automatically separated from editable business logic
 - **Deterministic & Reproducible**: Generate byte-identical output every time
 - **Knowledge Graph-Driven**: Embed RDF and query with SPARQL
 - **Marketplace Integration**: Reusable template packages (gpacks)
 - **Production-Ready Testing**: Hermetic, deterministic test environments
 
-From the ggen documentation, we can see it has commands like:
+From ggen v2.0, commands follow the noun-verb pattern:
 
 ```bash
 # AI commands
-ggen ai project "E-commerce API with Stripe" --name shop-api --rust
-ggen ai generate -d "Database repository pattern" -o repo.tmpl
-ggen ai graph -d "User management ontology" -o users.ttl
-ggen ai sparql -d "Find all active users" -g schema.ttl
+ggen ai project shop-api --rust
+ggen ai generate --description "Database repository pattern" --output repo.tmpl
+ggen ai graph --description "User management ontology" --output users.ttl
+ggen ai sparql --description "Find all active users" --graph schema.ttl
 
-# Marketplace commands
-ggen search "rust web"
-ggen add io.ggen.rust.axum
-ggen list
-ggen update
+# Marketplace commands (v2.0: market → marketplace)
+ggen marketplace search "rust web"
+ggen marketplace add io.ggen.rust.axum
+ggen marketplace list
+ggen marketplace update
+
+# Utility commands (v2.0: doctor → utils doctor)
+ggen utils doctor
+ggen utils help-me
+
+# Template commands (v2.0: gen → template generate)
+ggen template generate --template verb.tmpl --rdf command.ttl
 ```
 
-This is a perfect candidate for the noun-verb pattern, as commands naturally group into:
+This follows the noun-verb pattern perfectly:
 - `ai` noun with `project`, `generate`, `graph`, `sparql` verbs
 - `marketplace` noun with `search`, `add`, `list`, `update` verbs
-- And potentially other groups
+- `utils` noun with `doctor`, `help-me` verbs
+- `template` noun with `generate`, `list`, `validate` verbs
 
 ## Benefits of the noun-verb pattern
 
@@ -223,26 +254,34 @@ The noun-verb pattern provides several advantages for CLI applications:
 Users quickly understand the command hierarchy:
 
 ```bash
-ggen ai project <name>        # Generate an AI project
-ggen ai generate <description> # Generate a template
-ggen marketplace search <query> # Search marketplace
+ggen ai project <name>              # Generate an AI project
+ggen ai generate --description <desc> # Generate a template
+ggen marketplace search <query>     # Search marketplace (v2.0: market → marketplace)
+ggen utils doctor                   # Run diagnostics (v2.0: doctor → utils doctor)
+ggen template generate --template <tmpl> --rdf <rdf> # Generate from template (v2.0: gen → template generate)
 ```
 
 The structure is self-documenting and follows natural language patterns.
 
 ### 2. Scalable Organization
 
-Adding new commands is straightforward:
+Adding new commands is straightforward - just add a new function with `#[verb]`:
 
 ```rust,no_run
-noun!("ai", "AI-powered generation", [
-    verb!("project", ...),
-    verb!("generate", ...),
-    verb!("new-command", ...), // Easy to add!
-])
+// ai.rs
+//! AI-powered generation
+
+#[verb] // Verb "project" auto-inferred, noun "ai" auto-inferred from filename
+fn ai_project(name: String) -> Result<ProjectOutput> { ... }
+
+#[verb] // Verb "generate" auto-inferred
+fn ai_generate(description: String) -> Result<String> { ... }
+
+#[verb] // Verb "new-command" auto-inferred - Easy to add!
+fn ai_new_command() -> Result<String> { ... }
 ```
 
-No need to modify enums or add match cases—just add the verb to the appropriate noun.
+No need to modify enums or add match cases—just add the function with `#[verb]`!
 
 ### 3. Consistent UX
 

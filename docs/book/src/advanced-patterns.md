@@ -1,6 +1,119 @@
 # Advanced Patterns
 
-This chapter covers advanced patterns for porting complex CLI structures, including nested commands, error handling, custom implementations, and conditional command registration.
+This chapter covers advanced patterns for porting complex CLI structures, including async/sync compatibility, nested commands, error handling, custom implementations, and conditional command registration.
+
+## Async/Sync Compatibility Pattern
+
+**Critical**: `clap-noun-verb` v3.0.0 uses **sync-only** functions, but ggen has **async business logic**. This pattern shows how to handle async operations with sync CLI wrappers.
+
+### The Pattern
+
+```rust,no_run
+// commands/utils.rs - CLI Layer (Sync Wrappers)
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::Result;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct DoctorOutput {
+    checks: Vec<CheckResult>,
+    overall: String,
+}
+
+#[derive(Serialize)]
+struct CheckResult {
+    name: String,
+    status: String,
+    message: Option<String>,
+}
+
+// CLI Layer (Sync Wrapper - Delegates to Async Business Logic)
+#[verb("doctor", "utils")]
+fn utils_doctor() -> Result<DoctorOutput> {
+    // Create runtime for async operations
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    // Block on async business logic
+    rt.block_on(async {
+        crate::domain::utils::run_diagnostics().await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
+}
+
+// domain/utils.rs - Business Logic Layer (Async - Reusable)
+pub async fn run_diagnostics() -> Result<DoctorOutput> {
+    // Async operations here - can be I/O, network, etc.
+    use tokio::fs;
+    
+    // Check file system
+    let rust_ok = fs::metadata("Cargo.toml").await.is_ok();
+    
+    // Check network services
+    // ... async checks ...
+    
+    Ok(DoctorOutput {
+        checks: vec![
+            CheckResult {
+                name: "Rust".to_string(),
+                status: if rust_ok { "OK".to_string() } else { "ERROR".to_string() },
+                message: None,
+            },
+        ],
+        overall: "OK".to_string(),
+    })
+}
+```
+
+### Multiple Async Calls
+
+```rust,no_run
+#[verb("project", "ai")]
+fn ai_project(name: String, description: Option<String>) -> Result<ProjectOutput> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    rt.block_on(async {
+        // Multiple async operations
+        let project_data = crate::domain::ai::fetch_project_data(name.clone()).await?;
+        let template = crate::domain::ai::load_template("base.tmpl").await?;
+        let generated = crate::domain::ai::generate_from_template(template, project_data).await?;
+        
+        Ok(ProjectOutput {
+            name,
+            description,
+            files: generated,
+        })
+    })
+}
+```
+
+### Error Handling with Async
+
+```rust,no_run
+#[verb("generate", "template")]
+fn template_generate(template: String, rdf: String) -> Result<TemplateOutput> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    rt.block_on(async {
+        // Async operations with proper error handling
+        crate::domain::template::generate_from_template(template, rdf).await
+            .map_err(|e| {
+                // Convert domain errors to CLI errors
+                clap_noun_verb::NounVerbError::execution_error(
+                    format!("Template generation failed: {}", e)
+                )
+            })
+    })
+}
+```
 
 ## Nested command structures
 

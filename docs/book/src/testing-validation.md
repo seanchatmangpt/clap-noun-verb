@@ -1,6 +1,83 @@
 # Testing and Validation
 
-This chapter covers testing strategies for ported CLI commands, ensuring backward compatibility, validating CLI structure, and integration testing.
+This chapter covers testing strategies for ported CLI commands, including async/sync compatibility testing, ensuring backward compatibility, validating CLI structure, and integration testing.
+
+## Testing Async/Sync Compatibility
+
+**Critical**: Since ggen uses async business logic with sync CLI wrappers, we need to test both layers.
+
+### Testing Sync CLI Wrappers
+
+```rust,no_run
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap_noun_verb::Result;
+
+    #[test]
+    fn test_utils_doctor_sync_wrapper() -> Result<()> {
+        // Test that sync wrapper correctly spawns runtime and calls async function
+        let result = utils_doctor()?;
+        assert_eq!(result.overall, "OK");
+        assert!(!result.checks.is_empty());
+        Ok(())
+    }
+}
+```
+
+### Testing Async Business Logic Directly
+
+```rust,no_run
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::test;
+
+    #[test]
+    async fn test_run_diagnostics_async() -> Result<()> {
+        // Test async business logic directly
+        let result = crate::domain::utils::run_diagnostics().await?;
+        assert_eq!(result.overall, "OK");
+        Ok(())
+    }
+
+    #[test]
+    async fn test_generate_project_async() -> Result<()> {
+        // Test async project generation
+        let result = crate::domain::ai::generate_project(
+            "test-project".to_string(),
+            Some("Test description".to_string()),
+            true
+        ).await?;
+        
+        assert_eq!(result.name, "test-project");
+        assert!(result.rust);
+        Ok(())
+    }
+}
+```
+
+### Testing Runtime Spawning
+
+```rust,no_run
+#[test]
+fn test_runtime_creation() {
+    // Verify runtime creation doesn't panic
+    let rt = tokio::runtime::Runtime::new();
+    assert!(rt.is_ok());
+}
+
+#[test]
+fn test_block_on_execution() {
+    // Test that block_on correctly executes async code
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let result: i32 = rt.block_on(async {
+        tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
+        42
+    });
+    assert_eq!(result, 42);
+}
+```
 
 ## Testing ported commands
 

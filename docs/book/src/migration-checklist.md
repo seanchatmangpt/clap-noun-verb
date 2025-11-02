@@ -1,6 +1,69 @@
-# Migration Checklist
+# Migration Checklist (v2.0)
 
-This chapter provides a comprehensive checklist for completing the migration from regular clap to clap-noun-verb, including common pitfalls, solutions, and best practices.
+This chapter provides a comprehensive checklist for completing the migration from regular clap to clap-noun-verb v3.0.0 for ggen v2.0, including async/sync compatibility, common pitfalls, solutions, and best practices.
+
+## v2.0-Specific Migration Steps
+
+### Async/Sync Compatibility Migration ⚠️ **CRITICAL**
+
+- [ ] **Identify Async Functions**
+  - [ ] Find all async functions in CLI commands (94 in ggen)
+  - [ ] Document which functions need async wrappers
+  - [ ] Plan business logic extraction
+
+- [ ] **Create Sync CLI Wrappers**
+  - [ ] Create `commands/` directory for CLI layer
+  - [ ] Create sync wrapper functions with `#[verb]` attributes
+  - [ ] Add runtime creation and `block_on()` for each async function
+  - [ ] Test runtime creation and blocking
+
+- [ ] **Extract Business Logic**
+  - [ ] Create `domain/` directory for business logic
+  - [ ] Move async business logic to domain layer
+  - [ ] Ensure business logic functions are async
+  - [ ] Update CLI wrappers to delegate to domain layer
+
+- [ ] **Verify Async/Sync Pattern**
+  - [ ] Test that sync wrappers correctly call async business logic
+  - [ ] Test error handling through async chain
+  - [ ] Verify runtime creation doesn't fail
+  - [ ] Test with multiple async calls
+
+### v2.0 Command Renames
+
+- [ ] **Update Command Names**
+  - [ ] `market` → `marketplace` (14 commands)
+  - [ ] `doctor` → `utils doctor`
+  - [ ] `help-me` → `utils help-me`
+  - [ ] `ggen gen` → `ggen template generate`
+  - [ ] Update all command references in code
+  - [ ] Update all command references in documentation
+
+- [ ] **Remove Legacy Commands**
+  - [ ] Remove `market` noun (replaced by `marketplace`)
+  - [ ] Remove root-level `doctor` (moved to `utils doctor`)
+  - [ ] Remove root-level `help-me` (moved to `utils help-me`)
+  - [ ] Remove `ggen gen` (replaced by `template generate`)
+
+### v2.0 Argument Changes
+
+- [ ] **Remove `--var` Flags**
+  - [ ] Find all `--var` flag usage
+  - [ ] Remove `--var` from command definitions
+  - [ ] Update code that processes `--var` flags
+  - [ ] Update documentation
+
+- [ ] **Add `--rdf` Flag**
+  - [ ] Add `--rdf` flag to template commands
+  - [ ] Update business logic to load RDF files
+  - [ ] Update template engine to use RDF data
+  - [ ] Test RDF loading and SPARQL query execution
+
+- [ ] **Update Template Generation**
+  - [ ] Remove `vars:` section from template frontmatter
+  - [ ] Update templates to use RDF queries only
+  - [ ] Test pure RDF-driven generation
+  - [ ] Verify no hardcoded data in templates
 
 ## Step-by-step checklist
 
@@ -135,7 +198,35 @@ verb!("project", ..., |args: &VerbArgs| {
 })
 ```
 
-### Pitfall 2: Not Handling Required Arguments
+### Pitfall 2: Async/Sync Mismatch ⚠️ **CRITICAL**
+
+**Problem**: Trying to use async functions directly in sync `#[verb]` functions.
+
+**Solution**: Always use sync wrappers that spawn async runtimes:
+
+```rust,no_run
+// ❌ Bad: Async function in sync #[verb] - won't compile
+#[verb("doctor", "utils")]
+async fn utils_doctor() -> Result<DoctorOutput> {  // ERROR: async not allowed
+    run_diagnostics().await
+}
+
+// ✅ Good: Sync wrapper that spawns async runtime
+#[verb("doctor", "utils")]
+fn utils_doctor() -> Result<DoctorOutput> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(
+            format!("Failed to create runtime: {}", e)
+        ))?;
+    
+    rt.block_on(async {
+        crate::domain::utils::run_diagnostics().await
+            .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))
+    })
+}
+```
+
+### Pitfall 3: Not Handling Required Arguments
 
 **Problem**: Panic when required argument is missing.
 
@@ -149,7 +240,27 @@ let name = args.get_one_str("name").unwrap();
 let name = args.get_one_str("name")?;
 ```
 
-### Pitfall 3: Ignoring Error Propagation
+### Pitfall 4: Using `--vars` Instead of `--rdf` (v2.0)
+
+**Problem**: Using deprecated `--vars` flags instead of `--rdf` flag.
+
+**Solution**: Always use `--rdf` flag for RDF input:
+
+```rust,no_run
+// ❌ Bad: Using --vars (v2.0 removed)
+#[verb("generate", "template")]
+fn template_generate(template: String, vars: Vec<String>) -> Result<String> {
+    // v1.x pattern - removed in v2.0
+}
+
+// ✅ Good: Using --rdf (v2.0 required)
+#[verb("generate", "template")]
+fn template_generate(template: String, rdf: String) -> Result<TemplateOutput> {
+    // v2.0 pattern - pure RDF-driven
+}
+```
+
+### Pitfall 5: Ignoring Error Propagation
 
 **Problem**: Errors not properly propagated.
 
@@ -171,7 +282,7 @@ verb!("project", ..., |args: &VerbArgs| -> Result<()> {
 })
 ```
 
-### Pitfall 4: Duplicate Names
+### Pitfall 6: Duplicate Names
 
 **Problem**: Validation fails due to duplicate command names.
 
@@ -187,7 +298,7 @@ verb!("project", ..., |args: &VerbArgs| -> Result<()> {
 .noun(noun!("marketplace", ..., [...]))
 ```
 
-### Pitfall 5: Incorrect Argument Definitions
+### Pitfall 7: Incorrect Argument Definitions
 
 **Problem**: Arguments not parsed correctly.
 
@@ -209,7 +320,7 @@ verb!("generate", ..., |args: &VerbArgs| {
 ])
 ```
 
-### Pitfall 6: Not Testing All Argument Combinations
+### Pitfall 8: Not Testing All Argument Combinations
 
 **Problem**: Some argument combinations fail in production.
 
@@ -234,7 +345,27 @@ fn test_all_argument_combinations() -> Result<()> {
 }
 ```
 
-### Pitfall 7: Breaking Backward Compatibility
+### Pitfall 9: Breaking v2.0 Command Structure
+
+**Problem**: v2.0 has breaking changes - commands renamed, arguments changed.
+
+**Solution**: Document all breaking changes and update all references:
+
+```bash
+# ❌ v1.x commands (removed in v2.0)
+ggen market search "rust"
+ggen doctor
+ggen gen template.tmpl --vars name=my_module
+
+# ✅ v2.0 commands
+ggen marketplace search "rust"  # market → marketplace
+ggen utils doctor                # doctor → utils doctor
+ggen template generate --template template.tmpl --rdf domain.ttl  # gen → template generate, --vars → --rdf
+```
+
+### Pitfall 10: Breaking Backward Compatibility (Not Applicable for v2.0)
+
+**Note**: v2.0 intentionally breaks backward compatibility. No migration needed - clean break.
 
 **Problem**: Existing scripts/workflows break.
 

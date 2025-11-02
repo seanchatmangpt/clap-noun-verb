@@ -1,0 +1,412 @@
+' PlantUML C4 Diagrams for ggen Architecture
+' Focus: Template Rendering Engine, RDF, OWL, SHACL, SPARQL
+' Based on: https://github.com/seanchatmangpt/ggen
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' C4 Level 1: System Context Diagram
+' ============================================================================
+@startuml c4_context_ggen
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title System Context - ggen Template Generator
+
+Person(user, "Developer", "Uses ggen to generate templates, projects, and ontologies")
+Person(ai_user, "AI Assistant", "AI-powered agent using ggen for code generation")
+
+System(ggen, "ggen", "Rust Template Generator with Frontmatter & RDF Support\n- AI-powered generation\n- Template engine\n- RDF/OWL/SHACL/SPARQL support\n- Marketplace integration")
+
+System_Ext(ai_provider, "AI Providers", "OpenAI, Anthropic, Ollama\n- GPT-4o\n- Claude 3.5\n- Local models")
+System_Ext(marketplace, "Template Marketplace", "Package repository\n- gpacks distribution\n- Version management")
+System_Ext(file_system, "File System", "Local storage\n- Templates\n- Generated code\n- RDF graphs")
+
+Rel(user, ggen, "Uses", "CLI commands\n- ai project\n- ai generate\n- template generate\n- marketplace search")
+Rel(ai_user, ggen, "Uses via API", "JSON output\n- Automation\n- MCP integration")
+Rel(ggen, ai_provider, "Calls", "LLM API calls\n- Template generation\n- Code synthesis")
+Rel(ggen, marketplace, "Reads/Writes", "Package operations\n- Search\n- Install\n- Publish")
+Rel(ggen, file_system, "Reads/Writes", "Template files\n- Generated code\n- RDF graphs\n- Ontologies")
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 2: Container Diagram - Template Rendering & RDF Processing
+' ============================================================================
+@startuml c4_containers_template_rdf
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title Container Diagram - ggen Template & RDF Architecture
+
+Person(user, "Developer")
+
+System_Boundary(ggen_system, "ggen System") {
+    Container(cli, "CLI", "clap-noun-verb", "Command-line interface\n- Auto-discovery\n- JSON output\n- Type inference")
+    Container(template_engine, "Template Engine", "ggen-core", "Template rendering\n- Tera templating\n- Frontmatter parsing\n- Variable substitution\n- File tree generation")
+    Container(rdf_processor, "RDF Processor", "ggen-core", "RDF/OWL/SHACL support\n- Graph parsing\n- Validation\n- SPARQL execution\n- Ontology management")
+    Container(ai_integration, "AI Integration", "ggen-ai", "LLM providers\n- OpenAI\n- Anthropic\n- Ollama\n- Streaming generation")
+    Container(marketplace_system, "Marketplace", "ggen-marketplace", "Package management\n- Search\n- Install\n- Publish\n- Versioning")
+    Container(knowledge_hooks, "Knowledge Hooks", "ggen-core", "Autonomic regeneration\n- Trigger on changes\n- RDF-based rules")
+}
+
+System_Ext(ai_providers, "AI Providers", "External LLM APIs")
+System_Ext(external_fs, "File System", "Local storage")
+System_Ext(marketplace_repo, "Marketplace", "Remote repository")
+
+Rel(user, cli, "Uses", "Commands")
+Rel(cli, template_engine, "Delegates to", "Template operations")
+Rel(cli, rdf_processor, "Delegates to", "RDF operations")
+Rel(cli, ai_integration, "Delegates to", "AI generation")
+Rel(cli, marketplace_system, "Delegates to", "Package operations")
+
+Rel(template_engine, rdf_processor, "Queries", "SPARQL queries\n- Knowledge graph\n- Ontology data")
+Rel(template_engine, external_fs, "Reads/Writes", "Templates\n- Generated code")
+Rel(ai_integration, ai_providers, "Calls", "LLM APIs")
+Rel(ai_integration, rdf_processor, "Uses", "RDF context\n- Ontology embedding")
+Rel(rdf_processor, external_fs, "Reads/Writes", "RDF graphs\n- OWL ontologies\n- SHACL shapes")
+Rel(knowledge_hooks, rdf_processor, "Monitors", "RDF changes\n- Graph updates")
+Rel(knowledge_hooks, template_engine, "Triggers", "Regeneration")
+Rel(marketplace_system, marketplace_repo, "Syncs", "Packages")
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 3: Component Diagram - Template Engine
+' ============================================================================
+@startuml c4_components_template_engine
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title Component Diagram - Template Rendering Engine
+
+Container_Boundary(template_engine, "Template Engine (ggen-core)") {
+    Component(frontmatter_parser, "Frontmatter Parser", "YAML parser", "Parses YAML frontmatter\n- Metadata extraction\n- Variable definitions\n- Template configuration")
+    Component(tera_engine, "Tera Engine", "Template engine", "Rust templating\n- Variable substitution\n- Control structures\n- Filters and functions")
+    Component(sparql_integration, "SPARQL Integration", "RDF queries", "Executes SPARQL in templates\n- {{ sparql(query="...") }}\n- Knowledge graph access\n- Dynamic data injection")
+    Component(file_tree_generator, "File Tree Generator", "Structure builder", "Generates directory structure\n- File paths\n- Hierarchical layout\n- Nested templates")
+    Component(variable_resolver, "Variable Resolver", "Context manager", "Resolves template variables\n- User-provided vars\n- RDF-derived data\n- Computed values")
+    Component(template_loader, "Template Loader", "File I/O", "Loads templates\n- From files\n- From marketplace\n- Caching")
+    Component(output_writer, "Output Writer", "File I/O", "Writes generated code\n- File creation\n- Directory structure\n- Permissions")
+}
+
+Container(rdf_processor, "RDF Processor", "ggen-core", "Provides RDF data")
+Container(ai_integration, "AI Integration", "ggen-ai", "AI-generated templates")
+System_Ext(file_system, "File System", "Storage")
+
+Rel(frontmatter_parser, tera_engine, "Configures", "Template metadata")
+Rel(tera_engine, sparql_integration, "Uses", "SPARQL queries")
+Rel(tera_engine, variable_resolver, "Resolves", "Variables")
+Rel(file_tree_generator, tera_engine, "Uses", "Template rendering")
+Rel(variable_resolver, sparql_integration, "Queries", "RDF data")
+Rel(template_loader, tera_engine, "Provides", "Template content")
+Rel(tera_engine, output_writer, "Writes", "Generated code")
+Rel(sparql_integration, rdf_processor, "Executes", "SPARQL queries")
+Rel(template_loader, file_system, "Reads", "Template files")
+Rel(output_writer, file_system, "Writes", "Generated files")
+Rel(ai_integration, tera_engine, "Generates", "Template content")
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 3: Component Diagram - RDF Processor
+' ============================================================================
+@startuml c4_components_rdf_processor
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title Component Diagram - RDF Processor (RDF, OWL, SHACL, SPARQL)
+
+Container_Boundary(rdf_processor, "RDF Processor (ggen-core)") {
+    Component(rdf_parser, "RDF Parser", "Turtle/N-Triples parser", "Parses RDF formats\n- Turtle (.ttl)\n- N-Triples\n- RDF/XML\n- JSON-LD")
+    Component(graph_store, "Graph Store", "In-memory store", "RDF triple store\n- Subject-Predicate-Object\n- Indexed queries\n- Graph operations")
+    Component(owl_processor, "OWL Processor", "Ontology handler", "OWL ontology support\n- Classes and properties\n- Inheritance\n- Restrictions\n- Reasoning support")
+    Component(shacl_validator, "SHACL Validator", "Shape validator", "SHACL validation\n- Shape definitions\n- Constraint checking\n- Validation reports")
+    Component(sparql_engine, "SPARQL Engine", "Query processor", "SPARQL query execution\n- SELECT queries\n- CONSTRUCT queries\n- ASK queries\n- UPDATE operations")
+    Component(ontology_manager, "Ontology Manager", "Ontology operations", "Ontology management\n- Load/save\n- Merge operations\n- Namespace handling")
+    Component(serializer, "RDF Serializer", "Format converter", "RDF serialization\n- Turtle output\n- N-Triples\n- RDF/XML")
+}
+
+Container(template_engine, "Template Engine", "ggen-core", "Uses RDF data")
+Container(ai_integration, "AI Integration", "ggen-ai", "Uses ontologies")
+System_Ext(file_system, "File System", "RDF files")
+
+Rel(rdf_parser, graph_store, "Populates", "Triples")
+Rel(graph_store, owl_processor, "Provides", "Triples")
+Rel(owl_processor, graph_store, "Enriches", "Inferred triples")
+Rel(graph_store, shacl_validator, "Validates", "Data against shapes")
+Rel(graph_store, sparql_engine, "Queries", "SPARQL queries")
+Rel(ontology_manager, owl_processor, "Manages", "Ontologies")
+Rel(ontology_manager, graph_store, "Loads", "Ontology triples")
+Rel(graph_store, serializer, "Serializes", "RDF output")
+Rel(template_engine, sparql_engine, "Executes", "SPARQL queries")
+Rel(ai_integration, ontology_manager, "Uses", "Ontology context")
+Rel(rdf_parser, file_system, "Reads", "RDF files")
+Rel(serializer, file_system, "Writes", "RDF files")
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 4: Component Interaction - Template with SPARQL
+' ============================================================================
+@startuml c4_template_sparql_interaction
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title Template Engine + SPARQL Integration Detail
+
+Component(tera_engine, "Tera Engine", "Template rendering")
+Component(sparql_filter, "SPARQL Filter", "Tera filter function")
+Component(sparql_engine, "SPARQL Engine", "Query processor")
+Component(graph_store, "Graph Store", "RDF triples")
+Component(owl_reasoner, "OWL Reasoner", "Ontology reasoning")
+
+note right of tera_engine
+    **Template Example:**
+    ```tera
+    //! Type from RDF: {{ sparql(query="get_type") }}
+    
+    pub struct {{name | capitalize}} {
+        name: String,
+    }
+    ```
+end note
+
+Rel(tera_engine, sparql_filter, "Calls filter", "{{ sparql(query="...") }}")
+Rel(sparql_filter, sparql_engine, "Executes", "SPARQL query")
+Rel(sparql_engine, graph_store, "Queries", "Triples")
+Rel(graph_store, owl_reasoner, "Uses", "Reasoning")
+Rel(owl_reasoner, graph_store, "Inferred triples", "Adds")
+Rel(sparql_engine, sparql_filter, "Returns", "Query results")
+Rel(sparql_filter, tera_engine, "Injects", "RDF data")
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 3: Component Diagram - SHACL Validation Flow
+' ============================================================================
+@startuml c4_shacl_validation_flow
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title SHACL Validation Flow
+
+Container_Boundary(validation_system, "SHACL Validation System") {
+    Component(shacl_loader, "SHACL Loader", "Shape loader", "Loads SHACL shapes\n- Shape definitions\n- Target classes\n- Property constraints")
+    Component(shacl_validator, "SHACL Validator", "Validation engine", "Validates RDF data\n- Shape matching\n- Constraint checking\n- Severity levels")
+    Component(validation_report, "Validation Report", "Result generator", "Generates reports\n- Violations\n- Warnings\n- Info messages")
+    Component(constraint_checker, "Constraint Checker", "Rule evaluator", "Evaluates constraints\n- minCount/maxCount\n- datatype\n- pattern\n- node/property shapes")
+}
+
+Container(rdf_graph, "RDF Graph", "ggen-core", "Data to validate")
+System_Ext(user, "Developer", "Receives validation")
+
+Rel(shacl_loader, shacl_validator, "Provides", "Shapes")
+Rel(shacl_validator, constraint_checker, "Uses", "Constraint rules")
+Rel(rdf_graph, shacl_validator, "Validates", "Data nodes")
+Rel(constraint_checker, shacl_validator, "Reports", "Violations")
+Rel(shacl_validator, validation_report, "Generates", "Results")
+Rel(validation_report, user, "Reports", "Validation status")
+
+note right of shacl_validator
+    **SHACL Example:**
+    ```turtle
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    @prefix ex: <http://example.org/> .
+    
+    ex:UserShape
+        a sh:NodeShape ;
+        sh:targetClass ex:User ;
+        sh:property [
+            sh:path ex:name ;
+            sh:datatype xsd:string ;
+            sh:minCount 1 ;
+        ] .
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 4: OWL Ontology Processing
+' ============================================================================
+@startuml c4_owl_ontology_processing
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title OWL Ontology Processing Detail
+
+Container_Boundary(owl_system, "OWL Processing System") {
+    Component(owl_parser, "OWL Parser", "Ontology parser", "Parses OWL ontologies\n- Classes\n- Properties\n- Individuals\n- Axioms")
+    Component(ontology_reasoner, "OWL Reasoner", "Inference engine", "Performs reasoning\n- Class hierarchy\n- Property chains\n- Restrictions\n- Disjointness")
+    Component(class_hierarchy, "Class Hierarchy", "Taxonomy manager", "Manages class inheritance\n- SubClassOf\n- EquivalentClass\n- DisjointWith")
+    Component(property_manager, "Property Manager", "Property handler", "Manages properties\n- ObjectProperty\n- DataProperty\n- InverseOf\n- Transitive")
+    Component(individual_tracker, "Individual Tracker", "Instance manager", "Tracks instances\n- Type assertions\n- Property assertions\n- SameAs/DifferentFrom")
+}
+
+Container(graph_store, "Graph Store", "ggen-core", "RDF triples")
+Container(template_engine, "Template Engine", "ggen-core", "Uses ontology data")
+Container(ai_integration, "AI Integration", "ggen-ai", "Uses ontology context")
+
+Rel(owl_parser, graph_store, "Loads", "OWL axioms")
+Rel(graph_store, ontology_reasoner, "Provides", "Triples")
+Rel(ontology_reasoner, class_hierarchy, "Builds", "Hierarchy")
+Rel(ontology_reasoner, property_manager, "Infers", "Property relations")
+Rel(ontology_reasoner, individual_tracker, "Types", "Instances")
+Rel(class_hierarchy, graph_store, "Adds", "Inferred triples")
+Rel(property_manager, graph_store, "Adds", "Property triples")
+Rel(individual_tracker, graph_store, "Adds", "Instance triples")
+Rel(template_engine, ontology_reasoner, "Queries", "Ontology data")
+Rel(ai_integration, ontology_reasoner, "Uses", "Ontology context")
+
+note right of ontology_reasoner
+    **OWL Example:**
+    ```turtle
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    
+    ex:Developer
+        a owl:Class ;
+        rdfs:subClassOf ex:Person .
+    
+    ex:worksOn
+        a owl:ObjectProperty ;
+        rdfs:domain ex:Developer ;
+        rdfs:range ex:Project .
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 2: Container Diagram - Full Generation Flow
+' ============================================================================
+@startuml c4_full_generation_flow
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title Complete Generation Flow: AI + Templates + RDF
+
+Person(user, "Developer")
+
+System_Boundary(ggen_system, "ggen Generation Pipeline") {
+    Container(cli, "CLI", "clap-noun-verb", "Entry point")
+    Container(ai_generator, "AI Generator", "ggen-ai", "LLM-powered generation")
+    Container(template_engine, "Template Engine", "ggen-core", "Template rendering")
+    Container(rdf_processor, "RDF Processor", "ggen-core", "Knowledge graph")
+    Container(file_generator, "File Generator", "ggen-core", "Output generation")
+}
+
+System_Ext(ai_provider, "AI Provider", "LLM API")
+System_Ext(file_system, "File System", "Generated code")
+
+Rel(user, cli, "Commands", "ggen ai generate ...")
+Rel(cli, ai_generator, "Delegates", "Generation request")
+Rel(ai_generator, ai_provider, "Calls", "LLM API")
+Rel(ai_provider, ai_generator, "Returns", "Generated template")
+Rel(ai_generator, template_engine, "Provides", "Template content")
+Rel(template_engine, rdf_processor, "Queries", "SPARQL for context")
+Rel(rdf_processor, template_engine, "Returns", "RDF data")
+Rel(template_engine, file_generator, "Provides", "Rendered content")
+Rel(file_generator, file_system, "Writes", "Generated files")
+
+note right of ai_generator
+    **AI Generation:**
+    - Takes natural language description
+    - Generates template with RDF hooks
+    - Embeds ontology context
+end note
+
+note right of template_engine
+    **Template Rendering:**
+    - Processes Tera template
+    - Executes SPARQL queries
+    - Substitutes variables
+    - Generates file tree
+end note
+
+note right of rdf_processor
+    **RDF Support:**
+    - OWL ontologies
+    - SHACL validation
+    - SPARQL queries
+    - Knowledge graph
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 4: Data Flow - Template with RDF Knowledge Graph
+' ============================================================================
+@startuml c4_data_flow_template_rdf
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title Data Flow: Template Rendering with RDF Knowledge Graph
+
+Component(tera_template, "Tera Template", "Template file")
+Component(tera_engine, "Tera Engine", "Renderer")
+Component(sparql_executor, "SPARQL Executor", "Query processor")
+Component(owl_reasoner, "OWL Reasoner", "Inference")
+Component(graph_store, "Graph Store", "Triples")
+Component(shacl_validator, "SHACL Validator", "Validation")
+Component(output_generator, "Output Generator", "Code writer")
+
+database(rdf_graph, "RDF Graph", "Turtle/N-Triples", "Ontology data\n- Classes\n- Properties\n- Instances")
+
+Rel(tera_template, tera_engine, "1. Load", "Template file")
+Rel(tera_engine, sparql_executor, "2. Execute", "{{ sparql(query="...") }}")
+Rel(sparql_executor, graph_store, "3. Query", "Triples")
+Rel(graph_store, owl_reasoner, "4. Reason", "Inference")
+Rel(owl_reasoner, graph_store, "5. Add", "Inferred triples")
+Rel(graph_store, shacl_validator, "6. Validate", "Data shapes")
+Rel(shacl_validator, graph_store, "7. Report", "Violations")
+Rel(graph_store, sparql_executor, "8. Return", "Query results")
+Rel(sparql_executor, tera_engine, "9. Inject", "RDF data")
+Rel(tera_engine, output_generator, "10. Render", "Final code")
+Rel(graph_store, rdf_graph, "Reads/Writes", "Persistent storage")
+
+note right of tera_template
+    **Template Example:**
+    ```tera
+    //! Type from RDF: {{ sparql(query="SELECT ?type WHERE {...}") }}
+    
+    pub struct {{name | capitalize}} {
+        {% for field in sparql(query="get_fields") %}
+        {{ field.name }}: {{ field.type }},
+        {% endfor %}
+    }
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+

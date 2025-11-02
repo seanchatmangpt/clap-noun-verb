@@ -1,0 +1,565 @@
+' PlantUML C4 Diagrams for ggen v2.0 London TDD Approach
+' Focus: Outside-In Testing, Mock Boundaries, Behavior Verification
+' Based on: London TDD (Mockist TDD) - Outside-In Testing
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' London TDD: Outside-In Testing Strategy
+' ============================================================================
+@startuml c4_london_tdd_strategy
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title London TDD Strategy: Outside-In Testing for ggen v2.0
+
+skinparam component {
+    BackgroundColor<<integration>> #E1F5FE
+    BackgroundColor<<unit>> #F3E5F5
+    BackgroundColor<<mock>> #FFF3E0
+}
+
+Person(test_engineer, "Test Engineer", "Writes tests outside-in")
+
+System_Boundary(test_suite, "Test Suite - London TDD") {
+    Component(test_integration, "Integration Tests", "Outside Layer", "Tests end-to-end behavior\n- Full generation flow\n- File system interactions\n- RDF query execution\n- Template rendering\n\n✅ Start here first", <<integration>>)
+    
+    Component(test_component, "Component Tests", "Middle Layer", "Tests component interactions\n- Template engine + RDF processor\n- Frozen merger + File writer\n- Business logic separator\n\n✅ Mock external dependencies", <<unit>>)
+    
+    Component(test_unit, "Unit Tests", "Inside Layer", "Tests isolated units\n- SPARQL query parsing\n- Template syntax parsing\n- Path resolution\n- Frozen section detection\n\n✅ Mock all dependencies", <<unit>>)
+}
+
+System_Boundary(ggen_system, "ggen v2.0 System") {
+    Container(cli, "CLI", "clap-noun-verb")
+    Container(template_engine, "Template Engine", "ggen-core")
+    Container(rdf_processor, "RDF Processor", "ggen-core")
+    Container(frozen_preserver, "Frozen Preserver", "ggen-core")
+}
+
+System_Ext(file_system, "File System", "Generated code")
+System_Ext(rdf_graph, "RDF Graph", "Domain ontology")
+
+Rel(test_engineer, test_integration, "Starts with", "Outside-in")
+Rel(test_integration, test_component, "Drives", "Component tests")
+Rel(test_component, test_unit, "Drives", "Unit tests")
+
+Rel(test_integration, cli, "Tests", "End-to-end")
+Rel(test_integration, file_system, "Verifies", "Generated files")
+Rel(test_component, template_engine, "Tests", "With mocks")
+Rel(test_component, rdf_processor, "Mocks", "RDF queries")
+Rel(test_unit, frozen_preserver, "Tests", "Isolated")
+
+note right of test_integration
+    **London TDD Rule 1:**
+    Start with integration tests
+    - Test end-to-end behavior
+    - Verify system works
+    - Drive component design
+end note
+
+note right of test_component
+    **London TDD Rule 2:**
+    Test component interactions
+    - Mock external dependencies
+    - Verify interactions
+    - Focus on behavior
+end note
+
+note right of test_unit
+    **London TDD Rule 3:**
+    Test isolated units
+    - Mock all dependencies
+    - Test in isolation
+    - Verify pure functions
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Component Test Boundaries (Mocks)
+' ============================================================================
+@startuml c4_london_tdd_mocks
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title London TDD: Mock Boundaries for Component Tests
+
+skinparam component {
+    BackgroundColor<<real>> #E8F5E9
+    BackgroundColor<<mock>> #FFEBEE
+}
+
+Container_Boundary(template_engine_test, "Template Engine Component Test") {
+    Component(template_engine_real, "Template Engine", "Real", "Component under test\n- Renders templates\n- Executes SPARQL\n- Generates code", <<real>>)
+    
+    Component(sparql_mock, "SPARQL Executor", "Mock", "Mock RDF processor\n- Returns test data\n- Verifies query calls\n- Checks CONSTRUCT usage", <<mock>>)
+    
+    Component(file_writer_mock, "File Writer", "Mock", "Mock file system\n- Captures writes\n- Verifies paths\n- Checks content", <<mock>>)
+    
+    Component(frozen_merger_mock, "Frozen Merger", "Mock", "Mock frozen preserver\n- Returns preserved content\n- Verifies frozen detection\n- Checks merge logic", <<mock>>)
+}
+
+Component(test_case, "Test Case", "London TDD", "Component test\n- Sets up mocks\n- Calls real component\n- Verifies interactions\n- Asserts behavior")
+
+Rel(test_case, template_engine_real, "Tests", "Real component")
+Rel(template_engine_real, sparql_mock, "Calls", "Mock SPARQL executor")
+Rel(template_engine_real, file_writer_mock, "Calls", "Mock file writer")
+Rel(template_engine_real, frozen_merger_mock, "Calls", "Mock frozen merger")
+Rel(test_case, sparql_mock, "Verifies", "Query calls")
+Rel(test_case, file_writer_mock, "Verifies", "File writes")
+Rel(test_case, frozen_merger_mock, "Verifies", "Frozen preservation")
+
+note right of test_case
+    **London TDD Component Test:**
+    ```rust
+    #[test]
+    fn test_template_engine_renders_with_rdf() {
+        // 1. Set up mocks
+        let mut sparql_mock = SparqlExecutorMock::new();
+        sparql_mock.expect_query()
+            .returns(vec![...]);
+        
+        // 2. Call real component
+        let engine = TemplateEngine::new(sparql_mock);
+        engine.render(template, rdf).unwrap();
+        
+        // 3. Verify interactions
+        sparql_mock.verify_query_called();
+    }
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Integration Test Flow (Outside-In)
+' ============================================================================
+@startuml c4_london_tdd_integration_flow
+!theme plain
+
+title London TDD: Integration Test Flow (Outside-In)
+
+actor "Test Engineer" as TE
+participant "Integration Test" as IT
+participant "CLI" as CLI
+participant "Template Engine" as TE_REAL
+participant "RDF Processor" as RDF_REAL
+participant "File System" as FS
+
+== Outside-In Test Flow ==
+
+TE -> IT: Write integration test
+activate IT
+
+note right of IT
+    **Start with integration test:**
+    - Test end-to-end behavior
+    - Verify system works
+    - Drive design from outside
+end note
+
+IT -> CLI: ggen template generate\n--template verb.tmpl\n--rdf command.ttl
+activate CLI
+
+CLI -> TE_REAL: Load template\nExecute SPARQL
+activate TE_REAL
+
+TE_REAL -> RDF_REAL: Execute CONSTRUCT query
+activate RDF_REAL
+RDF_REAL -> FS: Load RDF file
+FS -> RDF_REAL: Return RDF triples
+RDF_REAL -> TE_REAL: Return transformed RDF
+deactivate RDF_REAL
+
+TE_REAL -> TE_REAL: Render template\nwith RDF data
+
+TE_REAL -> FS: Write generated code\n(with frozen markers)
+activate FS
+FS -> FS: Create CLI layer\nCreate business logic skeleton
+FS -> IT: Return generated files
+deactivate FS
+deactivate TE_REAL
+deactivate CLI
+
+IT -> IT: Verify generated code\n- CLI layer structure\n- Business logic separation\n- Frozen section markers\n- File paths
+
+IT -> IT: ✅ Test passes\nReal components\nReal file system\nReal RDF queries
+
+note right of IT
+    **London TDD Principle:**
+    Integration test verifies:
+    - System works end-to-end
+    - Components interact correctly
+    - Files are generated correctly
+    - RDF queries execute correctly
+end note
+
+deactivate IT
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Unit Test Isolation (Inside-Out)
+' ============================================================================
+@startuml c4_london_tdd_unit_isolation
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title London TDD: Unit Test Isolation
+
+skinparam component {
+    BackgroundColor<<unit>> #E3F2FD
+    BackgroundColor<<mock>> #FFF9C4
+}
+
+Container_Boundary(unit_test_suite, "Unit Test Suite") {
+    Component(test_frozen_detection, "Frozen Detection Test", "Unit", "Tests frozen parser in isolation\n- Mocks all dependencies\n- Tests pure functions\n- Verifies marker detection", <<unit>>)
+    
+    Component(test_path_resolver, "Path Resolver Test", "Unit", "Tests path resolution\n- Mocks filesystem\n- Tests convention logic\n- Verifies path generation", <<unit>>)
+    
+    Component(test_sparql_parser, "SPARQL Parser Test", "Unit", "Tests SPARQL parsing\n- Mocks RDF store\n- Tests query syntax\n- Verifies CONSTRUCT", <<unit>>)
+}
+
+Container_Boundary(mock_boundary, "Mock Dependencies") {
+    Component(filesystem_mock, "Filesystem Mock", "Mock", "Mocks file system operations", <<mock>>)
+    Component(rdf_store_mock, "RDF Store Mock", "Mock", "Mocks RDF graph operations", <<mock>>)
+    Component(template_loader_mock, "Template Loader Mock", "Mock", "Mocks template loading", <<mock>>)
+}
+
+Rel(test_frozen_detection, filesystem_mock, "Mocks", "File reads")
+Rel(test_path_resolver, filesystem_mock, "Mocks", "Path operations")
+Rel(test_sparql_parser, rdf_store_mock, "Mocks", "RDF queries")
+Rel(test_frozen_detection, template_loader_mock, "Mocks", "Template loading")
+
+note right of test_frozen_detection
+    **London TDD Unit Test:**
+    ```rust
+    #[test]
+    fn test_frozen_detection_parses_markers() {
+        // Mock dependencies
+        let mut fs_mock = FilesystemMock::new();
+        fs_mock.expect_read()
+            .returns("🔒 FROZEN START\n...\n🔒 FROZEN END");
+        
+        // Test in isolation
+        let parser = FrozenParser::new(fs_mock);
+        let sections = parser.detect("file.rs").unwrap();
+        
+        // Verify behavior
+        assert_eq!(sections.len(), 1);
+        assert_eq!(sections[0].content, "...");
+    }
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Test Hierarchy & Dependencies
+' ============================================================================
+@startuml c4_london_tdd_hierarchy
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title London TDD: Test Hierarchy & Dependencies
+
+skinparam component {
+    BackgroundColor<<level1>> #FFCDD2
+    BackgroundColor<<level2>> #F8BBD0
+    BackgroundColor<<level3>> #E1BEE7
+}
+
+Component(level1_integration, "Level 1: Integration Tests", "Outside", "End-to-end tests\n- Real components\n- Real file system\n- Real RDF queries\n\n✅ Start here\n✅ Drive design", <<level1>>)
+
+Component(level2_component, "Level 2: Component Tests", "Middle", "Component interaction tests\n- Real components\n- Mocked dependencies\n- Behavior verification\n\n✅ Driven by integration tests\n✅ Verify interactions", <<level2>>)
+
+Component(level3_unit, "Level 3: Unit Tests", "Inside", "Isolated unit tests\n- Pure functions\n- Mocked dependencies\n- Fast execution\n\n✅ Driven by component tests\n✅ Verify logic", <<level3>>)
+
+Rel(level1_integration, level2_component, "Drives", "Component design")
+Rel(level2_component, level3_unit, "Drives", "Unit implementation")
+Rel(level1_integration, level2_component, "Uses", "Component contracts")
+Rel(level2_component, level3_unit, "Uses", "Unit contracts")
+
+note right of level1_integration
+    **Integration Tests:**
+    - Test: `test_template_generation_end_to_end`
+    - Verify: Generated files exist
+    - Verify: CLI layer structure
+    - Verify: Business logic separation
+    - Verify: Frozen section preservation
+end note
+
+note right of level2_component
+    **Component Tests:**
+    - Test: `test_template_engine_renders_with_sparql`
+    - Mock: RDF processor
+    - Verify: Template rendering
+    - Verify: SPARQL query execution
+    - Verify: File writing
+end note
+
+note right of level3_unit
+    **Unit Tests:**
+    - Test: `test_frozen_parser_detects_markers`
+    - Mock: File system
+    - Verify: Marker detection
+    - Verify: Content extraction
+    - Verify: Edge cases
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Test Doubles Strategy
+' ============================================================================
+@startuml c4_london_tdd_doubles
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title London TDD: Test Doubles Strategy
+
+skinparam component {
+    BackgroundColor<<real>> #C8E6C9
+    BackgroundColor<<mock>> #FFCCBC
+    BackgroundColor<<stub>> #FFF9C4
+    BackgroundColor<<fake>> #BBDEFB
+}
+
+Container_Boundary(test_doubles, "Test Doubles Strategy") {
+    Component(mock_sparql, "Mock SPARQL Executor", "Mock", "Behavior verification\n- Verifies query calls\n- Checks CONSTRUCT usage\n- Asserts interactions", <<mock>>)
+    
+    Component(stub_rdf_store, "Stub RDF Store", "Stub", "State verification\n- Returns test data\n- No behavior checks\n- Simple responses", <<stub>>)
+    
+    Component(fake_filesystem, "Fake File System", "Fake", "Working implementation\n- In-memory file system\n- Real behavior\n- Test-friendly", <<fake>>)
+}
+
+Component(component_real, "Template Engine", "Real", "Component under test\n- Real implementation\n- Uses test doubles\n- Tested behavior", <<real>>)
+
+Component(test_case_doubles, "Test Case", "London TDD", "Uses appropriate double\n- Mock for interactions\n- Stub for data\n- Fake for integration")
+
+Rel(test_case_doubles, component_real, "Tests", "Real component")
+Rel(component_real, mock_sparql, "Uses", "Mock for SPARQL")
+Rel(component_real, stub_rdf_store, "Uses", "Stub for RDF data")
+Rel(component_real, fake_filesystem, "Uses", "Fake for filesystem")
+Rel(test_case_doubles, mock_sparql, "Verifies", "Interactions")
+Rel(test_case_doubles, stub_rdf_store, "Verifies", "Data")
+Rel(test_case_doubles, fake_filesystem, "Verifies", "State")
+
+note right of mock_sparql
+    **When to Use Mock:**
+    - Verify interactions
+    - Check method calls
+    - Assert behavior
+    - Test: Template engine calls SPARQL
+end note
+
+note right of stub_rdf_store
+    **When to Use Stub:**
+    - Return test data
+    - No behavior checks
+    - Simple responses
+    - Test: RDF store returns triples
+end note
+
+note right of fake_filesystem
+    **When to Use Fake:**
+    - Working implementation
+    - Test-friendly behavior
+    - Real operations
+    - Test: File operations work
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Test-Driven Component Design
+' ============================================================================
+@startuml c4_london_tdd_design
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title London TDD: Test-Driven Component Design
+
+skinparam component {
+    BackgroundColor<<test>> #E1F5FE
+    BackgroundColor<<component>> #E8F5E9
+    BackgroundColor<<interface>> #FFF3E0
+}
+
+Container_Boundary(design_process, "London TDD Design Process") {
+    Component(test_written_first, "1. Write Test", "Test", "Write failing test\n- Describes desired behavior\n- Defines component interface\n- Drives design\n\n✅ Test fails (red)", <<test>>)
+    
+    Component(interface_designed, "2. Design Interface", "Interface", "Design component interface\n- Based on test needs\n- Define contracts\n- Specify interactions\n\n✅ Interface defined", <<interface>>)
+    
+    Component(component_implemented, "3. Implement Component", "Component", "Implement component\n- Make test pass\n- Minimal implementation\n- Satisfies interface\n\n✅ Test passes (green)", <<component>>)
+    
+    Component(component_refactored, "4. Refactor", "Refactor", "Refactor implementation\n- Improve design\n- Extract patterns\n- Maintain tests\n\n✅ Tests still pass", <<component>>)
+}
+
+Rel(test_written_first, interface_designed, "Drives", "Interface design")
+Rel(interface_designed, component_implemented, "Guides", "Implementation")
+Rel(component_implemented, component_refactored, "Improves", "Design")
+Rel(component_refactored, test_written_first, "Maintains", "Tests pass")
+
+note right of test_written_first
+    **Example Test:**
+    ```rust
+    #[test]
+    fn test_template_engine_generates_with_frozen_sections() {
+        let engine = TemplateEngine::new(
+            mock_sparql,
+            mock_file_writer,
+            mock_frozen_merger,
+        );
+        
+        engine.render(template, rdf).unwrap();
+        
+        mock_file_writer.verify_write_called();
+        mock_frozen_merger.verify_preserve_called();
+    }
+    ```
+    
+    **This test drives:**
+    - TemplateEngine interface
+    - Constructor parameters
+    - Method signatures
+    - Component interactions
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Test Coverage Strategy
+' ============================================================================
+@startuml c4_london_tdd_coverage
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title London TDD: Test Coverage Strategy for ggen v2.0
+
+skinparam component {
+    BackgroundColor<<integration>> #FFCDD2
+    BackgroundColor<<component>> #F8BBD0
+    BackgroundColor<<unit>> #E1BEE7
+}
+
+Component(integration_coverage, "Integration Tests\n(20% of tests)", "Coverage", "Cover end-to-end flows\n- Full generation pipeline\n- File system operations\n- RDF query execution\n- Template rendering\n\n✅ Critical paths\n✅ User scenarios", <<integration>>)
+
+Component(component_coverage, "Component Tests\n(60% of tests)", "Coverage", "Cover component interactions\n- Template engine + RDF processor\n- Frozen merger + File writer\n- Business logic separator\n\n✅ Component boundaries\n✅ Interaction points", <<component>>)
+
+Component(unit_coverage, "Unit Tests\n(20% of tests)", "Coverage", "Cover isolated units\n- SPARQL parsing\n- Template syntax parsing\n- Path resolution\n- Frozen section detection\n\n✅ Pure functions\n✅ Edge cases", <<unit>>)
+
+note right of integration_coverage
+    **Integration Test Coverage:**
+    - ✅ End-to-end generation flow
+    - ✅ CLI command execution
+    - ✅ File generation
+    - ✅ Business logic separation
+    - ✅ Frozen section preservation
+    - ✅ Error handling
+end note
+
+note right of component_coverage
+    **Component Test Coverage:**
+    - ✅ Template engine rendering
+    - ✅ RDF processor queries
+    - ✅ Frozen merger logic
+    - ✅ File writer operations
+    - ✅ Business logic separator
+    - ✅ Path resolver conventions
+end note
+
+note right of unit_coverage
+    **Unit Test Coverage:**
+    - ✅ SPARQL query parsing
+    - ✅ Template syntax parsing
+    - ✅ Frozen marker detection
+    - ✅ Path convention resolution
+    - ✅ RDF triple processing
+    - ✅ Edge cases and error paths
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' London TDD: Test Execution Order
+' ============================================================================
+@startuml c4_london_tdd_execution
+!theme plain
+
+title London TDD: Test Execution Order
+
+participant "Test Runner" as TR
+participant "Integration Tests" as IT
+participant "Component Tests" as CT
+participant "Unit Tests" as UT
+
+== Test Execution Flow ==
+
+TR -> IT: Run integration tests first
+activate IT
+
+IT -> IT: Test end-to-end behavior
+IT -> IT: Verify system works
+IT -> IT: ✅ All pass
+
+IT -> CT: Run component tests
+activate CT
+
+CT -> CT: Test component interactions
+CT -> CT: Verify behavior
+CT -> CT: ✅ All pass
+
+CT -> UT: Run unit tests
+activate UT
+
+UT -> UT: Test isolated units
+UT -> UT: Verify logic
+UT -> UT: ✅ All pass
+
+UT -> TR: All tests pass ✅
+deactivate UT
+deactivate CT
+deactivate IT
+
+note right of IT
+    **Execution Strategy:**
+    - Integration tests run first (slow, few)
+    - Component tests run next (medium, many)
+    - Unit tests run last (fast, many)
+    
+    **Optimization:**
+    - Parallelize unit tests
+    - Cache integration tests
+    - Fast feedback loop
+end note
+
+SHOW_LEGEND()
+
+@enduml
+

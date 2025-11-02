@@ -1,0 +1,215 @@
+' PlantUML C4 Diagrams for ggen v2.0 Architecture
+' Focus: Business Logic Separation & Frozen Sections
+' Based on: ggen v2.0 Template Architecture
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' C4 Level 2: Container Diagram - ggen v2.0 Business Logic Separation
+' ============================================================================
+@startuml c4_containers_v2_business_logic
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title Container Diagram - ggen v2.0 Business Logic Separation
+
+Person(developer, "Developer", "Uses ggen to generate CLI applications")
+Person(coding_agent, "Coding Agent", "Edits business logic files")
+
+System_Boundary(ggen_v2_system, "ggen v2.0 System") {
+    Container(cli_v2, "CLI", "clap-noun-verb", "Command-line interface\n- Auto-discovery\n- JSON output\n- Type inference")
+    Container(template_engine_v2, "Template Engine", "ggen-core", "Template rendering\n- Tera templating\n- RDF-driven generation\n- Frozen section support")
+    Container(rdf_processor_v2, "RDF Processor", "ggen-core", "RDF/OWL/SHACL support\n- Graph parsing\n- SPARQL execution\n- CONSTRUCT queries")
+    Container(frozen_preserver, "Frozen Preserver", "ggen-core", "Preserves frozen sections\n- Detects frozen markers\n- Merges during regeneration")
+}
+
+System_Ext(external_fs_v2, "File System", "Generated code\n- CLI layer\n- Business logic\n- RDF ontologies")
+
+Rel(developer, cli_v2, "Uses", "ggen template generate")
+Rel(cli_v2, template_engine_v2, "Delegates to", "Template operations")
+Rel(template_engine_v2, rdf_processor_v2, "Queries", "SPARQL queries\n- CONSTRUCT\n- SELECT")
+Rel(template_engine_v2, frozen_preserver, "Marks", "Frozen sections\n- {% frozen %} tags")
+Rel(template_engine_v2, external_fs_v2, "Writes", "Generated CLI layer\n- Frozen markers")
+Rel(frozen_preserver, external_fs_v2, "Preserves", "Frozen sections\n- Human edits")
+Rel(coding_agent, external_fs_v2, "Edits", "Business logic files\n- Never regenerated")
+
+note right of template_engine_v2
+    **Template Pattern:**
+    - Generates CLI layer (thin wrapper)
+    - References business logic files
+    - Supports {% frozen %} sections
+end note
+
+note right of frozen_preserver
+    **Frozen Sections:**
+    - Detects 🔒 FROZEN START/END
+    - Preserves during regeneration
+    - Merges with template changes
+end note
+
+note right of external_fs_v2
+    **Generated Structure:**
+    - src/commands/ (CLI layer, regenerated)
+    - src/domain/ (Business logic, editable)
+    - Frozen sections in CLI layer
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 3: Component Diagram - Template Engine with Frozen Sections
+' ============================================================================
+@startuml c4_components_frozen_sections
+!theme plain
+
+LAYOUT_LEFT_RIGHT()
+
+title Component Diagram - Template Engine with Frozen Sections
+
+Container_Boundary(template_engine_frozen, "Template Engine (ggen-core)") {
+    Component(template_loader_frozen, "Template Loader", "File I/O", "Loads templates\n- From files\n- From RDF\n- Caching")
+    Component(tera_engine_frozen, "Tera Engine", "Template engine", "Renders templates\n- Variable substitution\n- {% frozen %} support\n- Control structures")
+    Component(sparql_integration_frozen, "SPARQL Integration", "RDF queries", "Executes SPARQL\n- SELECT queries\n- CONSTRUCT queries\n- RDF transformation")
+    Component(frozen_parser, "Frozen Parser", "Marker detection", "Detects frozen sections\n- {% frozen %} tags\n- Generated markers\n- Section boundaries")
+    Component(frozen_merger, "Frozen Merger", "Content preservation", "Preserves frozen content\n- Detects existing frozen sections\n- Merges with template\n- Preserves human edits")
+    Component(file_writer_frozen, "File Writer", "File I/O", "Writes generated code\n- CLI layer\n- Business logic skeleton\n- Frozen markers")
+}
+
+System_Ext(rdf_graph_frozen, "RDF Graph", "Domain ontology")
+System_Ext(generated_code_frozen, "Generated Code", "CLI layer + Business logic")
+System_Ext(existing_code_frozen, "Existing Code", "Previous generation\n- Frozen sections")
+
+Rel(template_loader_frozen, tera_engine_frozen, "Provides", "Template content")
+Rel(tera_engine_frozen, sparql_integration_frozen, "Executes", "{{ query('...') }}")
+Rel(sparql_integration_frozen, rdf_graph_frozen, "Queries", "SPARQL queries")
+Rel(tera_engine_frozen, frozen_parser, "Detects", "{% frozen %} tags")
+Rel(frozen_parser, frozen_merger, "Identifies", "Frozen sections")
+Rel(frozen_merger, existing_code_frozen, "Reads", "Previous frozen content")
+Rel(frozen_merger, tera_engine_frozen, "Merges", "Preserved content")
+Rel(tera_engine_frozen, file_writer_frozen, "Renders", "Final code")
+Rel(file_writer_frozen, generated_code_frozen, "Writes", "Generated files")
+
+note right of frozen_parser
+    **Frozen Detection:**
+    1. Parse {% frozen %} tags in template
+    2. Generate 🔒 FROZEN START/END markers
+    3. Identify section boundaries
+end note
+
+note right of frozen_merger
+    **Frozen Preservation:**
+    1. Read existing generated code
+    2. Detect frozen markers
+    3. Extract frozen content
+    4. Merge with new template output
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 3: Component Diagram - Business Logic Separation
+' ============================================================================
+@startuml c4_components_business_logic_separation
+!theme plain
+
+LAYOUT_TOP_DOWN()
+
+title Component Diagram - Business Logic Separation Pattern
+
+Container_Boundary(template_engine_biz, "Template Engine (ggen-core)") {
+    Component(rdf_query_engine, "RDF Query Engine", "SPARQL processor", "Executes CONSTRUCT queries\n- Transforms RDF\n- Generates command structure\n- Business logic paths")
+    Component(template_renderer, "Template Renderer", "Tera engine", "Renders templates\n- CLI layer template\n- Business logic template\n- File structure")
+    Component(path_resolver, "Path Resolver", "File system", "Resolves file paths\n- CLI layer paths\n- Business logic paths\n- Output directories")
+}
+
+Component(cli_layer_generator, "CLI Layer Generator", "Code generator", "Generates CLI layer\n- Thin wrappers\n- Delegates to business logic\n- Includes frozen sections")
+
+Component(business_logic_generator, "Business Logic Generator", "Code generator", "Generates business logic skeleton\n- Only if doesn't exist\n- Never regenerated\n- Editable by agent")
+
+System_Ext(rdf_ontology, "RDF Ontology", "Command definitions")
+System_Ext(cli_layer_files, "CLI Layer Files", "src/commands/\n- Generated\n- Regenerated")
+System_Ext(business_logic_files, "Business Logic Files", "src/domain/\n- Editable\n- Never regenerated")
+
+Person(coding_agent_biz, "Coding Agent", "Edits business logic")
+
+Rel(rdf_query_engine, rdf_ontology, "Queries", "CONSTRUCT queries\n- Command structure\n- Path information")
+Rel(rdf_query_engine, template_renderer, "Provides", "Transformed RDF data")
+Rel(template_renderer, cli_layer_generator, "Renders", "CLI layer template")
+Rel(template_renderer, business_logic_generator, "Renders", "Business logic template")
+Rel(cli_layer_generator, cli_layer_files, "Writes", "Generated CLI code\n- Delegates to business logic")
+Rel(business_logic_generator, business_logic_files, "Writes", "Business logic skeleton\n- Only if new")
+Rel(coding_agent_biz, business_logic_files, "Edits", "Implements business logic\n- Never regenerated")
+
+note right of cli_layer_generator
+    **CLI Layer Pattern:**
+    ```rust
+    use crate::domain::utils::doctor::*;
+
+    #[verb("doctor", "utils")]
+    pub fn utils_doctor() -> Result<DoctorOutput> {
+        Ok(run_diagnostics())
+    }
+    ```
+end note
+
+note right of business_logic_generator
+    **Business Logic Pattern:**
+    ```rust
+    pub fn run_diagnostics() -> DoctorOutput {
+        // Agent implements here
+        // Never regenerated
+    }
+    ```
+end note
+
+SHOW_LEGEND()
+
+@enduml
+
+' ============================================================================
+' C4 Level 4: Sequence Diagram - Template Generation with Frozen Sections
+' ============================================================================
+@startuml c4_sequence_frozen_generation
+!theme plain
+
+title Sequence: Template Generation with Frozen Section Preservation
+
+actor Developer
+participant "CLI" as CLI
+participant "Template Engine" as TE
+participant "RDF Processor" as RDF
+participant "Frozen Merger" as FM
+participant "File System" as FS
+
+Developer -> CLI: ggen template generate\n--template verb.tmpl\n--rdf command.ttl
+CLI -> TE: Load template
+TE -> RDF: Execute SPARQL queries\n(CONSTRUCT)
+RDF -> TE: Return transformed RDF
+
+TE -> TE: Render template\n(including {% frozen %} tags)
+
+alt First Generation
+    TE -> FS: Write generated code\n(with 🔒 FROZEN markers)
+    FS -> Developer: Generated CLI layer
+else Regeneration
+    TE -> FM: Generate new template output
+    FM -> FS: Read existing generated code
+    FS -> FM: Return existing code\n(with frozen content)
+    FM -> FM: Detect 🔒 FROZEN markers
+    FM -> FM: Extract frozen sections
+    FM -> FM: Merge frozen content\nwith new template
+    FM -> FS: Write merged code
+    FS -> Developer: Updated code\n(frozen sections preserved)
+end
+
+SHOW_LEGEND()
+
+@enduml
+

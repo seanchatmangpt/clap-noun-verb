@@ -173,6 +173,7 @@ fn main() -> Result<()> {
 ## Documentation
 
 - [Examples](examples/) - Working examples
+- [Book Documentation](docs/book/src/) - Comprehensive guide for porting CLI applications
 - [Contributing](CONTRIBUTING.md) - Contribution guidelines
 - [Changelog](CHANGELOG.md) - Version history
 
