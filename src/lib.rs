@@ -3,14 +3,20 @@
 //! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns
 //! on top of clap, similar to how Python's Typer provides a simpler interface over Click.
 //!
-//! ## Version 3.0.0 Architecture
+//! ## Version 3.2.0 Architecture
 //!
-//! Version 3.0.0 introduces attribute macros for zero-boilerplate command registration:
+//! Version 3.0.0 introduced attribute macros for zero-boilerplate command registration.
+//! Version 3.2.0 adds complete clap feature support:
 //!
 //! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[noun]` and `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
 //! - **Type Inference** - Arguments automatically inferred from function signatures
 //! - **JSON Output** - All output automatically serialized to JSON
+//! - **Environment Variables** - `#[arg(env = "VAR_NAME")]` for env var fallback
+//! - **Positional Arguments** - `#[arg(index = 0)]` for positional args
+//! - **Enhanced Actions** - Count, SetFalse with auto-inference (`usize` → Count, `bool` → SetTrue)
+//! - **Argument Groups** - Groups, requires, conflicts_with support
+//! - **Better Help** - long_about, hide, help_heading support
 //!
 //! ### Key Principles
 //!
@@ -31,7 +37,7 @@
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 3.0.0 and above
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 3.2.0 and above
 //! provide API stability guarantees:
 //!
 //! - **Public APIs** are stable and will not change in a breaking way within the same major version

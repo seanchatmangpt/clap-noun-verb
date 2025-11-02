@@ -10,7 +10,28 @@ use syn::{parse::Parser, parse_macro_input, ItemFn};
 // Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
 // because Rust doesn't allow proc_macro_attribute on parameters - only on items.
 // The #[verb] macro parses #[arg(...)] attributes directly from pat_type.attrs.
-// Users should use #[allow(unknown_attributes)] if they get compiler warnings.
+// However, we provide a pass-through #[arg] macro so the compiler accepts the attribute.
+// Users may still need #[allow(unknown_attributes)] in some contexts.
+
+/// Pass-through attribute macro for #[arg(...)] on function parameters
+///
+/// This attribute is parsed by the #[verb] macro but needs to exist as a real
+/// proc_macro_attribute so the compiler accepts it. It does nothing itself -
+/// the #[verb] macro processes these attributes during expansion.
+///
+/// Usage:
+/// ```rust,ignore
+/// #[verb("set")]
+/// fn set_config(
+///     #[arg(env = "SERVER_PORT", default_value = "8080")]
+///     port: u16,
+/// ) -> Result<()> {}
+/// ```
+#[proc_macro_attribute]
+pub fn arg(_args: TokenStream, input: TokenStream) -> TokenStream {
+    // Just pass through - the #[verb] macro will parse #[arg(...)] attributes
+    input
+}
 
 /// Attribute macro for registering a noun command
 ///
@@ -426,10 +447,31 @@ fn generate_verb_registration(
             let is_option = is_option_type(&pat_type.ty);
             let inner_type = extract_inner_type(&pat_type.ty);
             let is_flag = is_bool_type(&pat_type.ty);
+            let is_usize_type = if let syn::Type::Path(type_path) = &*pat_type.ty {
+                type_path.path.segments.last().map(|s| s.ident == "usize").unwrap_or(false)
+            } else {
+                false
+            };
             let is_vec = is_vec_type(&pat_type.ty);
             let vec_inner_type = if is_vec { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
 
-            if is_flag {
+            // Parse arg config to check for Count action
+            let arg_config = parse_arg_attributes(&pat_type.attrs);
+            let is_count_action = if let Some(config) = &arg_config {
+                config.action.as_ref().map(|a| a == "count").unwrap_or(false) || (is_usize_type && !is_option)
+            } else {
+                is_usize_type && !is_option
+            };
+
+            if is_count_action {
+                // Count action - extract count from input
+                arg_extractions.push(quote! {
+                    let #arg_name: usize = input.args.get(#arg_name_str)
+                        .and_then(|v| v.parse::<usize>().ok())
+                        .unwrap_or(0);
+                });
+                arg_calls.push(quote! { #arg_name });
+            } else if is_flag {
                 // Boolean flags
                 arg_extractions.push(quote! {
                     let #arg_name = input.opts.get(#arg_name_str)
@@ -488,6 +530,24 @@ fn generate_verb_registration(
             let is_option = is_option_type(&pat_type.ty);
             let is_flag = is_bool_type(&pat_type.ty);
 
+            // Check if it's usize (can be used with Count action for flags like -v, -vv, -vvv)
+            let is_usize_type = if let syn::Type::Path(type_path) = &*pat_type.ty {
+                type_path.path.segments.last().map(|s| s.ident == "usize").unwrap_or(false)
+            } else {
+                false
+            };
+
+            // Parse arg config to check for explicit Count action
+            let arg_config = parse_arg_attributes(&pat_type.attrs);
+            let has_count_action = if let Some(config) = &arg_config {
+                config.action.as_ref().map(|a| a == "count").unwrap_or(false)
+            } else {
+                false
+            };
+
+            // usize type without Option is treated as a flag (Count action)
+            let is_flag_type = is_flag || (is_usize_type && !is_option) || has_count_action;
+
             // Get inner type for validation (unwrap Option if needed)
             let inner_ty =
                 if is_option { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
@@ -514,11 +574,22 @@ fn generate_verb_registration(
             }
 
             // Parse argument attributes (e.g., #[arg(short = 'v', default_value = "50")])
-            let arg_config = parse_arg_attributes(&pat_type.attrs);
+            // Note: arg_config already parsed above for is_flag_type check
 
             // Auto-detect multiple values from Vec<T> type
             let is_vec_type = is_vec_type(&inner_ty);
             let multiple_values = arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
+
+            // Auto-infer action: usize type → Count (for flags like -v, -vv, -vvv),
+            // bool flags → SetTrue (unless overridden)
+            let inferred_action = if (is_usize_type && !is_option) || has_count_action {
+                // usize type without Option is inferred as Count (for -v, -vv, -vvv patterns)
+                Some("count".to_string())
+            } else if is_flag && arg_config.as_ref().and_then(|c| c.action.as_ref()).is_none() {
+                Some("set_true".to_string()) // Default for bool flags
+            } else {
+                None
+            };
 
             let min_value_token = if let Some(min) = min_val {
                 quote! { Some(#min.to_string()) }
@@ -544,10 +615,28 @@ fn generate_verb_registration(
                 quote! { None }
             };
 
-            // Get help text from docstring if available
-            let help_text = arg_descriptions.get(&arg_name);
-            let help_token = if let Some(help) = help_text {
+            // Get help text - priority: #[arg(help = "...")] > docstring > default
+            let help_token = if let Some(config) = &arg_config {
+                if let Some(ref explicit_help) = config.help {
+                    quote! { Some(#explicit_help.to_string()) }
+                } else if let Some(help) = arg_descriptions.get(&arg_name) {
+                    quote! { Some(#help.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else if let Some(help) = arg_descriptions.get(&arg_name) {
                 quote! { Some(#help.to_string()) }
+            } else {
+                quote! { None }
+            };
+
+            // Get long_help from #[arg(long_help = "...")]
+            let long_help_token = if let Some(config) = &arg_config {
+                if let Some(ref lh) = config.long_help {
+                    quote! { Some(#lh.to_string()) }
+                } else {
+                    quote! { None }
+                }
             } else {
                 quote! { None }
             };
@@ -604,11 +693,158 @@ fn generate_verb_registration(
                 quote! { vec![] }
             };
 
+            let positional_token = if let Some(config) = &arg_config {
+                if let Some(pos) = config.positional {
+                    quote! { Some(#pos) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            // Generate action token - use explicit action if provided, otherwise use inferred
+            let action_token = if let Some(config) = &arg_config {
+                if let Some(ref act) = config.action {
+                    // Parse action string to ArgAction
+                    match act.as_str() {
+                        "count" => quote! { Some(::clap::ArgAction::Count) },
+                        "set" => quote! { Some(::clap::ArgAction::Set) },
+                        "set_false" => quote! { Some(::clap::ArgAction::SetFalse) },
+                        "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
+                        "append" => quote! { Some(::clap::ArgAction::Append) },
+                        _ => quote! { None },
+                    }
+                } else if let Some(ref inferred) = inferred_action {
+                    match inferred.as_str() {
+                        "count" => quote! { Some(::clap::ArgAction::Count) },
+                        "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
+                        _ => quote! { None },
+                    }
+                } else {
+                    quote! { None }
+                }
+            } else if let Some(ref inferred) = inferred_action {
+                match inferred.as_str() {
+                    "count" => quote! { Some(::clap::ArgAction::Count) },
+                    "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
+                    _ => quote! { None },
+                }
+            } else {
+                quote! { None }
+            };
+
+            let group_token = if let Some(config) = &arg_config {
+                if let Some(ref g) = config.group {
+                    quote! { Some(#g.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let requires_token = if let Some(config) = &arg_config {
+                if !config.requires.is_empty() {
+                    let requires_vec = &config.requires;
+                    quote! { vec![#(#requires_vec.to_string()),*] }
+                } else {
+                    quote! { vec![] }
+                }
+            } else {
+                quote! { vec![] }
+            };
+
+            let conflicts_with_token = if let Some(config) = &arg_config {
+                if !config.conflicts_with.is_empty() {
+                    let conflicts_vec = &config.conflicts_with;
+                    quote! { vec![#(#conflicts_vec.to_string()),*] }
+                } else {
+                    quote! { vec![] }
+                }
+            } else {
+                quote! { vec![] }
+            };
+
+            // Handle value_parser
+            // Extract TokenStream string representation if explicit value_parser was specified
+            let value_parser_token = if let Some(config) = &arg_config {
+                if let Some(ref vp_ts) = config.value_parser {
+                    // Explicit value_parser specified - extract string representation
+                    // The TokenStream contains a string literal with the expression
+                    let ts_str = vp_ts.to_string();
+                    // Extract the actual expression string from the literal
+                    let expr_str = if ts_str.starts_with('"') && ts_str.ends_with('"') {
+                        ts_str.trim_matches('"').to_string()
+                    } else {
+                        ts_str
+                    };
+                    quote! { Some(#expr_str.to_string()) }
+                } else {
+                    // Try auto-inference
+                    let inferred_parser = infer_type_parser(&inner_ty);
+                    if let Some(ref parser) = inferred_parser {
+                        quote! { Some(#parser.to_string()) }
+                    } else {
+                        quote! { None::<Option<String>> }
+                    }
+                }
+            } else {
+                // Try auto-inference
+                let inferred_parser = infer_type_parser(&inner_ty);
+                if let Some(ref parser) = inferred_parser {
+                    quote! { Some(#parser.to_string()) }
+                } else {
+                    quote! { None::<Option<String>> }
+                }
+            };
+
+            let next_line_help_token = if let Some(config) = &arg_config {
+                let value = config.next_line_help;
+                quote! { #value }
+            } else {
+                quote! { false }
+            };
+
+            let display_order_token = if let Some(config) = &arg_config {
+                if let Some(order) = config.display_order {
+                    quote! { Some(#order) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let exclusive_token = if let Some(config) = &arg_config {
+                if let Some(excl) = config.exclusive {
+                    quote! { Some(#excl) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            let trailing_vararg_token = if let Some(config) = &arg_config {
+                let value = config.trailing_vararg;
+                quote! { #value }
+            } else {
+                quote! { false }
+            };
+
+            let allow_negative_numbers_token = if let Some(config) = &arg_config {
+                let value = config.allow_negative_numbers;
+                quote! { #value }
+            } else {
+                quote! { false }
+            };
+
             arg_metadata.push(quote! {
                 ::clap_noun_verb::cli::registry::ArgMetadata {
                     name: #arg_name.to_string(),
                     required: !#is_option,
-                    is_flag: #is_flag,
+                    is_flag: #is_flag_type,
                     help: #help_token,
                     min_value: #min_value_token,
                     max_value: #max_value_token,
@@ -620,6 +856,20 @@ fn generate_verb_registration(
                     multiple: #multiple_values,
                     value_name: #value_name_token,
                     aliases: #aliases_token,
+                    positional: #positional_token,
+                    action: #action_token,
+                    group: #group_token,
+                    requires: #requires_token,
+                    conflicts_with: #conflicts_with_token,
+                    value_parser: #value_parser_token,
+                    hide: false,
+                    next_help_heading: None::<Option<String>>,
+                    long_help: #long_help_token,
+                    next_line_help: #next_line_help_token,
+                    display_order: #display_order_token,
+                    exclusive: #exclusive_token,
+                    trailing_vararg: #trailing_vararg_token,
+                    allow_negative_numbers: #allow_negative_numbers_token,
                 }
             });
         }
@@ -774,6 +1024,19 @@ struct ArgConfig {
     multiple: bool,
     value_name: Option<String>,
     aliases: Vec<String>,
+    positional: Option<usize>,
+    action: Option<String>, // Store as string: "count", "set", "set_false", "set_true", "append"
+    group: Option<String>,
+    requires: Vec<String>,
+    conflicts_with: Vec<String>,
+    value_parser: Option<proc_macro2::TokenStream>, // Store TokenStream for compile-time expansion
+    help: Option<String>, // Override docstring help
+    long_help: Option<String>, // Long help text
+    next_line_help: bool, // Next line help formatting
+    display_order: Option<usize>, // Display order in help
+    exclusive: Option<bool>, // Exclusive group flag
+    trailing_vararg: bool, // Trailing varargs support
+    allow_negative_numbers: bool, // Allow negative numbers
 }
 
 /// Parse argument attributes from parameter attributes
@@ -791,6 +1054,19 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                     multiple: false,
                     value_name: None,
                     aliases: Vec::new(),
+                    positional: None,
+                    action: None,
+                    group: None,
+                    requires: Vec::new(),
+                    conflicts_with: Vec::new(),
+                    value_parser: None,
+                    help: None,
+                    long_help: None,
+                    next_line_help: false,
+                    display_order: None,
+                    exclusive: None,
+                    trailing_vararg: false,
+                    allow_negative_numbers: false,
                 };
 
                 // Try parsing as MetaList first (handles key=value pairs)
@@ -872,14 +1148,168 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                             config.aliases.push(s.value());
                                         }
                                     }
+                                    "index" => {
+                                        // Parse index = 0 (positional argument index)
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Int(i),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            if let Ok(index) = i.base10_parse::<usize>() {
+                                                config.positional = Some(index);
+                                            }
+                                        }
+                                    }
+                                    "action" => {
+                                        // Parse action = "count", action = "set_false", etc.
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.action = Some(s.value());
+                                        }
+                                    }
+                                    "group" => {
+                                        // Parse group = "filter"
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.group = Some(s.value());
+                                        }
+                                    }
+                                    "requires" => {
+                                        // Parse requires = ["arg1", "arg2"] or requires = "arg1"
+                                        if let syn::Expr::Array(arr) = &nv.value {
+                                            for expr in &arr.elems {
+                                                if let syn::Expr::Lit(syn::ExprLit {
+                                                    lit: syn::Lit::Str(s),
+                                                    ..
+                                                }) = expr
+                                                {
+                                                    config.requires.push(s.value());
+                                                }
+                                            }
+                                        } else if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.requires.push(s.value());
+                                        }
+                                    }
+                                    "conflicts_with" => {
+                                        // Parse conflicts_with = ["arg1", "arg2"] or conflicts_with = "arg1"
+                                        if let syn::Expr::Array(arr) = &nv.value {
+                                            for expr in &arr.elems {
+                                                if let syn::Expr::Lit(syn::ExprLit {
+                                                    lit: syn::Lit::Str(s),
+                                                    ..
+                                                }) = expr
+                                                {
+                                                    config.conflicts_with.push(s.value());
+                                                }
+                                            }
+                                        } else if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.conflicts_with.push(s.value());
+                                        }
+                                    }
+                                    "value_parser" => {
+                                        // Parse value_parser = ... 
+                                        // Workaround: Convert TokenStream to string and match common patterns
+                                        // This allows us to support common expressions like:
+                                        // - clap::value_parser!(u16).range(1..=65535)
+                                        // - clap::value_parser!(u32).range(1..)
+                                        // - clap::value_parser!(PathBuf)
+                                        // etc.
+                                        // Convert syn::Expr to TokenStream, then to string
+                                        let ts = quote::quote! { #nv.value };
+                                        let ts_string = ts.to_string();
+                                        config.value_parser = Some(proc_macro2::TokenStream::from_iter(
+                                            std::iter::once(proc_macro2::TokenTree::Literal(
+                                                proc_macro2::Literal::string(&ts_string)
+                                            ))
+                                        ));
+                                    }
+                                    "help" => {
+                                        // Parse help = "..." to override docstring
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.help = Some(s.value());
+                                        }
+                                    }
+                                    "long_help" => {
+                                        // Parse long_help = "..." for detailed help
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Str(s),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.long_help = Some(s.value());
+                                        }
+                                    }
+                                    "display_order" => {
+                                        // Parse display_order = N
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Int(i),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            if let Ok(order) = i.base10_parse::<usize>() {
+                                                config.display_order = Some(order);
+                                            }
+                                        }
+                                    }
+                                    "exclusive" => {
+                                        // Parse exclusive = true/false
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Bool(b),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.exclusive = Some(b.value);
+                                        }
+                                    }
+                                    "trailing_vararg" => {
+                                        // Parse trailing_vararg = true
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Bool(b),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.trailing_vararg = b.value;
+                                        }
+                                    }
+                                    "allow_negative_numbers" => {
+                                        // Parse allow_negative_numbers = true
+                                        if let syn::Expr::Lit(syn::ExprLit {
+                                            lit: syn::Lit::Bool(b),
+                                            ..
+                                        }) = &nv.value
+                                        {
+                                            config.allow_negative_numbers = b.value;
+                                        }
+                                    }
                                     _ => {}
                                 }
                             }
                             syn::Meta::Path(path) => {
-                                // Handle flag attributes like `multiple`
+                                // Handle flag attributes like `multiple`, `next_line_help`, `trailing_vararg`
                                 if let Some(ident) = path.get_ident() {
                                     match ident.to_string().as_str() {
                                         "multiple" => config.multiple = true,
+                                        "next_line_help" => config.next_line_help = true,
+                                        "trailing_vararg" => config.trailing_vararg = true,
+                                        "allow_negative_numbers" => config.allow_negative_numbers = true,
                                         _ => {}
                                     }
                                 }
@@ -1008,4 +1438,33 @@ fn extract_inner_type(ty: &syn::Type) -> syn::Type {
         }
     }
     ty.clone()
+}
+
+/// Infer type parser for common types
+///
+/// Returns a string representation of the parser expression for auto-inferred types:
+/// - `PathBuf` → `clap::value_parser!(PathBuf)`
+/// - `IpAddr` → `clap::value_parser!(IpAddr)`
+/// - `Ipv4Addr` → `clap::value_parser!(Ipv4Addr)`
+/// - `Ipv6Addr` → `clap::value_parser!(Ipv6Addr)`
+/// - `Url` → `clap::value_parser!(Url)` (if url feature available)
+/// - Numeric types already handled by validation constraints
+fn infer_type_parser(ty: &syn::Type) -> Option<String> {
+    if let syn::Type::Path(type_path) = ty {
+        let type_name = type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
+
+        match type_name.as_str() {
+            "PathBuf" => Some("clap::value_parser!(::std::path::PathBuf)".to_string()),
+            "IpAddr" => Some("clap::value_parser!(::std::net::IpAddr)".to_string()),
+            "Ipv4Addr" => Some("clap::value_parser!(::std::net::Ipv4Addr)".to_string()),
+            "Ipv6Addr" => Some("clap::value_parser!(::std::net::Ipv6Addr)".to_string()),
+            // Url requires url crate - check if available at compile time
+            // For now, we'll include it and let compilation fail if url feature isn't enabled
+            "Url" => Some("clap::value_parser!(::url::Url)".to_string()),
+            // Duration requires custom parser - defer to explicit specification
+            _ => None,
+        }
+    } else {
+        None
+    }
 }

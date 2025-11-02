@@ -1,6 +1,6 @@
 [package]
 name = "clap-noun-verb"
-version = "3.0.0"
+version = "3.3.0"
 edition = "2021"
 rust-version = "1.70"
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 linkme = "0.3"
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "3.0.0" }
+clap-noun-verb-macros = { version = "3.3.0", path = "clap-noun-verb-macros" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

@@ -2,6 +2,23 @@
 
 A framework for building composable CLI patterns on top of clap using the **noun-verb pattern** (e.g., `services status`, `collector up`). Inspired by Python's Typer.
 
+## v3.3.0 - Advanced clap Features & Typer-style Enhancements
+
+- **Custom Value Parsers**: Auto-inferred parsers for `PathBuf`, `IpAddr`, `Url`, etc.
+- **Enhanced Help**: `long_help`, `next_line_help`, help override support
+- **Display Order**: Control argument order in help with `display_order`
+- **Exclusive Groups**: Mutually exclusive argument groups
+- **Trailing Varargs**: Support for trailing variable arguments
+- **Negative Numbers**: Allow negative numbers in numeric arguments
+
+## v3.2.0 - Complete clap Feature Support
+
+- **Environment Variables**: `#[arg(env = "VAR_NAME")]` for env var fallback
+- **Positional Arguments**: `#[arg(index = 0)]` for positional args
+- **Enhanced Actions**: Count, SetFalse with auto-inference (`usize` → Count, `bool` → SetTrue)
+- **Argument Groups**: Groups, requires, conflicts_with support
+- **Better Help**: long_about, hide, help_heading support
+
 ## v3.0.0 - Attribute Macros & Auto-Discovery
 
 - **Attribute Macros**: `#[noun]` and `#[verb]` for zero-boilerplate command registration
@@ -16,8 +33,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "3.0.0"
-clap-noun-verb-macros = "3.0.0"
+clap-noun-verb = "3.3.0"
+clap-noun-verb-macros = "3.3.0"
 ```
 
 Use attribute macros to define commands:
@@ -75,8 +92,84 @@ Arguments are automatically inferred from function signatures:
 
 - `String` → Required argument `--name`
 - `Option<T>` → Optional argument `--name <value>`
-- `bool` → Flag `--name` (true if present)
-- `Vec<T>` → Multiple values `--name <value1> <value2> ...`
+- `bool` → Flag `--name` (true if present, uses `SetTrue` action)
+- `usize` → Count action `--name` (e.g., `-vvv` → 3)
+- `Vec<T>` → Multiple values `--name <value1> <value2> ...` (uses `Append` action)
+
+## Argument Attributes (v3.2.0)
+
+Use `#[arg(...)]` attributes to configure arguments:
+
+```rust
+#[verb("config")]
+fn set_config(
+    // Short flag with default value
+    #[arg(short = 'p', default_value = "8080")]
+    port: u16,
+    
+    // Environment variable fallback
+    #[arg(env = "SERVER_HOST", default_value = "localhost")]
+    host: String,
+    
+    // Positional argument (index 0)
+    #[arg(index = 0)]
+    url: String,
+    
+    // Count action (auto-inferred for usize, but can be explicit)
+    #[arg(short = 'v', action = "count")]
+    verbose: usize,
+    
+    // Multiple values
+    #[arg(multiple)]
+    tags: Vec<String>,
+    
+    // Custom value name in help
+    #[arg(value_name = "FILE")]
+    output: String,
+    
+    // Aliases
+    #[arg(short = 'd', alias = "debug")]
+    verbose_debug: bool,
+    
+    // Argument groups (exclusive)
+    #[arg(group = "format")]
+    json: bool,
+    #[arg(group = "format")]
+    yaml: bool,
+    
+    // Requires another argument
+    #[arg(requires = "output")]
+    format: Option<String>,
+    
+    // Conflicts with another argument
+    #[arg(conflicts_with = "format")]
+    raw: bool,
+) -> Result<Config> {
+    Ok(get_config(port, host, url, verbose, tags, output))
+}
+```
+
+**Usage:**
+```bash
+# Short flags with defaults
+myapp config set --port 3000  # Uses 3000, not default 8080
+
+# Environment variables
+export SERVER_HOST=example.com
+myapp config set  # Uses example.com from env
+
+# Positional + named
+myapp config set https://api.example.com --host api.example.com
+
+# Count action (verbose)
+myapp config set -vvv  # verbose = 3
+
+# Multiple values
+myapp config set --tags rust cli json
+
+# Aliases
+myapp config set -d  # Same as --verbose-debug or --debug
+```
 
 ## Verb Registration
 

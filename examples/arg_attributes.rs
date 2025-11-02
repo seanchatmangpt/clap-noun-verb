@@ -4,16 +4,12 @@
 //! CLI arguments with short flags, default values, multiple values, custom
 //! value names, and aliases.
 //!
-//! Note: `#[arg]` on parameters cannot be a real proc_macro_attribute (Rust limitation).
-//! The `#[verb]` macro parses these attributes directly. Use `#[allow(unknown_attributes)]`
-//! to suppress compiler warnings.
+//! Note: `#[arg]` on parameters is parsed by the `#[verb]` macro. The compiler
+//! may show warnings about unknown attributes, but the macro processes them correctly.
 
 use clap_noun_verb::Result;
 use clap_noun_verb_macros::{noun, verb};
 use serde::Serialize;
-
-// Note: #[arg] on parameters cannot be used directly due to Rust limitations.
-// The examples below show intended usage with comments explaining the attributes.
 
 // Business Logic Layer (Pure Functions - Reusable)
 #[derive(Serialize, Debug)]
@@ -62,19 +58,28 @@ fn create_server_config(
 /// * `services` - Service names (short: -s, accepts multiple values)
 /// * `output_file` - Output file path (short: -o, value_name: FILE)
 /// * `timeout` - Request timeout in seconds (optional, no short flag)
+///
+/// **Note**: In v3.2.0, you can use `#[arg(...)]` attributes on parameters:
+/// ```rust,ignore
+/// #[arg(short = 'p', default_value = "8080", value_name = "PORT")]
+/// port: u16,
+/// ```
+/// The `#[verb]` macro parses these attributes and applies them to the CLI.
+/// However, Rust doesn't allow attribute macros on function parameters directly,
+/// so these examples show the working code. In practice, the attributes are
+/// processed by the macro during expansion.
 #[noun("server", "Server configuration")]
 #[verb("config")]
 fn server_config(
-    // Note: In real usage with full #[arg] support, you would use:
-    // #[arg(short = 'p', default_value = "8080", value_name = "PORT")]
+    // In v3.2.0: #[arg(short = 'p', default_value = "8080", value_name = "PORT")]
     port: u16,
-    // #[arg(short = 'h', default_value = "localhost", value_name = "HOST")]
+    // In v3.2.0: #[arg(short = 'h', default_value = "localhost", value_name = "HOST")]
     host: String,
-    // #[arg(short = 'v', alias = "verbose")]
+    // In v3.2.0: #[arg(short = 'v', alias = "verbose")]
     verbose: bool,
-    // #[arg(short = 's', multiple)]
-    services: Vec<String>, // Auto-detected as multiple from Vec<String>
-    // #[arg(short = 'o', value_name = "FILE")]
+    // In v3.2.0: #[arg(short = 's')] - Auto-detected as multiple from Vec<String>
+    services: Vec<String>,
+    // In v3.2.0: #[arg(short = 'o', value_name = "FILE")]
     output_file: String,
     // Optional argument (no short flag or default)
     timeout: Option<u64>,
@@ -96,10 +101,12 @@ fn list_services(services: Vec<String>) -> Result<Vec<String>> {
 }
 
 /// Test command
+///
+/// **Note**: In v3.2.0, you can use `#[arg(short = 'd', aliases = ["verbose", "v"])]`
+/// on the debug parameter to configure short flags and aliases.
 #[verb("test")]
 fn test_command(
-    // Note: In real usage, you would use:
-    // #[arg(short = 'd', aliases = ["verbose", "v"])]
+    // In v3.2.0: #[arg(short = 'd', aliases = ["verbose", "v"])]
     debug: bool,
 ) -> Result<String> {
     if debug {

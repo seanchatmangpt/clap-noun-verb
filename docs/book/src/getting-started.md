@@ -10,9 +10,9 @@ Add `clap-noun-verb` to your `Cargo.toml` dependencies:
 
 ```toml
 [dependencies]
-clap = { version = "4.5", features = ["derive"] }
-clap-noun-verb = "3.0.0"
-clap-noun-verb-macros = "3.0.0"  # Required for #[verb] attribute macro
+clap = { version = "4.5", features = ["derive", "env"] }
+clap-noun-verb = "3.2.0"
+clap-noun-verb-macros = "3.2.0"  # Required for #[verb] attribute macro
 serde = { version = "1.0", features = ["derive"] }  # Required for JSON output
 # ... your other dependencies
 ```
@@ -23,8 +23,8 @@ Ensure your `clap` version is compatible with `clap-noun-verb` (requires clap 4.
 
 ```toml
 [dependencies]
-clap = { version = "4.5", features = ["derive"] }
-clap-noun-verb = "3.0.0"
+clap = { version = "4.5", features = ["derive", "env"] }
+clap-noun-verb = "3.2.0"
 ```
 
 ### 3. Optional: Update Dev Dependencies
@@ -33,7 +33,7 @@ If you have CLI tests, ensure they use compatible versions:
 
 ```toml
 [dev-dependencies]
-clap-noun-verb = "3.0.0"
+clap-noun-verb = "3.2.0"
 # ... other dev dependencies
 ```
 
@@ -105,7 +105,7 @@ ggen/
 
 ### Core Types
 
-### Attribute Macros (v3.0.0)
+### Attribute Macros (v3.2.0)
 
 The recommended approach uses attribute macros:
 
@@ -163,9 +163,9 @@ fn show_logs(service: String, lines: Option<usize>) -> Result<Logs> {
 
 ## Async/Sync Compatibility
 
-**Important**: `clap-noun-verb` v3.0.0 uses **sync-only** functions, but ggen has **async business logic**. We handle this by creating **sync CLI wrappers** that spawn async runtimes.
+**Important**: `clap-noun-verb` v3.2.0 uses **sync-only** functions, but ggen has **async business logic**. We handle this by creating **sync CLI wrappers** that spawn async runtimes.
 
-**Why Sync-Only?**: clap-noun-verb uses trait objects (`Box<dyn VerbCommand>`) for command registration. Rust trait objects cannot have async methods in stable Rust without `async-trait`, which would add overhead and violate the framework's zero-cost abstraction principle. **Async support is not planned for v3.1.0** - the sync wrapper pattern is the recommended approach.
+**Why Sync-Only?**: clap-noun-verb uses trait objects (`Box<dyn VerbCommand>`) for command registration. Rust trait objects cannot have async methods in stable Rust without `async-trait`, which would add overhead and violate the framework's zero-cost abstraction principle. **Async support is not planned for v3.x** - the sync wrapper pattern is the recommended approach.
 
 ### The Pattern
 
@@ -272,11 +272,18 @@ Arguments are automatically inferred from function signatures:
 fn ai_project(
     name: String,           // → Required argument --name
     description: Option<String>,  // → Optional argument --description
-    rust: bool              // → Flag --rust
+    rust: bool,            // → Flag --rust (SetTrue action)
+    verbosity: usize,      // → Count action (e.g., -vvv → 3)
+    services: Vec<String>, // → Multiple values (Append action)
 ) -> Result<ProjectOutput> {
     Ok(ProjectOutput { name, rust })
 }
 ```
+
+**v3.2.0 Enhanced Type Inference:**
+- `usize` → Count action (e.g., `-vvv` → 3)
+- `bool` → SetTrue action (flag, true if present)
+- `Vec<T>` → Append action (accepts multiple values)
 
 ### 3. Automatic JSON Output
 
@@ -391,6 +398,91 @@ $ myapp services status
 2. **Type inference**: Arguments inferred from function signature (none in this case)
 3. **JSON output**: Return type automatically serialized to JSON
 4. **Module docs**: Noun description from `//! Manage application services` comment
+
+## v3.2.0 Features
+
+Version 3.2.0 adds complete clap feature support:
+
+### Environment Variables
+
+Arguments can read from environment variables:
+
+```rust,no_run
+#[verb("config")]
+fn set_config(
+    // #[arg(env = "SERVER_PORT", default_value = "8080")]
+    port: u16,
+) -> Result<Config> {
+    Ok(get_config(port))
+}
+```
+
+**Usage:**
+```bash
+export SERVER_PORT=9000
+myapp config set  # Uses 9000 from env
+myapp config set --port 9090  # CLI overrides env
+```
+
+### Positional Arguments
+
+Arguments can be positional using `#[arg(index = N)]`:
+
+```rust,no_run
+#[verb("clone")]
+fn clone_repo(
+    // #[arg(index = 0)]
+    url: String,
+    // #[arg(index = 1)]
+    destination: Option<String>,
+) -> Result<Repo> {
+    Ok(clone(url, destination))
+}
+```
+
+**Usage:**
+```bash
+myapp git clone https://example.com/repo.git ./local-dir
+```
+
+### Enhanced ArgAction
+
+Support for Count, SetFalse, and auto-inference:
+
+```rust,no_run
+#[verb("build")]
+fn build_project(
+    // #[arg(short = 'v')] - Auto-inferred as Count action
+    verbosity: usize,  // -v = 1, -vv = 2, -vvv = 3
+    // #[arg(action = "set_false")]
+    cache: bool,       // --no-cache sets to false
+    debug: bool,       // Auto-inferred as SetTrue
+) -> Result<BuildResult> {
+    Ok(build(verbosity, cache, debug))
+}
+```
+
+### Argument Groups and Conflicts
+
+Arguments can be grouped and have relationships:
+
+```rust,no_run
+#[verb("filter")]
+fn filter_items(
+    // #[arg(group = "filter")]
+    by_name: Option<String>,
+    // #[arg(group = "filter")]
+    by_id: Option<u64>,
+    // #[arg(requires = "value")]
+    filename: Option<String>,
+    // #[arg(conflicts_with = "by_name")]
+    all: bool,
+) -> Result<FilteredItems> {
+    Ok(filter(by_name, by_id, filename, all))
+}
+```
+
+For complete documentation of all v3.2.0 features, see [Argument Attributes](../ARG_ATTRIBUTES.md).
 
 ## Next Steps
 

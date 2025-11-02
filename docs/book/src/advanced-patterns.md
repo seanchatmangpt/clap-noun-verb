@@ -4,7 +4,7 @@ This chapter covers advanced patterns for porting complex CLI structures, includ
 
 ## Async/Sync Compatibility Pattern
 
-**Critical**: `clap-noun-verb` v3.0.0 uses **sync-only** functions, but ggen has **async business logic**. This pattern shows how to handle async operations with sync CLI wrappers.
+**Critical**: `clap-noun-verb` v3.2.0 uses **sync-only** functions, but ggen has **async business logic**. This pattern shows how to handle async operations with sync CLI wrappers.
 
 ### The Pattern
 
