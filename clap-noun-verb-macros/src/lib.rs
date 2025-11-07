@@ -786,7 +786,7 @@ fn generate_verb_registration(
                     if let Some(ref parser) = inferred_parser {
                         quote! { Some(#parser.to_string()) }
                     } else {
-                        quote! { None::<Option<String>> }
+                        quote! { None }
                     }
                 }
             } else {
@@ -795,7 +795,7 @@ fn generate_verb_registration(
                 if let Some(ref parser) = inferred_parser {
                     quote! { Some(#parser.to_string()) }
                 } else {
-                    quote! { None::<Option<String>> }
+                    quote! { None }
                 }
             };
 
@@ -863,7 +863,7 @@ fn generate_verb_registration(
                     conflicts_with: #conflicts_with_token,
                     value_parser: #value_parser_token,
                     hide: false,
-                    next_help_heading: None::<Option<String>>,
+                    next_help_heading: None,
                     long_help: #long_help_token,
                     next_line_help: #next_line_help_token,
                     display_order: #display_order_token,
