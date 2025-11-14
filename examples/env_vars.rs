@@ -19,7 +19,12 @@ struct ServerConfig {
     debug: bool,
 }
 
-fn create_server_config(port: u16, host: String, timeout: Option<u64>, debug: bool) -> ServerConfig {
+fn create_server_config(
+    port: u16,
+    host: String,
+    timeout: Option<u64>,
+    debug: bool,
+) -> ServerConfig {
     ServerConfig { port, host, timeout, debug }
 }
 
@@ -105,4 +110,3 @@ fn main() -> Result<()> {
     // Auto-discover all registered commands and run
     clap_noun_verb::run()
 }
-

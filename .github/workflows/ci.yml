@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
   pull_request:
-    branches: [ main ]
+    branches: [ '**' ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -127,10 +127,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust 1.70.0 (MSRV)
-        uses: dtolnay/rust-toolchain@1.70.0
+      - name: Install Rust 1.74.0 (MSRV)
+        uses: dtolnay/rust-toolchain@1.74.0
         with:
-          toolchain: 1.70.0
+          toolchain: 1.74.0
 
       - name: Build
         run: cargo build --all-features
@@ -150,7 +150,7 @@ jobs:
         uses: taiki-e/install-action@typos
 
       - name: Check spelling
-        run: typos --write-changes
+        run: typos
 
   security-audit:
     name: Security Audit

@@ -5,9 +5,9 @@
 //!
 //! These attribute macros are provided by the `clap-noun-verb-macros` crate.
 
+use crate::cli::value_parser;
 use crate::error::Result;
 use crate::logic::{HandlerInput, HandlerOutput};
-use crate::cli::value_parser;
 use linkme::distributed_slice;
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -195,11 +195,7 @@ impl CommandRegistry {
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
         reg.nouns.insert(
             name.to_string(),
-            NounMetadata {
-                name: name.to_string(),
-                about: about.to_string(),
-                long_about: None,
-            },
+            NounMetadata { name: name.to_string(), about: about.to_string(), long_about: None },
         );
     }
 
@@ -283,193 +279,224 @@ impl CommandRegistry {
         let mut cmd = clap::Command::new("cli");
 
         for (noun_name, noun_meta) in &self.nouns {
-            let noun_name: &'static str = Box::leak(noun_name.clone().into_boxed_str());
-            let about: &'static str = Box::leak(noun_meta.about.clone().into_boxed_str());
-
-            let mut noun_cmd = clap::Command::new(noun_name).about(about);
-            
-            // Apply long_about if available
-            if let Some(ref long_about) = noun_meta.long_about {
-                let long_about_static: &'static str = Box::leak(long_about.clone().into_boxed_str());
-                noun_cmd = noun_cmd.long_about(long_about_static);
-            }
-
-            // Add verbs as subcommands
-            if let Some(verbs) = self.verbs.get(noun_name) {
-                for (verb_name, verb_meta) in verbs {
-                    let verb_name: &'static str = Box::leak(verb_name.clone().into_boxed_str());
-                    let about: &'static str = Box::leak(verb_meta.about.clone().into_boxed_str());
-
-                    let mut verb_cmd = clap::Command::new(verb_name).about(about);
-
-                    // Collect argument groups first with exclusivity info
-                    let mut groups: std::collections::HashMap<String, (bool, Vec<String>)> = std::collections::HashMap::new();
-                    for arg_meta in &verb_meta.args {
-                        if let Some(ref group_name) = arg_meta.group {
-                            let exclusive = arg_meta.exclusive.unwrap_or(true); // Default to exclusive
-                            let entry = groups.entry(group_name.clone()).or_insert_with(|| (exclusive, Vec::new()));
-                            entry.1.push(arg_meta.name.clone());
-                            // If any arg in group is exclusive, mark group as exclusive
-                            if !exclusive {
-                                entry.0 = false;
-                            }
-                        }
-                    }
-
-                    // Create ArgGroup for each group with proper exclusivity
-                    for (group_name, (exclusive, arg_names)) in &groups {
-                        if arg_names.len() > 1 {
-                            let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
-                            let mut group = clap::ArgGroup::new(group_static).multiple(!exclusive);
-                            for arg_name in arg_names {
-                                let arg_name_static: &'static str = Box::leak(arg_name.clone().into_boxed_str());
-                                group = group.arg(arg_name_static);
-                            }
-                            verb_cmd = verb_cmd.group(group);
-                        }
-                    }
-
-                    // Add arguments from metadata
-                    for arg_meta in &verb_meta.args {
-                        let arg_name: &'static str =
-                            Box::leak(arg_meta.name.clone().into_boxed_str());
-                        let default_value_name: &'static str =
-                            Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
-                        
-                        // Create argument - positional args use index(), others use long()
-                        // Handle trailing varargs for positional args
-                        let mut arg = if let Some(index) = arg_meta.positional {
-                            let mut pos_arg = clap::Arg::new(arg_name).index(index);
-                            if arg_meta.trailing_vararg {
-                                pos_arg = pos_arg.num_args(1..);
-                            }
-                            pos_arg
-                        } else {
-                            clap::Arg::new(arg_name).long(arg_name)
-                        };
-
-                        // Apply short flag if specified (only for non-positional args)
-                        if arg_meta.positional.is_none() {
-                            if let Some(short_char) = arg_meta.short {
-                                arg = arg.short(short_char);
-                            }
-
-                            // Apply aliases if specified (only for non-positional args)
-                            for alias in &arg_meta.aliases {
-                                let alias_static: &'static str = Box::leak(alias.clone().into_boxed_str());
-                                arg = arg.alias(alias_static);
-                            }
-                        }
-
-                        // Apply environment variable if specified
-                        if let Some(ref env_var) = arg_meta.env {
-                            let env_static: &'static str = Box::leak(env_var.clone().into_boxed_str());
-                            arg = arg.env(env_static);
-                        }
-
-                        // Apply default value if specified
-                        if let Some(ref default_val) = arg_meta.default_value {
-                            let default_static: &'static str =
-                                Box::leak(default_val.clone().into_boxed_str());
-                            arg = arg.default_value(default_static);
-                        }
-
-                        // Apply custom action if specified, otherwise use defaults
-                        if let Some(action) = &arg_meta.action {
-                            arg = arg.action(action.clone());
-                        } else if arg_meta.is_flag {
-                            // Default for flags
-                            arg = arg.action(clap::ArgAction::SetTrue);
-                        } else {
-                            // Apply value_name (custom if specified, otherwise default)
-                            let value_name: &'static str = if let Some(ref vn) = arg_meta.value_name {
-                                Box::leak(vn.clone().into_boxed_str())
-                            } else {
-                                default_value_name
-                            };
-                            arg = arg.value_name(value_name);
-
-                            // Apply multiple values if specified or detected from Vec<T>
-                            if arg_meta.multiple {
-                                arg = arg.action(clap::ArgAction::Append);
-                            }
-
-                            if arg_meta.required {
-                                arg = arg.required(true);
-                            }
-
-                            // Apply auto-inferred and explicit validation constraints
-                            // Try to apply validators based on the stored metadata
-                            apply_validators(&mut arg, arg_meta);
-
-                            // Apply allow_negative_numbers if specified
-                            if arg_meta.allow_negative_numbers {
-                                arg = arg.allow_negative_numbers(true);
-                            }
-                        }
-
-                        // Add help text - priority: explicit > docstring > default
-                        if let Some(help_text) = &arg_meta.help {
-                            let help: &'static str = Box::leak(help_text.clone().into_boxed_str());
-                            arg = arg.help(help);
-                        }
-
-                        // Apply long_help if specified
-                        if let Some(long_help_text) = &arg_meta.long_help {
-                            let long_help: &'static str = Box::leak(long_help_text.clone().into_boxed_str());
-                            arg = arg.long_help(long_help);
-                        }
-
-                        // Apply next_line_help if specified
-                        if arg_meta.next_line_help {
-                            arg = arg.next_line_help(true);
-                        }
-
-                        // Apply display_order if specified
-                        if let Some(order) = arg_meta.display_order {
-                            arg = arg.display_order(order);
-                        }
-
-                        // Apply requires
-                        for req in &arg_meta.requires {
-                            let req_static: &'static str = Box::leak(req.clone().into_boxed_str());
-                            arg = arg.requires(req_static);
-                        }
-
-                        // Apply conflicts_with
-                        for conflict in &arg_meta.conflicts_with {
-                            let conflict_static: &'static str = Box::leak(conflict.clone().into_boxed_str());
-                            arg = arg.conflicts_with(conflict_static);
-                        }
-
-                        // Apply group membership (if not already in a group via ArgGroup above)
-                        if let Some(ref group_name) = arg_meta.group {
-                            let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
-                            arg = arg.group(group_static);
-                        }
-
-                        // Apply hide if specified
-                        if arg_meta.hide {
-                            arg = arg.hide(true);
-                        }
-
-                        // Apply help_heading if specified
-                        if let Some(ref heading) = arg_meta.next_help_heading {
-                            let heading_static: &'static str = Box::leak(heading.clone().into_boxed_str());
-                            arg = arg.help_heading(heading_static);
-                        }
-
-                        verb_cmd = verb_cmd.arg(arg);
-                    }
-
-                    noun_cmd = noun_cmd.subcommand(verb_cmd);
-                }
-            }
-
+            let noun_cmd = self.build_noun_command(noun_name, noun_meta);
             cmd = cmd.subcommand(noun_cmd);
         }
 
         cmd
+    }
+
+    /// Build a noun command with all its verb subcommands
+    fn build_noun_command(&self, noun_name: &str, noun_meta: &NounMetadata) -> clap::Command {
+        let noun_name_static: &'static str = Box::leak(noun_name.to_string().into_boxed_str());
+        let about: &'static str = Box::leak(noun_meta.about.clone().into_boxed_str());
+        let mut noun_cmd = clap::Command::new(noun_name_static).about(about);
+
+        // Apply long_about if available
+        if let Some(ref long_about) = noun_meta.long_about {
+            let long_about_static: &'static str = Box::leak(long_about.clone().into_boxed_str());
+            noun_cmd = noun_cmd.long_about(long_about_static);
+        }
+
+        // Add verbs as subcommands
+        if let Some(verbs) = self.verbs.get(noun_name) {
+            for (verb_name, verb_meta) in verbs {
+                let verb_cmd = self.build_verb_command(verb_name, verb_meta);
+                noun_cmd = noun_cmd.subcommand(verb_cmd);
+            }
+        }
+
+        noun_cmd
+    }
+
+    /// Build a verb command with all its arguments
+    fn build_verb_command(&self, verb_name: &str, verb_meta: &VerbMetadata) -> clap::Command {
+        let verb_name_static: &'static str = Box::leak(verb_name.to_string().into_boxed_str());
+        let about: &'static str = Box::leak(verb_meta.about.clone().into_boxed_str());
+        let mut verb_cmd = clap::Command::new(verb_name_static).about(about);
+
+        // Add argument groups and arguments
+        verb_cmd = self.add_arg_groups(verb_cmd, verb_meta);
+        verb_cmd = self.add_arguments(verb_cmd, verb_meta);
+
+        verb_cmd
+    }
+
+    /// Add argument groups to a command
+    fn add_arg_groups(
+        &self,
+        mut verb_cmd: clap::Command,
+        verb_meta: &VerbMetadata,
+    ) -> clap::Command {
+        // Collect argument groups first with exclusivity info
+        let mut groups: std::collections::HashMap<String, (bool, Vec<String>)> =
+            std::collections::HashMap::new();
+        for arg_meta in &verb_meta.args {
+            if let Some(ref group_name) = arg_meta.group {
+                let exclusive = arg_meta.exclusive.unwrap_or(true); // Default to exclusive
+                let entry =
+                    groups.entry(group_name.clone()).or_insert_with(|| (exclusive, Vec::new()));
+                entry.1.push(arg_meta.name.clone());
+                // If any arg in group is exclusive, mark group as exclusive
+                if !exclusive {
+                    entry.0 = false;
+                }
+            }
+        }
+
+        // Create ArgGroup for each group with proper exclusivity
+        for (group_name, (exclusive, arg_names)) in &groups {
+            if arg_names.len() > 1 {
+                let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
+                let group = clap::ArgGroup::new(group_static).multiple(!exclusive);
+                let mut group = group;
+                for arg_name in arg_names {
+                    let arg_name_static: &'static str =
+                        Box::leak(arg_name.clone().into_boxed_str());
+                    group = group.arg(arg_name_static);
+                }
+                verb_cmd = verb_cmd.group(group);
+            }
+        }
+
+        verb_cmd
+    }
+
+    /// Add arguments to a command
+    fn add_arguments(
+        &self,
+        mut verb_cmd: clap::Command,
+        verb_meta: &VerbMetadata,
+    ) -> clap::Command {
+        for arg_meta in &verb_meta.args {
+            let arg = self.build_argument(arg_meta);
+            verb_cmd = verb_cmd.arg(arg);
+        }
+        verb_cmd
+    }
+
+    /// Build a single argument
+    fn build_argument(&self, arg_meta: &ArgMetadata) -> clap::Arg {
+        let arg_name: &'static str = Box::leak(arg_meta.name.clone().into_boxed_str());
+        let default_value_name: &'static str =
+            Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
+
+        // Create argument - positional args use index(), others use long()
+        let mut arg = if let Some(index) = arg_meta.positional {
+            let mut pos_arg = clap::Arg::new(arg_name).index(index);
+            if arg_meta.trailing_vararg {
+                pos_arg = pos_arg.num_args(1..);
+            }
+            pos_arg
+        } else {
+            clap::Arg::new(arg_name).long(arg_name)
+        };
+
+        // Apply short flag if specified (only for non-positional args)
+        if arg_meta.positional.is_none() {
+            if let Some(short_char) = arg_meta.short {
+                arg = arg.short(short_char);
+            }
+
+            // Apply aliases if specified (only for non-positional args)
+            for alias in &arg_meta.aliases {
+                let alias_static: &'static str = Box::leak(alias.clone().into_boxed_str());
+                arg = arg.alias(alias_static);
+            }
+        }
+
+        // Apply environment variable if specified
+        if let Some(ref env_var) = arg_meta.env {
+            let env_static: &'static str = Box::leak(env_var.clone().into_boxed_str());
+            arg = arg.env(env_static);
+        }
+
+        // Apply default value if specified
+        if let Some(ref default_val) = arg_meta.default_value {
+            let default_static: &'static str = Box::leak(default_val.clone().into_boxed_str());
+            arg = arg.default_value(default_static);
+        }
+
+        // Apply custom action if specified, otherwise use defaults
+        if let Some(action) = &arg_meta.action {
+            arg = arg.action(action.clone());
+        } else if arg_meta.is_flag {
+            arg = arg.action(clap::ArgAction::SetTrue);
+        } else {
+            let value_name: &'static str = if let Some(ref vn) = arg_meta.value_name {
+                Box::leak(vn.clone().into_boxed_str())
+            } else {
+                default_value_name
+            };
+            arg = arg.value_name(value_name);
+
+            if arg_meta.multiple {
+                arg = arg.action(clap::ArgAction::Append);
+            }
+
+            if arg_meta.required {
+                arg = arg.required(true);
+            }
+
+            apply_validators(&mut arg, arg_meta);
+
+            if arg_meta.allow_negative_numbers {
+                arg = arg.allow_negative_numbers(true);
+            }
+        }
+
+        // Apply help text
+        if let Some(help_text) = &arg_meta.help {
+            let help: &'static str = Box::leak(help_text.clone().into_boxed_str());
+            arg = arg.help(help);
+        }
+
+        // Apply long_help if specified
+        if let Some(long_help_text) = &arg_meta.long_help {
+            let long_help: &'static str = Box::leak(long_help_text.clone().into_boxed_str());
+            arg = arg.long_help(long_help);
+        }
+
+        // Apply next_line_help if specified
+        if arg_meta.next_line_help {
+            arg = arg.next_line_help(true);
+        }
+
+        // Apply display_order if specified
+        if let Some(order) = arg_meta.display_order {
+            arg = arg.display_order(order);
+        }
+
+        // Apply requires
+        for req in &arg_meta.requires {
+            let req_static: &'static str = Box::leak(req.clone().into_boxed_str());
+            arg = arg.requires(req_static);
+        }
+
+        // Apply conflicts_with
+        for conflict in &arg_meta.conflicts_with {
+            let conflict_static: &'static str = Box::leak(conflict.clone().into_boxed_str());
+            arg = arg.conflicts_with(conflict_static);
+        }
+
+        // Apply group membership
+        if let Some(ref group_name) = arg_meta.group {
+            let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
+            arg = arg.group(group_static);
+        }
+
+        // Apply hide if specified
+        if arg_meta.hide {
+            arg = arg.hide(true);
+        }
+
+        // Apply help_heading if specified
+        if let Some(ref heading) = arg_meta.next_help_heading {
+            let heading_static: &'static str = Box::leak(heading.clone().into_boxed_str());
+            arg = arg.help_heading(heading_static);
+        }
+
+        arg
     }
 
     /// Run CLI with auto-discovered commands
@@ -491,7 +518,7 @@ impl CommandRegistry {
                         // Extract each argument by name from clap matches
                         for arg_meta in &verb_meta.args {
                             let arg_name = &arg_meta.name;
-                            
+
                             // Handle positional arguments differently
                             if let Some(_index) = arg_meta.positional {
                                 // For positional args, clap extracts by name automatically
@@ -519,14 +546,18 @@ impl CommandRegistry {
                                     }
                                     clap::ArgAction::Append => {
                                         // Append collects multiple values
-                                        if let Some(values) = verb_matches.get_many::<String>(arg_name) {
+                                        if let Some(values) =
+                                            verb_matches.get_many::<String>(arg_name)
+                                        {
                                             let values_vec: Vec<String> = values.cloned().collect();
                                             args_map.insert(arg_name.clone(), values_vec.join(","));
                                         }
                                     }
                                     _ => {
                                         // For Set and other actions, extract as string
-                                        if let Some(value) = verb_matches.get_one::<String>(arg_name) {
+                                        if let Some(value) =
+                                            verb_matches.get_one::<String>(arg_name)
+                                        {
                                             args_map.insert(arg_name.clone(), value.clone());
                                         }
                                     }

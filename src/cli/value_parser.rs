@@ -24,7 +24,8 @@ pub fn apply_value_parser(arg: &mut clap::Arg, vp_str: &str) -> bool {
         if vp_str.contains("PathBuf") {
             *arg = arg.clone().value_parser(clap::value_parser!(std::path::PathBuf));
             return true;
-        } else if vp_str.contains("IpAddr") && !vp_str.contains("Ipv4") && !vp_str.contains("Ipv6") {
+        } else if vp_str.contains("IpAddr") && !vp_str.contains("Ipv4") && !vp_str.contains("Ipv6")
+        {
             *arg = arg.clone().value_parser(clap::value_parser!(std::net::IpAddr));
             return true;
         } else if vp_str.contains("Ipv4Addr") {
@@ -42,4 +43,3 @@ pub fn apply_value_parser(arg: &mut clap::Arg, vp_str: &str) -> bool {
 
     false
 }
-

@@ -1,17 +1,15 @@
 // Exact macro output test - manually written to debug
 
+use clap_noun_verb::cli::registry::{ArgMetadata, CommandRegistry};
 use clap_noun_verb::error::Result;
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
-use clap_noun_verb::cli::registry::{ArgMetadata, CommandRegistry};
 
 fn test_opt(opt: Option<String>) -> Result<()> {
     println!("Got: {:?}", opt);
     Ok(())
 }
 
-fn __test_opt_wrapper(
-    input: HandlerInput,
-) -> Result<HandlerOutput> {
+fn __test_opt_wrapper(input: HandlerInput) -> Result<HandlerOutput> {
     let opt = input.args.get("opt").map(|v| v.clone());
     let result = test_opt(opt)?;
     HandlerOutput::from_data(result)
@@ -30,38 +28,36 @@ static __init_test_opt: fn() = || {
         (name_static, about_static, verb_static)
     };
 
-    let args = vec![
-        ArgMetadata {
-            name: "opt".to_string(),
-            required: false,
-            is_flag: false,
-            help: None,
-            min_value: None,
-            max_value: None,
-            min_length: None,
-            max_length: None,
-            short: None,
-            default_value: None,
-            env: None,
-            multiple: false,
-            value_name: None,
-            aliases: vec![],
-            positional: None,
-            action: None,
-            group: None,
-            requires: vec![],
-            conflicts_with: vec![],
-            value_parser: None,
-            hide: false,
-            next_help_heading: None,
-            long_help: None,
-            next_line_help: false,
-            display_order: None,
-            exclusive: None,
-            trailing_vararg: false,
-            allow_negative_numbers: false,
-        },
-    ];
+    let args = vec![ArgMetadata {
+        name: "opt".to_string(),
+        required: false,
+        is_flag: false,
+        help: None,
+        min_value: None,
+        max_value: None,
+        min_length: None,
+        max_length: None,
+        short: None,
+        default_value: None,
+        env: None,
+        multiple: false,
+        value_name: None,
+        aliases: vec![],
+        positional: None,
+        action: None,
+        group: None,
+        requires: vec![],
+        conflicts_with: vec![],
+        value_parser: None,
+        hide: false,
+        next_help_heading: None,
+        long_help: None,
+        next_line_help: false,
+        display_order: None,
+        exclusive: None,
+        trailing_vararg: false,
+        allow_negative_numbers: false,
+    }];
     CommandRegistry::register_verb_with_args::<_>(
         noun_name_static,
         verb_name_final,

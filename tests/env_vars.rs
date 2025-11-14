@@ -26,11 +26,7 @@ fn get_config(port: u16, host: String, verbose: bool) -> Config {
 /// The macro already parses env attributes from #[arg(...)] when present.
 #[noun("config", "Application configuration")]
 #[verb("set")]
-fn set_config(
-    port: u16,
-    host: String,
-    verbose: bool,
-) -> Result<Config> {
+fn set_config(port: u16, host: String, verbose: bool) -> Result<Config> {
     Ok(get_config(port, host, verbose))
 }
 
@@ -47,16 +43,13 @@ fn test_env_var_support_registered() -> Result<()> {
     let config_cmd = cmd.get_subcommands().find(|s| s.get_name() == "config");
     assert!(config_cmd.is_some(), "config noun should be registered");
 
-    let set_cmd = config_cmd
-        .unwrap()
-        .get_subcommands()
-        .find(|s| s.get_name() == "set");
+    let set_cmd = config_cmd.unwrap().get_subcommands().find(|s| s.get_name() == "set");
     assert!(set_cmd.is_some(), "set verb should be registered");
 
     // Assert: Arguments should exist
     let set_cmd = set_cmd.unwrap();
     let args: Vec<_> = set_cmd.get_arguments().collect();
-    
+
     let port_arg = args.iter().find(|a| a.get_id().as_str() == "port");
     let host_arg = args.iter().find(|a| a.get_id().as_str() == "host");
 
@@ -83,4 +76,3 @@ fn test_env_var_metadata_stored() -> Result<()> {
 
     Ok(())
 }
-
