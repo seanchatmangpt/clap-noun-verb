@@ -150,7 +150,7 @@ jobs:
         uses: taiki-e/install-action@typos
 
       - name: Check spelling
-        run: typos --write-changes
+        run: typos
 
   security-audit:
     name: Security Audit
