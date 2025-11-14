@@ -453,12 +453,14 @@ fn generate_verb_registration(
                 false
             };
             let is_vec = is_vec_type(&pat_type.ty);
-            let vec_inner_type = if is_vec { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
+            let vec_inner_type =
+                if is_vec { extract_inner_type(&pat_type.ty) } else { (*pat_type.ty).clone() };
 
             // Parse arg config to check for Count action
             let arg_config = parse_arg_attributes(&pat_type.attrs);
             let is_count_action = if let Some(config) = &arg_config {
-                config.action.as_ref().map(|a| a == "count").unwrap_or(false) || (is_usize_type && !is_option)
+                config.action.as_ref().map(|a| a == "count").unwrap_or(false)
+                    || (is_usize_type && !is_option)
             } else {
                 is_usize_type && !is_option
             };
@@ -578,7 +580,8 @@ fn generate_verb_registration(
 
             // Auto-detect multiple values from Vec<T> type
             let is_vec_type = is_vec_type(&inner_ty);
-            let multiple_values = arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
+            let multiple_values =
+                arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
 
             // Auto-infer action: usize type → Count (for flags like -v, -vv, -vvv),
             // bool flags → SetTrue (unless overridden)
@@ -1030,13 +1033,13 @@ struct ArgConfig {
     requires: Vec<String>,
     conflicts_with: Vec<String>,
     value_parser: Option<proc_macro2::TokenStream>, // Store TokenStream for compile-time expansion
-    help: Option<String>, // Override docstring help
-    long_help: Option<String>, // Long help text
-    next_line_help: bool, // Next line help formatting
-    display_order: Option<usize>, // Display order in help
-    exclusive: Option<bool>, // Exclusive group flag
-    trailing_vararg: bool, // Trailing varargs support
-    allow_negative_numbers: bool, // Allow negative numbers
+    help: Option<String>,                           // Override docstring help
+    long_help: Option<String>,                      // Long help text
+    next_line_help: bool,                           // Next line help formatting
+    display_order: Option<usize>,                   // Display order in help
+    exclusive: Option<bool>,                        // Exclusive group flag
+    trailing_vararg: bool,                          // Trailing varargs support
+    allow_negative_numbers: bool,                   // Allow negative numbers
 }
 
 /// Parse argument attributes from parameter attributes
@@ -1221,7 +1224,7 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         }
                                     }
                                     "value_parser" => {
-                                        // Parse value_parser = ... 
+                                        // Parse value_parser = ...
                                         // Workaround: Convert TokenStream to string and match common patterns
                                         // This allows us to support common expressions like:
                                         // - clap::value_parser!(u16).range(1..=65535)
@@ -1231,11 +1234,12 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         // Convert syn::Expr to TokenStream, then to string
                                         let ts = quote::quote! { #nv.value };
                                         let ts_string = ts.to_string();
-                                        config.value_parser = Some(proc_macro2::TokenStream::from_iter(
-                                            std::iter::once(proc_macro2::TokenTree::Literal(
-                                                proc_macro2::Literal::string(&ts_string)
-                                            ))
-                                        ));
+                                        config.value_parser =
+                                            Some(proc_macro2::TokenStream::from_iter(
+                                                std::iter::once(proc_macro2::TokenTree::Literal(
+                                                    proc_macro2::Literal::string(&ts_string),
+                                                )),
+                                            ));
                                     }
                                     "help" => {
                                         // Parse help = "..." to override docstring
@@ -1309,7 +1313,9 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         "multiple" => config.multiple = true,
                                         "next_line_help" => config.next_line_help = true,
                                         "trailing_vararg" => config.trailing_vararg = true,
-                                        "allow_negative_numbers" => config.allow_negative_numbers = true,
+                                        "allow_negative_numbers" => {
+                                            config.allow_negative_numbers = true
+                                        }
                                         _ => {}
                                     }
                                 }
@@ -1451,7 +1457,8 @@ fn extract_inner_type(ty: &syn::Type) -> syn::Type {
 /// - Numeric types already handled by validation constraints
 fn infer_type_parser(ty: &syn::Type) -> Option<String> {
     if let syn::Type::Path(type_path) = ty {
-        let type_name = type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
+        let type_name =
+            type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
 
         match type_name.as_str() {
             "PathBuf" => Some("clap::value_parser!(::std::path::PathBuf)".to_string()),

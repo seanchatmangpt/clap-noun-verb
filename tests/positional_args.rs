@@ -24,10 +24,7 @@ fn clone_repo(url: String, destination: Option<String>) -> Repo {
 /// For testing, we verify the registry behavior works with positional args.
 #[noun("git", "Git commands")]
 #[verb("clone")]
-fn clone_repository(
-    url: String,
-    destination: Option<String>,
-) -> Result<Repo> {
+fn clone_repository(url: String, destination: Option<String>) -> Result<Repo> {
     Ok(clone_repo(url, destination))
 }
 
@@ -44,16 +41,13 @@ fn test_positional_args_registered() -> Result<()> {
     let git_cmd = cmd.get_subcommands().find(|s| s.get_name() == "git");
     assert!(git_cmd.is_some(), "git noun should be registered");
 
-    let clone_cmd = git_cmd
-        .unwrap()
-        .get_subcommands()
-        .find(|s| s.get_name() == "clone");
+    let clone_cmd = git_cmd.unwrap().get_subcommands().find(|s| s.get_name() == "clone");
     assert!(clone_cmd.is_some(), "clone verb should be registered");
 
     // Assert: Arguments should exist
     let clone_cmd = clone_cmd.unwrap();
     let args: Vec<_> = clone_cmd.get_arguments().collect();
-    
+
     let url_arg = args.iter().find(|a| a.get_id().as_str() == "url");
     let dest_arg = args.iter().find(|a| a.get_id().as_str() == "destination");
 
@@ -62,4 +56,3 @@ fn test_positional_args_registered() -> Result<()> {
 
     Ok(())
 }
-

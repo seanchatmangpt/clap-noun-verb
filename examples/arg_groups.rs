@@ -18,7 +18,12 @@ struct ExportConfig {
     raw: bool,
 }
 
-fn create_export_config(format: Option<String>, output: Option<String>, filename: Option<String>, raw: bool) -> ExportConfig {
+fn create_export_config(
+    format: Option<String>,
+    output: Option<String>,
+    filename: Option<String>,
+    raw: bool,
+) -> ExportConfig {
     ExportConfig { format, output, filename, raw }
 }
 
@@ -98,4 +103,3 @@ fn main() -> Result<()> {
     // Auto-discover all registered commands and run
     clap_noun_verb::run()
 }
-

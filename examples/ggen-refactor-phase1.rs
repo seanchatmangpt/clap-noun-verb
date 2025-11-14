@@ -16,10 +16,10 @@ use serde::Serialize;
 // PHASE 1.1: Foundation - utils doctor (proof-of-concept)
 // ============================================================================
 
-//! Utility commands for diagnostics and help
-//!
-//! This module demonstrates Phase 1.1: Foundation setup with utils doctor
-//! as a proof-of-concept for migrating to clap-noun-verb v3.0.0.
+// Utility commands for diagnostics and help
+//
+// This module demonstrates Phase 1.1: Foundation setup with utils doctor
+// as a proof-of-concept for migrating to clap-noun-verb v3.0.0.
 
 // Business Logic Layer (Pure Functions - Reusable)
 fn run_diagnostics() -> DoctorOutput {
@@ -137,11 +137,7 @@ struct HookOutput {
 /// * `description` - Optional project description
 /// * `rust` - Generate Rust project structure (flag)
 #[verb("new", "project")] // Verb "new" auto-inferred, noun "project" explicitly specified
-fn project_new(
-    name: String,
-    description: Option<String>,
-    rust: bool,
-) -> Result<ProjectOutput> {
+fn project_new(name: String, description: Option<String>, rust: bool) -> Result<ProjectOutput> {
     Ok(create_project(name, description, rust))
 }
 
@@ -256,11 +252,7 @@ struct TemplateGenerateOutput {
 /// * `description` - Optional project description
 /// * `rust` - Generate Rust project structure (flag)
 #[verb("project", "ai")] // Verb "project" auto-inferred, noun "ai" explicitly specified
-fn ai_project(
-    name: String,
-    description: Option<String>,
-    rust: bool,
-) -> Result<AiProjectOutput> {
+fn ai_project(name: String, description: Option<String>, rust: bool) -> Result<AiProjectOutput> {
     Ok(generate_project(name, description, rust))
 }
 
@@ -270,10 +262,7 @@ fn ai_project(
 /// * `description` - Template description
 /// * `output` - Optional output file path
 #[verb("generate", "ai")] // Verb "generate" auto-inferred, noun "ai" explicitly specified
-fn ai_generate(
-    description: String,
-    output: Option<String>,
-) -> Result<AiGenerateOutput> {
+fn ai_generate(description: String, output: Option<String>) -> Result<AiGenerateOutput> {
     Ok(generate_template(description, output))
 }
 
@@ -329,13 +318,11 @@ fn install_package(package: String) -> InstallOutput {
 
 fn list_packages() -> ListOutput {
     ListOutput {
-        packages: vec![
-            PackageInfo {
-                name: "io.ggen.rust.axum".to_string(),
-                description: "Axum web framework template".to_string(),
-                version: "1.0.0".to_string(),
-            },
-        ],
+        packages: vec![PackageInfo {
+            name: "io.ggen.rust.axum".to_string(),
+            description: "Axum web framework template".to_string(),
+            version: "1.0.0".to_string(),
+        }],
     }
 }
 
@@ -389,10 +376,7 @@ struct PublishOutput {
 /// * `description` - Ontology description
 /// * `output` - Optional output file path
 #[verb("graph", "ai")] // Verb "graph" auto-inferred, noun "ai" explicitly specified
-fn ai_graph(
-    description: String,
-    output: Option<String>,
-) -> Result<AiGraphOutput> {
+fn ai_graph(description: String, output: Option<String>) -> Result<AiGraphOutput> {
     Ok(generate_rdf_graph(description, output))
 }
 
@@ -402,10 +386,7 @@ fn ai_graph(
 /// * `description` - Query description
 /// * `graph` - Optional graph file path
 #[verb("sparql", "ai")] // Verb "sparql" auto-inferred, noun "ai" explicitly specified
-fn ai_sparql(
-    description: String,
-    graph: Option<String>,
-) -> Result<AiSparqlOutput> {
+fn ai_sparql(description: String, graph: Option<String>) -> Result<AiSparqlOutput> {
     Ok(generate_sparql_query(description, graph))
 }
 
@@ -449,4 +430,3 @@ fn main() -> Result<()> {
     // - Serializes output to JSON
     clap_noun_verb::run()
 }
-

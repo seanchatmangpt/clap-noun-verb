@@ -44,16 +44,13 @@ fn test_arg_actions_registered() -> Result<()> {
     let config_cmd = cmd.get_subcommands().find(|s| s.get_name() == "config");
     assert!(config_cmd.is_some(), "config noun should be registered");
 
-    let set_cmd = config_cmd
-        .unwrap()
-        .get_subcommands()
-        .find(|s| s.get_name() == "set");
+    let set_cmd = config_cmd.unwrap().get_subcommands().find(|s| s.get_name() == "set");
     assert!(set_cmd.is_some(), "set verb should be registered");
 
     // Assert: Arguments should exist
     let set_cmd = set_cmd.unwrap();
     let args: Vec<_> = set_cmd.get_arguments().collect();
-    
+
     let verbose_arg = args.iter().find(|a| a.get_id().as_str() == "verbose");
     let debug_arg = args.iter().find(|a| a.get_id().as_str() == "debug");
 
@@ -62,4 +59,3 @@ fn test_arg_actions_registered() -> Result<()> {
 
     Ok(())
 }
-

@@ -80,4 +80,3 @@ fn main() -> Result<()> {
     // Auto-discover all registered commands and run
     clap_noun_verb::run()
 }
-
