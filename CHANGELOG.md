@@ -5,6 +5,70 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2025-01-15
+
+### Added - Production-Ready Features & State Management
+
+#### Async Handler Support
+- **`run_async()` function** - Execute async operations from sync handlers
+- **`create_runtime()` helper** - Create reusable tokio runtime
+- **Full tokio integration** - Support for database, HTTP, and file I/O operations
+- **v3.6.0 feature** - Enable modern async patterns in CLI handlers
+
+#### Global Application Context System
+- **`AppContext<T>` type-safe container** - Share state across all commands
+- **Type-erased storage** - Works with any type via `Arc<RwLock<T>>`
+- **Thread-safe** - Safe for concurrent access across multiple handlers
+- **Helper methods** - `insert()`, `get()`, `contains()`, `remove()`, `with()`, `clear()`
+- **Real-world use cases** - Database connections, shared config, loggers, cache
+
+#### Output Format Plugins
+- **Pluggable formatters** - Beyond JSON (YAML, TOML, Table, TSV)
+- **`OutputFormat` enum** - JSON, Yaml, Toml, Table, Tsv variants
+- **Format auto-detection** - From CLI argument (`--format json|yaml|table`)
+- **Table generation** - ASCII tables from JSON arrays
+- **TSV support** - Spreadsheet-friendly tab-separated format
+- **YAML & TOML** - Popular configuration and data serialization formats
+
+#### Deprecation & Migration System
+- **`Deprecation` struct** - Metadata about deprecated items
+- **`DeprecationType` enum** - Noun, Verb, or Argument deprecations
+- **Version tracking** - `since`, `removed_in` version fields
+- **User guidance** - `suggestion` and `note` for migration help
+- **Warning messages** - Formatted output with emoji and clear guidance
+- **Help text integration** - Show deprecation info in help output
+
+#### Shell Completion Generation
+- **`Shell` enum** - Bash, Zsh, Fish, PowerShell, Elvish support
+- **`generate_completion()` function** - Generate completion script
+- **`print_completion()` helper** - Output directly to stdout
+- **clap_complete integration** - Leverage clap's native completion system
+- **Installation helpers** - Suggest where to install completions
+- **Multiple shell support** - Bash/Zsh/Fish/PowerShell/Elvish
+
+### Changed
+
+- **Dependencies updated**:
+  - Added `tokio` with rt and macros features
+  - Added `async-trait` for trait helper macro
+  - Added `serde_yaml` for YAML serialization
+  - Added `toml` for TOML serialization
+  - Added `clap_complete` for shell completion
+
+- **Version bump**: 3.5.0 → 3.6.0 (minor release)
+
+- **Documentation**: Enhanced README with v3.6.0 feature details
+
+### Migration Notes
+
+No breaking changes. All v3.5.0 code continues to work. v3.6.0 features are opt-in:
+
+- **Async code**: Wrap async operations with `run_async()`
+- **Shared state**: Create `AppContext` once at startup, pass to handlers
+- **Alternative formats**: Use `OutputFormat` enum to format output differently
+- **Deprecation**: Opt-in via `Deprecation` struct - no enforcement needed
+- **Completions**: Call `generate_completion()` in a `--generate-completion` handler
+
 ## [3.5.0] - 2025-01-15
 
 ### Added - Example Completeness & Integration Testing

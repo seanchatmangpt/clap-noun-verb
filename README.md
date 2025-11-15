@@ -2,6 +2,14 @@
 
 A framework for building composable CLI patterns on top of clap using the **noun-verb pattern** (e.g., `services status`, `collector up`). Inspired by Python's Typer.
 
+## v3.6.0 - Production-Ready Features & State Management
+
+- **Async Handler Support**: Execute async operations with `run_async()` in sync handlers
+- **Global Application Context**: Share typed state across all commands with `AppContext<T>`
+- **Output Format Plugins**: Generate JSON, YAML, TOML, Table, or TSV output
+- **Deprecation System**: Mark verbs/arguments as deprecated with migration guidance
+- **Shell Completion Generation**: Auto-generate bash/zsh/fish/powershell completions
+
 ## v3.3.0 - Advanced clap Features & Typer-style Enhancements
 
 - **Custom Value Parsers**: Auto-inferred parsers for `PathBuf`, `IpAddr`, `Url`, etc.
@@ -33,8 +41,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "3.3.0"
-clap-noun-verb-macros = "3.3.0"
+clap-noun-verb = "3.6.0"
+clap-noun-verb-macros = "3.6.0"
 ```
 
 Use attribute macros to define commands:
@@ -246,6 +254,149 @@ fn main() -> Result<()> {
 - ✅ Auto-discovery - Commands automatically registered
 - ✅ Better organization - Commands grouped by functionality
 - ✅ JSON output - Perfect for agents/MCP
+
+## v3.6.0 - Production Features in Detail
+
+### 1. Async Handler Support
+
+Execute async operations from within synchronous verb handlers using `run_async()`:
+
+```rust
+use clap_noun_verb::async_verb::run_async;
+use clap_noun_verb::VerbArgs;
+use serde::Serialize;
+use std::time::Duration;
+
+#[derive(Serialize)]
+struct Output {
+    message: String,
+}
+
+#[verb("fetch")]
+fn fetch_data(args: &VerbArgs) -> Result<Output> {
+    run_async(async {
+        // Your async code here
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // Database queries, HTTP calls, etc.
+        let data = fetch_from_api().await?;
+
+        Ok(Output {
+            message: data.into(),
+        })
+    })
+}
+```
+
+### 2. Global Application Context
+
+Share typed state across all commands:
+
+```rust
+use clap_noun_verb::AppContext;
+use std::sync::Arc;
+
+struct AppState {
+    db: Arc<Database>,
+    config: Config,
+}
+
+// At startup
+let context = AppContext::new();
+context.insert(AppState { ... })?;
+
+// In handlers
+#[verb("query")]
+fn query_database(args: &VerbArgs) -> Result<QueryResult> {
+    let context = // get from somewhere
+    let state: AppState = context.get()?;
+    let db = &state.db;
+    // Use database connection...
+}
+```
+
+### 3. Output Format Plugins
+
+Generate output in multiple formats beyond JSON:
+
+```rust
+use clap_noun_verb::OutputFormat;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct Result {
+    name: String,
+    value: i32
+}
+
+let output = Result {
+    name: "test".to_string(),
+    value: 42
+};
+
+// JSON (default)
+let json = OutputFormat::Json.format(&output)?;
+
+// YAML
+let yaml = OutputFormat::Yaml.format(&output)?;
+
+// Table format
+let table = OutputFormat::Table.format(&output)?;
+
+// TSV for spreadsheets
+let tsv = OutputFormat::Tsv.format(&output)?;
+```
+
+Supported formats: `json`, `yaml`, `toml`, `table`, `tsv`
+
+### 4. Deprecation System
+
+Mark commands as deprecated with helpful migration messages:
+
+```rust
+use clap_noun_verb::deprecation::{Deprecation, DeprecationType};
+
+let deprecation = Deprecation::new(DeprecationType::Verb)
+    .since("3.5.0")
+    .removed_in("4.0.0")
+    .note("This verb has been replaced for clarity")
+    .suggestion("Use 'new-verb' instead");
+
+let warning = deprecation.warning_message("old-verb");
+// Output:
+// ⚠️  Verb 'old-verb' is deprecated since v3.5.0 (will be removed in v4.0.0)
+//
+//   This verb has been replaced for clarity
+//
+//   💡 Suggestion: Use 'new-verb' instead
+```
+
+### 5. Shell Completion Generation
+
+Auto-generate shell completions for supported shells:
+
+```rust
+use clap_noun_verb::{generate_completion, Shell};
+use clap::Command;
+
+let mut cmd = my_cli_command();
+let completion = generate_completion(&mut cmd, Shell::Bash, "myapp");
+println!("{}", completion);
+
+// Or print directly
+print_completion(&mut cmd, Shell::Fish, "myapp")?;
+```
+
+Supported shells: `bash`, `zsh`, `fish`, `powershell`, `elvish`
+
+Installation example for bash:
+```bash
+# Output completions
+myapp --generate-completion bash > myapp.bash
+
+# Source in .bashrc
+source myapp.bash
+```
 
 ## Design Philosophy
 
