@@ -5,6 +5,19 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.1] - 2025-11-15
+
+### Changed
+
+- **Documentation** - Refactored README.md using Diátaxis documentation framework
+  - Removed version-specific sections for better maintainability
+  - Organized content by user needs (tutorials, how-to guides, reference, explanation)
+  - Improved structure and clarity
+
+### Migration Notes
+
+No breaking changes. All v3.7.0 code continues to work without modification.
+
 ## [3.7.0] - 2025-11-15
 
 ### Changed
