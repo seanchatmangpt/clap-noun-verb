@@ -87,6 +87,26 @@ path = "examples/arg_actions.rs"
 name = "arg_groups"
 path = "examples/arg_groups.rs"
 
+[[example]]
+name = "async_example"
+path = "examples/async_example.rs"
+
+[[example]]
+name = "context_example"
+path = "examples/context_example.rs"
+
+[[example]]
+name = "format_example"
+path = "examples/format_example.rs"
+
+[[example]]
+name = "deprecation_example"
+path = "examples/deprecation_example.rs"
+
+[[example]]
+name = "completion_example"
+path = "examples/completion_example.rs"
+
 [package.metadata.docs.rs]
 # docs.rs build configuration
 # All features are enabled by default for documentation
