@@ -62,9 +62,13 @@ pub mod verb;
 // New in v3.6.0
 pub mod async_verb;
 pub mod completion;
+pub mod config;
 pub mod context;
 pub mod deprecation;
 pub mod format;
+pub mod mangen;
+pub mod shell;
+pub mod validators;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes

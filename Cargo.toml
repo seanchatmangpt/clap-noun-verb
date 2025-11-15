@@ -18,8 +18,9 @@ name = "clap_noun_verb"
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version = "4.5", features = ["derive", "env"] }
+clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
 clap_complete = "4.5"
+clap_mangen = "0.2"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -29,6 +30,10 @@ async-trait = "0.1"
 tokio = { version = "1.0", features = ["rt"] }
 linkme = "0.3"
 clap-noun-verb-macros = { version = "3.6.0", path = "clap-noun-verb-macros" }
+regex = "1.10"
+url = "2.5"
+once_cell = "1.19"
+atty = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
