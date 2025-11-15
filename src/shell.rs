@@ -49,32 +49,21 @@ impl ShellType {
     pub fn config_path(&self) -> Option<PathBuf> {
         let home = dirs_home()?;
         match self {
-            ShellType::Bash => {
-                Some(home.join(".bashrc"))
-            }
-            ShellType::Zsh => {
-                Some(home.join(".zshrc"))
-            }
-            ShellType::Fish => {
-                Some(home.join(".config/fish/config.fish"))
-            }
+            ShellType::Bash => Some(home.join(".bashrc")),
+            ShellType::Zsh => Some(home.join(".zshrc")),
+            ShellType::Fish => Some(home.join(".config/fish/config.fish")),
             ShellType::PowerShell => {
                 // PowerShell profile paths are dynamic, need to query $PROFILE
                 None
             }
-            ShellType::Elvish => {
-                Some(home.join(".elvish/rc.elv"))
-            }
+            ShellType::Elvish => Some(home.join(".elvish/rc.elv")),
             ShellType::Unknown => None,
         }
     }
 
     /// Whether this shell supports command substitution with $()
     pub fn supports_command_substitution(&self) -> bool {
-        matches!(
-            self,
-            ShellType::Bash | ShellType::Zsh | ShellType::Fish | ShellType::Elvish
-        )
+        matches!(self, ShellType::Bash | ShellType::Zsh | ShellType::Fish | ShellType::Elvish)
     }
 
     /// Whether this shell requires special escaping
@@ -183,21 +172,15 @@ pub fn get_completions_dir(shell: ShellType) -> Option<PathBuf> {
             // Fall back to /etc/bash_completion.d (if writable)
             Some(PathBuf::from("/etc/bash_completion.d"))
         }
-        ShellType::Zsh => {
-            Some(home.join(".zsh/completions"))
-        }
-        ShellType::Fish => {
-            Some(home.join(".config/fish/completions"))
-        }
+        ShellType::Zsh => Some(home.join(".zsh/completions")),
+        ShellType::Fish => Some(home.join(".config/fish/completions")),
         ShellType::PowerShell => {
-            let docs = env::var("PROFILE").ok().and_then(|p| {
-                Path::new(&p).parent().map(|p| p.to_path_buf())
-            });
+            let docs = env::var("PROFILE")
+                .ok()
+                .and_then(|p| Path::new(&p).parent().map(|p| p.to_path_buf()));
             docs
         }
-        ShellType::Elvish => {
-            Some(home.join(".elvish/lib"))
-        }
+        ShellType::Elvish => Some(home.join(".elvish/lib")),
         ShellType::Unknown => None,
     }
 }
@@ -265,18 +248,9 @@ mod tests {
 
     #[test]
     fn test_parse_shell_path() {
-        assert_eq!(
-            parse_shell_path("/bin/bash"),
-            Some(ShellType::Bash)
-        );
-        assert_eq!(
-            parse_shell_path("/usr/bin/zsh"),
-            Some(ShellType::Zsh)
-        );
-        assert_eq!(
-            parse_shell_path("/usr/local/bin/fish"),
-            Some(ShellType::Fish)
-        );
+        assert_eq!(parse_shell_path("/bin/bash"), Some(ShellType::Bash));
+        assert_eq!(parse_shell_path("/usr/bin/zsh"), Some(ShellType::Zsh));
+        assert_eq!(parse_shell_path("/usr/local/bin/fish"), Some(ShellType::Fish));
     }
 
     #[test]

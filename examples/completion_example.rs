@@ -3,9 +3,9 @@
 //! Demonstrates how to generate shell completions for supported shells
 //! (bash, zsh, fish, powershell, elvish).
 
-use clap_noun_verb_macros::{noun, verb};
-use clap_noun_verb::{Result, generate_completion, Shell};
 use clap::Command;
+use clap_noun_verb::{generate_completion, Result, Shell};
+use clap_noun_verb_macros::{noun, verb};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -80,7 +80,12 @@ fn show_install_instructions(shell: String) -> Result<String> {
         "fish" => Shell::Fish,
         "powershell" | "posh" => Shell::PowerShell,
         "elvish" => Shell::Elvish,
-        _ => return Ok(format!("Unknown shell: {}. Use: bash, zsh, fish, powershell, or elvish", shell)),
+        _ => {
+            return Ok(format!(
+                "Unknown shell: {}. Use: bash, zsh, fish, powershell, or elvish",
+                shell
+            ))
+        }
     };
 
     Ok(shell_type.install_instructions("myapp"))

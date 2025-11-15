@@ -49,11 +49,7 @@ struct ContextData {
 impl AppContext {
     /// Create a new empty context
     pub fn new() -> Self {
-        Self {
-            state: Arc::new(RwLock::new(ContextData {
-                values: HashMap::new(),
-            })),
-        }
+        Self { state: Arc::new(RwLock::new(ContextData { values: HashMap::new() })) }
     }
 
     /// Insert a value into the context
@@ -67,10 +63,7 @@ impl AppContext {
     /// ```
     pub fn insert<T: Send + Sync + 'static>(&self, value: T) -> Result<(), ContextError> {
         let type_id = TypeId::of::<T>();
-        let mut state = self
-            .state
-            .write()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let mut state = self.state.write().map_err(|_| ContextError::PoisonedLock)?;
 
         state.values.insert(type_id, Box::new(value));
         Ok(())
@@ -86,15 +79,12 @@ impl AppContext {
     /// let value: i32 = ctx.get::<i32>()?;
     /// assert_eq!(value, 42);
     /// ```
-    pub fn get<T: 'static>(&self) -> Result<T, ContextError>
+    pub fn get<T>(&self) -> Result<T, ContextError>
     where
-        T: Clone,
+        T: Clone + 'static,
     {
         let type_id = TypeId::of::<T>();
-        let state = self
-            .state
-            .read()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let state = self.state.read().map_err(|_| ContextError::PoisonedLock)?;
 
         state
             .values
@@ -107,30 +97,20 @@ impl AppContext {
     /// Check if a value exists in the context
     pub fn contains<T: 'static>(&self) -> Result<bool, ContextError> {
         let type_id = TypeId::of::<T>();
-        let state = self
-            .state
-            .read()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let state = self.state.read().map_err(|_| ContextError::PoisonedLock)?;
 
         Ok(state.values.contains_key(&type_id))
     }
 
     /// Remove a value from the context
-    pub fn remove<T: 'static>(&self) -> Result<Option<T>, ContextError>
+    pub fn remove<T>(&self) -> Result<Option<T>, ContextError>
     where
         T: 'static,
     {
         let type_id = TypeId::of::<T>();
-        let mut state = self
-            .state
-            .write()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let mut state = self.state.write().map_err(|_| ContextError::PoisonedLock)?;
 
-        Ok(state
-            .values
-            .remove(&type_id)
-            .and_then(|v| v.downcast::<T>().ok())
-            .map(|b| *b))
+        Ok(state.values.remove(&type_id).and_then(|v| v.downcast::<T>().ok()).map(|b| *b))
     }
 
     /// Execute a closure with read access to a value
@@ -142,9 +122,9 @@ impl AppContext {
     /// ctx.insert("hello".to_string())?;
     /// ctx.with::<String, _, _>(|s| println!("{}", s))?;
     /// ```
-    pub fn with<T: 'static, F, R>(&self, f: F) -> Result<R, ContextError>
+    pub fn with<T, F, R>(&self, f: F) -> Result<R, ContextError>
     where
-        T: Clone,
+        T: Clone + 'static,
         F: FnOnce(T) -> R,
     {
         let value = self.get::<T>()?;
@@ -153,10 +133,7 @@ impl AppContext {
 
     /// Get number of values stored
     pub fn len(&self) -> Result<usize, ContextError> {
-        let state = self
-            .state
-            .read()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let state = self.state.read().map_err(|_| ContextError::PoisonedLock)?;
         Ok(state.values.len())
     }
 
@@ -167,10 +144,7 @@ impl AppContext {
 
     /// Clear all values from context
     pub fn clear(&self) -> Result<(), ContextError> {
-        let mut state = self
-            .state
-            .write()
-            .map_err(|_| ContextError::PoisonedLock)?;
+        let mut state = self.state.write().map_err(|_| ContextError::PoisonedLock)?;
         state.values.clear();
         Ok(())
     }
@@ -184,9 +158,7 @@ impl Default for AppContext {
 
 impl fmt::Debug for AppContext {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("AppContext")
-            .field("values_count", &self.len().unwrap_or(0))
-            .finish()
+        f.debug_struct("AppContext").field("values_count", &self.len().unwrap_or(0)).finish()
     }
 }
 
@@ -264,9 +236,7 @@ mod tests {
         let ctx = AppContext::new();
         ctx.insert("hello".to_string()).unwrap();
 
-        let result = ctx
-            .with::<String, _, _>(|s| format!("{} world", s))
-            .unwrap();
+        let result = ctx.with::<String, _, _>(|s| format!("{} world", s)).unwrap();
         assert_eq!(result, "hello world");
     }
 

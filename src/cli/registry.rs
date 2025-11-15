@@ -336,7 +336,9 @@ impl CommandRegistry {
 
     /// Build clap command structure from registry
     pub fn build_command(&self) -> clap::Command {
-        let mut cmd = clap::Command::new("cli");
+        let mut cmd = clap::Command::new("cli")
+            .version(env!("CARGO_PKG_VERSION"))
+            .arg_required_else_help(true);
 
         for (noun_name, noun_meta) in &self.nouns {
             let noun_cmd = self.build_noun_command(noun_name, noun_meta);
@@ -574,6 +576,72 @@ impl CommandRegistry {
         arg
     }
 
+    /// Extract arguments from clap matches into a HashMap
+    fn extract_args(
+        &self,
+        verb_meta: &VerbMetadata,
+        verb_matches: &clap::ArgMatches,
+    ) -> std::collections::HashMap<String, String> {
+        let mut args_map = std::collections::HashMap::new();
+
+        for arg_meta in &verb_meta.args {
+            let arg_name = &arg_meta.name;
+
+            // Handle positional arguments differently
+            if let Some(_index) = arg_meta.positional {
+                // For positional args, clap extracts by name automatically
+                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
+                    args_map.insert(arg_name.clone(), value.clone());
+                }
+            } else if let Some(action) = &arg_meta.action {
+                // Handle custom actions
+                match action {
+                    clap::ArgAction::Count => {
+                        let count = verb_matches.get_count(arg_name);
+                        args_map.insert(arg_name.clone(), count.to_string());
+                    }
+                    clap::ArgAction::SetTrue => {
+                        if verb_matches.get_flag(arg_name) {
+                            args_map.insert(arg_name.clone(), "true".to_string());
+                        }
+                    }
+                    clap::ArgAction::SetFalse => {
+                        // SetFalse is handled differently - need to check if present
+                        // Note: clap doesn't have get_flag for SetFalse, so we check presence
+                        if verb_matches.contains_id(arg_name) {
+                            args_map.insert(arg_name.clone(), "false".to_string());
+                        }
+                    }
+                    clap::ArgAction::Append => {
+                        // Append collects multiple values
+                        if let Some(values) = verb_matches.get_many::<String>(arg_name) {
+                            let values_vec: Vec<String> = values.cloned().collect();
+                            args_map.insert(arg_name.clone(), values_vec.join(","));
+                        }
+                    }
+                    _ => {
+                        // For Set and other actions, extract as string
+                        if let Some(value) = verb_matches.get_one::<String>(arg_name) {
+                            args_map.insert(arg_name.clone(), value.clone());
+                        }
+                    }
+                }
+            } else if arg_meta.is_flag {
+                // For flags, check if they're set
+                if verb_matches.get_flag(arg_name) {
+                    args_map.insert(arg_name.clone(), "true".to_string());
+                }
+            } else {
+                // For regular named arguments
+                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
+                    args_map.insert(arg_name.clone(), value.clone());
+                }
+            }
+        }
+
+        args_map
+    }
+
     /// Run CLI with auto-discovered commands
     pub fn run(&self, args: Vec<String>) -> Result<()> {
         let cmd = self.build_command();
@@ -585,72 +653,15 @@ impl CommandRegistry {
         if let Some((noun_name, noun_matches)) = matches.subcommand() {
             if let Some((verb_name, verb_matches)) = noun_matches.subcommand() {
                 // Execute verb - extract arguments from matches
-                let mut args_map = std::collections::HashMap::new();
-
-                // Get verb metadata to know which arguments exist
-                if let Some(verbs) = self.verbs.get(noun_name) {
+                let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
                     if let Some(verb_meta) = verbs.get(verb_name) {
-                        // Extract each argument by name from clap matches
-                        for arg_meta in &verb_meta.args {
-                            let arg_name = &arg_meta.name;
-
-                            // Handle positional arguments differently
-                            if let Some(_index) = arg_meta.positional {
-                                // For positional args, clap extracts by name automatically
-                                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
-                                    args_map.insert(arg_name.clone(), value.clone());
-                                }
-                            } else if let Some(action) = &arg_meta.action {
-                                // Handle custom actions
-                                match action {
-                                    clap::ArgAction::Count => {
-                                        let count = verb_matches.get_count(arg_name);
-                                        args_map.insert(arg_name.clone(), count.to_string());
-                                    }
-                                    clap::ArgAction::SetTrue => {
-                                        if verb_matches.get_flag(arg_name) {
-                                            args_map.insert(arg_name.clone(), "true".to_string());
-                                        }
-                                    }
-                                    clap::ArgAction::SetFalse => {
-                                        // SetFalse is handled differently - need to check if present
-                                        // Note: clap doesn't have get_flag for SetFalse, so we check presence
-                                        if verb_matches.contains_id(arg_name) {
-                                            args_map.insert(arg_name.clone(), "false".to_string());
-                                        }
-                                    }
-                                    clap::ArgAction::Append => {
-                                        // Append collects multiple values
-                                        if let Some(values) =
-                                            verb_matches.get_many::<String>(arg_name)
-                                        {
-                                            let values_vec: Vec<String> = values.cloned().collect();
-                                            args_map.insert(arg_name.clone(), values_vec.join(","));
-                                        }
-                                    }
-                                    _ => {
-                                        // For Set and other actions, extract as string
-                                        if let Some(value) =
-                                            verb_matches.get_one::<String>(arg_name)
-                                        {
-                                            args_map.insert(arg_name.clone(), value.clone());
-                                        }
-                                    }
-                                }
-                            } else if arg_meta.is_flag {
-                                // For flags, check if they're set
-                                if verb_matches.get_flag(arg_name) {
-                                    args_map.insert(arg_name.clone(), "true".to_string());
-                                }
-                            } else {
-                                // For regular named arguments
-                                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
-                                    args_map.insert(arg_name.clone(), value.clone());
-                                }
-                            }
-                        }
+                        self.extract_args(verb_meta, verb_matches)
+                    } else {
+                        std::collections::HashMap::new()
                     }
-                }
+                } else {
+                    std::collections::HashMap::new()
+                };
 
                 let input = crate::logic::HandlerInput {
                     args: args_map,
@@ -662,10 +673,53 @@ impl CommandRegistry {
                 let json = output.to_json()?;
                 println!("{}", json);
             } else {
-                return Err(crate::error::NounVerbError::invalid_structure("No verb specified"));
+                // No verb specified - show help for the noun
+                if let Some(noun_meta) = self.nouns.get(noun_name) {
+                    let noun_name_static: &'static str =
+                        Box::leak(noun_name.to_string().into_boxed_str());
+                    let about_static: &'static str =
+                        Box::leak(noun_meta.about.clone().into_boxed_str());
+
+                    let mut noun_cmd = clap::Command::new(noun_name_static).about(about_static);
+
+                    // Apply long_about if available
+                    if let Some(ref long_about) = noun_meta.long_about {
+                        let long_about_static: &'static str =
+                            Box::leak(long_about.clone().into_boxed_str());
+                        noun_cmd = noun_cmd.long_about(long_about_static);
+                    }
+
+                    // Add verbs as subcommands for help display
+                    if let Some(verbs) = self.verbs.get(noun_name) {
+                        for (verb_name, verb_meta) in verbs {
+                            let verb_name_static: &'static str =
+                                Box::leak(verb_name.clone().into_boxed_str());
+                            let verb_about_static: &'static str =
+                                Box::leak(verb_meta.about.clone().into_boxed_str());
+                            noun_cmd = noun_cmd.subcommand(
+                                clap::Command::new(verb_name_static).about(verb_about_static),
+                            );
+                        }
+                    }
+
+                    noun_cmd.print_help().map_err(|e| {
+                        crate::error::NounVerbError::execution_error(format!(
+                            "Failed to print help: {}",
+                            e
+                        ))
+                    })?;
+                } else {
+                    return Err(crate::error::NounVerbError::invalid_structure(
+                        "No verb specified",
+                    ));
+                }
             }
         } else {
-            return Err(crate::error::NounVerbError::invalid_structure("No noun specified"));
+            // No noun specified - show root help
+            let mut cmd = self.build_command();
+            cmd.print_help().map_err(|e| {
+                crate::error::NounVerbError::execution_error(format!("Failed to print help: {}", e))
+            })?;
         }
 
         Ok(())

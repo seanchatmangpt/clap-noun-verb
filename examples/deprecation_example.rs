@@ -2,8 +2,8 @@
 //!
 //! Demonstrates how to mark commands as deprecated and provide migration guidance.
 
+use clap_noun_verb::{Deprecation, DeprecationType, Result};
 use clap_noun_verb_macros::{noun, verb};
-use clap_noun_verb::{Result, Deprecation, DeprecationType};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -23,11 +23,7 @@ struct ServiceStatus {
 #[noun("server", "Server management")]
 #[verb("health")]
 fn check_health() -> Result<ServiceStatus> {
-    Ok(ServiceStatus {
-        service: "api-server".to_string(),
-        is_running: true,
-        uptime_seconds: 86400,
-    })
+    Ok(ServiceStatus { service: "api-server".to_string(), is_running: true, uptime_seconds: 86400 })
 }
 
 /// Old endpoint (deprecated in 3.5.0, will be removed in 4.0.0)
@@ -83,10 +79,7 @@ fn show_deprecation_info() -> Result<String> {
         .removed_in("4.0.0")
         .suggestion("Use 'health' instead");
 
-    info.push_str(&format!(
-        "Command 'status':\n{}\n\n",
-        status_dep.warning_message("status")
-    ));
+    info.push_str(&format!("Command 'status':\n{}\n\n", status_dep.warning_message("status")));
 
     // Restart command deprecation
     let restart_dep = Deprecation::new(DeprecationType::Verb)
@@ -94,10 +87,7 @@ fn show_deprecation_info() -> Result<String> {
         .removed_in("4.0.0")
         .suggestion("Use admin console");
 
-    info.push_str(&format!(
-        "Command 'restart':\n{}\n\n",
-        restart_dep.warning_message("restart")
-    ));
+    info.push_str(&format!("Command 'restart':\n{}\n\n", restart_dep.warning_message("restart")));
 
     info.push_str("Deprecation timeline:\n");
     info.push_str("- v3.3.0+: 'restart' deprecated\n");

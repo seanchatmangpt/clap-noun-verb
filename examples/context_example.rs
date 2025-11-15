@@ -4,8 +4,8 @@
 //! This is useful for sharing database connections, configuration, loggers, etc.
 
 use clap_noun_verb::AppContext;
-use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::Result;
+use clap_noun_verb_macros::{noun, verb};
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -26,9 +26,7 @@ struct Cache {
 
 impl Cache {
     fn new() -> Self {
-        Cache {
-            data: Arc::new(Mutex::new(std::collections::HashMap::new())),
-        }
+        Cache { data: Arc::new(Mutex::new(std::collections::HashMap::new())) }
     }
 
     fn get(&self, key: &str) -> Option<String> {
@@ -87,11 +85,8 @@ fn cache_get(key: String) -> Result<CacheResult> {
         format!("value-for-{}", key)
     });
 
-    let source = if cache.get(&key).is_some() {
-        "cache".to_string()
-    } else {
-        "computed".to_string()
-    };
+    let source =
+        if cache.get(&key).is_some() { "cache".to_string() } else { "computed".to_string() };
 
     Ok(CacheResult { key, value, source })
 }
@@ -103,11 +98,7 @@ fn cache_set(key: String, value: String) -> Result<CacheResult> {
     let cache = Cache::new();
     cache.set(key.clone(), value.clone());
 
-    Ok(CacheResult {
-        key,
-        value,
-        source: "cache".to_string(),
-    })
+    Ok(CacheResult { key, value, source: "cache".to_string() })
 }
 
 /// Show cache statistics

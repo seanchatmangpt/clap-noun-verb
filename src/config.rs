@@ -64,15 +64,9 @@ impl ConfigLoader {
             p.clone()
         } else {
             // Try default paths
-            self.default_paths
-                .iter()
-                .find(|p| p.exists())
-                .cloned()
-                .ok_or_else(|| {
-                    crate::error::NounVerbError::execution_error(
-                        "No configuration file found",
-                    )
-                })?
+            self.default_paths.iter().find(|p| p.exists()).cloned().ok_or_else(|| {
+                crate::error::NounVerbError::execution_error("No configuration file found")
+            })?
         };
 
         Config::from_file(&path)
@@ -102,9 +96,7 @@ pub struct Config {
 impl Config {
     /// Create new empty configuration
     pub fn new() -> Self {
-        Self {
-            data: json!({}),
-        }
+        Self { data: json!({}) }
     }
 
     /// Load configuration from file
@@ -117,20 +109,12 @@ impl Config {
             ))
         })?;
 
-        let extension = path
-            .extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("json");
+        let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("json");
 
         let data = match extension {
-            "yaml" | "yml" => {
-                serde_yaml::from_str(&content).map_err(|e| {
-                    crate::error::NounVerbError::execution_error(format!(
-                        "Failed to parse YAML: {}",
-                        e
-                    ))
-                })?
-            }
+            "yaml" | "yml" => serde_yaml::from_str(&content).map_err(|e| {
+                crate::error::NounVerbError::execution_error(format!("Failed to parse YAML: {}", e))
+            })?,
             "toml" => {
                 let toml_value: toml::Value = toml::from_str(&content).map_err(|e| {
                     crate::error::NounVerbError::execution_error(format!(
@@ -145,14 +129,9 @@ impl Config {
                     ))
                 })?
             }
-            _ => {
-                serde_json::from_str(&content).map_err(|e| {
-                    crate::error::NounVerbError::execution_error(format!(
-                        "Failed to parse JSON: {}",
-                        e
-                    ))
-                })?
-            }
+            _ => serde_json::from_str(&content).map_err(|e| {
+                crate::error::NounVerbError::execution_error(format!("Failed to parse JSON: {}", e))
+            })?,
         };
 
         Ok(Self { data })
@@ -161,10 +140,7 @@ impl Config {
     /// Load configuration from JSON string
     pub fn from_json(json_str: &str) -> Result<Self> {
         let data = serde_json::from_str(json_str).map_err(|e| {
-            crate::error::NounVerbError::execution_error(format!(
-                "Failed to parse JSON: {}",
-                e
-            ))
+            crate::error::NounVerbError::execution_error(format!("Failed to parse JSON: {}", e))
         })?;
         Ok(Self { data })
     }
@@ -172,10 +148,7 @@ impl Config {
     /// Load configuration from YAML string
     pub fn from_yaml(yaml_str: &str) -> Result<Self> {
         let data = serde_yaml::from_str(yaml_str).map_err(|e| {
-            crate::error::NounVerbError::execution_error(format!(
-                "Failed to parse YAML: {}",
-                e
-            ))
+            crate::error::NounVerbError::execution_error(format!("Failed to parse YAML: {}", e))
         })?;
         Ok(Self { data })
     }
@@ -208,15 +181,13 @@ impl Config {
     }
 
     /// Helper to flatten nested config to CLI args
+    #[allow(clippy::only_used_in_recursion)]
     fn flatten_to_args(&self, value: &Value, prefix: String, args: &mut Vec<String>) {
         match value {
             Value::Object(obj) => {
                 for (key, val) in obj.iter() {
-                    let new_prefix = if prefix.is_empty() {
-                        key.clone()
-                    } else {
-                        format!("{}.{}", prefix, key)
-                    };
+                    let new_prefix =
+                        if prefix.is_empty() { key.clone() } else { format!("{}.{}", prefix, key) };
                     self.flatten_to_args(val, new_prefix, args);
                 }
             }
@@ -252,15 +223,13 @@ impl Config {
     }
 
     /// Helper to flatten config to map
+    #[allow(clippy::only_used_in_recursion)]
     fn flatten_to_map(&self, value: &Value, prefix: String, map: &mut HashMap<String, String>) {
         match value {
             Value::Object(obj) => {
                 for (key, val) in obj.iter() {
-                    let new_prefix = if prefix.is_empty() {
-                        key.clone()
-                    } else {
-                        format!("{}.{}", prefix, key)
-                    };
+                    let new_prefix =
+                        if prefix.is_empty() { key.clone() } else { format!("{}.{}", prefix, key) };
                     self.flatten_to_map(val, new_prefix, map);
                 }
             }

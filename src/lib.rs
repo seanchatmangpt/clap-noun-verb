@@ -86,11 +86,11 @@ pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
 // New in v3.6.0
+pub use async_verb::{create_runtime, run_async};
 pub use completion::{generate_completion, print_completion, Shell};
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
 pub use format::OutputFormat;
-pub use async_verb::{run_async, create_runtime};
 
 // Macros are exported at crate root via #[macro_export]
 

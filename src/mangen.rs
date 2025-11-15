@@ -36,10 +36,7 @@ pub fn generate_man_page(cmd: &Command, app_name: &str) -> Result<String> {
 
     let man = Man::new(cmd_copy);
     man.render(&mut buffer).map_err(|e| {
-        crate::error::NounVerbError::execution_error(format!(
-            "Failed to generate man page: {}",
-            e
-        ))
+        crate::error::NounVerbError::execution_error(format!("Failed to generate man page: {}", e))
     })?;
 
     String::from_utf8(buffer).map_err(|e| {
@@ -67,10 +64,7 @@ pub fn write_man_page(cmd: &Command, app_name: &str, output_path: &str) -> Resul
     })?;
 
     file.write_all(man_content.as_bytes()).map_err(|e| {
-        crate::error::NounVerbError::execution_error(format!(
-            "Failed to write man page: {}",
-            e
-        ))
+        crate::error::NounVerbError::execution_error(format!("Failed to write man page: {}", e))
     })?;
 
     Ok(())
@@ -105,11 +99,7 @@ pub fn generate_all_man_pages(cmd: &Command, app_name: &str, output_dir: &str) -
 }
 
 /// Helper to recursively generate man pages for subcommands
-fn generate_subcommand_man_pages(
-    cmd: &Command,
-    parent_name: &str,
-    output_dir: &str,
-) -> Result<()> {
+fn generate_subcommand_man_pages(cmd: &Command, parent_name: &str, output_dir: &str) -> Result<()> {
     let cmd_name = cmd.get_name();
     let full_name = format!("{}-{}", parent_name, cmd_name);
 

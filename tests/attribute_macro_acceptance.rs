@@ -71,9 +71,12 @@ fn test_attribute_macro_api_registers_commands() -> Result<()> {
 
     // Act: Verify registry contains commands
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
 
     // Assert: Registry should contain "services" noun
     let cmd = registry.build_command();
@@ -99,9 +102,12 @@ fn test_type_inference_from_function_signature() -> Result<()> {
 
     // Act: Build command and verify arguments
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     // Find services -> logs command
@@ -215,9 +221,12 @@ fn test_compile_time_auto_discovery() -> Result<()> {
 
     // Act: Initialize registry (should auto-discover)
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
 
     // Assert: Commands are present (discovered at compile time)
     let cmd = registry.build_command();
@@ -240,9 +249,12 @@ fn test_docstring_help_generation() -> Result<()> {
 
     // Act: Build command and verify help text
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     // Find services -> logs command

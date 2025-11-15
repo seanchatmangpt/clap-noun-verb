@@ -45,13 +45,7 @@ pub struct Deprecation {
 impl Deprecation {
     /// Create a new deprecation with a given type
     pub fn new(item_type: DeprecationType) -> Self {
-        Self {
-            item_type,
-            since: None,
-            removed_in: None,
-            note: None,
-            suggestion: None,
-        }
+        Self { item_type, since: None, removed_in: None, note: None, suggestion: None }
     }
 
     /// Set the version when deprecation was introduced
@@ -107,10 +101,7 @@ impl Deprecation {
     pub fn help_text(&self, item_name: &str) -> String {
         match (self.since.as_ref(), self.suggestion.as_ref()) {
             (Some(since), Some(suggestion)) => {
-                format!(
-                    "[DEPRECATED since v{}] {} → {}",
-                    since, item_name, suggestion
-                )
+                format!("[DEPRECATED since v{}] {} → {}", since, item_name, suggestion)
             }
             (Some(since), None) => {
                 format!("[DEPRECATED since v{}] {}", since, item_name)

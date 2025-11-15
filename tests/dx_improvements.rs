@@ -129,9 +129,12 @@ fn test_verb_name_auto_inference_with_show_prefix() -> Result<()> {
 
     // Act: Verify registry contains verb with inferred name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     // Find services noun
@@ -181,9 +184,12 @@ fn test_verb_name_auto_inference_with_list_prefix() -> Result<()> {
 
     // Act: Verify registry contains verb with inferred name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     // Find users noun
@@ -263,9 +269,12 @@ fn test_noun_name_auto_detection_when_both_attributes_on_same_function() -> Resu
 
     // Act: Verify registry contains verb associated with correct noun
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     // Find services noun
@@ -296,9 +305,12 @@ fn test_noun_name_auto_detection_with_arguments() -> Result<()> {
 
     // Assert: Registry contains verb associated with correct noun
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
@@ -373,9 +385,12 @@ fn test_explicit_verb_and_noun_name_override_still_works() -> Result<()> {
 
     // Assert: Registry contains verb with explicit name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e|
-        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    )?;
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
     let cmd = registry.build_command();
 
     let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");

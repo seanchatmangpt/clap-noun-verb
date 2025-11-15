@@ -24,9 +24,10 @@ use serde::Serialize;
 use std::fmt;
 
 /// Supported output formats
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OutputFormat {
     /// JSON format (default)
+    #[default]
     Json,
     /// YAML format
     Yaml,
@@ -92,12 +93,6 @@ impl std::str::FromStr for OutputFormat {
     }
 }
 
-impl Default for OutputFormat {
-    fn default() -> Self {
-        OutputFormat::Json
-    }
-}
-
 /// JSON formatter (default)
 fn format_json<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
@@ -119,28 +114,25 @@ fn format_toml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Er
 /// Table formatter - converts JSON to ASCII table
 fn format_table<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
-    json_to_table(&json)
+    Ok(json_to_table(&json))
 }
 
 /// TSV formatter - converts JSON to tab-separated values
 fn format_tsv<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
-    json_to_tsv(&json)
+    Ok(json_to_tsv(&json))
 }
 
 /// Helper: Build formatted table/TSV rows from JSON object array
 ///
 /// This generic helper reduces duplication between table and TSV formatting.
 /// The formatter closure controls how each cell value is converted to a string.
-fn format_object_array<F>(
-    arr: &[serde_json::Value],
-    formatter: F,
-) -> Result<String, Box<dyn std::error::Error>>
+fn format_object_array<F>(arr: &[serde_json::Value], formatter: F) -> String
 where
     F: Fn(&serde_json::Value, &str) -> String, // (value, key) -> formatted_cell
 {
     if arr.is_empty() {
-        return Ok(String::new());
+        return String::new();
     }
 
     let first = &arr[0];
@@ -150,7 +142,9 @@ where
 
         // Header row - avoid Vec allocation, build directly
         for (i, k) in keys.iter().enumerate() {
-            if i > 0 { output.push('\t'); }
+            if i > 0 {
+                output.push('\t');
+            }
             output.push_str(k.as_str());
         }
         output.push('\n');
@@ -159,39 +153,44 @@ where
         for item in arr {
             if let serde_json::Value::Object(item_obj) = item {
                 for (i, k) in keys.iter().enumerate() {
-                    if i > 0 { output.push('\t'); }
-                    let cell_value = formatter(item_obj.get(k.as_str()).unwrap_or(&serde_json::Value::Null), k.as_str());
+                    if i > 0 {
+                        output.push('\t');
+                    }
+                    let cell_value = formatter(
+                        item_obj.get(k.as_str()).unwrap_or(&serde_json::Value::Null),
+                        k.as_str(),
+                    );
                     output.push_str(&cell_value);
                 }
                 output.push('\n');
             }
         }
-        Ok(output)
+        output
     } else {
         // Fallback for non-object arrays
         let mut result = String::new();
         for (i, item) in arr.iter().enumerate() {
-            if i > 0 { result.push('\n'); }
+            if i > 0 {
+                result.push('\n');
+            }
             result.push_str(&item.to_string());
         }
-        Ok(result)
+        result
     }
 }
 
 /// Helper: Convert JSON value to ASCII table
-fn json_to_table(value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
+fn json_to_table(value: &serde_json::Value) -> String {
     match value {
         serde_json::Value::Array(arr) => {
             if arr.is_empty() {
-                return Ok("(empty)".to_string());
+                return "(empty)".to_string();
             }
 
             // Table formatter: show "-" for missing values
-            format_object_array(arr, |val, _key| {
-                match val {
-                    serde_json::Value::Null => "-".to_string(),
-                    other => other.to_string(),
-                }
+            format_object_array(arr, |val, _key| match val {
+                serde_json::Value::Null => "-".to_string(),
+                other => other.to_string(),
             })
         }
         serde_json::Value::Object(obj) => {
@@ -199,33 +198,31 @@ fn json_to_table(value: &serde_json::Value) -> Result<String, Box<dyn std::error
             for (k, v) in obj {
                 output.push_str(&format!("{}\t{}\n", k, v));
             }
-            Ok(output)
+            output
         }
-        other => Ok(other.to_string()),
+        other => other.to_string(),
     }
 }
 
 /// Helper: Convert JSON to TSV
-fn json_to_tsv(value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
+fn json_to_tsv(value: &serde_json::Value) -> String {
     match value {
         serde_json::Value::Array(arr) => {
             if arr.is_empty() {
-                return Ok(String::new());
+                return String::new();
             }
 
             // TSV formatter: escape special characters
-            format_object_array(arr, |val, _key| {
-                escape_tsv(&val.to_string())
-            })
+            format_object_array(arr, |val, _key| escape_tsv(&val.to_string()))
         }
         serde_json::Value::Object(obj) => {
             let mut output = String::new();
             for (k, v) in obj {
                 output.push_str(&format!("{}\t{}\n", k, escape_tsv(&v.to_string())));
             }
-            Ok(output)
+            output
         }
-        other => Ok(other.to_string()),
+        other => other.to_string(),
     }
 }
 

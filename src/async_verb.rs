@@ -45,12 +45,9 @@ pub fn run_async<F, T>(future: F) -> Result<T>
 where
     F: std::future::Future<Output = Result<T>>,
 {
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| crate::error::NounVerbError::execution_error(
-            format!("Failed to create runtime: {}", e)
-        ))?;
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!("Failed to create runtime: {}", e))
+    })?;
 
     rt.block_on(future)
 }
@@ -65,12 +62,9 @@ where
 /// let result2 = runtime.block_on(async_op2());
 /// ```
 pub fn create_runtime() -> Result<tokio::runtime::Runtime> {
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| crate::error::NounVerbError::execution_error(
-            format!("Failed to create runtime: {}", e)
-        ))
+    tokio::runtime::Builder::new_current_thread().enable_all().build().map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!("Failed to create runtime: {}", e))
+    })
 }
 
 #[cfg(test)]

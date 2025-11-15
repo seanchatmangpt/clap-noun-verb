@@ -5,6 +5,22 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2025-11-15
+
+### Changed
+
+- **Registry refactoring** - Improved code organization in `src/cli/registry.rs`
+  - Extracted `build_noun_command()` method for better modularity
+  - Extracted `build_verb_command()` method for cleaner structure
+  - Extracted `add_arg_groups()` and `add_arguments()` helper methods
+  - Improved maintainability and readability
+
+- **Dependencies** - Added `chicago-tdd-tools` as dev dependency for testing
+
+### Migration Notes
+
+No breaking changes. All v3.6.0 code continues to work without modification.
+
 ## [3.6.0] - 2025-01-15
 
 ### Added - Production-Ready Features & State Management

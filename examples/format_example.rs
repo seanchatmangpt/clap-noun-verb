@@ -3,8 +3,8 @@
 //! Demonstrates how to use OutputFormat to generate output in different formats
 //! (JSON, YAML, TOML, Table, TSV) instead of just JSON.
 
+use clap_noun_verb::{OutputFormat, Result};
 use clap_noun_verb_macros::{noun, verb};
-use clap_noun_verb::{Result, OutputFormat};
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -24,32 +24,14 @@ struct Inventory {
 // Generate sample inventory
 fn get_inventory() -> Inventory {
     let products = vec![
-        Product {
-            id: 1,
-            name: "Laptop".to_string(),
-            price: 999.99,
-            in_stock: true,
-        },
-        Product {
-            id: 2,
-            name: "Mouse".to_string(),
-            price: 29.99,
-            in_stock: true,
-        },
-        Product {
-            id: 3,
-            name: "Keyboard".to_string(),
-            price: 79.99,
-            in_stock: false,
-        },
+        Product { id: 1, name: "Laptop".to_string(), price: 999.99, in_stock: true },
+        Product { id: 2, name: "Mouse".to_string(), price: 29.99, in_stock: true },
+        Product { id: 3, name: "Keyboard".to_string(), price: 79.99, in_stock: false },
     ];
 
     let total_value = products.iter().map(|p| p.price).sum();
 
-    Inventory {
-        products,
-        total_value,
-    }
+    Inventory { products, total_value }
 }
 
 /// List inventory in JSON format (default)
@@ -76,10 +58,7 @@ fn show_all_formats() -> Result<String> {
         .format(&inventory)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
 
-    Ok(format!(
-        "=== JSON ===\n{}\n\n=== YAML ===\n{}\n\n=== TABLE ===\n{}",
-        json, yaml, table
-    ))
+    Ok(format!("=== JSON ===\n{}\n\n=== YAML ===\n{}\n\n=== TABLE ===\n{}", json, yaml, table))
 }
 
 /// List products as table

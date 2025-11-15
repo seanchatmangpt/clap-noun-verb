@@ -57,9 +57,8 @@ pub fn validate_port(port: u16) -> Result<()> {
 /// validate_url("not a url")?;                // Error: invalid URL
 /// ```
 pub fn validate_url(url_str: &str) -> Result<()> {
-    Url::parse(url_str).map_err(|e| {
-        crate::error::NounVerbError::execution_error(format!("Invalid URL: {}", e))
-    })?;
+    Url::parse(url_str)
+        .map_err(|e| crate::error::NounVerbError::execution_error(format!("Invalid URL: {}", e)))?;
     Ok(())
 }
 
@@ -86,9 +85,7 @@ pub fn validate_url(url_str: &str) -> Result<()> {
 pub fn validate_ipv4(ip: &str) -> Result<()> {
     let parts: Vec<&str> = ip.split('.').collect();
     if parts.len() != 4 {
-        return Err(crate::error::NounVerbError::execution_error(
-            "IPv4 must have 4 octets",
-        ));
+        return Err(crate::error::NounVerbError::execution_error("IPv4 must have 4 octets"));
     }
 
     for part in parts {
@@ -126,9 +123,7 @@ pub fn validate_ipv4(ip: &str) -> Result<()> {
 /// ```
 pub fn validate_ipv6(ip: &str) -> Result<()> {
     ip.parse::<std::net::Ipv6Addr>()
-        .map_err(|_| {
-            crate::error::NounVerbError::execution_error("Invalid IPv6 address")
-        })?;
+        .map_err(|_| crate::error::NounVerbError::execution_error("Invalid IPv6 address"))?;
     Ok(())
 }
 
@@ -154,9 +149,10 @@ pub fn validate_ipv6(ip: &str) -> Result<()> {
 /// ```
 pub fn validate_path_exists(path_str: &str) -> Result<()> {
     if !Path::new(path_str).exists() {
-        return Err(crate::error::NounVerbError::execution_error(
-            format!("Path does not exist: {}", path_str),
-        ));
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "Path does not exist: {}",
+            path_str
+        )));
     }
     Ok(())
 }
@@ -184,9 +180,10 @@ pub fn validate_path_creatable(path_str: &str) -> Result<()> {
     let path = Path::new(path_str);
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() && !parent.exists() {
-            return Err(crate::error::NounVerbError::execution_error(
-                format!("Parent directory does not exist for: {}", path_str),
-            ));
+            return Err(crate::error::NounVerbError::execution_error(format!(
+                "Parent directory does not exist for: {}",
+                path_str
+            )));
         }
     }
     Ok(())
@@ -220,9 +217,7 @@ pub fn validate_email(email: &str) -> Result<()> {
         .map_err(|_| crate::error::NounVerbError::execution_error("Email regex error"))?;
 
     if !email_regex.is_match(email) {
-        return Err(crate::error::NounVerbError::execution_error(
-            "Invalid email format",
-        ));
+        return Err(crate::error::NounVerbError::execution_error("Invalid email format"));
     }
     Ok(())
 }
@@ -248,9 +243,7 @@ pub fn validate_email(email: &str) -> Result<()> {
 /// ```
 pub fn validate_not_empty(value: &str) -> Result<()> {
     if value.trim().is_empty() {
-        return Err(crate::error::NounVerbError::execution_error(
-            "Value cannot be empty",
-        ));
+        return Err(crate::error::NounVerbError::execution_error("Value cannot be empty"));
     }
     Ok(())
 }
@@ -282,14 +275,16 @@ pub fn validate_not_empty(value: &str) -> Result<()> {
 pub fn validate_length(value: &str, min: usize, max: usize) -> Result<()> {
     let len = value.len();
     if len < min {
-        return Err(crate::error::NounVerbError::execution_error(
-            format!("Value must be at least {} characters", min),
-        ));
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "Value must be at least {} characters",
+            min
+        )));
     }
     if len > max {
-        return Err(crate::error::NounVerbError::execution_error(
-            format!("Value must be at most {} characters", max),
-        ));
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "Value must be at most {} characters",
+            max
+        )));
     }
     Ok(())
 }
@@ -326,9 +321,10 @@ pub fn validate_regex(value: &str, pattern: &str) -> Result<()> {
     })?;
 
     if !regex.is_match(value) {
-        return Err(crate::error::NounVerbError::execution_error(
-            format!("Value does not match pattern: {}", pattern),
-        ));
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "Value does not match pattern: {}",
+            pattern
+        )));
     }
     Ok(())
 }
