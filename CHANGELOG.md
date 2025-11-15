@@ -5,6 +5,63 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2025-01-15
+
+### Added - Example Completeness & Integration Testing
+
+#### Comprehensive Examples
+- **env_vars.rs** - Environment variable support example
+  - Reading configuration from environment variables: `#[arg(env = "VAR_NAME")]`
+  - Proper precedence: CLI args override env vars which override defaults
+  - Real-world configuration management scenario
+
+- **positional.rs** - Positional arguments example
+  - First positional argument: `#[arg(index = 0)]`
+  - Optional second positional argument: `#[arg(index = 1)]`
+  - Mixed positional and named arguments pattern (e.g., `git clone`)
+
+- **arg_actions.rs** - Advanced argument actions example
+  - Count action: `-v`, `-vv`, `-vvv` → 1, 2, 3
+  - SetFalse action: `--no-cache` style inverted flags
+  - Type-based auto-inference for actions
+
+- **arg_groups.rs** - Argument groups and constraints example
+  - Exclusive argument groups (mutually exclusive options)
+  - Argument dependencies: `#[arg(requires = "...")]`
+  - Argument conflicts: `#[arg(conflicts_with = "...")]`
+
+#### Integration Testing
+- **Enabled 12 integration tests** - All tests in `tests/integration_examples.rs` now enabled
+  - `test_basic_example_help` - Basic example help output
+  - `test_basic_example_services_status` - Basic example command execution
+  - `test_services_example` - Services example functionality
+  - `test_services_example_logs` - Services with arguments
+  - `test_collector_example` - Collector pattern example
+  - `test_arguments_example` - Arguments with required/optional fields
+  - `test_arguments_example_with_flag` - Boolean flag support
+  - `test_validation_example` - Input validation
+  - `test_nested_example` - Nested command structures
+  - `test_framework_example` - Framework usage patterns
+  - `test_attribute_macro_example` - Attribute macro basics
+  - `test_attribute_macro_example_with_args` - Attribute macro with arguments
+
+### Changed
+
+- **Documentation completeness** - All v3.2.0 and v3.3.0 features now fully documented with working examples
+- **Example coverage** - Comprehensive examples for every major feature category
+
+### Migration Notes
+
+No breaking changes. All existing code continues to work. v3.5.0 is a feature-complete release with comprehensive examples and integration tests.
+
+**New in this release:**
+1. All 12 integration tests are now enabled and part of the standard test suite
+2. Four additional examples demonstrating v3.2.0+ features:
+   - env_vars.rs: Environment variable handling
+   - positional.rs: Positional arguments
+   - arg_actions.rs: Advanced argument actions (count, set_false)
+   - arg_groups.rs: Argument groups and constraints
+
 ## [3.4.0] - 2025-01-07
 
 ### Fixed

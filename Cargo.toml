@@ -1,6 +1,6 @@
 [package]
 name = "clap-noun-verb"
-version = "3.4.0"
+version = "3.5.0"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 linkme = "0.3"
-clap-noun-verb-macros = { version = "3.4.0", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "3.5.0", path = "clap-noun-verb-macros" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -65,6 +65,22 @@ path = "examples/attribute_macro.rs"
 [[example]]
 name = "validation"
 path = "examples/validation.rs"
+
+[[example]]
+name = "env_vars"
+path = "examples/env_vars.rs"
+
+[[example]]
+name = "positional"
+path = "examples/positional.rs"
+
+[[example]]
+name = "arg_actions"
+path = "examples/arg_actions.rs"
+
+[[example]]
+name = "arg_groups"
+path = "examples/arg_groups.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration

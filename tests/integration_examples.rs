@@ -39,7 +39,6 @@ fn run_example(example_name: &str, args: Vec<&str>) -> Result<(String, i32)> {
 }
 
 #[test]
-#[ignore]
 fn test_basic_example_help() -> Result<()> {
     // Test that the basic example compiles and shows help
     let (output, _code) = run_example("basic", vec!["--help"])?;
@@ -55,7 +54,6 @@ fn test_basic_example_help() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_basic_example_services_status() -> Result<()> {
     // Test that basic example can execute a command
     let (output, _code) = run_example("basic", vec!["services", "status"])?;
@@ -71,7 +69,6 @@ fn test_basic_example_services_status() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_services_example() -> Result<()> {
     // Test services example
     let (output, _code) = run_example("services", vec!["services", "status"])?;
@@ -87,7 +84,6 @@ fn test_services_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_services_example_logs() -> Result<()> {
     // Test services example with arguments
     let (output, _code) = run_example("services", vec!["services", "logs", "--service", "web"])?;
@@ -103,7 +99,6 @@ fn test_services_example_logs() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_collector_example() -> Result<()> {
     // Test collector example
     let (output, _code) = run_example("collector", vec!["collector", "status"])?;
@@ -119,7 +114,6 @@ fn test_collector_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_arguments_example() -> Result<()> {
     // Test arguments example with required and optional args
     let (output, _code) =
@@ -136,7 +130,6 @@ fn test_arguments_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_arguments_example_with_flag() -> Result<()> {
     // Test arguments example with boolean flag
     let (output, _code) =
@@ -153,7 +146,6 @@ fn test_arguments_example_with_flag() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_validation_example() -> Result<()> {
     // Test validation example
     let (output, _code) = run_example(
@@ -172,7 +164,6 @@ fn test_validation_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_nested_example() -> Result<()> {
     // Test nested example
     let (output, _code) = run_example("nested", vec!["test", "run"])?;
@@ -188,7 +179,6 @@ fn test_nested_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_framework_example() -> Result<()> {
     // Test framework example
     let (output, _code) = run_example("framework", vec!["services", "status"])?;
@@ -204,7 +194,6 @@ fn test_framework_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_attribute_macro_example() -> Result<()> {
     // Test attribute_macro example
     let (output, _code) = run_example("attribute_macro", vec!["services", "status"])?;
@@ -220,7 +209,6 @@ fn test_attribute_macro_example() -> Result<()> {
 }
 
 #[test]
-#[ignore]
 fn test_attribute_macro_example_with_args() -> Result<()> {
     // Test attribute_macro example with arguments
     let (output, _code) = run_example(
