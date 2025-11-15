@@ -16,13 +16,9 @@ fn test_make_core_function() {
     let result = core_fn("test".to_string());
 
     // Assert - Should execute successfully
-    match result {
-        Ok(output) => {
-            assert_eq!(output, "Processed: test");
-        }
-        Err(_) => {
-            panic!("Core function should not fail");
-        }
+    assert!(result.is_ok(), "Core function should not fail: {:?}", result);
+    if let Ok(output) = result {
+        assert_eq!(output, "Processed: test");
     }
 }
 
@@ -51,12 +47,8 @@ fn test_core_function_with_different_types() {
     let result = core_fn(21);
 
     // Assert - Should double the input
-    match result {
-        Ok(output) => {
-            assert_eq!(output, 42);
-        }
-        Err(_) => {
-            panic!("Core function should not fail");
-        }
+    assert!(result.is_ok(), "Core function should not fail: {:?}", result);
+    if let Ok(output) = result {
+        assert_eq!(output, 42);
     }
 }

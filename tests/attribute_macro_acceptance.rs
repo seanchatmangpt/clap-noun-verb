@@ -71,7 +71,9 @@ fn test_attribute_macro_api_registers_commands() -> Result<()> {
 
     // Act: Verify registry contains commands
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
 
     // Assert: Registry should contain "services" noun
     let cmd = registry.build_command();
@@ -97,20 +99,24 @@ fn test_type_inference_from_function_signature() -> Result<()> {
 
     // Act: Build command and verify arguments
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
     // Find services -> logs command
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
-        if let Some(logs_cmd) = services_cmd.get_subcommands().find(|s| s.get_name() == "logs") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
+        let logs_cmd = services_cmd.get_subcommands().find(|s| s.get_name() == "logs");
+        assert!(logs_cmd.is_some(), "logs verb should be registered");
+
+        if let Some(logs_cmd) = logs_cmd {
             // Assert: logs command should have arguments
             // Note: Exact argument verification depends on clap API
             assert!(logs_cmd.get_arguments().count() >= 0, "logs command should exist");
-        } else {
-            panic!("logs verb should be registered");
         }
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
@@ -209,7 +215,9 @@ fn test_compile_time_auto_discovery() -> Result<()> {
 
     // Act: Initialize registry (should auto-discover)
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
 
     // Assert: Commands are present (discovered at compile time)
     let cmd = registry.build_command();
@@ -232,12 +240,20 @@ fn test_docstring_help_generation() -> Result<()> {
 
     // Act: Build command and verify help text
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
     // Find services -> logs command
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
-        if let Some(logs_cmd) = services_cmd.get_subcommands().find(|s| s.get_name() == "logs") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
+        let logs_cmd = services_cmd.get_subcommands().find(|s| s.get_name() == "logs");
+        assert!(logs_cmd.is_some(), "logs verb should be registered");
+
+        if let Some(logs_cmd) = logs_cmd {
             // Assert: Command should have about text from docstring
             let about = logs_cmd.get_about().map(|s| s.to_string()).unwrap_or_default();
             assert!(
@@ -263,10 +279,6 @@ fn test_docstring_help_generation() -> Result<()> {
                             "Argument 'service' should have help text from docstring, got: '{}'",
                             help_str
                         );
-                    } else {
-                        // If no help, that's ok - it's optional enhancement
-                        // But we verify the argument exists
-                        assert!(true, "Argument 'service' exists");
                     }
                 }
                 if arg_id == "lines" {
@@ -280,10 +292,6 @@ fn test_docstring_help_generation() -> Result<()> {
                             "Argument 'lines' should have help text from docstring, got: '{}'",
                             help_str
                         );
-                    } else {
-                        // If no help, that's ok - it's optional enhancement
-                        // But we verify the argument exists
-                        assert!(true, "Argument 'lines' exists");
                     }
                 }
             }
@@ -291,11 +299,7 @@ fn test_docstring_help_generation() -> Result<()> {
             // Verify arguments exist
             assert!(found_service, "Argument 'service' should be registered");
             assert!(found_lines, "Argument 'lines' should be registered");
-        } else {
-            panic!("logs verb should be registered");
         }
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
