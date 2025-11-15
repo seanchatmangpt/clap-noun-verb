@@ -32,11 +32,13 @@ impl Cache {
     }
 
     fn get(&self, key: &str) -> Option<String> {
-        self.data.lock().unwrap().get(key).cloned()
+        self.data.lock().ok().and_then(|m| m.get(key).cloned())
     }
 
     fn set(&self, key: String, value: String) {
-        self.data.lock().unwrap().insert(key, value);
+        if let Ok(mut data) = self.data.lock() {
+            data.insert(key, value);
+        }
     }
 }
 

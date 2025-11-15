@@ -43,8 +43,10 @@ fn test_registry_functionality() -> Result<()> {
 
     let structure = registry.command_structure();
     assert!(structure.contains_key("test"));
-    assert_eq!(structure.get("test").unwrap().len(), 1);
-    assert!(structure.get("test").unwrap().contains(&"run".to_string()));
+    if let Some(verbs) = structure.get("test") {
+        assert_eq!(verbs.len(), 1);
+        assert!(verbs.contains(&"run".to_string()));
+    }
 
     Ok(())
 }
@@ -149,7 +151,9 @@ fn test_custom_command_implementation() -> Result<()> {
 
     let structure = cli.command_structure();
     assert!(structure.contains_key("custom-services"));
-    assert!(structure.get("custom-services").unwrap().contains(&"status".to_string()));
+    if let Some(verbs) = structure.get("custom-services") {
+        assert!(verbs.contains(&"status".to_string()));
+    }
 
     Ok(())
 }
@@ -230,8 +234,12 @@ fn test_cli_builder_method_chaining() -> Result<()> {
     let structure = cli.command_structure();
     assert!(structure.contains_key("first"));
     assert!(structure.contains_key("second"));
-    assert_eq!(structure.get("first").unwrap().len(), 1);
-    assert_eq!(structure.get("second").unwrap().len(), 1);
+    if let Some(first_verbs) = structure.get("first") {
+        assert_eq!(first_verbs.len(), 1);
+    }
+    if let Some(second_verbs) = structure.get("second") {
+        assert_eq!(second_verbs.len(), 1);
+    }
 
     Ok(())
 }
@@ -307,8 +315,12 @@ fn test_registry_introspection() -> Result<()> {
 
     let structure = registry.command_structure();
     assert_eq!(structure.len(), 2);
-    assert_eq!(structure.get("services").unwrap().len(), 2);
-    assert_eq!(structure.get("config").unwrap().len(), 2);
+    if let Some(services_verbs) = structure.get("services") {
+        assert_eq!(services_verbs.len(), 2);
+    }
+    if let Some(config_verbs) = structure.get("config") {
+        assert_eq!(config_verbs.len(), 2);
+    }
 
     Ok(())
 }

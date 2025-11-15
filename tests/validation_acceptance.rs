@@ -48,8 +48,14 @@ fn test_auto_validation_from_types() -> Result<()> {
     let cmd = registry.build_command();
 
     // Find users -> create command
-    if let Some(users_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "users") {
-        if let Some(create_cmd) = users_cmd.get_subcommands().find(|s| s.get_name() == "create") {
+    let users_cmd = cmd.get_subcommands().find(|s| s.get_name() == "users");
+    assert!(users_cmd.is_some(), "users noun should be registered");
+
+    if let Some(users_cmd) = users_cmd {
+        let create_cmd = users_cmd.get_subcommands().find(|s| s.get_name() == "create");
+        assert!(create_cmd.is_some(), "create verb should be registered");
+
+        if let Some(create_cmd) = create_cmd {
             // Assert: Arguments should have validation metadata
             let args: Vec<_> = create_cmd.get_arguments().collect();
             let mut found_age = false;
@@ -58,16 +64,11 @@ fn test_auto_validation_from_types() -> Result<()> {
                 if arg.get_id().as_str() == "age" {
                     found_age = true;
                     // Age is u8, so should have validation (0-255 for u8)
-                    assert!(true, "Argument 'age' exists with type validation");
                 }
             }
 
             assert!(found_age, "Argument 'age' should be registered");
-        } else {
-            panic!("create verb should be registered");
         }
-    } else {
-        panic!("users noun should be registered");
     }
 
     Ok(())
@@ -95,8 +96,14 @@ fn test_explicit_validation_attributes() -> Result<()> {
     let cmd = registry.build_command();
 
     // Find users -> create command
-    if let Some(users_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "users") {
-        if let Some(create_cmd) = users_cmd.get_subcommands().find(|s| s.get_name() == "create") {
+    let users_cmd = cmd.get_subcommands().find(|s| s.get_name() == "users");
+    assert!(users_cmd.is_some(), "users noun should be registered");
+
+    if let Some(users_cmd) = users_cmd {
+        let create_cmd = users_cmd.get_subcommands().find(|s| s.get_name() == "create");
+        assert!(create_cmd.is_some(), "create verb should be registered");
+
+        if let Some(create_cmd) = create_cmd {
             // Assert: Arguments should have validation applied
             let args: Vec<_> = create_cmd.get_arguments().collect();
             let mut found_age = false;
@@ -105,16 +112,11 @@ fn test_explicit_validation_attributes() -> Result<()> {
                 if arg.get_id().as_str() == "age" {
                     found_age = true;
                     // Age is u8, so should have type-based validation (0-255)
-                    assert!(true, "Argument 'age' exists with type-based validation");
                 }
             }
 
             assert!(found_age, "Argument 'age' should be registered");
-        } else {
-            panic!("create verb should be registered");
         }
-    } else {
-        panic!("users noun should be registered");
     }
 
     Ok(())

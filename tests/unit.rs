@@ -105,8 +105,8 @@ fn test_registry_configuration() -> Result<()> {
 
     let command = registry.build_command();
     assert_eq!(command.get_name(), "test-app");
-    assert_eq!(command.get_about().unwrap().to_string(), "Test application");
-    assert_eq!(command.get_version().unwrap(), "1.0.0");
+    assert_eq!(command.get_about().map(|s| s.to_string()).unwrap_or_default(), "Test application");
+    assert_eq!(command.get_version().unwrap_or(""), "1.0.0");
 
     Ok(())
 }
@@ -164,14 +164,16 @@ fn test_registry_command_structure() -> Result<()> {
     assert!(structure.contains_key("services"));
     assert!(structure.contains_key("config"));
 
-    let services_verbs = structure.get("services").unwrap();
-    assert_eq!(services_verbs.len(), 2);
-    assert!(services_verbs.contains(&"status".to_string()));
-    assert!(services_verbs.contains(&"restart".to_string()));
+    if let Some(services_verbs) = structure.get("services") {
+        assert_eq!(services_verbs.len(), 2);
+        assert!(services_verbs.contains(&"status".to_string()));
+        assert!(services_verbs.contains(&"restart".to_string()));
+    }
 
-    let config_verbs = structure.get("config").unwrap();
-    assert_eq!(config_verbs.len(), 1);
-    assert!(config_verbs.contains(&"get".to_string()));
+    if let Some(config_verbs) = structure.get("config") {
+        assert_eq!(config_verbs.len(), 1);
+        assert!(config_verbs.contains(&"get".to_string()));
+    }
 
     Ok(())
 }
@@ -230,7 +232,7 @@ fn test_cli_builder_basic() -> Result<()> {
 
     let command = cli.build_command();
     assert_eq!(command.get_name(), "test-cli");
-    assert_eq!(command.get_about().unwrap().to_string(), "Test CLI");
+    assert_eq!(command.get_about().map(|s| s.to_string()).unwrap_or_default(), "Test CLI");
 
     Ok(())
 }
@@ -363,7 +365,7 @@ fn test_build_cli_function() -> Result<()> {
     });
 
     assert_eq!(command.get_name(), "build-test");
-    assert_eq!(command.get_about().unwrap().to_string(), "Build test CLI");
+    assert_eq!(command.get_about().map(|s| s.to_string()).unwrap_or_default(), "Build test CLI");
     assert_eq!(structure.len(), 1);
     assert!(structure.contains_key("test"));
 

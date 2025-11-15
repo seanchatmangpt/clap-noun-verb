@@ -129,19 +129,22 @@ fn test_verb_name_auto_inference_with_show_prefix() -> Result<()> {
 
     // Act: Verify registry contains verb with inferred name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
     // Find services noun
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
         // Assert: Should have "status" verb (inferred from show_status)
         let verbs: Vec<_> = services_cmd.get_subcommands().map(|s| s.get_name()).collect();
         assert!(
             verbs.contains(&"status"),
             "Verb name should be inferred from function name 'show_status' → 'status'"
         );
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
@@ -178,19 +181,22 @@ fn test_verb_name_auto_inference_with_list_prefix() -> Result<()> {
 
     // Act: Verify registry contains verb with inferred name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
     // Find users noun
-    if let Some(users_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "users") {
+    let users_cmd = cmd.get_subcommands().find(|s| s.get_name() == "users");
+    assert!(users_cmd.is_some(), "users noun should be registered");
+
+    if let Some(users_cmd) = users_cmd {
         // Assert: Should have "users" verb (inferred from list_users)
         let verbs: Vec<_> = users_cmd.get_subcommands().map(|s| s.get_name()).collect();
         assert!(
             verbs.contains(&"users"),
             "Verb name should be inferred from function name 'list_users' → 'users'"
         );
-    } else {
-        panic!("users noun should be registered");
     }
 
     Ok(())
@@ -257,19 +263,22 @@ fn test_noun_name_auto_detection_when_both_attributes_on_same_function() -> Resu
 
     // Act: Verify registry contains verb associated with correct noun
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
     // Find services noun
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
         // Assert: Should have "status" verb automatically associated with "services" noun
         let verbs: Vec<_> = services_cmd.get_subcommands().map(|s| s.get_name()).collect();
         assert!(
             verbs.contains(&"status"),
             "Verb should be auto-associated with noun from same function"
         );
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
@@ -287,17 +296,20 @@ fn test_noun_name_auto_detection_with_arguments() -> Result<()> {
 
     // Assert: Registry contains verb associated with correct noun
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
         let verbs: Vec<_> = services_cmd.get_subcommands().map(|s| s.get_name()).collect();
         assert!(
             verbs.contains(&"restart"),
             "Verb 'restart' should be auto-associated with 'services' noun"
         );
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
@@ -361,17 +373,20 @@ fn test_explicit_verb_and_noun_name_override_still_works() -> Result<()> {
 
     // Assert: Registry contains verb with explicit name
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().map_err(|e|
+        clap_noun_verb::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    )?;
     let cmd = registry.build_command();
 
-    if let Some(services_cmd) = cmd.get_subcommands().find(|s| s.get_name() == "services") {
+    let services_cmd = cmd.get_subcommands().find(|s| s.get_name() == "services");
+    assert!(services_cmd.is_some(), "services noun should be registered");
+
+    if let Some(services_cmd) = services_cmd {
         let verbs: Vec<_> = services_cmd.get_subcommands().map(|s| s.get_name()).collect();
         assert!(
             verbs.contains(&"custom-verb"),
             "Explicit verb name 'custom-verb' should be registered"
         );
-    } else {
-        panic!("services noun should be registered");
     }
 
     Ok(())
