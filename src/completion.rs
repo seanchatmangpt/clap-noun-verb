@@ -64,48 +64,78 @@ impl Shell {
     }
 
     /// Get installation instructions for this shell
+    ///
+    /// Returns shell-specific instructions for installing and activating completions.
+    /// Each shell has different directory structures and configuration files.
     pub fn install_instructions(self, app_name: &str) -> String {
+        // Define shell-specific instruction templates for better maintainability.
+        // Structure: (shell_name, config_file, primary_instruction, alternate_instruction)
         match self {
-            Shell::Bash => format!(
-                "# Bash\n\
-                 # Add to ~/.bashrc or ~/.bash_profile:\n\
-                 eval \"$({} --completions bash)\"\n\
-                 # Or source directly:\n\
-                 source <({} --completions bash))",
-                app_name, app_name
-            ),
-            Shell::Zsh => format!(
-                "# Zsh\n\
-                 # Add to ~/.zshrc:\n\
-                 eval \"$({} --completions zsh)\"\n\
-                 # Or add completion directory to fpath:\n\
-                 # mkdir -p ~/.zsh/completions\n\
-                 # {} --completions zsh > ~/.zsh/completions/_{}\n\
-                 # fpath+=(~/.zsh/completions)",
-                app_name, app_name, app_name
-            ),
-            Shell::Fish => format!(
-                "# Fish\n\
-                 # Add to ~/.config/fish/config.fish:\n\
-                 eval \"$({} --completions fish)\"\n\
-                 # Or save to completions directory:\n\
-                 # mkdir -p ~/.config/fish/completions\n\
-                 # {} --completions fish > ~/.config/fish/completions/{}.fish",
-                app_name, app_name, app_name
-            ),
-            Shell::PowerShell => format!(
-                "# PowerShell\n\
-                 # Add to PowerShell profile:\n\
-                 # & ({{{} --completions powershell}}  | Out-String | Invoke-Expression)",
-                app_name
-            ),
-            Shell::Elvish => format!(
-                "# Elvish\n\
-                 # Add to ~/.elvish/rc.elv:\n\
-                 eval \"$({} --completions elvish)\"",
-                app_name
-            ),
+            Shell::Bash => self.format_bash_instructions(app_name),
+            Shell::Zsh => self.format_zsh_instructions(app_name),
+            Shell::Fish => self.format_fish_instructions(app_name),
+            Shell::PowerShell => self.format_powershell_instructions(app_name),
+            Shell::Elvish => self.format_elvish_instructions(app_name),
         }
+    }
+
+    /// Format Bash installation instructions
+    fn format_bash_instructions(self, app_name: &str) -> String {
+        format!(
+            "# Bash\n\
+             # Add to ~/.bashrc or ~/.bash_profile:\n\
+             eval \"$({} --completions bash)\"\n\
+             # Or source directly:\n\
+             source <({} --completions bash))",
+            app_name, app_name
+        )
+    }
+
+    /// Format Zsh installation instructions
+    fn format_zsh_instructions(self, app_name: &str) -> String {
+        format!(
+            "# Zsh\n\
+             # Add to ~/.zshrc:\n\
+             eval \"$({} --completions zsh)\"\n\
+             # Or add completion directory to fpath:\n\
+             # mkdir -p ~/.zsh/completions\n\
+             # {} --completions zsh > ~/.zsh/completions/_{}\n\
+             # fpath+=(~/.zsh/completions)",
+            app_name, app_name, app_name
+        )
+    }
+
+    /// Format Fish installation instructions
+    fn format_fish_instructions(self, app_name: &str) -> String {
+        format!(
+            "# Fish\n\
+             # Add to ~/.config/fish/config.fish:\n\
+             eval \"$({} --completions fish)\"\n\
+             # Or save to completions directory:\n\
+             # mkdir -p ~/.config/fish/completions\n\
+             # {} --completions fish > ~/.config/fish/completions/{}.fish",
+            app_name, app_name, app_name
+        )
+    }
+
+    /// Format PowerShell installation instructions
+    fn format_powershell_instructions(self, app_name: &str) -> String {
+        format!(
+            "# PowerShell\n\
+             # Add to PowerShell profile:\n\
+             # & ({{{} --completions powershell}}  | Out-String | Invoke-Expression)",
+            app_name
+        )
+    }
+
+    /// Format Elvish installation instructions
+    fn format_elvish_instructions(self, app_name: &str) -> String {
+        format!(
+            "# Elvish\n\
+             # Add to ~/.elvish/rc.elv:\n\
+             eval \"$({} --completions elvish)\"",
+            app_name
+        )
     }
 }
 
