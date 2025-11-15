@@ -20,13 +20,16 @@ use std::sync::{Mutex, OnceLock};
 ///
 /// For explicit value_parser expressions, it uses pattern matching on
 /// the string representation to apply common patterns.
-fn apply_validators(arg: &mut clap::Arg, arg_meta: &ArgMetadata) {
+///
+/// Takes ownership of Arg and returns the modified Arg to avoid unnecessary
+/// cloning while applying builder-pattern methods that consume and return self.
+fn apply_validators(mut arg: clap::Arg, arg_meta: &ArgMetadata) -> clap::Arg {
     // Apply value parser if specified (auto-inferred or explicit)
     // Note: value_parser is stored as a string representation, so we match on the string
     if let Some(ref vp_str) = arg_meta.value_parser {
         // Try to apply value parser from pattern matching
-        if value_parser::apply_value_parser(arg, vp_str) {
-            return;
+        if value_parser::apply_value_parser(&mut arg, vp_str) {
+            return arg;
         }
     }
 
@@ -38,28 +41,38 @@ fn apply_validators(arg: &mut clap::Arg, arg_meta: &ArgMetadata) {
         let min_u64 = arg_meta.min_value.as_ref().and_then(|v| v.parse::<u64>().ok());
         let max_u64 = arg_meta.max_value.as_ref().and_then(|v| v.parse::<u64>().ok());
 
-        // Apply range validators based on what we can parse
-        if let (Some(min), Some(max)) = (min_i64, max_i64) {
-            *arg = arg.clone().value_parser(clap::value_parser!(i64).range(min..=max));
-        } else if let Some(min) = min_i64 {
-            *arg = arg.clone().value_parser(clap::value_parser!(i64).range(min..));
-        } else if let Some(max) = max_i64 {
-            *arg = arg.clone().value_parser(clap::value_parser!(i64).range(..=max));
-        } else if let (Some(min), Some(max)) = (min_u64, max_u64) {
-            *arg = arg.clone().value_parser(clap::value_parser!(u64).range(min..=max));
-        } else if let Some(min) = min_u64 {
-            *arg = arg.clone().value_parser(clap::value_parser!(u64).range(min..));
-        } else if let Some(max) = max_u64 {
-            *arg = arg.clone().value_parser(clap::value_parser!(u64).range(..=max));
+        // Apply range validators based on what we can parse using match for clarity
+        match (min_i64, max_i64, min_u64, max_u64) {
+            (Some(min), Some(max), _, _) => {
+                arg = arg.value_parser(clap::value_parser!(i64).range(min..=max));
+            }
+            (Some(min), None, _, _) => {
+                arg = arg.value_parser(clap::value_parser!(i64).range(min..));
+            }
+            (None, Some(max), _, _) => {
+                arg = arg.value_parser(clap::value_parser!(i64).range(..=max));
+            }
+            (_, _, Some(min), Some(max)) => {
+                arg = arg.value_parser(clap::value_parser!(u64).range(min..=max));
+            }
+            (_, _, Some(min), None) => {
+                arg = arg.value_parser(clap::value_parser!(u64).range(min..));
+            }
+            (_, _, None, Some(max)) => {
+                arg = arg.value_parser(clap::value_parser!(u64).range(..=max));
+            }
+            _ => {}
         }
     }
 
     // For string types with min_length, ensure non-empty
     if let Some(min_len) = arg_meta.min_length {
         if min_len > 0 {
-            *arg = arg.clone().value_parser(clap::builder::NonEmptyStringValueParser::new());
+            arg = arg.value_parser(clap::builder::NonEmptyStringValueParser::new());
         }
     }
+
+    arg
 }
 
 /// Distributed slice for noun registrations
@@ -438,7 +451,7 @@ impl CommandRegistry {
                 arg = arg.required(true);
             }
 
-            apply_validators(&mut arg, arg_meta);
+            arg = apply_validators(arg, arg_meta);
 
             if arg_meta.allow_negative_numbers {
                 arg = arg.allow_negative_numbers(true);
