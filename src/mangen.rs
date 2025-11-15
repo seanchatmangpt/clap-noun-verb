@@ -22,15 +22,16 @@ use std::io::Write;
 /// # Arguments
 ///
 /// * `cmd` - The clap Command to generate documentation for
-/// * `app_name` - The name of the application
+/// * `app_name` - The name of the application (reserved for future use)
 ///
 /// # Returns
 ///
 /// A String containing the man page in groff format
+#[allow(unused_variables)]
 pub fn generate_man_page(cmd: &Command, app_name: &str) -> Result<String> {
     use clap_mangen::Man;
 
-    let mut cmd_copy = cmd.clone();
+    let cmd_copy = cmd.clone();
     let mut buffer = Vec::new();
 
     let man = Man::new(cmd_copy);

@@ -59,12 +59,8 @@ impl ShellType {
                 Some(home.join(".config/fish/config.fish"))
             }
             ShellType::PowerShell => {
-                let profiles = vec![
-                    "$PROFILE",
-                    "$PROFILE.CurrentUserCurrentHost",
-                ];
-                // Return first as primary
-                None // PowerShell paths are dynamic
+                // PowerShell profile paths are dynamic, need to query $PROFILE
+                None
             }
             ShellType::Elvish => {
                 Some(home.join(".elvish/rc.elv"))

@@ -19,10 +19,10 @@ struct CompletionInfo {
 #[noun("completion", "Shell completion generation")]
 #[verb("available")]
 fn show_available_shells() -> Result<String> {
-    let shells = vec!["bash", "zsh", "fish", "powershell", "elvish"];
+    const SHELLS: &[&str] = &["bash", "zsh", "fish", "powershell", "elvish"];
     let info = format!(
         "Supported shells for completion:\n  - {}\n\nUse: myapp completion generate <shell>",
-        shells.join("\n  - ")
+        SHELLS.join("\n  - ")
     );
     Ok(info)
 }

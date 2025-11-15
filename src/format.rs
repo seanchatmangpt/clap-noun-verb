@@ -140,10 +140,10 @@ fn json_to_table(value: &serde_json::Value) -> Result<String, Box<dyn std::error
             let first = &arr[0];
             if let serde_json::Value::Object(obj) = first {
                 let mut output = String::new();
-                let keys: Vec<String> = obj.keys().map(|s| s.to_string()).collect();
+                let keys: Vec<&String> = obj.keys().collect();
 
                 // Header row
-                output.push_str(&keys.join("\t"));
+                output.push_str(&keys.iter().map(|k| k.as_str()).collect::<Vec<_>>().join("\t"));
                 output.push('\n');
 
                 // Data rows
@@ -201,10 +201,10 @@ fn json_to_tsv(value: &serde_json::Value) -> Result<String, Box<dyn std::error::
             let first = &arr[0];
             if let serde_json::Value::Object(obj) = first {
                 let mut output = String::new();
-                let keys: Vec<String> = obj.keys().map(|s| s.to_string()).collect();
+                let keys: Vec<&String> = obj.keys().collect();
 
                 // Header
-                output.push_str(&keys.join("\t"));
+                output.push_str(&keys.iter().map(|k| k.as_str()).collect::<Vec<_>>().join("\t"));
                 output.push('\n');
 
                 // Rows
@@ -225,7 +225,7 @@ fn json_to_tsv(value: &serde_json::Value) -> Result<String, Box<dyn std::error::
                 }
                 Ok(output)
             } else {
-                Ok(arr.iter().map(|v| v.to_string()).collect::<Vec<_>>().join("\n"))
+                Ok(arr.iter().map(|v| v.to_string()).collect::<Vec<String>>().join("\n"))
             }
         }
         serde_json::Value::Object(obj) => {
