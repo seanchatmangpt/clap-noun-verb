@@ -3,7 +3,7 @@
 //! Demonstrates how to use OutputFormat to generate output in different formats
 //! (JSON, YAML, TOML, Table, TSV) instead of just JSON.
 
-use clap_noun_verb_macros::verb;
+use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::{Result, OutputFormat};
 use serde::Serialize;
 
@@ -53,6 +53,7 @@ fn get_inventory() -> Inventory {
 }
 
 /// List inventory in JSON format (default)
+#[noun("inventory", "Inventory management")]
 #[verb("json")]
 fn show_json() -> Result<Inventory> {
     Ok(get_inventory())
@@ -60,6 +61,7 @@ fn show_json() -> Result<Inventory> {
 
 /// List inventory (demonstrating format flexibility)
 /// In a real app, this would accept --format argument
+#[noun("inventory", "Inventory management")]
 #[verb("all")]
 fn show_all_formats() -> Result<String> {
     let inventory = get_inventory();
@@ -81,18 +83,21 @@ fn show_all_formats() -> Result<String> {
 }
 
 /// List products as table
+#[noun("inventory", "Inventory management")]
 #[verb("table")]
 fn show_table() -> Result<Vec<Product>> {
     Ok(get_inventory().products)
 }
 
 /// Export as TSV for spreadsheet
+#[noun("inventory", "Inventory management")]
 #[verb("tsv")]
 fn export_tsv() -> Result<Vec<Product>> {
     Ok(get_inventory().products)
 }
 
 /// Show summary statistics
+#[noun("inventory", "Inventory management")]
 #[verb("summary")]
 fn show_summary() -> Result<Inventory> {
     Ok(get_inventory())

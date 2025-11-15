@@ -4,7 +4,7 @@
 //! This is useful for sharing database connections, configuration, loggers, etc.
 
 use clap_noun_verb::AppContext;
-use clap_noun_verb_macros::verb;
+use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::Result;
 use serde::Serialize;
 use std::sync::Arc;
@@ -55,6 +55,7 @@ struct ConfigInfo {
 }
 
 /// Get configuration info
+#[noun("app", "Application configuration")]
 #[verb("config")]
 fn show_config() -> Result<ConfigInfo> {
     // In a real app, you'd pass context through args or a global
@@ -73,6 +74,7 @@ fn show_config() -> Result<ConfigInfo> {
 }
 
 /// Get a value from cache
+#[noun("cache", "In-memory cache management")]
 #[verb("get")]
 fn cache_get(key: String) -> Result<CacheResult> {
     let cache = Cache::new();
@@ -93,6 +95,7 @@ fn cache_get(key: String) -> Result<CacheResult> {
 }
 
 /// Set a value in cache
+#[noun("cache", "In-memory cache management")]
 #[verb("set")]
 fn cache_set(key: String, value: String) -> Result<CacheResult> {
     let cache = Cache::new();
@@ -106,6 +109,7 @@ fn cache_set(key: String, value: String) -> Result<CacheResult> {
 }
 
 /// Show cache statistics
+#[noun("cache", "In-memory cache management")]
 #[verb("stats")]
 fn cache_stats() -> Result<String> {
     Ok("Cache is empty (in-memory demo)".to_string())

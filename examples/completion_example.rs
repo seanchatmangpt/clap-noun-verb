@@ -3,7 +3,7 @@
 //! Demonstrates how to generate shell completions for supported shells
 //! (bash, zsh, fish, powershell, elvish).
 
-use clap_noun_verb_macros::verb;
+use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::{Result, generate_completion, Shell};
 use clap::Command;
 use serde::Serialize;
@@ -16,6 +16,7 @@ struct CompletionInfo {
 }
 
 /// Show available shells
+#[noun("completion", "Shell completion generation")]
 #[verb("available")]
 fn show_available_shells() -> Result<String> {
     let shells = vec!["bash", "zsh", "fish", "powershell", "elvish"];
@@ -27,6 +28,7 @@ fn show_available_shells() -> Result<String> {
 }
 
 /// Generate bash completion
+#[noun("completion", "Shell completion generation")]
 #[verb("bash")]
 fn generate_bash() -> Result<String> {
     // In a real app, you'd create the actual command structure
@@ -41,6 +43,7 @@ fn generate_bash() -> Result<String> {
 }
 
 /// Generate zsh completion
+#[noun("completion", "Shell completion generation")]
 #[verb("zsh")]
 fn generate_zsh() -> Result<String> {
     let mut cmd = Command::new("myapp")
@@ -54,6 +57,7 @@ fn generate_zsh() -> Result<String> {
 }
 
 /// Generate fish completion
+#[noun("completion", "Shell completion generation")]
 #[verb("fish")]
 fn generate_fish() -> Result<String> {
     let mut cmd = Command::new("myapp")
@@ -67,6 +71,7 @@ fn generate_fish() -> Result<String> {
 }
 
 /// Show installation instructions
+#[noun("completion", "Shell completion generation")]
 #[verb("install")]
 fn show_install_instructions(shell: String) -> Result<String> {
     let shell_type = match shell.as_str() {
@@ -82,6 +87,7 @@ fn show_install_instructions(shell: String) -> Result<String> {
 }
 
 /// Show completion file extension for a shell
+#[noun("completion", "Shell completion generation")]
 #[verb("extension")]
 fn show_extension(shell: String) -> Result<String> {
     let ext = match shell.as_str() {

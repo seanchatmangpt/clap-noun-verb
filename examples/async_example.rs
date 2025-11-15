@@ -4,7 +4,7 @@
 //! This enables database queries, HTTP calls, and other I/O operations in CLI handlers.
 
 use clap_noun_verb::async_verb::run_async;
-use clap_noun_verb_macros::verb;
+use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::Result;
 use serde::Serialize;
 use std::time::Duration;
@@ -60,6 +60,7 @@ struct Order {
 }
 
 /// Fetch user profile from database
+#[noun("users", "User management")]
 #[verb("profile")]
 fn get_user_profile(user_id: u32) -> Result<UserProfile> {
     run_async(async {
@@ -77,6 +78,7 @@ fn get_user_profile(user_id: u32) -> Result<UserProfile> {
 }
 
 /// Create a new user
+#[noun("users", "User management")]
 #[verb("create")]
 fn create_user(name: String, email: String) -> Result<UserData> {
     run_async(async {
@@ -92,6 +94,7 @@ fn create_user(name: String, email: String) -> Result<UserData> {
 }
 
 /// List all users
+#[noun("users", "User management")]
 #[verb("list")]
 fn list_users() -> Result<Vec<UserData>> {
     run_async(async {

@@ -2,7 +2,7 @@
 //!
 //! Demonstrates how to mark commands as deprecated and provide migration guidance.
 
-use clap_noun_verb_macros::verb;
+use clap_noun_verb_macros::{noun, verb};
 use clap_noun_verb::{Result, Deprecation, DeprecationType};
 use serde::Serialize;
 
@@ -20,6 +20,7 @@ struct ServiceStatus {
 }
 
 /// Modern endpoint for service health check
+#[noun("server", "Server management")]
 #[verb("health")]
 fn check_health() -> Result<ServiceStatus> {
     Ok(ServiceStatus {
@@ -32,6 +33,7 @@ fn check_health() -> Result<ServiceStatus> {
 /// Old endpoint (deprecated in 3.5.0, will be removed in 4.0.0)
 ///
 /// ⚠️  This command is deprecated. Use 'health' instead.
+#[noun("server", "Server management")]
 #[verb("status")]
 fn check_status() -> Result<ApiResponse> {
     // Show deprecation warning
@@ -51,6 +53,7 @@ fn check_status() -> Result<ApiResponse> {
 }
 
 /// Old restart command (deprecated)
+#[noun("server", "Server management")]
 #[verb("restart")]
 fn restart_service() -> Result<ApiResponse> {
     let deprecation = Deprecation::new(DeprecationType::Verb)
@@ -69,6 +72,7 @@ fn restart_service() -> Result<ApiResponse> {
 }
 
 /// View deprecation information for a command
+#[noun("server", "Server management")]
 #[verb("deprecation-info")]
 fn show_deprecation_info() -> Result<String> {
     let mut info = String::new();
