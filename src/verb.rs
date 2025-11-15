@@ -164,7 +164,37 @@ impl VerbArgs {
         self.matches.get_count(name)
     }
 
-    /// Get all argument names
+    /// Get all argument names as references (zero-copy)
+    ///
+    /// Returns borrowed references to argument names without allocating Strings.
+    /// This is the preferred method when you don't need owned Strings.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let args = verb_args.arg_names_refs();
+    /// for name in args {
+    ///     println!("Argument: {}", name);
+    /// }
+    /// ```
+    pub fn arg_names_refs(&self) -> Vec<&str> {
+        self.matches.ids().map(|id| id.as_str()).collect()
+    }
+
+    /// Get all argument names as owned Strings
+    ///
+    /// Returns owned String copies of all argument names.
+    /// Prefer [`Self::arg_names_refs`] when you don't need owned Strings,
+    /// as it avoids unnecessary allocations.
+    ///
+    /// # Deprecation Note
+    ///
+    /// This method allocates a String for each argument name. In most cases,
+    /// you should use [`Self::arg_names_refs`] instead for better performance.
+    #[deprecated(
+        since = "3.6.0",
+        note = "use `arg_names_refs()` instead to avoid unnecessary allocations"
+    )]
     pub fn arg_names(&self) -> Vec<String> {
         self.matches.ids().map(|id| id.as_str().to_string()).collect()
     }
