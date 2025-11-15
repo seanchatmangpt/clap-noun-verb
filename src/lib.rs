@@ -59,6 +59,17 @@ pub mod runtime;
 pub mod tree;
 pub mod verb;
 
+// New in v3.6.0
+pub mod async_verb;
+pub mod completion;
+pub mod config;
+pub mod context;
+pub mod deprecation;
+pub mod format;
+pub mod mangen;
+pub mod shell;
+pub mod validators;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
@@ -73,6 +84,13 @@ pub use registry::CommandRegistry;
 pub use router::CommandRouter;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
+
+// New in v3.6.0
+pub use completion::{generate_completion, print_completion, Shell};
+pub use context::AppContext;
+pub use deprecation::{Deprecation, DeprecationType};
+pub use format::OutputFormat;
+pub use async_verb::{run_async, create_runtime};
 
 // Macros are exported at crate root via #[macro_export]
 

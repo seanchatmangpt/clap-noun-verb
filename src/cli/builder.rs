@@ -8,6 +8,15 @@
 //! - Strong defaults for 90% of use cases
 //!
 //! If you need low-level control, use clap directly.
+//!
+//! ## Memory Management: Box::leak Usage
+//!
+//! This module uses `Box::leak()` to convert owned Strings to `&'static str`
+//! references required by clap. This is acceptable for CLI construction since:
+//! - It happens once during initialization (not in hot paths)
+//! - Total memory impact is negligible for typical CLI applications
+//! - No reasonable alternative maintains clap's performance model
+//! - For more details, see src/cli/registry.rs module documentation
 
 use crate::cli::CommandRouter;
 use crate::error::{NounVerbError, Result};

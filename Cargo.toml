@@ -1,6 +1,6 @@
 [package]
 name = "clap-noun-verb"
-version = "3.4.0"
+version = "3.6.0"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -18,12 +18,22 @@ name = "clap_noun_verb"
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version = "4.5", features = ["derive", "env"] }
+clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
+clap_complete = "4.5"
+clap_mangen = "0.2"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"
+toml = "0.8"
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["rt"] }
 linkme = "0.3"
-clap-noun-verb-macros = { version = "3.4.0", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "3.6.0", path = "clap-noun-verb-macros" }
+regex = "1.10"
+url = "2.5"
+once_cell = "1.19"
+atty = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -65,6 +75,42 @@ path = "examples/attribute_macro.rs"
 [[example]]
 name = "validation"
 path = "examples/validation.rs"
+
+[[example]]
+name = "env_vars"
+path = "examples/env_vars.rs"
+
+[[example]]
+name = "positional"
+path = "examples/positional.rs"
+
+[[example]]
+name = "arg_actions"
+path = "examples/arg_actions.rs"
+
+[[example]]
+name = "arg_groups"
+path = "examples/arg_groups.rs"
+
+[[example]]
+name = "async_example"
+path = "examples/async_example.rs"
+
+[[example]]
+name = "context_example"
+path = "examples/context_example.rs"
+
+[[example]]
+name = "format_example"
+path = "examples/format_example.rs"
+
+[[example]]
+name = "deprecation_example"
+path = "examples/deprecation_example.rs"
+
+[[example]]
+name = "completion_example"
+path = "examples/completion_example.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration

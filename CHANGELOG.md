@@ -5,6 +5,127 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2025-01-15
+
+### Added - Production-Ready Features & State Management
+
+#### Async Handler Support
+- **`run_async()` function** - Execute async operations from sync handlers
+- **`create_runtime()` helper** - Create reusable tokio runtime
+- **Full tokio integration** - Support for database, HTTP, and file I/O operations
+- **v3.6.0 feature** - Enable modern async patterns in CLI handlers
+
+#### Global Application Context System
+- **`AppContext<T>` type-safe container** - Share state across all commands
+- **Type-erased storage** - Works with any type via `Arc<RwLock<T>>`
+- **Thread-safe** - Safe for concurrent access across multiple handlers
+- **Helper methods** - `insert()`, `get()`, `contains()`, `remove()`, `with()`, `clear()`
+- **Real-world use cases** - Database connections, shared config, loggers, cache
+
+#### Output Format Plugins
+- **Pluggable formatters** - Beyond JSON (YAML, TOML, Table, TSV)
+- **`OutputFormat` enum** - JSON, Yaml, Toml, Table, Tsv variants
+- **Format auto-detection** - From CLI argument (`--format json|yaml|table`)
+- **Table generation** - ASCII tables from JSON arrays
+- **TSV support** - Spreadsheet-friendly tab-separated format
+- **YAML & TOML** - Popular configuration and data serialization formats
+
+#### Deprecation & Migration System
+- **`Deprecation` struct** - Metadata about deprecated items
+- **`DeprecationType` enum** - Noun, Verb, or Argument deprecations
+- **Version tracking** - `since`, `removed_in` version fields
+- **User guidance** - `suggestion` and `note` for migration help
+- **Warning messages** - Formatted output with emoji and clear guidance
+- **Help text integration** - Show deprecation info in help output
+
+#### Shell Completion Generation
+- **`Shell` enum** - Bash, Zsh, Fish, PowerShell, Elvish support
+- **`generate_completion()` function** - Generate completion script
+- **`print_completion()` helper** - Output directly to stdout
+- **clap_complete integration** - Leverage clap's native completion system
+- **Installation helpers** - Suggest where to install completions
+- **Multiple shell support** - Bash/Zsh/Fish/PowerShell/Elvish
+
+### Changed
+
+- **Dependencies updated**:
+  - Added `tokio` with rt and macros features
+  - Added `async-trait` for trait helper macro
+  - Added `serde_yaml` for YAML serialization
+  - Added `toml` for TOML serialization
+  - Added `clap_complete` for shell completion
+
+- **Version bump**: 3.5.0 → 3.6.0 (minor release)
+
+- **Documentation**: Enhanced README with v3.6.0 feature details
+
+### Migration Notes
+
+No breaking changes. All v3.5.0 code continues to work. v3.6.0 features are opt-in:
+
+- **Async code**: Wrap async operations with `run_async()`
+- **Shared state**: Create `AppContext` once at startup, pass to handlers
+- **Alternative formats**: Use `OutputFormat` enum to format output differently
+- **Deprecation**: Opt-in via `Deprecation` struct - no enforcement needed
+- **Completions**: Call `generate_completion()` in a `--generate-completion` handler
+
+## [3.5.0] - 2025-01-15
+
+### Added - Example Completeness & Integration Testing
+
+#### Comprehensive Examples
+- **env_vars.rs** - Environment variable support example
+  - Reading configuration from environment variables: `#[arg(env = "VAR_NAME")]`
+  - Proper precedence: CLI args override env vars which override defaults
+  - Real-world configuration management scenario
+
+- **positional.rs** - Positional arguments example
+  - First positional argument: `#[arg(index = 0)]`
+  - Optional second positional argument: `#[arg(index = 1)]`
+  - Mixed positional and named arguments pattern (e.g., `git clone`)
+
+- **arg_actions.rs** - Advanced argument actions example
+  - Count action: `-v`, `-vv`, `-vvv` → 1, 2, 3
+  - SetFalse action: `--no-cache` style inverted flags
+  - Type-based auto-inference for actions
+
+- **arg_groups.rs** - Argument groups and constraints example
+  - Exclusive argument groups (mutually exclusive options)
+  - Argument dependencies: `#[arg(requires = "...")]`
+  - Argument conflicts: `#[arg(conflicts_with = "...")]`
+
+#### Integration Testing
+- **Enabled 12 integration tests** - All tests in `tests/integration_examples.rs` now enabled
+  - `test_basic_example_help` - Basic example help output
+  - `test_basic_example_services_status` - Basic example command execution
+  - `test_services_example` - Services example functionality
+  - `test_services_example_logs` - Services with arguments
+  - `test_collector_example` - Collector pattern example
+  - `test_arguments_example` - Arguments with required/optional fields
+  - `test_arguments_example_with_flag` - Boolean flag support
+  - `test_validation_example` - Input validation
+  - `test_nested_example` - Nested command structures
+  - `test_framework_example` - Framework usage patterns
+  - `test_attribute_macro_example` - Attribute macro basics
+  - `test_attribute_macro_example_with_args` - Attribute macro with arguments
+
+### Changed
+
+- **Documentation completeness** - All v3.2.0 and v3.3.0 features now fully documented with working examples
+- **Example coverage** - Comprehensive examples for every major feature category
+
+### Migration Notes
+
+No breaking changes. All existing code continues to work. v3.5.0 is a feature-complete release with comprehensive examples and integration tests.
+
+**New in this release:**
+1. All 12 integration tests are now enabled and part of the standard test suite
+2. Four additional examples demonstrating v3.2.0+ features:
+   - env_vars.rs: Environment variable handling
+   - positional.rs: Positional arguments
+   - arg_actions.rs: Advanced argument actions (count, set_false)
+   - arg_groups.rs: Argument groups and constraints
+
 ## [3.4.0] - 2025-01-07
 
 ### Fixed

@@ -2,6 +2,13 @@
 //!
 //! The CommandTree provides a tree-based structure for organizing commands
 //! hierarchically, making it easy to build complex nested command structures.
+//!
+//! ## Memory Management: Box::leak Usage
+//!
+//! This module uses `Box::leak()` to convert owned Strings to `&'static str`
+//! references required by clap's command builder. This is an acceptable pattern
+//! for CLI applications. See src/cli/registry.rs for comprehensive documentation
+//! on the rationale and memory impact assessment.
 
 use crate::error::{NounVerbError, Result};
 use crate::verb::VerbArgs;

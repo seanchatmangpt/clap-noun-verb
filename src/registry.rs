@@ -3,6 +3,13 @@
 //! The CommandRegistry provides a central hub for registering and composing
 //! commands in a flexible, extensible way. This allows users to build their
 //! own CLI patterns by composing commands together.
+//!
+//! ## Memory Management: Box::leak Usage
+//!
+//! This module uses `Box::leak()` to convert owned Strings to `&'static str`
+//! references required by clap's command builder. This is an acceptable pattern
+//! for CLI applications. See src/cli/registry.rs for comprehensive documentation
+//! on the rationale and memory impact assessment.
 
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
