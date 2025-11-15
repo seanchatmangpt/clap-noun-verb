@@ -144,7 +144,33 @@ fn dirs_home() -> Option<PathBuf> {
     }
 }
 
-/// Get the shell config directory for storing completions
+/// Get the shell completion directory for the given shell type
+///
+/// Returns the standard location where shell completion scripts should be installed
+/// for the user's system. This varies by shell:
+/// - Bash: `~/.local/share/bash-completion/completions` or `/etc/bash_completion.d`
+/// - Zsh: `~/.zsh/completions`
+/// - Fish: `~/.config/fish/completions`
+/// - PowerShell: `$PROFILE` directory
+/// - Elvish: `~/.elvish/lib`
+///
+/// # Arguments
+///
+/// * `shell` - The shell type to get the completion directory for
+///
+/// # Returns
+///
+/// `Some(PathBuf)` with the completion directory path, or `None` if it cannot be determined
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb::shell::{ShellType, get_completions_dir};
+///
+/// if let Some(completion_dir) = get_completions_dir(ShellType::Bash) {
+///     println!("Install completions to: {}", completion_dir.display());
+/// }
+/// ```
 pub fn get_completions_dir(shell: ShellType) -> Option<PathBuf> {
     let home = dirs_home()?;
     match shell {
@@ -176,12 +202,56 @@ pub fn get_completions_dir(shell: ShellType) -> Option<PathBuf> {
     }
 }
 
-/// Check if running in interactive shell
+/// Check if the standard output is connected to an interactive terminal
+///
+/// This is useful for determining whether to display interactive prompts,
+/// formatted output, or colors. When not interactive (e.g., piped to a file
+/// or another command), you may want to output plain text instead.
+///
+/// # Returns
+///
+/// `true` if stdout is connected to an interactive terminal, `false` otherwise
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb::shell::is_interactive;
+///
+/// if is_interactive() {
+///     println!("Interactive mode - showing formatted output");
+/// } else {
+///     println!("Non-interactive - showing plain output");
+/// }
+/// ```
 pub fn is_interactive() -> bool {
     atty::is(atty::Stream::Stdout)
 }
 
-/// Get appropriate line ending for shell
+/// Get the appropriate line ending for the given shell type
+///
+/// Different shells and operating systems use different line endings:
+/// - PowerShell on Windows: `\r\n` (CRLF)
+/// - Most other shells: `\n` (LF)
+///
+/// This is useful when generating shell scripts that will be executed
+/// in different shell environments.
+///
+/// # Arguments
+///
+/// * `shell` - The target shell type
+///
+/// # Returns
+///
+/// A static string containing the appropriate line ending
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb::shell::{ShellType, line_ending};
+///
+/// let ending = line_ending(ShellType::PowerShell);
+/// assert_eq!(ending, "\r\n");
+/// ```
 pub fn line_ending(shell: ShellType) -> &'static str {
     match shell {
         ShellType::PowerShell => "\r\n",

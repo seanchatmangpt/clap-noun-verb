@@ -142,23 +142,24 @@ fn json_to_table(value: &serde_json::Value) -> Result<String, Box<dyn std::error
                 let mut output = String::new();
                 let keys: Vec<&String> = obj.keys().collect();
 
-                // Header row
-                output.push_str(&keys.iter().map(|k| k.as_str()).collect::<Vec<_>>().join("\t"));
+                // Header row - avoid Vec allocation, build directly
+                for (i, k) in keys.iter().enumerate() {
+                    if i > 0 { output.push('\t'); }
+                    output.push_str(k.as_str());
+                }
                 output.push('\n');
 
                 // Data rows
                 for item in arr {
                     if let serde_json::Value::Object(item_obj) = item {
-                        let values: Vec<String> = keys
-                            .iter()
-                            .map(|k| {
-                                item_obj
-                                    .get(k.as_str())
-                                    .map(|v| v.to_string())
-                                    .unwrap_or_else(|| "-".to_string())
-                            })
-                            .collect();
-                        output.push_str(&values.join("\t"));
+                        for (i, k) in keys.iter().enumerate() {
+                            if i > 0 { output.push('\t'); }
+                            let value_str = item_obj
+                                .get(k.as_str())
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "-".to_string());
+                            output.push_str(&value_str);
+                        }
                         output.push('\n');
                     }
                 }
@@ -203,29 +204,36 @@ fn json_to_tsv(value: &serde_json::Value) -> Result<String, Box<dyn std::error::
                 let mut output = String::new();
                 let keys: Vec<&String> = obj.keys().collect();
 
-                // Header
-                output.push_str(&keys.iter().map(|k| k.as_str()).collect::<Vec<_>>().join("\t"));
+                // Header - avoid Vec allocation, build directly
+                for (i, k) in keys.iter().enumerate() {
+                    if i > 0 { output.push('\t'); }
+                    output.push_str(k.as_str());
+                }
                 output.push('\n');
 
                 // Rows
                 for item in arr {
                     if let serde_json::Value::Object(item_obj) = item {
-                        let values: Vec<String> = keys
-                            .iter()
-                            .map(|k| {
-                                item_obj
-                                    .get(k.as_str())
-                                    .map(|v| escape_tsv(&v.to_string()))
-                                    .unwrap_or_default()
-                            })
-                            .collect();
-                        output.push_str(&values.join("\t"));
+                        for (i, k) in keys.iter().enumerate() {
+                            if i > 0 { output.push('\t'); }
+                            let escaped = item_obj
+                                .get(k.as_str())
+                                .map(|v| escape_tsv(&v.to_string()))
+                                .unwrap_or_default();
+                            output.push_str(&escaped);
+                        }
                         output.push('\n');
                     }
                 }
                 Ok(output)
             } else {
-                Ok(arr.iter().map(|v| v.to_string()).collect::<Vec<String>>().join("\n"))
+                // Avoid Vec allocation for simple string join
+                let mut result = String::new();
+                for (i, item) in arr.iter().enumerate() {
+                    if i > 0 { result.push('\n'); }
+                    result.push_str(&item.to_string());
+                }
+                Ok(result)
             }
         }
         serde_json::Value::Object(obj) => {
