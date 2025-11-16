@@ -58,6 +58,7 @@ pub mod capability_contracts;
 pub mod concurrent;
 pub mod const_caps;
 pub mod execution_receipts;
+pub mod frame_schema;
 pub mod grammar;
 pub mod grammar_dsl;
 pub mod io;
@@ -106,7 +107,7 @@ pub use execution_receipts::{
 pub use replay_engine::{
     ReplayEngine, VerifyReplayEngine, SimulateReplayEngine, AuditReplayEngine,
     DeterministicContext, ReplayEngineFactory, BatchReplayResult, BatchReplayExecutor,
-    SideEffect,
+    SideEffect, ReplayModeMarker, VerifyMode, SimulateMode, AuditMode, ReplayModeEnum,
 };
 pub use session::{
     ControlCommand, Frame, FramePayload, SessionBuilder, SessionConfig, SessionHandle,
@@ -121,7 +122,11 @@ pub use session_log::{
     FrameDelta, SessionCompression, SessionLogStore, InMemorySessionLogStore,
     ExitCodeClass, LogicalClock, QuotaFootprint, ResultFrame, ErrorFrame,
     FrameMetadata, FrameOrderKey, TimingDrift, QuotaCheckResult,
-    TimingPercentiles, ResourceStats,
+    TimingPercentiles, ResourceStats, FrameValidationError, FRAME_SCHEMA_VERSION,
+    MAX_CLOCK_SKEW_NS,
+};
+pub use frame_schema::{
+    FrameSchemaVersion, SchemaV1, FrameSchemaCompat,
 };
 pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
