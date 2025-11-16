@@ -223,7 +223,7 @@ impl ConcurrencyContract {
         Self {
             model,
             isolation: IsolationLevel::Shared,
-            resource_limits: ResourceLimits::default(),
+            resource_limits: ResourceLimits::unlimited(),
         }
     }
 

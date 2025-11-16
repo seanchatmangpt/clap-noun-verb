@@ -58,8 +58,18 @@ impl AgentIdentity {
     }
 }
 
+// Manual Hash impl to skip metadata HashMap
+impl std::hash::Hash for AgentIdentity {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.agent_id.hash(state);
+        self.agent_type.hash(state);
+        self.agent_version.hash(state);
+        // Skip metadata as HashMap doesn't implement Hash
+    }
+}
+
 /// Tenant or project identity
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TenantIdentity {
     /// Unique tenant/project identifier
     pub tenant_id: String,

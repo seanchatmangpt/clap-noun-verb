@@ -549,8 +549,8 @@ impl CapabilityGraph {
     /// Check if output schema is compatible with input schema
     fn check_schema_compatibility(
         &self,
-        output: &OutputSchema,
-        input: &InputSchema,
+        _output: &OutputSchema,
+        _input: &InputSchema,
     ) -> SchemaCompatibility {
         // Simplified compatibility check
         // In a real implementation, this would do deep schema analysis
@@ -564,13 +564,13 @@ impl CapabilityGraph {
     }
 
     /// Check if schema accepts a type
-    fn schema_accepts(&self, schema: &InputSchema, type_schema: &TypeSchema) -> bool {
+    fn schema_accepts(&self, _schema: &InputSchema, _type_schema: &TypeSchema) -> bool {
         // Simplified check - real implementation would do deep type matching
         true // Placeholder
     }
 
     /// Check if schema produces a type
-    fn schema_produces(&self, schema: &OutputSchema, type_schema: &TypeSchema) -> bool {
+    fn schema_produces(&self, _schema: &OutputSchema, _type_schema: &TypeSchema) -> bool {
         // Simplified check - real implementation would do deep type matching
         true // Placeholder
     }
@@ -703,7 +703,7 @@ mod tests {
             CapabilityId::from_path("a"),
             "A",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -711,7 +711,7 @@ mod tests {
             CapabilityId::from_path("b"),
             "B",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -729,7 +729,7 @@ mod tests {
             CapabilityId::from_path("a"),
             "A",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -737,7 +737,7 @@ mod tests {
             CapabilityId::from_path("b"),
             "B",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -745,7 +745,7 @@ mod tests {
             CapabilityId::from_path("c"),
             "C",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -764,7 +764,7 @@ mod tests {
             CapabilityId::from_path("a"),
             "A",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -772,7 +772,7 @@ mod tests {
             CapabilityId::from_path("b"),
             "B",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 
@@ -780,7 +780,7 @@ mod tests {
             CapabilityId::from_path("c"),
             "C",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             vec![],
         );
 

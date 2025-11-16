@@ -165,7 +165,7 @@ impl PolicyTrace {
             policy_engine_id: engine_id.into(),
             decision: result.decision.clone(),
             evaluated_rules: result.evaluated_rules.clone(),
-            matched_rule: result.matched_rule.clone(),
+            matched_rule: None, // Policy result doesn't have this field
             evaluation_duration: Duration::from_micros(100), // Placeholder
             context: std::collections::HashMap::new(),
         }
@@ -254,7 +254,7 @@ impl Certificate<Unchecked> {
                     _state: PhantomData,
                 })
             }
-            PolicyDecision::Deny { reason } => {
+            PolicyDecision::Deny { reason, .. } => {
                 Err(CertificateError::PolicyDenied(reason.clone()))
             }
             PolicyDecision::Rewrite { .. } | PolicyDecision::Redirect { .. } => {
@@ -451,7 +451,7 @@ impl CertificateBuilder {
             input_schema,
             output_schema,
             agent: AgentIdentity::anonymous(),
-            tenant: TenantIdentity::default(),
+            tenant: TenantIdentity::default_tenant(),
             correlation_id: uuid::Uuid::new_v4().to_string(),
             expiration: Duration::from_secs(3600),
         }

@@ -283,7 +283,8 @@ pub struct DelegationToken {
 
     /// Number of times this token has been used
     #[serde(skip)]
-    uses: std::sync::atomic::AtomicU32,
+    #[allow(dead_code)]
+    uses: std::sync::Arc<std::sync::atomic::AtomicU32>,
 }
 
 impl DelegationToken {
@@ -302,7 +303,7 @@ impl DelegationToken {
             temporal,
             parent_token_id: None,
             metadata: DelegationMetadata::default(),
-            uses: std::sync::atomic::AtomicU32::new(0),
+            uses: std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0)),
         }
     }
 
@@ -336,7 +337,7 @@ impl DelegationToken {
             temporal: combined_temporal,
             parent_token_id: Some(self.token_id.clone()),
             metadata: DelegationMetadata::default(),
-            uses: std::sync::atomic::AtomicU32::new(0),
+            uses: std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0)),
         })
     }
 
