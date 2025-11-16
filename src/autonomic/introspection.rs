@@ -1,8 +1,10 @@
 //! Introspection capabilities for CLI commands
 
+use super::capability_id::{CapabilityId, CapabilityVersion};
 use super::effects::EffectMetadata;
 use super::guards::GuardConfig;
 use super::planes::PlaneInteraction;
+use super::schema::CompositionMetadata;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -108,6 +110,9 @@ impl IntrospectionResponse {
 pub struct NounMetadata {
     /// Noun name
     pub name: String,
+    /// Stable capability ID
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capability_id: Option<CapabilityId>,
     /// Description
     pub about: String,
     /// Available verbs
@@ -120,7 +125,21 @@ pub struct NounMetadata {
 impl NounMetadata {
     /// Create new noun metadata
     pub fn new(name: impl Into<String>, about: impl Into<String>) -> Self {
-        Self { name: name.into(), about: about.into(), verbs: Vec::new(), sub_nouns: Vec::new() }
+        let name_str = name.into();
+        let capability_id = Some(CapabilityId::from_path(&name_str));
+        Self {
+            name: name_str,
+            capability_id,
+            about: about.into(),
+            verbs: Vec::new(),
+            sub_nouns: Vec::new(),
+        }
+    }
+
+    /// Set capability ID
+    pub fn with_capability_id(mut self, id: CapabilityId) -> Self {
+        self.capability_id = Some(id);
+        self
     }
 
     /// Add a verb
@@ -141,6 +160,12 @@ impl NounMetadata {
 pub struct VerbMetadata {
     /// Verb name
     pub name: String,
+    /// Stable capability ID
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capability_id: Option<CapabilityId>,
+    /// Capability version information
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<CapabilityVersion>,
     /// Description
     pub about: String,
     /// Full command metadata
@@ -150,11 +175,41 @@ pub struct VerbMetadata {
 impl VerbMetadata {
     /// Create new verb metadata
     pub fn new(name: impl Into<String>, about: impl Into<String>) -> Self {
+        let name_str = name.into();
+        let capability_id = Some(CapabilityId::from_path(&name_str));
         Self {
-            name: name.into(),
+            name: name_str,
+            capability_id,
+            version: None,
             about: about.into(),
             command: CommandMetadata::default(),
         }
+    }
+
+    /// Create with noun context for full path-based ID
+    pub fn with_noun_context(name: impl Into<String>, noun: impl AsRef<str>, about: impl Into<String>) -> Self {
+        let name_str = name.into();
+        let path = format!("{}.{}", noun.as_ref(), &name_str);
+        let capability_id = Some(CapabilityId::from_path(&path));
+        Self {
+            name: name_str,
+            capability_id,
+            version: None,
+            about: about.into(),
+            command: CommandMetadata::default(),
+        }
+    }
+
+    /// Set capability ID
+    pub fn with_capability_id(mut self, id: CapabilityId) -> Self {
+        self.capability_id = Some(id);
+        self
+    }
+
+    /// Set capability version
+    pub fn with_version(mut self, version: CapabilityVersion) -> Self {
+        self.version = Some(version);
+        self
     }
 
     /// Set command metadata
@@ -182,6 +237,9 @@ pub struct CommandMetadata {
     /// Output type description
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_type: Option<String>,
+    /// Composition metadata (input/output schemas)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub composition: Option<CompositionMetadata>,
     /// Preconditions (commands that should be run first)
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub preconditions: Vec<String>,
@@ -220,6 +278,12 @@ impl CommandMetadata {
     /// Set output type
     pub fn with_output_type(mut self, output_type: impl Into<String>) -> Self {
         self.output_type = Some(output_type.into());
+        self
+    }
+
+    /// Set composition metadata
+    pub fn with_composition(mut self, composition: CompositionMetadata) -> Self {
+        self.composition = Some(composition);
         self
     }
 
