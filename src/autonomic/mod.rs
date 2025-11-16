@@ -16,6 +16,7 @@
 //! - **Guards & Budgets**: Latency and resource constraints
 //! - **Receipts**: Structured execution records for audit and analysis
 
+pub mod async_runtime;
 pub mod capability_id;
 pub mod certificates;
 pub mod cli;
@@ -32,8 +33,11 @@ pub mod planes;
 pub mod policy;
 pub mod receipts;
 pub mod schema;
+pub mod simd;
 pub mod streaming;
+pub mod telemetry;
 pub mod tenancy;
+pub mod verification;
 
 // Re-export key types
 pub use capability_id::{CapabilityChange, CapabilityChangelog, CapabilityId, CapabilityVersion, ChangeType, DeprecationInfo};
@@ -54,7 +58,7 @@ pub use governance::{
     ReplayEngine, ReplayResult, ViolationSeverity,
 };
 pub use graph::{
-    CapabilityEdge, CapabilityGraph, CapabilityNode, EdgeId, EdgeType, GraphError, NodeId,
+    CapabilityEdge, CapabilityGraph, CapabilityNode, EdgeId, EdgeType, GraphError, GraphStats, NodeId,
     SchemaCompatibility,
 };
 pub use guards::{GuardConfig, GuardResult, GuardStatus};
