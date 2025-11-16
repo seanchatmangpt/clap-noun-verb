@@ -64,6 +64,11 @@ impl SessionId {
     pub fn as_uuid(&self) -> Uuid {
         self.0
     }
+
+    /// Get the UUID bytes for hashing
+    pub fn as_bytes(&self) -> &[u8; 16] {
+        self.0.as_bytes()
+    }
 }
 
 impl Default for SessionId {

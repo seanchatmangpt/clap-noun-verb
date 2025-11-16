@@ -51,13 +51,17 @@
 //! - Autonomic Command Fabric (v4.0) - current version
 
 pub mod capability;
+pub mod concurrent;
+pub mod const_caps;
 pub mod grammar;
+pub mod grammar_dsl;
 pub mod io;
 pub mod manpage;
 pub mod output;
 pub mod session;
 pub mod telemetry;
 pub mod test_harness;
+pub mod typestate;
 pub mod version;
 
 // Re-export key types for convenience
