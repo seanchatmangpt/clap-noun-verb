@@ -70,6 +70,9 @@ pub mod mangen;
 pub mod shell;
 pub mod validators;
 
+// New in v3.8.0 - Autonomic CLI Layer
+pub mod autonomic;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
