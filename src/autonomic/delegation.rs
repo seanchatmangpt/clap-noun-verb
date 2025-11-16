@@ -582,8 +582,8 @@ mod tests {
 
     #[test]
     fn test_delegation_token_creation() {
-        let delegator = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default());
-        let delegate = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default());
+        let delegator = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
+        let delegate = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
         let token = DelegationToken::new(
             delegator,
@@ -597,8 +597,8 @@ mod tests {
 
     #[test]
     fn test_delegation_chain() {
-        let origin = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default());
-        let delegate1 = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default());
+        let origin = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
+        let delegate1 = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
         let token = DelegationToken::new(
             origin.clone(),

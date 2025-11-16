@@ -213,6 +213,7 @@ impl Certificate<Unchecked> {
                 policy_engine_id: "pending".to_string(),
                 decision: PolicyDecision::Deny {
                     reason: "Not yet evaluated".to_string(),
+                    suggestion: None,
                 },
                 evaluated_rules: vec![],
                 matched_rule: None,
@@ -507,6 +508,7 @@ impl CertificateBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::autonomic::{TypeSchema, PrimitiveType};
 
     #[test]
     fn test_certificate_state_machine() {
@@ -516,9 +518,9 @@ mod tests {
             "1.0.0",
             vec![],
             &InputSchema::default(),
-            &OutputSchema::default(),
+            &OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
             AgentIdentity::anonymous(),
-            TenantIdentity::default(),
+            TenantIdentity::default_tenant(),
             "test-correlation",
         );
 
@@ -530,7 +532,6 @@ mod tests {
         let policy_result = PolicyResult {
             decision: PolicyDecision::Allow,
             evaluated_rules: vec!["allow-all".to_string()],
-            matched_rule: Some("allow-all".to_string()),
             metadata: std::collections::HashMap::new(),
         };
 
@@ -554,14 +555,13 @@ mod tests {
             CapabilityId::from_path("test.cmd"),
             "1.0.0",
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
         )
         .build();
 
         let policy_result = PolicyResult {
             decision: PolicyDecision::Allow,
             evaluated_rules: vec![],
-            matched_rule: None,
             metadata: std::collections::HashMap::new(),
         };
 

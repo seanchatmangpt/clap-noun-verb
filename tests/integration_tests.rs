@@ -88,16 +88,16 @@ fn test_complete_swarm_native_execution_flow() {
         InputSchema {
             required_inputs: vec![(
                 "user_id".to_string(),
-                TypeSchema::Primitive(PrimitiveType::String),
+                TypeSchema::primitive(PrimitiveType::String),
             )],
             optional_inputs: vec![],
             supports_stdin: false,
         },
         OutputSchema {
-            success_schema: TypeSchema::Primitive(PrimitiveType::String),
-            error_schema: TypeSchema::Primitive(PrimitiveType::String),
-            supports_stdout: true,
-            named_outputs: vec![],
+            success_schema: TypeSchema::primitive(PrimitiveType::String),
+            error_schema: TypeSchema::primitive(PrimitiveType::String),
+            outputs_stdout: true,
+            named_outputs: std::collections::HashMap::new(),
         },
         vec![EffectMetadata {
             effect_type: EffectType::ReadOnly,
@@ -113,7 +113,7 @@ fn test_complete_swarm_native_execution_flow() {
         CapabilityId::from_path("user.list"),
         "List Users",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
         vec![EffectMetadata {
             effect_type: EffectType::ReadOnly,
             sensitivity: Sensitivity::Low,
@@ -187,16 +187,16 @@ fn test_complete_swarm_native_execution_flow() {
         InputSchema {
             required_inputs: vec![(
                 "user_id".to_string(),
-                TypeSchema::Primitive(PrimitiveType::String),
+                TypeSchema::primitive(PrimitiveType::String),
             )],
             optional_inputs: vec![],
             supports_stdin: false,
         },
         OutputSchema {
-            success_schema: TypeSchema::Primitive(PrimitiveType::String),
-            error_schema: TypeSchema::Primitive(PrimitiveType::String),
-            supports_stdout: true,
-            named_outputs: vec![],
+            success_schema: TypeSchema::primitive(PrimitiveType::String),
+            error_schema: TypeSchema::primitive(PrimitiveType::String),
+            outputs_stdout: true,
+            named_outputs: std::collections::HashMap::new(),
         },
     )
     .with_agent(bob.agent.clone())
@@ -216,7 +216,6 @@ fn test_complete_swarm_native_execution_flow() {
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec!["allow-read-only".to_string()],
-        matched_rule: Some("allow-read-only".to_string()),
         metadata: std::collections::HashMap::new(),
     };
 
@@ -381,7 +380,7 @@ fn test_delegation_chain_with_certificates() {
         CapabilityId::from_path("safe.operation"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_agent(delegate.agent)
     .with_tenant(delegate.tenant)
@@ -394,7 +393,6 @@ fn test_delegation_chain_with_certificates() {
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec![],
-        matched_rule: None,
         metadata: std::collections::HashMap::new(),
     };
 
@@ -463,7 +461,7 @@ fn test_graph_composition_with_contracts() {
         CapabilityId::from_path("fast.query"),
         "Fast Query",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
         vec![],
     );
 
@@ -471,7 +469,7 @@ fn test_graph_composition_with_contracts() {
         CapabilityId::from_path("slow.report"),
         "Slow Report",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
         vec![],
     );
 

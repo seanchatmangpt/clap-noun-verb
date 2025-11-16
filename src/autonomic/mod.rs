@@ -60,7 +60,7 @@ pub use graph::{
 pub use guards::{GuardConfig, GuardResult, GuardStatus};
 pub use hotpath::{
     AgentHandle, ContextPool, EffectFlags, HotPathContext, HotPathInvocation, HotPathMetrics,
-    InvocationQueue, TenantHandle, ZeroCopyParser,
+    InvocationArena, InvocationQueue, TenantHandle, ZeroCopyParser,
 };
 pub use introspection::{
     AppMetadata, ArgumentMetadata, CommandCapabilities, CommandGraph, CommandMetadata,

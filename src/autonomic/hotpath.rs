@@ -257,6 +257,7 @@ impl InvocationArena {
         ) {
             Ok(_) => {
                 // SAFETY: We have exclusive access to this region
+                #[allow(unsafe_code)]
                 unsafe {
                     let ptr = self.buffer.as_ptr().add(aligned) as *mut T;
                     std::ptr::write(ptr, value);

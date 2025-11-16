@@ -628,7 +628,7 @@ mod tests {
             CapabilityId::from_path("user.create"),
             AgentIdentity::anonymous(),
             AgentIdentity::anonymous(),
-            TenantIdentity::default(),
+            TenantIdentity::default_tenant(),
             "test",
         );
 
@@ -646,7 +646,7 @@ mod tests {
             CapabilityId::from_path("cap1"),
             agent1.clone(),
             agent1.clone(),
-            TenantIdentity::default(),
+            TenantIdentity::default_tenant(),
             "test1",
         );
 
@@ -654,7 +654,7 @@ mod tests {
             CapabilityId::from_path("cap2"),
             agent2.clone(),
             agent2.clone(),
-            TenantIdentity::default(),
+            TenantIdentity::default_tenant(),
             "test2",
         );
 
@@ -671,7 +671,7 @@ mod tests {
             CapabilityId::from_path("test.cmd"),
             "test command",
             AgentIdentity::anonymous(),
-            TenantIdentity::default(),
+            TenantIdentity::default_tenant(),
             "test",
         );
 

@@ -694,6 +694,7 @@ pub enum GraphError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::autonomic::PrimitiveType;
 
     #[test]
     fn test_graph_creation() {

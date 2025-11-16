@@ -18,7 +18,7 @@ fn test_certificate_type_state_transitions() {
         CapabilityId::from_path("user.create"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_agent(AgentIdentity::human("alice"))
     .with_tenant(TenantIdentity::default_tenant())
@@ -28,7 +28,6 @@ fn test_certificate_type_state_transitions() {
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec!["allow-all".to_string()],
-        matched_rule: Some("allow-all".to_string()),
         metadata: std::collections::HashMap::new(),
     };
 
@@ -61,7 +60,7 @@ fn test_certificate_policy_denial_blocks_transition() {
         CapabilityId::from_path("admin.delete"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .build();
 
@@ -71,7 +70,6 @@ fn test_certificate_policy_denial_blocks_transition() {
             reason: "Insufficient permissions".to_string(),
         },
         evaluated_rules: vec!["deny-admin".to_string()],
-        matched_rule: Some("deny-admin".to_string()),
         metadata: std::collections::HashMap::new(),
     };
 
@@ -89,14 +87,13 @@ fn test_certificate_missing_capability_blocks_transition() {
         CapabilityId::from_path("user.create"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .build();
 
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec![],
-        matched_rule: None,
         metadata: std::collections::HashMap::new(),
     };
 
@@ -122,7 +119,7 @@ fn test_certificate_expiration() {
         CapabilityId::from_path("temp.action"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_expiration(Duration::from_millis(1))
     .build();
@@ -131,7 +128,6 @@ fn test_certificate_expiration() {
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec![],
-        matched_rule: None,
         metadata: std::collections::HashMap::new(),
     };
 
@@ -194,7 +190,7 @@ fn test_certificate_with_effects() {
         CapabilityId::from_path("data.sync"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_effects(effects.clone())
     .build();
@@ -233,7 +229,7 @@ fn test_certificate_correlation_id() {
         CapabilityId::from_path("op1"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_correlation_id(correlation_id)
     .build();
@@ -242,7 +238,7 @@ fn test_certificate_correlation_id() {
         CapabilityId::from_path("op2"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_correlation_id(correlation_id)
     .build();
@@ -259,14 +255,13 @@ fn test_certificate_policy_trace() {
         CapabilityId::from_path("test.cmd"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .build();
 
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec!["rule1".to_string(), "rule2".to_string()],
-        matched_rule: Some("rule1".to_string()),
         metadata: std::collections::HashMap::new(),
     };
 
@@ -291,8 +286,8 @@ fn test_certificate_schema_hashes() {
     let output_schema = OutputSchema {
         success_schema: TypeSchema::Primitive(PrimitiveType::String),
         error_schema: TypeSchema::Primitive(PrimitiveType::String),
-        supports_stdout: true,
-        named_outputs: vec![],
+        outputs_stdout: true,
+        named_outputs: std::collections::HashMap::new(),
     };
 
     // WHEN: We create a certificate
@@ -330,7 +325,7 @@ fn create_verified_certificate() -> Certificate<Verified> {
         CapabilityId::from_path("test.operation"),
         "1.0.0",
         InputSchema::default(),
-        OutputSchema::default(),
+        OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
     )
     .with_agent(AgentIdentity::human("test-user"))
     .with_tenant(TenantIdentity::default_tenant())
@@ -339,7 +334,6 @@ fn create_verified_certificate() -> Certificate<Verified> {
     let policy_result = PolicyResult {
         decision: PolicyDecision::Allow,
         evaluated_rules: vec![],
-        matched_rule: None,
         metadata: std::collections::HashMap::new(),
     };
 
