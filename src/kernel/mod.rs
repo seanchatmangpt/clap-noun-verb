@@ -53,10 +53,12 @@
 pub mod ahi_policy;
 pub mod attestation;
 pub mod broker;
+pub mod broker_state;
 pub mod capability;
 pub mod capability_contracts;
 pub mod concurrent;
 pub mod const_caps;
+pub mod contract_runtime_view;
 pub mod execution_receipts;
 pub mod frame_schema;
 pub mod grammar;
@@ -64,6 +66,7 @@ pub mod grammar_dsl;
 pub mod io;
 pub mod manpage;
 pub mod output;
+pub mod policy_governance;
 pub mod quotas;
 pub mod replay_engine;
 pub mod session;
@@ -127,6 +130,15 @@ pub use session_log::{
 };
 pub use frame_schema::{
     FrameSchemaVersion, SchemaV1, FrameSchemaCompat,
+};
+pub use broker_state::{
+    BrokerState, BrokerTimeouts, QueueLimits, BackpressureError,
+};
+pub use contract_runtime_view::{
+    ContractRuntimeView, UsageViolation, ReceiptVerifier, VerificationError,
+};
+pub use policy_governance::{
+    PolicyDelta, PolicyState, PolicySnapshot, PolicyTransitionValidator, TransitionError,
 };
 pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
