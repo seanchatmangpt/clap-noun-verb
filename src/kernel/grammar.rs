@@ -33,6 +33,7 @@
 //! ```
 
 use crate::cli::registry::{ArgMetadata, __NOUN_REGISTRY, __VERB_REGISTRY};
+use crate::kernel::capability::CapabilityContract;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -149,6 +150,9 @@ pub struct GrammarVerb {
     pub deprecated: bool,
     /// Deprecation message
     pub deprecation_message: Option<String>,
+    /// Capability contract (CNV 4.0)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub capability: Option<CapabilityContract>,
     /// Additional metadata (extensible)
     #[serde(flatten)]
     pub metadata: HashMap<String, serde_json::Value>,

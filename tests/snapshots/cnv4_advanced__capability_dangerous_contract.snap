@@ -1,0 +1,10 @@
+---
+source: tests/cnv4_advanced.rs
+expression: dangerous
+---
+{
+  "capability_class": "dangerous",
+  "resource_band": "slow",
+  "stability": "stable",
+  "safety": "human_review_required"
+}

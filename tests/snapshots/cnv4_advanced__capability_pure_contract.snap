@@ -1,0 +1,10 @@
+---
+source: tests/cnv4_advanced.rs
+expression: pure
+---
+{
+  "capability_class": "pure",
+  "resource_band": "instant",
+  "stability": "stable",
+  "safety": "agent_safe"
+}

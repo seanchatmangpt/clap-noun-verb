@@ -34,7 +34,9 @@
 //! }
 //! ```
 
+use crate::kernel::capability::{CapabilityClass, CapabilityContract};
 use crate::kernel::grammar::{Grammar, GrammarModel, GrammarVerb};
+use crate::kernel::version::GrammarDelta;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -227,6 +229,7 @@ impl TestHarness {
     /// - Conflicting argument names
     /// - Invalid argument groups
     /// - Circular dependencies
+    /// - Capability contract issues (CNV 4.0)
     pub fn validate(&self) -> ValidationReport {
         let mut report = ValidationReport::default();
 
@@ -257,6 +260,9 @@ impl TestHarness {
                         ));
                     }
                 }
+
+                // CNV 4.0: Check capability contracts
+                self.validate_capability(&mut report, noun, verb);
             }
         }
 
@@ -268,6 +274,158 @@ impl TestHarness {
                         "Missing help text for {}.{}",
                         noun, verb
                     ));
+                }
+            }
+        }
+
+        report
+    }
+
+    /// Validate capability contract for a verb (CNV 4.0)
+    fn validate_capability(&self, report: &mut ValidationReport, noun: &crate::kernel::grammar::GrammarNoun, verb: &GrammarVerb) {
+        if let Some(capability) = &verb.capability {
+            // Check for dangerous capabilities without human review
+            if capability.capability_class == CapabilityClass::Dangerous
+                && capability.is_agent_safe()
+            {
+                report.errors.push(format!(
+                    "Verb '{}.{}' has Dangerous capability but is marked AgentSafe",
+                    noun.name, verb.name
+                ));
+            }
+
+            // Warn about deprecated commands
+            use crate::kernel::capability::StabilityProfile;
+            if capability.stability == StabilityProfile::Deprecated && !verb.deprecated {
+                report.warnings.push(format!(
+                    "Verb '{}.{}' has deprecated capability but deprecated flag not set",
+                    noun.name, verb.name
+                ));
+            }
+
+            // Check for experimental + agent_safe mismatch
+            if capability.stability == StabilityProfile::Experimental
+                && capability.is_agent_safe()
+            {
+                report.warnings.push(format!(
+                    "Verb '{}.{}' is experimental but marked agent-safe - consider human review",
+                    noun.name, verb.name
+                ));
+            }
+        } else {
+            // Warn if no capability contract is defined
+            report.info.push(format!(
+                "Verb '{}.{}' has no capability contract - consider adding one",
+                noun.name, verb.name
+            ));
+        }
+    }
+
+    /// Validate capability contract is met for a verb (CNV 4.0)
+    pub fn assert_capability(
+        &self,
+        noun: &str,
+        verb: &str,
+        required: &CapabilityContract,
+    ) -> Result<(), String> {
+        let metadata = self
+            .verb_metadata(noun, verb)
+            .ok_or_else(|| format!("Verb '{}.{}' not found", noun, verb))?;
+
+        let actual = metadata
+            .capability
+            .as_ref()
+            .ok_or_else(|| format!("Verb '{}.{}' has no capability contract", noun, verb))?;
+
+        if !actual.is_compatible_with(required) {
+            return Err(format!(
+                "Capability mismatch for '{}.{}': required {}, got {}",
+                noun, verb, required, actual
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Check grammar compatibility with a previous version (CNV 4.0)
+    pub fn check_compatibility(&self, old_grammar: &GrammarModel) -> Result<GrammarDelta, Box<dyn std::error::Error>> {
+        GrammarDelta::compute(old_grammar, &self.grammar)
+    }
+
+    /// Assert no breaking changes from a previous version (CNV 4.0)
+    pub fn assert_no_breaking_changes(&self, old_grammar: &GrammarModel) -> Result<(), String> {
+        let delta = self
+            .check_compatibility(old_grammar)
+            .map_err(|e| e.to_string())?;
+
+        if delta.has_breaking_changes() {
+            Err(format!(
+                "Breaking changes detected:\n{}",
+                delta.breaking_changes().join("\n")
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Get all agent-safe commands (CNV 4.0)
+    pub fn agent_safe_commands(&self) -> Vec<(&str, &str)> {
+        let mut safe = Vec::new();
+
+        for (noun, verb) in self.all_commands() {
+            if let Some(metadata) = self.verb_metadata(noun, verb) {
+                if let Some(capability) = &metadata.capability {
+                    if capability.is_agent_safe() {
+                        safe.push((noun, verb));
+                    }
+                }
+            }
+        }
+
+        safe
+    }
+
+    /// Get commands by capability class (CNV 4.0)
+    pub fn commands_by_capability(&self, class: CapabilityClass) -> Vec<(&str, &str)> {
+        let mut commands = Vec::new();
+
+        for (noun, verb) in self.all_commands() {
+            if let Some(metadata) = self.verb_metadata(noun, verb) {
+                if let Some(capability) = &metadata.capability {
+                    if capability.capability_class == class {
+                        commands.push((noun, verb));
+                    }
+                }
+            }
+        }
+
+        commands
+    }
+
+    /// Generate capability report (CNV 4.0)
+    pub fn capability_report(&self) -> CapabilityReport {
+        let mut report = CapabilityReport::default();
+
+        for (noun, verb) in self.all_commands() {
+            if let Some(metadata) = self.verb_metadata(noun, verb) {
+                if let Some(capability) = &metadata.capability {
+                    report.total += 1;
+
+                    match capability.capability_class {
+                        CapabilityClass::Pure => report.pure += 1,
+                        CapabilityClass::ReadOnlyFS => report.read_only += 1,
+                        CapabilityClass::ReadWriteFS => report.read_write += 1,
+                        CapabilityClass::Network => report.network += 1,
+                        CapabilityClass::Subprocess => report.subprocess += 1,
+                        CapabilityClass::Environment => report.environment += 1,
+                        CapabilityClass::Dangerous => report.dangerous += 1,
+                    }
+
+                    if capability.is_agent_safe() {
+                        report.agent_safe += 1;
+                    }
+                } else {
+                    report.no_capability += 1;
                 }
             }
         }
@@ -323,6 +481,52 @@ impl ValidationReport {
     /// Get total issue count
     pub fn issue_count(&self) -> usize {
         self.errors.len() + self.warnings.len()
+    }
+}
+
+/// Capability report (CNV 4.0)
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CapabilityReport {
+    /// Total commands with capabilities
+    pub total: usize,
+    /// Commands without capability contracts
+    pub no_capability: usize,
+    /// Pure commands
+    pub pure: usize,
+    /// Read-only filesystem commands
+    pub read_only: usize,
+    /// Read-write filesystem commands
+    pub read_write: usize,
+    /// Network commands
+    pub network: usize,
+    /// Subprocess commands
+    pub subprocess: usize,
+    /// Environment commands
+    pub environment: usize,
+    /// Dangerous commands
+    pub dangerous: usize,
+    /// Agent-safe commands
+    pub agent_safe: usize,
+}
+
+impl CapabilityReport {
+    /// Get percentage of agent-safe commands
+    pub fn agent_safe_percentage(&self) -> f64 {
+        if self.total == 0 {
+            0.0
+        } else {
+            (self.agent_safe as f64 / self.total as f64) * 100.0
+        }
+    }
+
+    /// Get percentage of commands with capability contracts
+    pub fn coverage_percentage(&self) -> f64 {
+        let total = self.total + self.no_capability;
+        if total == 0 {
+            0.0
+        } else {
+            (self.total as f64 / total as f64) * 100.0
+        }
     }
 }
 

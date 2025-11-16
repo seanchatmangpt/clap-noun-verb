@@ -1,0 +1,61 @@
+---
+source: tests/cnv4_advanced.rs
+expression: delta
+---
+{
+  "from_version": "1.0.0",
+  "to_version": "2.0.0",
+  "noun_changes": [
+    {
+      "change_type": "modified",
+      "name": "file",
+      "verb_changes": [
+        {
+          "change_type": "modified",
+          "name": "read",
+          "noun": "file",
+          "argument_changes": [],
+          "capability_changes": [
+            {
+              "change_type": "class_changed",
+              "old_class": "read_only_fs",
+              "new_class": "read_write_fs",
+              "more_dangerous": true
+            },
+            {
+              "change_type": "safety_changed",
+              "old_safety": "agent_safe",
+              "new_safety": "human_review_required",
+              "less_safe": true
+            }
+          ],
+          "help_changed": false
+        }
+      ]
+    }
+  ],
+  "verb_changes": [
+    {
+      "change_type": "modified",
+      "name": "read",
+      "noun": "file",
+      "argument_changes": [],
+      "capability_changes": [
+        {
+          "change_type": "class_changed",
+          "old_class": "read_only_fs",
+          "new_class": "read_write_fs",
+          "more_dangerous": true
+        },
+        {
+          "change_type": "safety_changed",
+          "old_safety": "agent_safe",
+          "new_safety": "human_review_required",
+          "less_safe": true
+        }
+      ],
+      "help_changed": false
+    }
+  ],
+  "severity": "breaking"
+}
