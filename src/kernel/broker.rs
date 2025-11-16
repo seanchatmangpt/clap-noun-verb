@@ -43,7 +43,8 @@ pub struct BrokerRequest {
     pub capability_id: CapabilityId,
     /// Input arguments
     pub arguments: serde_json::Value,
-    /// Attestation chain (if required)
+    /// Attestation chain (if required) - skipped in serialization
+    #[serde(skip)]
     pub attestation: Option<AttestationChain>,
     /// QoS hints for scheduling
     pub qos_hints: QoSHints,
@@ -54,11 +55,13 @@ pub struct BrokerRequest {
 pub struct BrokerResponse {
     /// Echo of request ID
     pub request_id: String,
-    /// The session frame (for replay)
+    /// The session frame (for replay) - skipped in serialization
+    #[serde(skip)]
     pub session_frame: Option<SessionLogFrame>,
     /// Result or error
     pub result: BrokerResult,
-    /// Updated attestation (e.g., consumption receipts)
+    /// Updated attestation (e.g., consumption receipts) - skipped in serialization
+    #[serde(skip)]
     pub updated_attestation: Option<AttestationChain>,
 }
 
