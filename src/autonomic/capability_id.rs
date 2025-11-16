@@ -58,7 +58,14 @@ impl CapabilityId {
             return None;
         }
 
-        self.0.rsplit('_').next().map(|v| v.replace('_', "."))
+        // Format is: cap_{hash}_{version_with_underscores}
+        // Skip first two parts and join the rest with dots
+        let parts: Vec<&str> = self.0.split('_').collect();
+        if parts.len() > 2 {
+            Some(parts[2..].join("."))
+        } else {
+            None
+        }
     }
 }
 
@@ -284,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_deprecation_info() {
-        let old_cap = CapabilityId::from_path("old.verb");
+        let _old_cap = CapabilityId::from_path("old.verb");
         let new_cap = CapabilityId::from_path("new.verb");
 
         let deprecation = DeprecationInfo::new("2025-01-01")

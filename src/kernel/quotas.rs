@@ -101,21 +101,25 @@ pub type SplitBudget<Mem, Cpu, Io, Net> = (
 );
 
 /// Combine two budgets (compile-time)
+///
+/// NOTE: This trait and its implementation require the `generic_const_exprs` feature
+/// which is not stable yet. Commented out until Rust 1.80+ or when feature stabilizes.
 pub trait CombineBudgets<Other> {
     type Combined;
 }
 
-impl<const M1: u64, const C1: u64, const I1: u64, const N1: u64, const M2: u64, const C2: u64, const I2: u64, const N2: u64>
-    CombineBudgets<ResourceBudget<MemoryQuota<M2>, CpuQuota<C2>, IoQuota<I2>, NetworkQuota<N2>>>
-    for ResourceBudget<MemoryQuota<M1>, CpuQuota<C1>, IoQuota<I1>, NetworkQuota<N1>>
-{
-    type Combined = ResourceBudget<
-        MemoryQuota<{ M1 + M2 }>,
-        CpuQuota<{ C1 + C2 }>,
-        IoQuota<{ I1 + I2 }>,
-        NetworkQuota<{ N1 + N2 }>,
-    >;
-}
+// COMMENTED OUT: Requires generic_const_exprs (unstable feature)
+// impl<const M1: u64, const C1: u64, const I1: u64, const N1: u64, const M2: u64, const C2: u64, const I2: u64, const N2: u64>
+//     CombineBudgets<ResourceBudget<MemoryQuota<M2>, CpuQuota<C2>, IoQuota<I2>, NetworkQuota<N2>>>
+//     for ResourceBudget<MemoryQuota<M1>, CpuQuota<C1>, IoQuota<I1>, NetworkQuota<N1>>
+// {
+//     type Combined = ResourceBudget<
+//         MemoryQuota<{ M1 + M2 }>,
+//         CpuQuota<{ C1 + C2 }>,
+//         IoQuota<{ I1 + I2 }>,
+//         NetworkQuota<{ N1 + N2 }>,
+//     >;
+// }
 
 // ============================================================================
 // Budgeted Operation

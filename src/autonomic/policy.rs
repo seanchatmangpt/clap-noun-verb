@@ -6,7 +6,7 @@
 //! - Redirect to alternative noun/verb
 //! - Enforce global governance rules
 
-use super::effects::EffectMetadata;
+use crate::autonomic::EffectMetadata;
 use super::tenancy::InvocationContext;
 use crate::error::{NounVerbError, Result};
 use serde::{Deserialize, Serialize};
@@ -441,7 +441,7 @@ mod tests {
             "services",
             "restart",
             HashMap::new(),
-            super::effects::EffectMetadata::new(super::effects::EffectType::Privileged),
+            crate::autonomic::EffectMetadata::new(crate::autonomic::EffectType::Privileged),
         );
 
         let result = engine.evaluate(&request).unwrap();

@@ -104,6 +104,19 @@ impl QuotaFootprint {
     }
 }
 
+/// Default invocation context for deserialization
+fn default_invocation_context() -> Arc<InvocationContext> {
+    use crate::autonomic::{AgentIdentity, TenantIdentity, QoSHints};
+    Arc::new(InvocationContext {
+        agent: AgentIdentity::anonymous(),
+        tenant: TenantIdentity::default_tenant(),
+        policy: None,
+        qos: QoSHints::default(),
+        correlation_id: String::from("default"),
+        parent_invocation_id: None,
+    })
+}
+
 /// Complete deterministic session log frame
 ///
 /// This is the canonical O (observation) for μ_CNV.
@@ -122,6 +135,7 @@ pub struct SessionLogFrame {
     pub capability_version: u32,
 
     /// Invocation context (tenant, agent, policy)
+    #[serde(skip, default = "default_invocation_context")]
     pub invocation_context: Arc<InvocationContext>,
 
     /// Attestation chain hash (for verification)

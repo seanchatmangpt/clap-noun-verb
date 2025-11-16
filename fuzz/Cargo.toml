@@ -1,0 +1,48 @@
+[package]
+name = "clap-noun-verb-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.clap-noun-verb]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_capability_parser"
+path = "fuzz_targets/fuzz_capability_parser.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_certificate_serialization"
+path = "fuzz_targets/fuzz_certificate_serialization.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_delegation_chain"
+path = "fuzz_targets/fuzz_delegation_chain.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_zero_copy_parser"
+path = "fuzz_targets/fuzz_zero_copy_parser.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_graph_operations"
+path = "fuzz_targets/fuzz_graph_operations.rs"
+test = false
+doc = false

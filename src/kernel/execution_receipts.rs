@@ -112,7 +112,7 @@ impl CapabilityExecutionReceipt {
             capability_version,
             tenant_id,
             agent_id,
-            invocation_attestation: None,
+            invocation_attestation_hash: None,
             quota_tier,
             quota_footprint,
             policy_id,

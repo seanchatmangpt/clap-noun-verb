@@ -1,0 +1,555 @@
+//! Comprehensive tests for delegation protocol
+//!
+//! Critical 80/20 test coverage:
+//! - Principal creation and types
+//! - Delegation token creation
+//! - Capability constraints
+//! - Temporal constraints
+//! - Sub-delegation with constraint intersection
+//! - Delegation chains
+//! - Token verification and expiration
+
+use clap_noun_verb::autonomic::*;
+use std::collections::HashSet;
+use std::time::{Duration, SystemTime};
+
+#[test]
+fn test_principal_creation() {
+    // GIVEN: Different principal types
+    let agent = AgentIdentity::human("alice");
+    let tenant = TenantIdentity::default_tenant();
+
+    let direct = Principal::new(agent.clone(), tenant.clone());
+    let delegated = Principal::delegated(agent.clone(), tenant.clone());
+    let service = Principal::service(agent.clone(), tenant.clone());
+
+    // THEN: Types are correctly set
+    assert_eq!(direct.principal_type, PrincipalType::Direct);
+    assert_eq!(delegated.principal_type, PrincipalType::Delegated);
+    assert_eq!(service.principal_type, PrincipalType::Service);
+}
+
+#[test]
+fn test_capability_constraint_unrestricted() {
+    // GIVEN: Unrestricted constraints
+    let constraint = CapabilityConstraint::unrestricted();
+
+    // THEN: All capabilities are allowed
+    assert!(constraint.allows_capability(&CapabilityId::from_path("any.capability")));
+    assert!(constraint.allows_command("any", "command"));
+}
+
+#[test]
+fn test_capability_constraint_strict() {
+    // GIVEN: Strict constraints
+    let constraint = CapabilityConstraint::strict();
+
+    // THEN: No capabilities are allowed
+    assert!(!constraint.allows_capability(&CapabilityId::from_path("any.capability")));
+    assert!(!constraint.allows_command("any", "command"));
+}
+
+#[test]
+fn test_capability_constraint_allowed_capabilities() {
+    // GIVEN: Constraints with specific allowed capabilities
+    let mut allowed = HashSet::new();
+    allowed.insert(CapabilityId::from_path("user.read"));
+    allowed.insert(CapabilityId::from_path("user.list"));
+
+    let constraint = CapabilityConstraint {
+        allowed_capabilities: Some(allowed),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: None,
+    };
+
+    // THEN: Only allowed capabilities are permitted
+    assert!(constraint.allows_capability(&CapabilityId::from_path("user.read")));
+    assert!(constraint.allows_capability(&CapabilityId::from_path("user.list")));
+    assert!(!constraint.allows_capability(&CapabilityId::from_path("user.delete")));
+}
+
+#[test]
+fn test_capability_constraint_forbidden_overrides_allowed() {
+    // GIVEN: Constraints with both allowed and forbidden
+    let mut allowed = HashSet::new();
+    allowed.insert(CapabilityId::from_path("user.read"));
+    allowed.insert(CapabilityId::from_path("user.write"));
+
+    let mut forbidden = HashSet::new();
+    forbidden.insert(CapabilityId::from_path("user.write"));
+
+    let constraint = CapabilityConstraint {
+        allowed_capabilities: Some(allowed),
+        forbidden_capabilities: forbidden,
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: None,
+    };
+
+    // THEN: Forbidden takes precedence
+    assert!(constraint.allows_capability(&CapabilityId::from_path("user.read")));
+    assert!(!constraint.allows_capability(&CapabilityId::from_path("user.write")));
+}
+
+#[test]
+fn test_capability_constraint_intersection() {
+    // GIVEN: Two constraints
+    let mut allowed1 = HashSet::new();
+    allowed1.insert(CapabilityId::from_path("user.read"));
+    allowed1.insert(CapabilityId::from_path("user.write"));
+
+    let constraint1 = CapabilityConstraint {
+        allowed_capabilities: Some(allowed1),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: Some(EffectLevel::Mutate),
+    };
+
+    let mut allowed2 = HashSet::new();
+    allowed2.insert(CapabilityId::from_path("user.read"));
+    allowed2.insert(CapabilityId::from_path("user.list"));
+
+    let constraint2 = CapabilityConstraint {
+        allowed_capabilities: Some(allowed2),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: Some(EffectLevel::ReadOnly),
+    };
+
+    // WHEN: We intersect them
+    let intersected = constraint1.intersect(&constraint2);
+
+    // THEN: Only common capabilities are allowed
+    assert!(intersected.allows_capability(&CapabilityId::from_path("user.read")));
+    assert!(!intersected.allows_capability(&CapabilityId::from_path("user.write")));
+    assert!(!intersected.allows_capability(&CapabilityId::from_path("user.list")));
+
+    // AND: Most restrictive effect level is used
+    assert_eq!(intersected.max_effect_level, Some(EffectLevel::ReadOnly));
+}
+
+#[test]
+fn test_temporal_constraint_validity() {
+    // GIVEN: A temporal constraint
+    let now = SystemTime::now();
+    let constraint = TemporalConstraint {
+        not_before: now,
+        not_after: now + Duration::from_secs(3600), // Valid for 1 hour
+        max_uses: None,
+    };
+
+    // THEN: It's currently valid
+    assert!(constraint.is_valid());
+
+    // WHEN: We check a time in the past
+    let past = now - Duration::from_secs(10);
+    assert!(!constraint.is_valid_at(past));
+
+    // AND: A time in the future (but within window)
+    let future = now + Duration::from_secs(1800);
+    assert!(constraint.is_valid_at(future));
+}
+
+#[test]
+fn test_temporal_constraint_max_uses() {
+    // GIVEN: A constraint with max uses
+    let constraint = TemporalConstraint::valid_for(Duration::from_secs(3600))
+        .with_max_uses(3);
+
+    // THEN: Max uses is set
+    assert_eq!(constraint.max_uses, Some(3));
+}
+
+#[test]
+fn test_delegation_token_creation() {
+    // GIVEN: Delegator and delegate
+    let delegator = Principal::new(
+        AgentIdentity::human("alice"),
+        TenantIdentity::default_tenant(),
+    );
+
+    let delegate = Principal::delegated(
+        AgentIdentity::human("bob"),
+        TenantIdentity::default_tenant(),
+    );
+
+    // WHEN: We create a delegation token
+    let token = DelegationToken::new(
+        delegator.clone(),
+        delegate.clone(),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    // THEN: Token is created correctly
+    assert_eq!(token.delegator, delegator);
+    assert_eq!(token.delegate, delegate);
+    assert!(token.verify().is_ok());
+}
+
+#[test]
+fn test_delegation_token_verification_success() {
+    // GIVEN: A valid token
+    let token = create_test_token();
+
+    // WHEN: We verify it
+    let result = token.verify();
+
+    // THEN: Verification succeeds
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_delegation_token_expiration() {
+    // GIVEN: A token that expires immediately
+    let delegator = Principal::new(
+        AgentIdentity::anonymous(),
+        TenantIdentity::default_tenant(),
+    );
+
+    let delegate = Principal::delegated(
+        AgentIdentity::anonymous(),
+        TenantIdentity::default_tenant(),
+    );
+
+    let token = DelegationToken::new(
+        delegator,
+        delegate,
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_millis(1)),
+    );
+
+    // WHEN: We wait and verify
+    std::thread::sleep(Duration::from_millis(10));
+
+    let result = token.verify();
+
+    // THEN: Verification fails due to expiration
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), DelegationError::TokenExpired));
+}
+
+#[test]
+fn test_delegation_token_usage_limit() {
+    // GIVEN: A token with max 2 uses
+    let token = create_test_token_with_max_uses(2);
+
+    // WHEN: We use it twice
+    assert!(token.record_use().is_ok());
+    assert!(token.record_use().is_ok());
+
+    // THEN: Third use fails
+    let result = token.record_use();
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        DelegationError::UsageLimitExceeded
+    ));
+}
+
+#[test]
+fn test_delegation_token_allows_capability() {
+    // GIVEN: A token with specific capabilities
+    let mut allowed = HashSet::new();
+    allowed.insert(CapabilityId::from_path("user.read"));
+
+    let constraints = CapabilityConstraint {
+        allowed_capabilities: Some(allowed),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: None,
+    };
+
+    let token = DelegationToken::new(
+        Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        constraints,
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    // THEN: Only allowed capability is permitted
+    assert!(token.allows_capability(&CapabilityId::from_path("user.read")));
+    assert!(!token.allows_capability(&CapabilityId::from_path("user.write")));
+}
+
+#[test]
+fn test_sub_delegation_constraint_intersection() {
+    // GIVEN: A parent token
+    let mut parent_allowed = HashSet::new();
+    parent_allowed.insert(CapabilityId::from_path("user.read"));
+    parent_allowed.insert(CapabilityId::from_path("user.write"));
+    parent_allowed.insert(CapabilityId::from_path("user.delete"));
+
+    let parent_constraints = CapabilityConstraint {
+        allowed_capabilities: Some(parent_allowed),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: Some(EffectLevel::Mutate),
+    };
+
+    let parent = DelegationToken::new(
+        Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        parent_constraints,
+        TemporalConstraint::valid_for(Duration::from_secs(7200)),
+    );
+
+    // WHEN: We create a sub-delegation with stricter constraints
+    let mut child_allowed = HashSet::new();
+    child_allowed.insert(CapabilityId::from_path("user.read"));
+    child_allowed.insert(CapabilityId::from_path("user.write"));
+
+    let child_constraints = CapabilityConstraint {
+        allowed_capabilities: Some(child_allowed),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: Some(EffectLevel::ReadOnly),
+    };
+
+    let child = parent
+        .sub_delegate(
+            Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+            child_constraints,
+            TemporalConstraint::valid_for(Duration::from_secs(3600)),
+        )
+        .unwrap();
+
+    // THEN: Child has intersection of constraints
+    assert!(child.allows_capability(&CapabilityId::from_path("user.read")));
+    assert!(child.allows_capability(&CapabilityId::from_path("user.write")));
+    assert!(!child.allows_capability(&CapabilityId::from_path("user.delete"))); // Not in child
+
+    // AND: Most restrictive effect level
+    assert_eq!(child.constraints.max_effect_level, Some(EffectLevel::ReadOnly));
+
+    // AND: Parent token ID is recorded
+    assert_eq!(child.parent_token_id, Some(parent.token_id.clone()));
+}
+
+#[test]
+fn test_delegation_chain_direct() {
+    // GIVEN: Direct execution (no delegation)
+    let principal = Principal::new(
+        AgentIdentity::human("alice"),
+        TenantIdentity::default_tenant(),
+    );
+
+    // WHEN: We create a direct chain
+    let chain = DelegationChain::direct(principal.clone());
+
+    // THEN: Chain is valid
+    assert!(chain.verify().is_ok());
+    assert!(chain.is_direct());
+    assert_eq!(chain.depth(), 0);
+    assert_eq!(chain.origin, principal);
+    assert_eq!(chain.executor, principal);
+}
+
+#[test]
+fn test_delegation_chain_single_delegation() {
+    // GIVEN: A delegation token
+    let token = create_test_token();
+
+    // WHEN: We create a chain
+    let chain = DelegationChain::with_delegation(token);
+
+    // THEN: Chain is valid
+    assert!(chain.verify().is_ok());
+    assert!(!chain.is_direct());
+    assert_eq!(chain.depth(), 1);
+}
+
+#[test]
+fn test_delegation_chain_multiple_delegations() {
+    // GIVEN: A chain of delegations
+    let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
+    let bob = Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
+    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+
+    let token1 = DelegationToken::new(
+        alice.clone(),
+        bob.clone(),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    let token2 = DelegationToken::new(
+        bob.clone(),
+        charlie.clone(),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    // WHEN: We create a chain
+    let chain = DelegationChain::with_delegation(token1).add_delegation(token2);
+
+    // THEN: Chain is valid
+    assert!(chain.verify().is_ok());
+    assert_eq!(chain.depth(), 2);
+    assert_eq!(chain.origin, alice);
+    assert_eq!(chain.executor, charlie);
+}
+
+#[test]
+fn test_delegation_chain_broken_continuity() {
+    // GIVEN: Two unrelated tokens
+    let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
+    let bob = Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
+    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+    let dave = Principal::delegated(AgentIdentity::human("dave"), TenantIdentity::default_tenant());
+
+    let token1 = DelegationToken::new(
+        alice.clone(),
+        bob.clone(),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    let token2 = DelegationToken::new(
+        charlie.clone(), // Not bob!
+        dave.clone(),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    // WHEN: We create a chain with broken continuity
+    let chain = DelegationChain::with_delegation(token1).add_delegation(token2);
+
+    // THEN: Verification fails
+    let result = chain.verify();
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), DelegationError::BrokenChain));
+}
+
+#[test]
+fn test_delegation_chain_effective_constraints() {
+    // GIVEN: A chain with progressively stricter constraints
+    let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
+    let bob = Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
+
+    let mut allowed1 = HashSet::new();
+    allowed1.insert(CapabilityId::from_path("cap1"));
+    allowed1.insert(CapabilityId::from_path("cap2"));
+    allowed1.insert(CapabilityId::from_path("cap3"));
+
+    let constraints1 = CapabilityConstraint {
+        allowed_capabilities: Some(allowed1),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: None,
+    };
+
+    let token1 = DelegationToken::new(
+        alice.clone(),
+        bob.clone(),
+        constraints1,
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
+
+    // Second delegation is more restrictive
+    let mut allowed2 = HashSet::new();
+    allowed2.insert(CapabilityId::from_path("cap1"));
+    allowed2.insert(CapabilityId::from_path("cap2"));
+
+    let constraints2 = CapabilityConstraint {
+        allowed_capabilities: Some(allowed2),
+        forbidden_capabilities: HashSet::new(),
+        allowed_nouns: None,
+        allowed_verbs: None,
+        max_effect_level: None,
+    };
+
+    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+    let token2 = DelegationToken::new(bob.clone(), charlie.clone(), constraints2, TemporalConstraint::valid_for(Duration::from_secs(3600)));
+
+    let chain = DelegationChain::with_delegation(token1).add_delegation(token2);
+
+    // WHEN: We get effective constraints
+    let effective = chain.effective_constraints();
+
+    // THEN: Intersection of all constraints
+    assert!(effective.allows_capability(&CapabilityId::from_path("cap1")));
+    assert!(effective.allows_capability(&CapabilityId::from_path("cap2")));
+    assert!(!effective.allows_capability(&CapabilityId::from_path("cap3"))); // Removed in second delegation
+}
+
+#[test]
+fn test_delegation_registry() {
+    // GIVEN: A delegation registry
+    let registry = DelegationRegistry::new();
+
+    // WHEN: We register a token
+    let token = create_test_token();
+    let token_id = token.token_id.clone();
+
+    registry.register(token);
+
+    // THEN: We can retrieve it
+    let retrieved = registry.get(&token_id);
+    assert!(retrieved.is_some());
+
+    // AND: We can revoke it
+    registry.revoke(&token_id);
+    assert!(registry.get(&token_id).is_none());
+}
+
+#[test]
+fn test_delegation_registry_cleanup_expired() {
+    // GIVEN: A registry with some expired tokens
+    let registry = DelegationRegistry::new();
+
+    // Add a valid token
+    let valid_token = create_test_token();
+    let valid_id = valid_token.token_id.clone();
+    registry.register(valid_token);
+
+    // Add an expired token
+    let expired_token = create_test_token_with_expiry(Duration::from_millis(1));
+    let expired_id = expired_token.token_id.clone();
+    registry.register(expired_token);
+
+    std::thread::sleep(Duration::from_millis(10));
+
+    // WHEN: We cleanup
+    registry.cleanup_expired();
+
+    // THEN: Expired token is removed
+    assert!(registry.get(&valid_id).is_some());
+    assert!(registry.get(&expired_id).is_none());
+}
+
+// Helper functions
+fn create_test_token() -> DelegationToken {
+    DelegationToken::new(
+        Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    )
+}
+
+fn create_test_token_with_max_uses(max_uses: u32) -> DelegationToken {
+    DelegationToken::new(
+        Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(Duration::from_secs(3600)).with_max_uses(max_uses),
+    )
+}
+
+fn create_test_token_with_expiry(duration: Duration) -> DelegationToken {
+    DelegationToken::new(
+        Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant()),
+        CapabilityConstraint::unrestricted(),
+        TemporalConstraint::valid_for(duration),
+    )
+}
