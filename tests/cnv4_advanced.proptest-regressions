@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 5d4d25cb70b1b17bead8357de2713bb5458fb14cea9e53b7bb9493ae28e54cf2 # shrinks to class = Pure, resource_band = Instant, stability = Deprecated, safety = AgentSafe
+cc 858dac523917e1359832a2a3719eb80e15d1bc1bf69b51964a8e6057e77b9e08 # shrinks to class = Environment, resource_band = Cold, stability = Stable, safety = AgentSafe
