@@ -405,7 +405,8 @@ impl CapabilityContract {
             (Preview, Stable | Preview) => true,
             (Experimental, Stable | Preview | Experimental) => true,
             (NonDeterministic, _) => true,
-            (Deprecated, _) => false, // Deprecated never matches
+            (Deprecated, Deprecated) => true, // Deprecated matches itself
+            (Deprecated, _) => false, // But only deprecated matches deprecated requirement
             _ => false,
         }
     }
