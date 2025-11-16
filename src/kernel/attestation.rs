@@ -297,6 +297,7 @@ impl CapabilityAttestation {
 /// Chain of capability delegations
 ///
 /// Enables hierarchical trust: root authority → intermediate → agent
+#[derive(Debug, Clone)]
 pub struct AttestationChain {
     /// Root authority public key
     pub root: PublicKey,
