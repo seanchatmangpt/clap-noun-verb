@@ -17,10 +17,16 @@
 //! - **Receipts**: Structured execution records for audit and analysis
 
 pub mod capability_id;
+pub mod certificates;
 pub mod cli;
+pub mod contracts;
+pub mod delegation;
 pub mod effects;
 pub mod errors;
+pub mod governance;
+pub mod graph;
 pub mod guards;
+pub mod hotpath;
 pub mod introspection;
 pub mod planes;
 pub mod policy;
@@ -31,10 +37,31 @@ pub mod tenancy;
 
 // Re-export key types
 pub use capability_id::{CapabilityChange, CapabilityChangelog, CapabilityId, CapabilityVersion, ChangeType, DeprecationInfo};
+pub use certificates::{Certificate, CertificateBuilder, CertificateError, CertificateId, CertifiedInvocation, PolicyTrace, SchemaHash};
 pub use cli::{AutonomicCli, AutonomicNounCommand, AutonomicVerbCommand};
+pub use contracts::{
+    ConcurrencyContract, ConcurrencyModel, DeadlineSpec, DurationClass, ExecutionContract,
+    HasContract, IsolationLevel, ResourceLimits, RetryPolicy, TemporalContract,
+};
+pub use delegation::{
+    CapabilityConstraint, DelegationChain, DelegationError, DelegationRegistry, DelegationToken,
+    EffectLevel, Principal, PrincipalType, TemporalConstraint, TokenId,
+};
 pub use effects::{DataSensitivityTag, EffectMetadata, EffectType, IsolationRequirement, Sensitivity};
 pub use errors::{ErrorKind, ErrorResponse, StructuredError};
+pub use governance::{
+    EventId, EventType, GovernanceEvent, GovernanceLedger, OperatingMode, PolicyChangeType,
+    ReplayEngine, ReplayResult, ViolationSeverity,
+};
+pub use graph::{
+    CapabilityEdge, CapabilityGraph, CapabilityNode, EdgeId, EdgeType, GraphError, NodeId,
+    SchemaCompatibility,
+};
 pub use guards::{GuardConfig, GuardResult, GuardStatus};
+pub use hotpath::{
+    AgentHandle, ContextPool, EffectFlags, HotPathContext, HotPathInvocation, HotPathMetrics,
+    InvocationQueue, TenantHandle, ZeroCopyParser,
+};
 pub use introspection::{
     AppMetadata, ArgumentMetadata, CommandCapabilities, CommandGraph, CommandMetadata,
     GraphEdge, GraphNode, IntrospectionResponse, NounMetadata, VerbMetadata,
@@ -68,4 +95,11 @@ pub const SUPPORTED_FEATURES: &[&str] = &[
     "composition",
     "streaming",
     "sessions",
+    // 2027 Swarm-Native Features
+    "certificates",
+    "contracts",
+    "delegation",
+    "governance",
+    "graph",
+    "hotpath",
 ];
