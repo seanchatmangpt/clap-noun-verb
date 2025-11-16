@@ -50,35 +50,78 @@
 //! - Kernel capabilities introduced in v3.8.0
 //! - Autonomic Command Fabric (v4.0) - current version
 
+pub mod ahi_policy;
 pub mod attestation;
+pub mod broker;
 pub mod capability;
+pub mod capability_contracts;
 pub mod concurrent;
 pub mod const_caps;
+pub mod execution_receipts;
 pub mod grammar;
 pub mod grammar_dsl;
 pub mod io;
 pub mod manpage;
 pub mod output;
 pub mod quotas;
+pub mod replay_engine;
 pub mod session;
+pub mod session_log;
 pub mod simd;
 pub mod telemetry;
 pub mod test_harness;
+pub mod transport;
 pub mod typestate;
 pub mod version;
 
 // Re-export key types for convenience
+pub use ahi_policy::{
+    AhiPolicyAdapter, PolicyDecision, PolicyUpdate, PolicyState, PolicyValidator,
+    RiskActionType, CapabilityPolicy, DisabledCapabilityInfo, DeprecationInfo, RiskPolicy,
+};
+pub use broker::{
+    BrokerKernel, BrokerRequest, BrokerResponse, BrokerResult, BrokerError,
+    BrokerCapabilityRegistry, AdmissionPolicy, AdmissionController, BrokerLoad,
+    TenantPolicy, FairShareScheduler, DeferredExecution,
+};
 pub use capability::{
     CapabilityClass, CapabilityContext, CapabilityContract, ResourceBand, SafetyProfile,
     StabilityProfile,
+};
+pub use capability_contracts::{
+    CapabilityContractV2, CapabilitySchema, CapabilityConstraints, EffectsDeclaration,
+    SideEffectType, IsolationRequirement, DataSensitivity, Invariant, InvariantSeverity,
+    Guarantees, StabilityLevel, SafetyLevel, DeterminismGuarantee, IdempotencyGuarantee,
+    ProofReferences, TestCoverage, StaticAnalysis, AuditReference, ProofObject,
+    BuildMetadata, PathAccessPattern, AccessType,
 };
 pub use grammar::{Grammar, GrammarModel, GrammarNode};
 pub use io::{FileIO, InputSource, OutputSink};
 pub use manpage::ManpageGenerator;
 pub use output::{OutputEnvelope, OutputPipeline, StructuredError, StructuredResult};
+pub use execution_receipts::{
+    CapabilityExecutionReceipt, EffectSummary, NetworkConnection, ReceiptMetadata,
+    ReceiptStore, InMemoryReceiptStore, UsageStatistics,
+};
+pub use replay_engine::{
+    ReplayEngine, VerifyReplayEngine, SimulateReplayEngine, AuditReplayEngine,
+    DeterministicContext, ReplayEngineFactory, BatchReplayResult, BatchReplayExecutor,
+    SideEffect,
+};
 pub use session::{
     ControlCommand, Frame, FramePayload, SessionBuilder, SessionConfig, SessionHandle,
     SessionId, SessionMetrics, SessionState, SessionVerb, StreamId,
+};
+pub use transport::{
+    InvocationFrame, FrameType, FrameFlags, TransportError, InvocationTransport,
+    StdioTransport, UnixSocketTransport, QuicTransport, TcpTransport,
+};
+pub use session_log::{
+    SessionLogFrame, ReplayConfig, ReplayMode, ReplayResult,
+    FrameDelta, SessionCompression, SessionLogStore, InMemorySessionLogStore,
+    ExitCodeClass, LogicalClock, QuotaFootprint, ResultFrame, ErrorFrame,
+    FrameMetadata, FrameOrderKey, TimingDrift, QuotaCheckResult,
+    TimingPercentiles, ResourceStats,
 };
 pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
