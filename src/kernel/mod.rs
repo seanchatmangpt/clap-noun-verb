@@ -50,6 +50,7 @@
 //! - Kernel capabilities introduced in v3.8.0
 //! - Autonomic Command Fabric (v4.0) - current version
 
+pub mod attestation;
 pub mod capability;
 pub mod concurrent;
 pub mod const_caps;
@@ -58,7 +59,9 @@ pub mod grammar_dsl;
 pub mod io;
 pub mod manpage;
 pub mod output;
+pub mod quotas;
 pub mod session;
+pub mod simd;
 pub mod telemetry;
 pub mod test_harness;
 pub mod typestate;
