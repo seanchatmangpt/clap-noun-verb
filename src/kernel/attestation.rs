@@ -26,7 +26,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // ============================================================================
 
 /// Ed25519 public key (32 bytes)
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PublicKey(pub [u8; 32]);
 
 /// Ed25519 private key (64 bytes - includes public key)
@@ -100,7 +100,7 @@ impl PrivateKey {
 }
 
 /// Digital signature
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Signature(Vec<u8>);
 
 impl Signature {
@@ -143,7 +143,7 @@ impl Signature {
 /// assert!(attestation.verify(&authority_pub));
 /// assert!(!attestation.is_expired());
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CapabilityAttestation {
     /// The capability being granted
     pub contract: CapabilityContract,
@@ -297,7 +297,7 @@ impl CapabilityAttestation {
 /// Chain of capability delegations
 ///
 /// Enables hierarchical trust: root authority → intermediate → agent
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AttestationChain {
     /// Root authority public key
     pub root: PublicKey,

@@ -1,3 +1,4 @@
+#![allow(unsafe_code)]
 //! # Phase 1: Zero-Copy SIMD Frame Serialization
 //!
 //! Ultra-high-performance frame serialization using SIMD instructions and zero-copy techniques.
