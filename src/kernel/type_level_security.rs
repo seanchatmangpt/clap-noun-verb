@@ -4,7 +4,6 @@
 //! Prevents entire classes of bugs at compile time through type checking
 
 use std::marker::PhantomData;
-use serde::{Deserialize, Serialize};
 
 /// Phantom type for "unverified" state
 pub struct Unverified;
@@ -26,9 +25,11 @@ impl Executable for (Verified, Signed, Encrypted) {}
 
 /// Type-level marker for "immutable"
 pub trait Immutable: Send + Sync {}
+impl Immutable for Verified {}
+impl Immutable for Signed {}
 
-/// Type-level marker for "replicated"
-pub trait Replicated: Send + Sync {}
+/// Type-level marker for "replicated" - concrete type
+pub struct Replicated;
 
 /// Execution context with type-level security state
 /// E = Execution state (Unverified | Verified | Signed | Encrypted)
@@ -278,14 +279,13 @@ mod tests {
 
     #[test]
     fn test_isolated_invocation() {
-        let inv = IsolatedInvocation::<ProcessIsolated>::new("inv-1".to_string());
-        assert_eq!(inv.isolation_level(), "ProcessIsolated");
+        let _inv = IsolatedInvocation::<ProcessIsolated>::new("inv-1".to_string());
+        assert_eq!(IsolatedInvocation::<ProcessIsolated>::isolation_level(), "ProcessIsolated");
     }
 
     #[test]
     fn test_pure_execution() {
         let exec = ExecutionWithEffects::<Pure>::new();
         assert_eq!(exec.effects().len(), 0);
-        assert_eq!(ExecutionWithEffects::<Pure>::new().effect_log.len(), 0);
     }
 }

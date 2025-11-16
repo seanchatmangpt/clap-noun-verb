@@ -45,11 +45,11 @@ pub trait PersistenceBackend: Send + Sync + 'static {
 
 /// In-memory backend with full ownership (for testing)
 #[derive(Debug)]
-pub struct InMemoryBackend<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync> {
+pub struct InMemoryBackend<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync + 'static> {
     store: parking_lot::RwLock<std::collections::BTreeMap<String, T>>,
 }
 
-impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync> InMemoryBackend<T> {
+impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync + 'static> InMemoryBackend<T> {
     pub fn new() -> Self {
         Self {
             store: parking_lot::RwLock::new(std::collections::BTreeMap::new()),
@@ -57,13 +57,13 @@ impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync> InM
     }
 }
 
-impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync> Default for InMemoryBackend<T> {
+impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync + 'static> Default for InMemoryBackend<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync> PersistenceBackend for InMemoryBackend<T> {
+impl<T: Serialize + for<'de> Deserialize<'de> + Debug + Clone + Send + Sync + 'static> PersistenceBackend for InMemoryBackend<T> {
     type Item = T;
     type QueryResult = Vec<T>;
     type Error = std::io::Error;

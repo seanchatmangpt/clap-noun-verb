@@ -30,11 +30,11 @@ impl ContractRuntimeView {
     pub fn from_contract(contract: &CapabilityContractV2, capability_id: String) -> Self {
         Self {
             capability_id,
-            max_runtime_ms: contract.constraints.max_runtime_ms,
-            max_memory_bytes: contract.constraints.max_memory_bytes,
-            max_io_ops: contract.constraints.max_io_operations,
-            max_network_bytes: contract.constraints.max_network_bytes,
-            allowed_effects: vec![],  // Extracted from effects declaration
+            max_runtime_ms: contract.constraints.max_runtime_ms.unwrap_or(u64::MAX),
+            max_memory_bytes: contract.constraints.max_memory_bytes.unwrap_or(u64::MAX),
+            max_io_ops: contract.constraints.max_io_ops.unwrap_or(u64::MAX),
+            max_network_bytes: contract.constraints.max_network_bytes.unwrap_or(u64::MAX),
+            allowed_effects: contract.constraints.allowed_operations.clone(),
             isolation_requirement: "ProcessIsolation".to_string(),
         }
     }

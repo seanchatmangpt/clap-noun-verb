@@ -168,7 +168,7 @@ impl QuotaFootprint {
 /// - Hashable (content-addressed)
 /// - Reconstructible (enough data to replay deterministically)
 /// - Validated (invariants enforced on creation and deserialization)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct SessionLogFrame {
     /// Frame schema version - for backward compatibility
     pub frame_schema_version: u32,
@@ -520,8 +520,9 @@ impl Default for ReplayConfig {
 }
 
 /// Result of replay verification
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ReplayResult {
+    #[serde(skip)]
     pub frame: SessionLogFrame,
     pub mode: ReplayMode,
     pub success: bool,
