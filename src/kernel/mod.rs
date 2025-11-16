@@ -51,6 +51,7 @@
 //! - Autonomic Command Fabric (v4.0) - current version
 
 pub mod ahi_policy;
+pub mod advanced_quota_enforcement;
 pub mod attestation;
 pub mod broker;
 pub mod broker_state;
@@ -59,6 +60,7 @@ pub mod capability_contracts;
 pub mod concurrent;
 pub mod const_caps;
 pub mod contract_runtime_view;
+pub mod deterministic_execution;
 pub mod execution_receipts;
 pub mod frame_schema;
 pub mod grammar;
@@ -66,6 +68,7 @@ pub mod grammar_dsl;
 pub mod io;
 pub mod manpage;
 pub mod output;
+pub mod pluggable_persistence;
 pub mod policy_governance;
 pub mod quotas;
 pub mod replay_engine;
@@ -75,6 +78,7 @@ pub mod simd;
 pub mod telemetry;
 pub mod test_harness;
 pub mod transport;
+pub mod type_level_security;
 pub mod typestate;
 pub mod version;
 
@@ -138,7 +142,23 @@ pub use contract_runtime_view::{
     ContractRuntimeView, UsageViolation, ReceiptVerifier, VerificationError,
 };
 pub use policy_governance::{
-    PolicyDelta, PolicyState, PolicySnapshot, PolicyTransitionValidator, TransitionError,
+    PolicyDelta, PolicyState as GovernancePolicy, PolicySnapshot, PolicyTransitionValidator, TransitionError,
+};
+pub use advanced_quota_enforcement::{
+    LockFreeQuotaBucket, QuotaReservation, QuotaExhausted,
+};
+pub use deterministic_execution::{
+    DeterministicInstruction, DeterministicAuditTrail, DeterministicExecution,
+    DeterministicReplayVerifier, AuditTrailFull, SyscallError, ReplayMismatch,
+};
+pub use pluggable_persistence::{
+    PersistenceBackend, InMemoryBackend, ReplicatedBackend, PersistenceConstraint,
+    ImmutableAfterWrite, EncryptedAtRest, AuditLogged,
+};
+pub use type_level_security::{
+    Unverified, Verified, Encrypted, Signed, Executable, Immutable, Replicated,
+    SecureContext, AllowedEffect, ReadFS, WriteFS, Network, Pure, ExecutionWithEffects,
+    IsolationLevel, Shared, ProcessIsolated, ContainerIsolated, IsolatedInvocation,
 };
 pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
