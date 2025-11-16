@@ -148,13 +148,13 @@ mod tests {
             TenantIdentity::default_tenant(),
         );
 
-        let constraint = CapabilityConstraint::new(vec![], None, None);
+        let constraint = CapabilityConstraint::unrestricted();
 
         let token = DelegationToken::new(
             delegator,
             delegate,
             constraint,
-            std::time::Duration::from_secs(3600),
+            TemporalConstraint::valid_for(std::time::Duration::from_secs(3600)),
         );
 
         // Register async
@@ -162,7 +162,7 @@ mod tests {
         assert!(result.is_ok());
 
         // Retrieve async
-        let retrieved = registry.get_token_async(&token.token_id).await;
+        let retrieved = registry.get_token_async(&token.token_id.0).await;
         assert!(retrieved.is_some());
     }
 

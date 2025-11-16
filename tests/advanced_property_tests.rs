@@ -31,7 +31,7 @@ fn property_certificate_state_transitions_are_monotonic() {
             capability_id.clone(),
             format!("{}.0.0", seed % 5),
             InputSchema::default(),
-            OutputSchema::default(),
+            OutputSchema::new(TypeSchema::primitive(PrimitiveType::String)),
         )
         .with_agent(AgentIdentity::anonymous())
         .with_tenant(TenantIdentity::default_tenant())
@@ -483,7 +483,7 @@ fn property_zero_copy_parser_borrows_from_input() {
         );
 
         // Property: All argument slices are substrings of input
-        for (key, value) in parsed.args {
+        for &(key, value) in parsed.args {
             if !key.is_empty() {
                 assert!(
                     input.contains(key) || key == "-" || key == "--",

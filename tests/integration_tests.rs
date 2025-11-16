@@ -86,16 +86,16 @@ fn test_complete_swarm_native_execution_flow() {
         CapabilityId::from_path("user.read"),
         "Read User",
         InputSchema {
-            required_inputs: vec![(
+            required: vec![(
                 "user_id".to_string(),
                 TypeSchema::primitive(PrimitiveType::String),
             )],
-            optional_inputs: vec![],
-            supports_stdin: false,
+            optional: vec![],
+            accepts_stdin: false,
         },
         OutputSchema {
-            success_schema: TypeSchema::primitive(PrimitiveType::String),
-            error_schema: TypeSchema::primitive(PrimitiveType::String),
+            success: TypeSchema::primitive(PrimitiveType::String),
+            error: TypeSchema::primitive(PrimitiveType::String),
             outputs_stdout: true,
             named_outputs: std::collections::HashMap::new(),
         },
@@ -104,8 +104,8 @@ fn test_complete_swarm_native_execution_flow() {
             sensitivity: Sensitivity::Medium,
             idempotent: true,
             required_role: Some("user".to_string()),
-            data_sensitivity_tags: vec![DataSensitivityTag::PII],
-            isolation_requirement: IsolationRequirement::Shared,
+            data_sensitivity: vec![DataSensitivityTag::Pii],
+            isolation: IsolationRequirement::Shared,
         }],
     );
 
@@ -119,8 +119,8 @@ fn test_complete_swarm_native_execution_flow() {
             sensitivity: Sensitivity::Low,
             idempotent: true,
             required_role: Some("user".to_string()),
-            data_sensitivity_tags: vec![],
-            isolation_requirement: IsolationRequirement::Shared,
+            data_sensitivity: vec![],
+            isolation: IsolationRequirement::Shared,
         }],
     );
 
@@ -185,16 +185,16 @@ fn test_complete_swarm_native_execution_flow() {
         capability_id.clone(),
         "1.0.0",
         InputSchema {
-            required_inputs: vec![(
+            required: vec![(
                 "user_id".to_string(),
                 TypeSchema::primitive(PrimitiveType::String),
             )],
-            optional_inputs: vec![],
-            supports_stdin: false,
+            optional: vec![],
+            accepts_stdin: false,
         },
         OutputSchema {
-            success_schema: TypeSchema::primitive(PrimitiveType::String),
-            error_schema: TypeSchema::primitive(PrimitiveType::String),
+            success: TypeSchema::primitive(PrimitiveType::String),
+            error: TypeSchema::primitive(PrimitiveType::String),
             outputs_stdout: true,
             named_outputs: std::collections::HashMap::new(),
         },
@@ -206,8 +206,8 @@ fn test_complete_swarm_native_execution_flow() {
         sensitivity: Sensitivity::Medium,
         idempotent: true,
         required_role: Some("user".to_string()),
-        data_sensitivity_tags: vec![DataSensitivityTag::PII],
-        isolation_requirement: IsolationRequirement::Shared,
+        data_sensitivity: vec![DataSensitivityTag::Pii],
+        isolation: IsolationRequirement::Shared,
     }])
     .with_correlation_id("swarm-request-42")
     .build();
