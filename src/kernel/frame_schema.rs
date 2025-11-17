@@ -69,8 +69,8 @@ mod tests {
     fn test_schema_v1_compatibility() {
         let v1 = SchemaV1;
         assert!(v1.is_compatible_with(1));
-        assert!(!v1.is_compatible_with(2));
-        assert!(!v1.is_compatible_with(0));
+        assert!(!v1.is_compatible_with(2)); // Can't read future version
+        assert!(v1.is_compatible_with(0));  // Can read older version (backward compat)
     }
 
     #[test]

@@ -444,7 +444,9 @@ mod tests {
             stream_id: StreamId::Stdout,
             sequence: 0,
             timestamp_ms: 0,
-            payload: FramePayload::Data(serde_json::json!({"test": "data"})),
+            payload: FramePayload::Data {
+                data: serde_json::json!({"test": "data"}),
+            },
         };
 
         queue.enqueue(frame.clone()).unwrap();
@@ -471,7 +473,9 @@ mod tests {
                 stream_id: StreamId::Stdout,
                 sequence: i,
                 timestamp_ms: 0,
-                payload: FramePayload::Data(serde_json::json!({"seq": i})),
+                payload: FramePayload::Data {
+                    data: serde_json::json!({"seq": i}),
+                },
             };
             queue.enqueue(frame).unwrap();
         }
@@ -482,7 +486,9 @@ mod tests {
             stream_id: StreamId::Stdout,
             sequence: 999,
             timestamp_ms: 0,
-            payload: FramePayload::Data(serde_json::json!({"overflow": true})),
+            payload: FramePayload::Data {
+                data: serde_json::json!({"overflow": true}),
+            },
         };
 
         assert!(queue.enqueue(overflow_frame).is_err());
@@ -497,7 +503,7 @@ mod tests {
             let session = SessionBuilder::new()
                 .capability(CapabilityContract::pure())
                 .build();
-            registry.register(session);
+            registry.register(std::sync::Arc::new(session));
         }
 
         let stats = registry.stats();

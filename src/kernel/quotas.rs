@@ -528,7 +528,12 @@ mod tests {
 
     #[test]
     fn test_budget_pool() {
-        let budget = MediumBudget::default();
+        let budget: MediumBudget = ResourceBudget {
+            _mem: PhantomData,
+            _cpu: PhantomData,
+            _io: PhantomData,
+            _net: PhantomData,
+        };
         let mut pool = BudgetPool::from_budget(&budget);
 
         // Allocate memory
@@ -550,7 +555,12 @@ mod tests {
 
     #[test]
     fn test_budget_exhaustion() {
-        let budget = TinyBudget::default();
+        let budget: TinyBudget = ResourceBudget {
+            _mem: PhantomData,
+            _cpu: PhantomData,
+            _io: PhantomData,
+            _net: PhantomData,
+        };
         let mut pool = BudgetPool::from_budget(&budget);
 
         // Try to allocate more than limit
@@ -568,7 +578,12 @@ mod tests {
 
     #[test]
     fn test_budget_utilization() {
-        let budget = MediumBudget::default();
+        let budget: MediumBudget = ResourceBudget {
+            _mem: PhantomData,
+            _cpu: PhantomData,
+            _io: PhantomData,
+            _net: PhantomData,
+        };
         let mut pool = BudgetPool::from_budget(&budget);
 
         pool.allocate_memory(500_000).unwrap(); // 50%

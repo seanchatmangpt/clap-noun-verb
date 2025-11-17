@@ -330,8 +330,8 @@ mod tests {
         };
 
         // Verify grammar structure
-        assert_eq!(grammar.name(), "test-app");
-        assert_eq!(grammar.version(), "1.0.0");
+        assert_eq!(grammar.app_name, "test-app");
+        assert_eq!(grammar.app_version, Some("1.0.0".to_string()));
         assert_eq!(grammar.nouns().len(), 2);
 
         // Verify file noun

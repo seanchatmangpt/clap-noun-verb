@@ -345,17 +345,10 @@ mod tests {
     fn test_execution_receipt_creation() {
         let receipt = CapabilityExecutionReceipt::new(
             "r1".to_string(),
-            CapabilityId {
-                id: "cap1".to_string(),
-                version: 1,
-            },
+            CapabilityId::new("cap1"),
             1,
-            TenantIdentity {
-                id: "t1".to_string(),
-            },
-            AgentIdentity {
-                id: "a1".to_string(),
-            },
+            TenantIdentity::new("t1"),
+            AgentIdentity::new("a1", "test-type"),
             "standard".to_string(),
             QuotaFootprint::zero(),
             "policy1".to_string(),
@@ -373,17 +366,10 @@ mod tests {
 
         let receipt = CapabilityExecutionReceipt::new(
             "r1".to_string(),
-            CapabilityId {
-                id: "cap1".to_string(),
-                version: 1,
-            },
+            CapabilityId::new("cap1"),
             1,
-            TenantIdentity {
-                id: "t1".to_string(),
-            },
-            AgentIdentity {
-                id: "a1".to_string(),
-            },
+            TenantIdentity::new("t1"),
+            AgentIdentity::new("a1", "test-type"),
             "standard".to_string(),
             QuotaFootprint::zero(),
             "policy1".to_string(),
@@ -401,17 +387,10 @@ mod tests {
 
         let receipt = CapabilityExecutionReceipt::new(
             "r1".to_string(),
-            CapabilityId {
-                id: "cap1".to_string(),
-                version: 1,
-            },
+            CapabilityId::new("cap1"),
             1,
-            TenantIdentity {
-                id: "t1".to_string(),
-            },
-            AgentIdentity {
-                id: "a1".to_string(),
-            },
+            TenantIdentity::new("t1"),
+            AgentIdentity::new("a1", "test-type"),
             "standard".to_string(),
             QuotaFootprint {
                 runtime_ms: 100,

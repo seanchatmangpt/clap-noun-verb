@@ -418,7 +418,7 @@ mod tests {
         assert!(budget.is_within_budget());
         budget.record_cpu(500_000).unwrap();
         assert!(budget.is_within_budget());
-        budget.record_cpu(500_001).unwrap(); // Should succeed (now 1M)
+        budget.record_cpu(500_000).unwrap(); // Should succeed (now 1M exactly)
         assert!(budget.is_within_budget());
         assert!(budget.record_cpu(1).is_err()); // Should fail (would exceed)
     }
