@@ -25,6 +25,22 @@ pub enum NounVerbError {
     #[error("Argument parsing failed: {message}")]
     ArgumentError { message: String },
 
+    /// Plugin-related error
+    #[error("Plugin error: {0}")]
+    PluginError(String),
+
+    /// Validation failed
+    #[error("Validation failed: {0}")]
+    ValidationFailed(String),
+
+    /// Middleware error
+    #[error("Middleware error: {0}")]
+    MiddlewareError(String),
+
+    /// Telemetry error
+    #[error("Telemetry error: {0}")]
+    TelemetryError(String),
+
     /// Generic error wrapper
     #[error("Error: {0}")]
     Generic(String),
