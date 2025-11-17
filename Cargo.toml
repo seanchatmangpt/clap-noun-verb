@@ -29,7 +29,7 @@ toml = "0.8"
 async-trait = "0.1"
 tokio-stream = "0.1"
 linkme = "0.3"
-clap-noun-verb-macros = { version = "3.8.0", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "4.0.0", path = "clap-noun-verb-macros" }
 regex = "1.10"
 url = "2.5"
 once_cell = "1.19"
@@ -198,4 +198,16 @@ harness = false
 
 [[bench]]
 name = "graph_benchmarks"
+harness = false
+
+[[bench]]
+name = "v4_system_benchmarks"
+harness = false
+
+[[bench]]
+name = "io_performance_benchmarks"
+harness = false
+
+[[bench]]
+name = "config_startup_benchmarks"
 harness = false
