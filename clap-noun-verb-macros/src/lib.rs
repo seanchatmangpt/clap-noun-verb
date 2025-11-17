@@ -2,10 +2,19 @@
 //!
 //! This crate provides attribute macros `#[noun]` and `#[verb]` for
 //! declarative CLI command registration.
+//!
+//! # I/O Support (v4.0)
+//!
+//! The #[verb] macro now auto-detects clio::Input and clio::Output types
+//! in function parameters and automatically wires them with appropriate
+//! clap configuration.
+
+mod io_detection;
 
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, parse_macro_input, ItemFn};
+use io_detection::{detect_io_type, DetectedIoType, IoArgConfig};
 
 // Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
 // because Rust doesn't allow proc_macro_attribute on parameters - only on items.

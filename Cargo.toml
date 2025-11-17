@@ -27,7 +27,6 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 toml = "0.8"
 async-trait = "0.1"
-tokio = { version = "1.0", features = ["rt", "sync"] }
 tokio-stream = "0.1"
 linkme = "0.3"
 clap-noun-verb-macros = { version = "3.8.0", path = "clap-noun-verb-macros" }
@@ -42,8 +41,21 @@ chrono = "0.4"
 crossbeam = "0.8"
 parking_lot = "0.12"
 
+# New in v4.0 - I/O Integration
+clio = { version = "0.3", features = ["clap-parse"] }
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
+lazy_static = "1.4"
+
+# New in v4.1 - Async I/O and advanced features
+tokio = { version = "1.40", features = ["io-util", "net", "rt", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+bytes = "1.7"
+pin-project = "1.1"
+futures = "0.3"
+
 [dev-dependencies]
-tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
 cargo-make = "0.37"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
@@ -51,6 +63,11 @@ criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.0"
 insta = { version = "1.0", features = ["json", "yaml"] }
 loom = "0.7"
+
+# New in v4.0 - CLI Testing
+assert_cmd = "2.0"
+predicates = "3.0"
+assert_fs = "1.0"
 
 [workspace.metadata.make]
 # Cargo-make configuration
@@ -131,6 +148,18 @@ path = "examples/autonomic_example.rs"
 [[example]]
 name = "cnv4_example"
 path = "examples/cnv4_example.rs"
+
+[[example]]
+name = "io_basic"
+path = "examples/io_basic.rs"
+
+[[example]]
+name = "io_advanced"
+path = "examples/io_advanced.rs"
+
+[[example]]
+name = "async_io_example"
+path = "examples/async_io_example.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration

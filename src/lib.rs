@@ -76,6 +76,9 @@ pub mod autonomic;
 // New in v3.8.0 - CNV Kernel Capabilities
 pub mod kernel;
 
+// New in v4.0 - I/O Integration
+pub mod io;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
