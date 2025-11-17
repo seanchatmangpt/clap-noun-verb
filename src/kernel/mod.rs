@@ -61,6 +61,7 @@ pub mod clnrm;
 pub mod concurrent;
 pub mod const_caps;
 pub mod contract_runtime_view;
+pub mod dflss;
 pub mod deterministic_execution;
 pub mod execution_receipts;
 pub mod frame_schema;
@@ -106,6 +107,10 @@ pub use capability_contracts::{
 };
 pub use clnrm::{
     HermeticContainer, MockServices, MockResponse, RecordedSpan, QuotaBudget, DeterministicClock,
+};
+pub use dflss::{
+    OptimizationObjective, Measurement, Candidate, Design, DeploymentPhase, DeploymentStatus,
+    VerificationResult, DFLSSOptimizer, Change, Impact, DeploymentVerdict, SuccessCriteria,
 };
 pub use grammar::{Grammar, GrammarModel, GrammarNode};
 pub use io::{FileIO, InputSource, OutputSink};
