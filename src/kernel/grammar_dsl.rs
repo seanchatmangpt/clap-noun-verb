@@ -170,12 +170,16 @@ macro_rules! __grammar_dsl_verbs {
                 _ => panic!("Unknown capability: {}", stringify!($cap)),
             };
 
+            // Parse arguments if provided
+            let mut arguments = Vec::new();
+            $crate::__grammar_dsl_parse_args!(arguments, $($($arg_def)*)?);
+
             let verb = $crate::kernel::grammar::GrammarVerb {
                 name: $verb_name.to_string(),
                 noun: $noun_name.to_string(),
                 help: Some($help.to_string()),
                 long_help: None,
-                arguments: Vec::new(), // TODO: Parse args
+                arguments,
                 deprecated: false,
                 deprecation_message: None,
                 capability: Some(contract),
@@ -186,6 +190,42 @@ macro_rules! __grammar_dsl_verbs {
         }
 
         $crate::__grammar_dsl_verbs!($verbs, $noun_name, $($rest)*);
+    };
+}
+
+/// Internal: Parse argument definitions from DSL
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __grammar_dsl_parse_args {
+    // Base case: no more arguments
+    ($args:ident,) => {};
+
+    // Parse one argument: name: Type = "help text"
+    ($args:ident,
+        $arg_name:ident : $arg_type:ty = $arg_help:literal
+        $(, $($rest:tt)*)?
+    ) => {
+        {
+            let arg = $crate::kernel::grammar::GrammarArgument {
+                name: stringify!($arg_name).to_string(),
+                short: None,
+                long: Some(stringify!($arg_name).to_string()),
+                arg_type: $crate::kernel::grammar::ArgumentType::Named,
+                help: Some($arg_help.to_string()),
+                required: true,
+                default: None,
+                env: None,
+                value_name: Some(stringify!($arg_type).to_string()),
+                possible_values: None,
+                multiple: false,
+                group: None,
+                requires: Vec::new(),
+                conflicts_with: Vec::new(),
+                index: None,
+            };
+            $args.push(arg);
+        }
+        $crate::__grammar_dsl_parse_args!($args, $($($rest)*)?);
     };
 }
 

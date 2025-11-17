@@ -517,8 +517,12 @@ impl SessionHandle {
         let json = frame.to_json()?;
         let bytes = json.len() as u64;
 
+        // Measure actual latency from frame creation to now
+        let now_ms = chrono::Utc::now().timestamp_millis() as u64;
+        let latency_ms = (now_ms.saturating_sub(frame.timestamp_ms)) as f64;
+
         if let Ok(mut metrics) = self.metrics.lock() {
-            metrics.record_frame(bytes, 0.0); // TODO: Measure actual latency
+            metrics.record_frame(bytes, latency_ms);
         }
 
         Ok(())

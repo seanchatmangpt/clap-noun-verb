@@ -277,26 +277,51 @@ impl Grammar {
             init();
         }
 
-        let model = GrammarModel::new(app_name);
+        let mut model = GrammarModel::new(app_name);
 
-        // Group verbs by noun
-        let _nouns_map: HashMap<String, Vec<(String, Vec<ArgMetadata>)>> = HashMap::new();
+        // Get the command registry
+        let registry = crate::cli::registry::CommandRegistry::get();
+        let registry = registry.lock().map_err(|e| format!("Failed to lock registry: {}", e))?;
 
-        // Extract verbs from registry
-        for _init in __VERB_REGISTRY {
-            // This is a bit tricky - we need access to the actual registry data
-            // For now, we'll build this from the clap Command structure
-            // TODO: Enhance registry to expose verb metadata directly
+        // Extract nouns and their verbs from registry
+        for (noun_name, noun_about) in registry.get_nouns() {
+            let mut grammar_verbs = Vec::new();
+
+            // Get all verbs for this noun with their metadata
+            for (verb_name, verb_about, args) in registry.get_verbs_with_metadata(noun_name) {
+                // Convert ArgMetadata to GrammarArgument
+                let grammar_args = args
+                    .iter()
+                    .map(|arg_meta| GrammarArgument::from_metadata(arg_meta))
+                    .collect();
+
+                let grammar_verb = GrammarVerb {
+                    name: verb_name.to_string(),
+                    noun: noun_name.to_string(),
+                    help: Some(verb_about.to_string()),
+                    long_help: None,
+                    arguments: grammar_args,
+                    deprecated: false,
+                    deprecation_message: None,
+                    capability: None,
+                    metadata: HashMap::new(),
+                };
+
+                grammar_verbs.push(grammar_verb);
+            }
+
+            let grammar_noun = GrammarNoun {
+                name: noun_name.to_string(),
+                help: Some(noun_about.to_string()),
+                long_help: None,
+                verbs: grammar_verbs,
+                sub_nouns: Vec::new(),
+                metadata: HashMap::new(),
+            };
+
+            model.add_noun(grammar_noun);
         }
 
-        // Extract nouns from registry
-        for _init in __NOUN_REGISTRY {
-            // Similarly, extract noun metadata
-            // TODO: Enhance registry
-        }
-
-        // For now, return a basic model
-        // In a full implementation, we'd walk the clap Command tree
         Ok(model)
     }
 
