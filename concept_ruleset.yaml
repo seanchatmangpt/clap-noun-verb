@@ -1,0 +1,370 @@
+# Concept ID Reference Ruleset
+# For use by agents scanning repositories for evidence supporting graph-universe thesis concepts
+# Generated: 2025-11-17
+
+version: 1.0
+purpose: "Machine-readable patterns for matching evidence to graph-universe concepts"
+
+concepts:
+  # 1.1 Universe & Projections
+  C_GRAPH_UNIVERSE_PRIMARY:
+    label: "Graph/Ontology is primary; code is projection"
+    category: "universe_projections"
+    must_include_any:
+      - "ontology as source of truth"
+      - "projection engine"
+      - "graph-driven"
+      - "code generated from ontology"
+      - "ontology is law"
+    boost_if_present:
+      - "Σ → code"
+      - "A = μ(O)"
+      - "KNHK"
+      - "knowledge kernel"
+      - "primary truth"
+      - "graph universe"
+      - "projection model"
+    exclude:
+      - "mock"
+      - "example-only"
+      - "TODO"
+    strength_threshold: 0.65
+
+  C_CODE_AS_PROJECTION:
+    label: "Code is derived surface, not authorial input"
+    category: "universe_projections"
+    must_include_any:
+      - "generated code"
+      - "projection"
+      - "derived from schema"
+      - "view of"
+      - "no direct edits"
+    boost_if_present:
+      - "do not edit by hand"
+      - "@generated"
+      - "immutable projection"
+      - "contract view"
+      - "schema-driven"
+      - "read-only code"
+      - "auto-generated"
+    exclude:
+      - "manual override"
+      - "exception"
+      - "hand-crafted"
+    strength_threshold: 0.60
+
+  C_RECEIPTS_AND_PROOFS:
+    label: "Each action leaves receipt with timing, evidence, hash linkage"
+    category: "universe_projections"
+    must_include_any:
+      - "receipt"
+      - "attestation"
+      - "Ed25519"
+      - "proof"
+      - "hash"
+      - "signature"
+    boost_if_present:
+      - "hash(A) = hash(μ(O))"
+      - "proof-carrying"
+      - "audit trail"
+      - "Γ"
+      - "receipt graph"
+      - "parent receipt"
+      - "causal chain"
+      - "Ed25519"
+      - "execution receipt"
+      - "cryptographic"
+    exclude:
+      - "mock"
+      - "test only"
+    strength_threshold: 0.70
+
+  # 1.2 μ-kernel & Timing Physics
+  C_MU_KERNEL_PHYSICS:
+    label: "μ-kernel defines allowed operations and timing bounds"
+    category: "mu_kernel_timing"
+    must_include_any:
+      - "μ-kernel"
+      - "mu-kernel"
+      - "session kernel"
+      - "ISA"
+      - "instruction set"
+      - "deterministic execution"
+    boost_if_present:
+      - "timing.rs"
+      - "patterns.rs"
+      - "CHATMAN_CONSTANT"
+      - "≤ 8 ticks"
+      - "cycle-accurate"
+      - "timing bound"
+      - "operation semantics"
+      - "kernel operation"
+    exclude:
+      - "mock"
+      - "test harness"
+    strength_threshold: 0.65
+
+  C_TIMING_BOUNDS_ENFORCED:
+    label: "Timing constraints enforced in code, tests, and docs"
+    category: "mu_kernel_timing"
+    must_include_any:
+      - "≤ 8 ticks"
+      - "timing bound"
+      - "latency"
+      - "ns"
+      - "nanosecond"
+      - "cycle"
+      - "tick"
+    boost_if_present:
+      - "Chatman constant"
+      - "performance harness"
+      - "RDTSC"
+      - "benchmark"
+      - "<100ns"
+      - "<10ns"
+      - "10M+ operations"
+      - "throughput"
+      - "chicago-tdd-tools"
+    exclude:
+      - "future"
+      - "TODO"
+    strength_threshold: 0.60
+
+  # 1.3 Knowledge & Invariants (KNHK, DFLSS, AHI)
+  C_KNHK_GRAPH_PRIMARY:
+    label: "KNHK: Knowledge graph is ground truth, workflows are projections"
+    category: "knowledge_invariants"
+    must_include_any:
+      - "KNHK"
+      - "Kinetic Knowledge Hypergraph"
+      - "knowledge graph"
+      - "ontology is law"
+      - "Σ is primary"
+    boost_if_present:
+      - "graph"
+      - "hypergraph"
+      - "workflow as view"
+      - "projection"
+      - "kinetic"
+      - "knowledge"
+      - "Σ"
+      - "schema as truth"
+    exclude:
+      - "mock graph"
+      - "test graph"
+    strength_threshold: 0.65
+
+  C_DFLSS_FLOW:
+    label: "DFLSS: Agent-only closed-world optimization flow"
+    category: "knowledge_invariants"
+    must_include_any:
+      - "DFLSS"
+      - "Design for Lean Six Sigma"
+      - "DMEDI"
+    exclude:
+      - "DFSS"  # Note: specifically DFLSS, not DFSS
+      - "mock"
+    boost_if_present:
+      - "closed-world"
+      - "optimization"
+      - "Define"
+      - "Measure"
+      - "Explore"
+      - "Design"
+      - "Implement"
+      - "Verify"
+      - "agent-native"
+      - "ontology evolution"
+    strength_threshold: 0.75
+
+  C_AHI_GOVERNANCE:
+    label: "AHI: Autonomic Hyper Intelligence managing ΔΣ and policy"
+    category: "knowledge_invariants"
+    must_include_any:
+      - "AHI"
+      - "Autonomic Hyper Intelligence"
+      - "autonomic"
+      - "governance"
+      - "policy"
+    boost_if_present:
+      - "MAPE-K"
+      - "ΔΣ"
+      - "policy adapter"
+      - "ontology proposal"
+      - "receipt graph"
+      - "Γ"
+      - "autonomic governance"
+      - "self-managing"
+    exclude:
+      - "mock"
+      - "test"
+    strength_threshold: 0.65
+
+  # 1.4 Verification (CTT, clnrm, 12-phase)
+  C_CTT_12_PHASE_VERIFICATION:
+    label: "CTT: Multi-phase verification pipeline from invariants"
+    category: "verification"
+    must_include_any:
+      - "Chicago TDD"
+      - "CTT"
+      - "12 phase"
+      - "phase"
+      - "verification"
+    boost_if_present:
+      - "Contract"
+      - "Thermal"
+      - "Effects"
+      - "State Machine"
+      - "Receipt"
+      - "Governance"
+      - "A = μ(O)"
+      - "6 phase"
+      - "7 phase"
+      - "verification pipeline"
+    exclude:
+      - "mock"
+    strength_threshold: 0.65
+
+  C_CLNRM_HERMETIC_TESTING:
+    label: "clnrm: Hermetic container tests with OpenTelemetry + Weaver"
+    category: "verification"
+    must_include_any:
+      - "clnrm"
+      - "hermetic"
+      - "Weaver"
+      - "OTEL"
+      - "OpenTelemetry"
+    boost_if_present:
+      - "no external services"
+      - "span graph"
+      - "hermeticity"
+      - "live-check"
+      - "TOML"
+      - "isolation"
+    exclude:
+      - "mock"
+    strength_threshold: 0.70
+
+  # 1.5 Interface & Surface (CNV, nomrg, ggen)
+  C_CNV_AGENT_CLI:
+    label: "CNV: clap-noun-verb as agent-grade capability surface"
+    category: "interface_surface"
+    must_include_any:
+      - "clap-noun-verb"
+      - "CNV"
+      - "noun-verb"
+      - "agent CLI"
+      - "capability contract"
+    boost_if_present:
+      - "tenant"
+      - "agent ID"
+      - "resource quota"
+      - "attestation"
+      - "swarm-native"
+      - "million agent"
+      - "trillion agent"
+      - "stable capability ID"
+      - "effect declaration"
+    exclude:
+      - "human"
+      - "human-facing"
+    strength_threshold: 0.65
+
+  C_NOMRG_GRAPH_OVERLAY:
+    label: "nomrg: Remove textual merges; only graph overlays with proofs"
+    category: "interface_surface"
+    must_include_any:
+      - "nomrg"
+      - "no merge"
+      - "graph overlay"
+      - "overlay"
+      - "ΔΣ"
+    boost_if_present:
+      - "conflict-free"
+      - "CRDT"
+      - "text diff"
+      - "overlay algebra"
+      - "proof"
+      - "no text merge"
+    exclude:
+      - "mock"
+    strength_threshold: 0.68
+
+  C_GGEN_PROJECTION_ENGINE:
+    label: "ggen: General projection engine Σ + Q → code/tests/CLIs/config"
+    category: "interface_surface"
+    must_include_any:
+      - "ggen"
+      - "projection engine"
+      - "code generation"
+      - "code generator"
+    boost_if_present:
+      - "Σ + Q"
+      - "ontology"
+      - "invariants"
+      - "projection profile"
+      - "Σ* binary"
+      - "code projection"
+      - "test projection"
+      - "CLI projection"
+      - "config projection"
+      - "template"
+    exclude:
+      - "mock"
+    strength_threshold: 0.63
+
+# Scoring guidance for agents
+scoring:
+  base_score: 0.0
+  rules:
+    - condition: "any must_include_any token found"
+      score_delta: 0.40
+    - condition: "each boost_if_present token found"
+      score_delta: 0.10
+    - condition: "exclude token found"
+      score_delta: -0.15
+    - condition: "context is code vs. docs"
+      score_delta: "+0.05 for code"
+
+  example:
+    concept_id: "C_RECEIPTS_AND_PROOFS"
+    file: "src/kernel/execution_receipts.rs"
+    tokens:
+      - "execution_receipts" (file name): +0.40 (must_include "receipt")
+      - "Ed25519" (in code): +0.10 (boost_if_present)
+      - "hash" (in code): +0.10 (boost_if_present)
+      - "audit" (in comments): +0.05 (boost mention)
+    total_score: 0.65 (above threshold 0.70? No, but close - investigator should read)
+
+# Meta-instructions for scanning agents
+agent_instructions:
+  1_tokenization:
+    - Extract identifiers, type names, function names
+    - Extract comments and doc comments
+    - Extract headings (in markdown)
+    - Extract configuration keys (TOML/YAML/JSON)
+    - Record line ranges for each token occurrence
+
+  2_concept_matching:
+    - For each (FileDescriptor, concept_id) pair
+    - Compute match score using rules above
+    - If score >= strength_threshold, generate candidate evidence
+    - Extract line ranges with highest token density
+
+  3_excerpt_extraction:
+    - For each candidate (file, concept)
+    - Identify contiguous regions (line ranges) with relevant tokens
+    - Extract Excerpts with path, start_line, end_line, raw_text, local_score
+    - Prefer contexts >= threshold even if just above cutoff
+
+  4_evidence_synthesis:
+    - Read raw excerpts
+    - Decide: direct | indirect | contextual support
+    - Generate claim_summary in neutral language
+    - Assign strength (0-1 scale)
+    - Cluster and deduplicate overlapping regions
+
+  5_final_output:
+    - Generate EvidenceGraph JSON (nodes: concepts, evidence, systems; edges: supports, implements, composed_with)
+    - Generate ConceptCoverageReport (coverage per concept, systems involved, gaps)
+    - Generate ConceptGapsReport (gaps ranked by priority, remediation roadmap)

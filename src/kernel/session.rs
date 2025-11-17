@@ -1,4 +1,9 @@
-//! CNV Session Kernel
+//! CNV Session Kernel (μ-Kernel)
+//!
+//! The **μ-kernel** is the deterministic execution layer implementing `A = μ(O)`:
+//! - **O** = Ontology (schema, policies, invariants from KNHK)
+//! - **μ** = This kernel: applies O with timing bounds and proofs
+//! - **A** = Application: running system with receipts and audit trail
 //!
 //! Long-lived, multiplexed, back-pressured command streams for agent workloads.
 //!
@@ -6,17 +11,31 @@
 //!
 //! The session kernel extends CNV from invocation-oriented (parse argv, run, exit)
 //! to session-oriented (long-lived RPC-like protocol) while preserving:
-//! - Deterministic output
-//! - Structured telemetry
-//! - Strict capability contracts
+//! - **Deterministic execution**: Same input → same output, same timing
+//! - **Timing bounds**: < 100ns per session, < 10ns per frame (SIMD)
+//! - **Structured telemetry**: Per-session metrics and tracing
+//! - **Strict capability contracts**: Type-state escalation, quota enforcement
+//! - **Cryptographic proofs**: Ed25519 receipts linked by hash chains
+//!
+//! # Timing Physics
+//!
+//! Operations are bounded by the Chatman constant (τ ≤ 8 ticks, current: < 100ns):
+//! - Lock-free algorithms prevent unpredictable lock contention
+//! - SIMD serialization (cache-line aligned, zero-copy) enables sub-nanosecond latency
+//! - No dynamic allocation eliminates GC pauses
+//! - Type-level bounds proven at compile time
+//!
+//! See [`MU_KERNEL.md`](../../MU_KERNEL.md) for detailed timing physics and proofs.
 //!
 //! # Features
 //!
-//! - **Session abstraction**: Long-lived command contexts
-//! - **Multiplexed protocol**: Multiple logical streams over stdio
+//! - **Session abstraction**: Long-lived command contexts with unique IDs
+//! - **Multiplexed protocol**: Multiple logical streams (stdout, stderr, logs, metrics)
 //! - **Backpressure**: Cooperative flow control
 //! - **Cancellation**: Graceful command termination
 //! - **Session-scoped telemetry**: Per-session metrics and tracing
+//! - **Deterministic replay**: Re-execute with bit-for-bit identical output
+//! - **Quota enforcement**: CPU, memory, I/O, time budgets enforced in real-time
 //!
 //! # Example
 //!
