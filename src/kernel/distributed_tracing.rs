@@ -1,4 +1,4 @@
-//! Distributed Tracing Integration for CNV 4.1.0
+//! Distributed Tracing Integration
 //!
 //! OpenTelemetry-compatible tracing for command execution across distributed systems.
 //! Uses advanced patterns: context propagation, baggage, and sampling strategies.

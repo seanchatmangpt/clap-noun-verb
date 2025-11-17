@@ -84,11 +84,11 @@ pub mod type_level_security;
 pub mod typestate;
 pub mod version;
 
-// CNV 4.1.0 Modules
-pub mod introspection_v41;
-pub mod session_streaming_v41;
-pub mod distributed_tracing_v41;
-pub mod schema_registry_v41;
+// Advanced introspection and streaming capabilities
+pub mod introspection;
+pub mod session_streaming;
+pub mod distributed_tracing;
+pub mod schema_registry;
 
 // Re-export key types for convenience
 pub use ahi_policy::{
@@ -181,20 +181,20 @@ pub use version::{
     NegotiationResponse, VersionNegotiator,
 };
 
-// CNV 4.1.0 Re-exports
-pub use introspection_v41::{
-    CapabilityInfo, EffectTypeV41, ResourceProfileV41, StabilityGuaranteeV41, SafetyProfileV41,
+// Re-exports for advanced capabilities
+pub use introspection::{
+    CapabilityInfo, EffectType, ResourceProfile, StabilityGuarantee, SafetyProfile,
     CapabilityRegistry, IntrospectionHandler, CapabilitiesOutput, ExplanationOutput,
 };
-pub use session_streaming_v41::{
-    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink, BackpressureErrorV41,
+pub use session_streaming::{
+    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink, BackpressureError,
     ServerStreamingHandler, ClientStreamingHandler, CollectedOutput,
 };
-pub use distributed_tracing_v41::{
+pub use distributed_tracing::{
     TraceContext, TraceFlags, Span, SpanAttribute, SpanEvent, SpanStatus,
     SamplingStrategy, AlwaysSampler, ProbabilisticSampler, SpanExporter,
     InMemoryExporter, TracingProvider,
 };
-pub use schema_registry_v41::{
+pub use schema_registry::{
     SchemaVersion, MerkleNode, SchemaEntry, CompatibilityType, EvolutionRule, SchemaRegistry,
 };

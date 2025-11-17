@@ -1,4 +1,4 @@
-//! Session Streaming Protocol for CNV 4.1.0
+//! Session Streaming Protocol
 //!
 //! Server/Client streaming mode for long-lived command streams.
 //! Uses advanced async patterns: channels, backpressure, and multiplexing.
@@ -143,17 +143,17 @@ impl FrameSink {
 
     /// Send frame with backpressure handling
     /// Returns Ok if queued, Err if backpressure limit exceeded
-    pub async fn send(&self, frame: StreamFrame) -> Result<(), BackpressureErrorV41> {
+    pub async fn send(&self, frame: StreamFrame) -> Result<(), BackpressureError> {
         // Async send with bounded queue provides backpressure
-        self.tx.send(frame).await.map_err(|_| BackpressureErrorV41 {
+        self.tx.send(frame).await.map_err(|_| BackpressureError {
             message: "Channel closed or full".to_string(),
         })?;
         Ok(())
     }
 
     /// Try to send without blocking
-    pub fn try_send(&self, frame: StreamFrame) -> Result<(), BackpressureErrorV41> {
-        self.tx.try_send(frame).map_err(|_| BackpressureErrorV41 {
+    pub fn try_send(&self, frame: StreamFrame) -> Result<(), BackpressureError> {
+        self.tx.try_send(frame).map_err(|_| BackpressureError {
             message: "Channel full or closed".to_string(),
         })?;
         Ok(())
@@ -165,9 +165,9 @@ impl FrameSink {
     }
 }
 
-/// Backpressure error (v4.1.0)
+/// Backpressure error from frame sink
 #[derive(Debug, Clone)]
-pub struct BackpressureErrorV41 {
+pub struct BackpressureError {
     pub message: String,
 }
 

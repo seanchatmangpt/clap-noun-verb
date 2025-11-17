@@ -1,4 +1,4 @@
-//! Schema Registry for Grammar Versions (CNV 4.1.0)
+//! Schema Registry for Grammar Versions
 //!
 //! Immutable schema versioning with merkle-tree based integrity checking.
 //! Enables safe grammar evolution across trillion-agent deployments.

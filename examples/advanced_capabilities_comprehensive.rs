@@ -1,6 +1,6 @@
-//! CNV 4.1.0 Comprehensive Example
+//! Advanced Capabilities Framework Comprehensive Example
 //!
-//! Demonstrates all five v4.1.0 features:
+//! Demonstrates all five advanced features:
 //! 1. Type-Level Capability Enforcement
 //! 2. Capability Introspection (--capabilities, --explain)
 //! 3. Session Streaming Protocol
@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     rt.block_on(async {
         println!("═══════════════════════════════════════════════════════════");
-        println!("CNV 4.1.0 Framework Capabilities Demonstration");
+        println!("Advanced Capabilities Framework Framework Capabilities Demonstration");
         println!("═══════════════════════════════════════════════════════════\n");
 
         // Feature 1: Type-Level Capability Enforcement

@@ -1,8 +1,8 @@
-# CNV 4.1.0: Advanced Framework Capabilities
+# Advanced Capabilities Framework
 
-**Version 4.1.0 - Next Generation Capability Framework (2025)**
+**Next Generation Framework Capabilities (2025)**
 
-This guide documents the five major feature areas introduced in CNV 4.1.0:
+This guide documents the five major feature areas introduced in the advanced capabilities framework:
 1. **Type-Level Capability Enforcement** - Compile-time safety guarantees
 2. **Capability Introspection** - Runtime capability discovery (`--capabilities`, `--explain`)
 3. **Session Streaming Protocol** - Server/client mode for long-lived streams
@@ -903,11 +903,11 @@ impl SchemaRegistry {
 
 ---
 
-## Migration Guide
+## Integration Guide
 
-### From CNV 4.0 to CNV 4.1
+### Adding Advanced Capabilities to Existing Projects
 
-No breaking changes. All 4.0 code continues to work. v4.1 features are opt-in:
+These features are fully backward compatible and can be adopted incrementally:
 
 1. **Add type-level enforcement**: Wrap verbs in `TypedVerb<C, S>`
 2. **Add introspection**: Create `CapabilityRegistry`, expose via `--capabilities`
@@ -919,6 +919,6 @@ No breaking changes. All 4.0 code continues to work. v4.1 features are opt-in:
 
 ## See Also
 
-- **CNV_4.0_RELEASE.md** - Three pillars (Capability Contracts, Session Kernel, Version Negotiation)
+- **CNV_4.0_RELEASE.md** - Core framework pillars (Capability Contracts, Session Kernel, Version Negotiation)
 - **src/kernel/** - All implementation code with tests
 - **examples/** - Working examples for each feature

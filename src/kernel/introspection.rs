@@ -1,4 +1,4 @@
-//! Capability Introspection for CNV 4.1.0
+//! Capability Introspection
 //!
 //! Provides `--capabilities` and `--explain` runtime introspection commands.
 //! Uses advanced Rust patterns: GATs, trait objects, and compile-time registry.
@@ -13,17 +13,17 @@ pub struct CapabilityInfo {
     pub id: String,
     pub name: String,
     pub description: String,
-    pub side_effects: Vec<EffectTypeV41>,
-    pub resource_profile: ResourceProfileV41,
-    pub stability: StabilityGuaranteeV41,
-    pub safety: SafetyProfileV41,
+    pub side_effects: Vec<EffectType>,
+    pub resource_profile: ResourceProfile,
+    pub stability: StabilityGuarantee,
+    pub safety: SafetyProfile,
     pub agent_safe: bool,
     pub requires_approval: Vec<String>,
 }
 
 /// Side effects that a capability may produce
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum EffectTypeV41 {
+pub enum EffectType {
     Pure,
     ReadOnlyFS,
     ReadWriteFS,
@@ -33,7 +33,7 @@ pub enum EffectTypeV41 {
     Dangerous,
 }
 
-impl EffectTypeV41 {
+impl EffectType {
     pub fn description(&self) -> &'static str {
         match self {
             Self::Pure => "Pure computation, no side effects",
@@ -61,7 +61,7 @@ impl EffectTypeV41 {
 
 /// Resource consumption profile
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum ResourceProfileV41 {
+pub enum ResourceProfile {
     Instant,       // < 1ms
     Fast,          // 1-100ms
     Medium,        // 100ms-1s
@@ -69,7 +69,7 @@ pub enum ResourceProfileV41 {
     Cold,          // > 10s
 }
 
-impl ResourceProfileV41 {
+impl ResourceProfile {
     pub fn max_duration_ms(&self) -> u64 {
         match self {
             Self::Instant => 1,
@@ -83,7 +83,7 @@ impl ResourceProfileV41 {
 
 /// Stability guarantee
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum StabilityGuaranteeV41 {
+pub enum StabilityGuarantee {
     Stable,
     Preview,
     Experimental,
@@ -91,7 +91,7 @@ pub enum StabilityGuaranteeV41 {
     NonDeterministic,
 }
 
-impl StabilityGuaranteeV41 {
+impl StabilityGuarantee {
     pub fn description(&self) -> &'static str {
         match self {
             Self::Stable => "Stable API, safe to depend on",
@@ -105,7 +105,7 @@ impl StabilityGuaranteeV41 {
 
 /// Safety profile for agent execution
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub enum SafetyProfileV41 {
+pub enum SafetyProfile {
     AgentSafe,
     HumanReviewRequired,
     InteractiveOnly,
@@ -139,7 +139,7 @@ impl CapabilityRegistry {
         self.capabilities.values().cloned().collect()
     }
 
-    pub fn find_by_safety(&self, safety: &SafetyProfileV41) -> Vec<Arc<CapabilityInfo>> {
+    pub fn find_by_safety(&self, safety: &SafetyProfile) -> Vec<Arc<CapabilityInfo>> {
         self.capabilities
             .values()
             .filter(|cap| &cap.safety == safety)
@@ -155,7 +155,7 @@ impl CapabilityRegistry {
             .collect()
     }
 
-    pub fn find_by_side_effect(&self, effect: &EffectTypeV41) -> Vec<Arc<CapabilityInfo>> {
+    pub fn find_by_side_effect(&self, effect: &EffectType) -> Vec<Arc<CapabilityInfo>> {
         self.capabilities
             .values()
             .filter(|cap| cap.side_effects.contains(effect))
@@ -240,7 +240,7 @@ impl IntrospectionHandler {
             implications.push("NOT safe for agent execution - requires human review".to_string());
         }
 
-        if cap.side_effects.contains(&EffectTypeV41::Dangerous) {
+        if cap.side_effects.contains(&EffectType::Dangerous) {
             implications.push("DANGEROUS: Exercise extreme caution".to_string());
         }
 
@@ -314,10 +314,10 @@ mod tests {
             id: "list".to_string(),
             name: "List".to_string(),
             description: "List items".to_string(),
-            side_effects: vec![EffectTypeV41::ReadOnlyFS],
-            resource_profile: ResourceProfileV41::Fast,
-            stability: StabilityGuaranteeV41::Stable,
-            safety: SafetyProfileV41::AgentSafe,
+            side_effects: vec![EffectType::ReadOnlyFS],
+            resource_profile: ResourceProfile::Fast,
+            stability: StabilityGuarantee::Stable,
+            safety: SafetyProfile::AgentSafe,
             agent_safe: true,
             requires_approval: vec![],
         };
@@ -328,16 +328,16 @@ mod tests {
 
     #[test]
     fn test_side_effect_risk_levels() {
-        assert_eq!(EffectTypeV41::Pure.risk_level(), 0);
-        assert_eq!(EffectTypeV41::ReadOnlyFS.risk_level(), 10);
-        assert_eq!(EffectTypeV41::Dangerous.risk_level(), 100);
+        assert_eq!(EffectType::Pure.risk_level(), 0);
+        assert_eq!(EffectType::ReadOnlyFS.risk_level(), 10);
+        assert_eq!(EffectType::Dangerous.risk_level(), 100);
     }
 
     #[test]
     fn test_resource_profile_durations() {
-        assert_eq!(ResourceProfileV41::Instant.max_duration_ms(), 1);
-        assert_eq!(ResourceProfileV41::Fast.max_duration_ms(), 100);
-        assert_eq!(ResourceProfileV41::Cold.max_duration_ms(), 60000);
+        assert_eq!(ResourceProfile::Instant.max_duration_ms(), 1);
+        assert_eq!(ResourceProfile::Fast.max_duration_ms(), 100);
+        assert_eq!(ResourceProfile::Cold.max_duration_ms(), 60000);
     }
 
     #[test]
@@ -348,10 +348,10 @@ mod tests {
             id: "read".to_string(),
             name: "Read".to_string(),
             description: "Read data".to_string(),
-            side_effects: vec![EffectTypeV41::ReadOnlyFS],
-            resource_profile: ResourceProfileV41::Fast,
-            stability: StabilityGuaranteeV41::Stable,
-            safety: SafetyProfileV41::AgentSafe,
+            side_effects: vec![EffectType::ReadOnlyFS],
+            resource_profile: ResourceProfile::Fast,
+            stability: StabilityGuarantee::Stable,
+            safety: SafetyProfile::AgentSafe,
             agent_safe: true,
             requires_approval: vec![],
         });
@@ -371,10 +371,10 @@ mod tests {
             id: "dangerous".to_string(),
             name: "Dangerous Op".to_string(),
             description: "A dangerous operation".to_string(),
-            side_effects: vec![EffectTypeV41::Dangerous],
-            resource_profile: ResourceProfileV41::Instant,
-            stability: StabilityGuaranteeV41::Stable,
-            safety: SafetyProfileV41::HumanReviewRequired,
+            side_effects: vec![EffectType::Dangerous],
+            resource_profile: ResourceProfile::Instant,
+            stability: StabilityGuarantee::Stable,
+            safety: SafetyProfile::HumanReviewRequired,
             agent_safe: false,
             requires_approval: vec!["admin".to_string()],
         });
@@ -382,7 +382,7 @@ mod tests {
         let handler = IntrospectionHandler::new(registry);
         let output = handler.explain_capability("dangerous").unwrap();
 
-        assert_eq!(output.capability.safety, SafetyProfileV41::HumanReviewRequired);
+        assert_eq!(output.capability.safety, SafetyProfile::HumanReviewRequired);
         assert!(output
             .implications
             .iter()
