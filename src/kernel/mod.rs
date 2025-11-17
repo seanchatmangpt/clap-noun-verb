@@ -84,6 +84,12 @@ pub mod type_level_security;
 pub mod typestate;
 pub mod version;
 
+// Advanced introspection and streaming capabilities
+pub mod introspection;
+pub mod session_streaming;
+pub mod distributed_tracing;
+pub mod schema_registry;
+
 // Re-export key types for convenience
 pub use ahi_policy::{
     AhiPolicyAdapter, PolicyDecision, PolicyUpdate, PolicyState, PolicyValidator,
@@ -173,4 +179,22 @@ pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
     ChangeType, ChangeSeverity, CompatibilityLevel, GrammarDelta, NegotiationRequest,
     NegotiationResponse, VersionNegotiator,
+};
+
+// Re-exports for advanced capabilities
+pub use introspection::{
+    CapabilityInfo, EffectType, ResourceProfile, StabilityGuarantee, SafetyProfile,
+    CapabilityRegistry, IntrospectionHandler, CapabilitiesOutput, ExplanationOutput,
+};
+pub use session_streaming::{
+    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink, BackpressureError,
+    ServerStreamingHandler, ClientStreamingHandler, CollectedOutput,
+};
+pub use distributed_tracing::{
+    TraceContext, TraceFlags, Span, SpanAttribute, SpanEvent, SpanStatus,
+    SamplingStrategy, AlwaysSampler, ProbabilisticSampler, SpanExporter,
+    InMemoryExporter, TracingProvider,
+};
+pub use schema_registry::{
+    SchemaVersion, MerkleNode, SchemaEntry, CompatibilityType, EvolutionRule, SchemaRegistry,
 };
