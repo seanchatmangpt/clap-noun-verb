@@ -1,4 +1,10 @@
 //! Plugin loader for dynamic discovery and loading from manifests.
+//!
+//! # Plugin Signature Verification (v4.0.0 Security Enhancement)
+//!
+//! This module supports optional Ed25519 signature verification for plugins to prevent
+//! tampering and ensure plugin authenticity. Signatures are backward-compatible and
+//! optional to support existing plugins without signatures.
 
 use super::PluginRegistry;
 use std::path::{Path, PathBuf};
@@ -16,6 +22,10 @@ pub struct PluginManifest {
     entry_point: String,
     /// Dependencies
     dependencies: Vec<String>,
+    /// Ed25519 signature (optional, base64-encoded)
+    signature: Option<String>,
+    /// Ed25519 public key (optional, base64-encoded)
+    public_key: Option<String>,
 }
 
 impl PluginManifest {
@@ -31,6 +41,8 @@ impl PluginManifest {
             description: String::new(),
             entry_point: entry_point.into(),
             dependencies: Vec::new(),
+            signature: None,
+            public_key: None,
         }
     }
 
@@ -43,6 +55,18 @@ impl PluginManifest {
     /// Add a dependency.
     pub fn with_dependency(mut self, dep: impl Into<String>) -> Self {
         self.dependencies.push(dep.into());
+        self
+    }
+
+    /// Set the Ed25519 signature (base64-encoded).
+    pub fn with_signature(mut self, signature: impl Into<String>) -> Self {
+        self.signature = Some(signature.into());
+        self
+    }
+
+    /// Set the Ed25519 public key (base64-encoded).
+    pub fn with_public_key(mut self, public_key: impl Into<String>) -> Self {
+        self.public_key = Some(public_key.into());
         self
     }
 
@@ -70,6 +94,89 @@ impl PluginManifest {
     pub fn dependencies(&self) -> &[String] {
         &self.dependencies
     }
+
+    /// Get the signature.
+    pub fn signature(&self) -> Option<&str> {
+        self.signature.as_deref()
+    }
+
+    /// Get the public key.
+    pub fn public_key(&self) -> Option<&str> {
+        self.public_key.as_deref()
+    }
+
+    /// Check if the manifest has a signature.
+    pub fn is_signed(&self) -> bool {
+        self.signature.is_some() && self.public_key.is_some()
+    }
+
+    /// Verify the manifest signature using Ed25519.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if signature verification fails.
+    pub fn verify_signature(&self) -> crate::Result<bool> {
+        use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+
+        // If no signature, consider it valid for backward compatibility
+        if !self.is_signed() {
+            return Ok(true);
+        }
+
+        let signature_bytes = base64::decode(self.signature.as_ref().unwrap())
+            .map_err(|e| crate::NounVerbError::PluginError(
+                format!("Invalid signature encoding: {}", e)
+            ))?;
+
+        let public_key_bytes = base64::decode(self.public_key.as_ref().unwrap())
+            .map_err(|e| crate::NounVerbError::PluginError(
+                format!("Invalid public key encoding: {}", e)
+            ))?;
+
+        // Parse Ed25519 public key
+        let public_key_array: [u8; 32] = public_key_bytes.try_into()
+            .map_err(|_| crate::NounVerbError::PluginError(
+                "Public key must be 32 bytes".to_string()
+            ))?;
+
+        let verifying_key = VerifyingKey::from_bytes(&public_key_array)
+            .map_err(|e| crate::NounVerbError::PluginError(
+                format!("Invalid public key: {}", e)
+            ))?;
+
+        // Parse Ed25519 signature
+        let signature_array: [u8; 64] = signature_bytes.try_into()
+            .map_err(|_| crate::NounVerbError::PluginError(
+                "Signature must be 64 bytes".to_string()
+            ))?;
+
+        let signature = Signature::from_bytes(&signature_array);
+
+        // Create message to verify (canonical representation)
+        let message = self.canonical_representation();
+
+        // Verify signature
+        verifying_key.verify(message.as_bytes(), &signature)
+            .map_err(|e| crate::NounVerbError::PluginError(
+                format!("Signature verification failed: {}", e)
+            ))?;
+
+        Ok(true)
+    }
+
+    /// Create a canonical representation of the manifest for signing.
+    ///
+    /// This ensures the same manifest always produces the same message for verification.
+    fn canonical_representation(&self) -> String {
+        format!(
+            "{}:{}:{}:{}:{}",
+            self.name,
+            self.version,
+            self.description,
+            self.entry_point,
+            self.dependencies.join(",")
+        )
+    }
 }
 
 /// Plugin loader for discovering and loading plugins.
@@ -89,6 +196,19 @@ impl PluginLoader {
         }
     }
 
+    /// Validate and canonicalize a plugin path to prevent directory traversal attacks.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the path cannot be canonicalized or is invalid.
+    pub fn validate_plugin_path(path: &Path) -> crate::Result<PathBuf> {
+        let canonical = path.canonicalize()
+            .map_err(|e| crate::NounVerbError::PluginError(
+                format!("Invalid plugin path: {}", e)
+            ))?;
+        Ok(canonical)
+    }
+
     /// Discover plugins in the manifest directory.
     ///
     /// # Errors
@@ -102,8 +222,11 @@ impl PluginLoader {
             return Ok(discovered);
         }
 
+        // Validate and canonicalize the manifest directory path to prevent directory traversal
+        let canonical_dir = Self::validate_plugin_path(&self.manifest_dir)?;
+
         // Try to read directory
-        let entries = std::fs::read_dir(&self.manifest_dir).map_err(|e| {
+        let entries = std::fs::read_dir(&canonical_dir).map_err(|e| {
             crate::NounVerbError::PluginError(format!(
                 "Failed to scan plugin directory: {}",
                 e

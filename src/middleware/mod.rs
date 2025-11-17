@@ -75,6 +75,38 @@ impl MiddlewareRequest {
     pub fn requester(&self) -> Option<&str> {
         self.requester.as_deref()
     }
+
+    /// Redact sensitive arguments based on patterns.
+    ///
+    /// This method scans arguments for sensitive patterns (case-insensitive) and
+    /// replaces any matching arguments with "[REDACTED]" to prevent logging or
+    /// exposing personally identifiable information (PII) and secrets.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use clap_noun_verb::middleware::MiddlewareRequest;
+    ///
+    /// let req = MiddlewareRequest::new("login")
+    ///     .with_arg("--password=secret123")
+    ///     .with_arg("--user=john");
+    ///
+    /// let redacted = req.redacted_args(&["password", "secret", "token"]);
+    /// // redacted[0] == "[REDACTED]"
+    /// // redacted[1] == "--user=john"
+    /// ```
+    pub fn redacted_args(&self, sensitive_patterns: &[&str]) -> Vec<String> {
+        self.args.iter()
+            .map(|arg| {
+                for pattern in sensitive_patterns {
+                    if arg.to_lowercase().contains(pattern) {
+                        return "[REDACTED]".to_string();
+                    }
+                }
+                arg.clone()
+            })
+            .collect()
+    }
 }
 
 /// Middleware response context.
@@ -288,5 +320,61 @@ mod tests {
         let pipeline = MiddlewarePipeline::new();
         assert_eq!(pipeline.len(), 0);
         assert!(pipeline.is_empty());
+    }
+
+    #[test]
+    fn test_redacted_args_basic() {
+        let req = MiddlewareRequest::new("login")
+            .with_arg("--password=secret123")
+            .with_arg("--user=john");
+
+        let redacted = req.redacted_args(&["password"]);
+        assert_eq!(redacted[0], "[REDACTED]");
+        assert_eq!(redacted[1], "--user=john");
+    }
+
+    #[test]
+    fn test_redacted_args_multiple_patterns() {
+        let req = MiddlewareRequest::new("config")
+            .with_arg("--api_key=xyz")
+            .with_arg("--token=abc")
+            .with_arg("--email=test@example.com")
+            .with_arg("--port=8080");
+
+        let patterns = &["password", "secret", "token", "api_key", "email"];
+        let redacted = req.redacted_args(patterns);
+
+        assert_eq!(redacted[0], "[REDACTED]"); // api_key
+        assert_eq!(redacted[1], "[REDACTED]"); // token
+        assert_eq!(redacted[2], "[REDACTED]"); // email
+        assert_eq!(redacted[3], "--port=8080"); // not sensitive
+    }
+
+    #[test]
+    fn test_redacted_args_case_insensitive() {
+        let req = MiddlewareRequest::new("test")
+            .with_arg("--PASSWORD=secret")
+            .with_arg("--Secret=value")
+            .with_arg("--API_KEY=key");
+
+        let patterns = &["password", "secret", "api_key"];
+        let redacted = req.redacted_args(patterns);
+
+        assert_eq!(redacted[0], "[REDACTED]");
+        assert_eq!(redacted[1], "[REDACTED]");
+        assert_eq!(redacted[2], "[REDACTED]");
+    }
+
+    #[test]
+    fn test_redacted_args_no_matches() {
+        let req = MiddlewareRequest::new("test")
+            .with_arg("--port=8080")
+            .with_arg("--host=localhost");
+
+        let patterns = &["password", "secret"];
+        let redacted = req.redacted_args(patterns);
+
+        assert_eq!(redacted[0], "--port=8080");
+        assert_eq!(redacted[1], "--host=localhost");
     }
 }

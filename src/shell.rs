@@ -13,6 +13,7 @@
 //! ```
 
 use std::env;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 
 /// Detected shell type
@@ -207,7 +208,7 @@ pub fn get_completions_dir(shell: ShellType) -> Option<PathBuf> {
 /// }
 /// ```
 pub fn is_interactive() -> bool {
-    atty::is(atty::Stream::Stdout)
+    std::io::stdout().is_terminal()
 }
 
 /// Get the appropriate line ending for the given shell type

@@ -33,12 +33,14 @@
 pub mod builtin;
 pub mod loader;
 pub mod registry;
+pub mod quotas;
 
 use std::fmt;
 
 pub use builtin::{AliasPlugin, HistoryPlugin, HelpPlugin};
-pub use loader::PluginLoader;
+pub use loader::{PluginLoader, PluginManifest};
 pub use registry::PluginRegistry;
+pub use quotas::{ResourceQuota, QuotaGuard, ResourceUsage};
 
 /// Plugin capability enumeration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -245,6 +247,8 @@ pub struct PluginConfig {
     enable_cache: bool,
     /// Sandbox plugins (capability-based restrictions)
     sandbox: bool,
+    /// Resource quotas for plugin execution
+    quotas: Option<ResourceQuota>,
 }
 
 impl PluginConfig {
@@ -255,6 +259,7 @@ impl PluginConfig {
             manifest_dir: "./plugins".to_string(),
             enable_cache: true,
             sandbox: true,
+            quotas: Some(ResourceQuota::default()),
         }
     }
 
@@ -282,6 +287,18 @@ impl PluginConfig {
         self
     }
 
+    /// Set resource quotas for plugin execution.
+    pub fn with_quotas(mut self, quotas: ResourceQuota) -> Self {
+        self.quotas = Some(quotas);
+        self
+    }
+
+    /// Disable resource quotas (unlimited execution).
+    pub fn without_quotas(mut self) -> Self {
+        self.quotas = None;
+        self
+    }
+
     /// Check if auto-discover is enabled.
     pub fn is_auto_discover_enabled(&self) -> bool {
         self.auto_discover
@@ -300,6 +317,24 @@ impl PluginConfig {
     /// Check if sandboxing is enabled.
     pub fn is_sandbox_enabled(&self) -> bool {
         self.sandbox
+    }
+
+    /// Get the resource quotas.
+    pub fn quotas(&self) -> Option<&ResourceQuota> {
+        self.quotas.as_ref()
+    }
+
+    /// Acquire a quota guard for plugin execution.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if quotas are enabled but cannot be acquired.
+    pub fn acquire_quota_guard(&self) -> crate::Result<Option<QuotaGuard>> {
+        if let Some(ref quotas) = self.quotas {
+            Ok(Some(quotas.acquire()?))
+        } else {
+            Ok(None)
+        }
     }
 }
 
