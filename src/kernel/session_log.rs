@@ -807,6 +807,7 @@ impl SessionLogStore for InMemorySessionLogStore {
         let mut total_memory: u64 = 0;
         let mut total_io: u64 = 0;
         let mut total_network: u64 = 0;
+        let mut agent_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 
         for frame in &selected {
             *histogram
@@ -816,6 +817,7 @@ impl SessionLogStore for InMemorySessionLogStore {
             total_memory += frame.quota_footprint.peak_memory_bytes;
             total_io += frame.quota_footprint.io_operations;
             total_network += frame.quota_footprint.network_bytes;
+            agent_ids.insert(frame.metadata.agent_id.clone());
         }
 
         timings.sort_unstable();
@@ -836,7 +838,7 @@ impl SessionLogStore for InMemorySessionLogStore {
                 total_memory_gb: total_memory as f64 / (1024.0 * 1024.0 * 1024.0),
                 total_io_ops: total_io,
                 total_network_bytes: total_network,
-                peak_concurrent_agents: 0, // TODO: track from metadata
+                peak_concurrent_agents: agent_ids.len() as u64,
             },
         })
     }

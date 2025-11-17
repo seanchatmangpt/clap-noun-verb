@@ -315,6 +315,23 @@ impl CommandRegistry {
             .unwrap_or_default()
     }
 
+    /// Get all verbs for a noun with their full metadata including arguments
+    pub fn get_verbs_with_metadata(&self, noun_name: &str) -> Vec<(&str, &str, &Vec<ArgMetadata>)> {
+        self.verbs
+            .get(noun_name)
+            .map(|verbs| {
+                verbs.iter()
+                    .map(|(name, meta)| (name.as_str(), meta.about.as_str(), &meta.args))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Get all registered noun names
+    pub fn get_all_noun_names(&self) -> Vec<&str> {
+        self.nouns.keys().map(|n| n.as_str()).collect()
+    }
+
     /// Execute a verb handler
     pub fn execute_verb(
         &self,
