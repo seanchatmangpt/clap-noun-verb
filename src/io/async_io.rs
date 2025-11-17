@@ -397,7 +397,7 @@ mod tests {
         let builder = LengthDelimitedFrameBuilder::new();
         let data = vec![13, 0, 0, 0, b'H', b'e', b'l', b'l', b'o'];
 
-        let result = builder.parse(&data).unwrap();
+        let result = builder.parse(&data).unwrap().unwrap();
         assert_eq!(result.0, 13);
     }
 

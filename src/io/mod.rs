@@ -73,6 +73,7 @@
 pub mod error;
 pub mod types;
 pub mod async_io;
+pub mod typed_io;
 
 // Re-export core clio types with clap-parse support
 pub use clio::{Input, InputPath, Output, OutputPath};
@@ -88,6 +89,13 @@ pub use error::{IoError, Result};
 
 // Re-export type detection for macro use
 pub use types::{IoType, IoTypeRegistry, TypeInspector};
+
+// Re-export type-level validation types (Phase 6)
+pub use typed_io::{
+    Unvalidated, Validated, Processed, ValidatedPath, FormatParser,
+    JsonFormat, YamlFormat, PlainFormat, ValidatedBuffer, ValidatedString,
+    Effect, PureOp, ImpureOp,
+};
 
 /// Version of I/O module
 pub const IO_MODULE_VERSION: &str = "4.0.0";
