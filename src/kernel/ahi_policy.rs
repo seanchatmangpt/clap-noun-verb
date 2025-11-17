@@ -11,7 +11,6 @@
 //! This makes CNV a fully autonomous, policy-governed service.
 
 use crate::kernel::broker::BrokerKernel;
-use crate::kernel::capability_contracts::CapabilityContractV2;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::Arc;

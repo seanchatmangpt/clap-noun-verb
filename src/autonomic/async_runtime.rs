@@ -46,7 +46,7 @@ impl AsyncDelegationRegistry {
     /// Register a delegation token asynchronously
     pub async fn register_async(&self, token: DelegationToken) -> Result<(), String> {
         // Acquire write lock
-        let mut local = self.local.write().await;
+        let local = self.local.write().await;
 
         // Register locally
         local.register(token.clone());
@@ -65,7 +65,7 @@ impl AsyncDelegationRegistry {
 
     /// Revoke token asynchronously
     pub async fn revoke_async(&self, token_id: &str) {
-        let mut local = self.local.write().await;
+        let local = self.local.write().await;
         local.revoke(&TokenId(token_id.to_string()));
     }
 }

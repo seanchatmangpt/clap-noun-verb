@@ -90,9 +90,11 @@ use uuid::Uuid;
 /// A hermetic test container that isolates test execution
 pub struct HermeticContainer {
     /// Unique container ID
+    #[allow(dead_code)]
     id: Uuid,
 
     /// Mock services (stubs for external dependencies)
+    #[allow(dead_code)]
     mocks: Arc<Mutex<MockServices>>,
 
     /// OpenTelemetry span recorder
@@ -108,9 +110,11 @@ pub struct HermeticContainer {
     quota: Arc<Mutex<QuotaBudget>>,
 
     /// Deterministic clock
+    #[allow(dead_code)]
     clock: Arc<Mutex<DeterministicClock>>,
 
     /// Traced execution flag
+    #[allow(dead_code)]
     traced_execution: Arc<AtomicBool>,
 }
 

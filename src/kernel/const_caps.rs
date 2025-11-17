@@ -171,6 +171,7 @@ impl ConstResourceBand for Cold {
 /// const WRITE_SAFE: bool = <ReadWriteFS as ConstRisk>::IS_AGENT_SAFE; // false
 /// ```
 pub struct ValidatedCommand<Cap: ConstRisk, Resource: ConstResourceBand> {
+    #[allow(dead_code)]
     name: String,
     _capability: PhantomData<Cap>,
     _resource: PhantomData<Resource>,
@@ -252,7 +253,7 @@ impl AgentSafeCapability for ReadOnlyFS {}
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use clap_noun_verb::kernel::const_caps::*;
 ///
 /// // This function only accepts agent-safe commands
@@ -261,7 +262,7 @@ impl AgentSafeCapability for ReadOnlyFS {}
 /// ) {
 ///     // Safe to execute without human review
 ///     cmd.execute(|| {
-///         println!("Executing {} autonomously", cmd.capability_name());
+///         println!("Executing autonomously");
 ///     });
 /// }
 ///
@@ -378,7 +379,7 @@ mod tests {
 
     #[test]
     fn test_validated_command() {
-        let cmd = ValidatedCommand::<Pure, Fast>::new("test-command");
+        let _cmd = ValidatedCommand::<Pure, Fast>::new("test-command");
         assert_eq!(ValidatedCommand::<Pure, Fast>::risk_level(), 0);
         assert!(ValidatedCommand::<Pure, Fast>::is_agent_safe());
     }

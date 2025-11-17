@@ -711,7 +711,6 @@ impl VersionNegotiator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kernel::capability::{CapabilityClass, ResourceBand, SafetyProfile, StabilityProfile};
 
     #[test]
     fn test_change_type_breaking() {

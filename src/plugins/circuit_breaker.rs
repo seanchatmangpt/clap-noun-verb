@@ -10,7 +10,9 @@ pub enum CircuitState {
 
 #[derive(Clone)]
 pub struct CircuitBreakerPlugin {
+    #[allow(dead_code)]
     state: Arc<Mutex<CircuitState>>,
+    #[allow(dead_code)]
     failures: Arc<Mutex<u32>>,
     loaded: bool,
 }

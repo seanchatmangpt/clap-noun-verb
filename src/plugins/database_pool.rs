@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct DatabasePoolPlugin {
+    #[allow(dead_code)]
     connections: Arc<Mutex<Vec<bool>>>,
     loaded: bool,
 }

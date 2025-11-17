@@ -14,7 +14,6 @@ mod io_detection;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, parse_macro_input, ItemFn};
-use io_detection::{detect_io_type, DetectedIoType, IoArgConfig};
 
 // Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
 // because Rust doesn't allow proc_macro_attribute on parameters - only on items.

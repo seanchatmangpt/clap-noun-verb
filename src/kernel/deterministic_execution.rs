@@ -135,6 +135,7 @@ impl std::fmt::Display for AuditTrailFull {
 /// Deterministic execution context with zero-copy references
 pub struct DeterministicExecution<'a> {
     audit_trail: Arc<DeterministicAuditTrail>,
+    #[allow(dead_code)]
     execution_id: String,
     deterministic_seed: u64,
     _lifetime: std::marker::PhantomData<&'a ()>,
@@ -187,7 +188,7 @@ impl<'a> DeterministicExecution<'a> {
         // Deterministic PRNG seeded from frame hash
         let lcg_a = 1664525u64;
         let lcg_c = 1013904223u64;
-        let seed = (self.deterministic_seed.wrapping_mul(lcg_a).wrapping_add(lcg_c));
+        let seed = self.deterministic_seed.wrapping_mul(lcg_a).wrapping_add(lcg_c);
 
         let timestamp_ns = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

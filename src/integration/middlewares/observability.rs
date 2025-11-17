@@ -13,7 +13,9 @@ use std::sync::{Arc, Mutex};
 /// - Execution timing
 #[derive(Clone)]
 pub struct ObservabilityMiddleware {
+    #[allow(dead_code)]
     metrics: Arc<MetricsCollector>,
+    #[allow(dead_code)]
     tracing: Arc<Mutex<TracingCollector>>,
     enabled: bool,
 }
@@ -76,7 +78,7 @@ impl Middleware for ObservabilityMiddleware {
         Ok(true)
     }
 
-    fn after(&self, response: &MiddlewareResponse) -> crate::Result<()> {
+    fn after(&self, _response: &MiddlewareResponse) -> crate::Result<()> {
         if !self.enabled {
             return Ok(());
         }

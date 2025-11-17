@@ -124,6 +124,7 @@ impl StreamingSession {
 pub struct FrameSink {
     tx: mpsc::Sender<StreamFrame>,
     buffer: Arc<RwLock<VecDeque<StreamFrame>>>,
+    #[allow(dead_code)]
     max_buffered_frames: usize,
 }
 
@@ -213,7 +214,7 @@ impl ServerStreamingHandler {
     }
 
     /// Cancel a session
-    pub async fn cancel_session(&self, id: &str, reason: Option<String>) -> Result<(), String> {
+    pub async fn cancel_session(&self, id: &str, _reason: Option<String>) -> Result<(), String> {
         let mut sessions = self.sessions.write().await;
 
         if let Some(session) = sessions.get_mut(id) {

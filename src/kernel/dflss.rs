@@ -247,6 +247,7 @@ pub struct DFLSSOptimizer {
     objectives: Vec<OptimizationObjective>,
 
     /// Completed optimizations (history)
+    #[allow(dead_code)]
     completed: Vec<(OptimizationObjective, VerificationResult)>,
 }
 
@@ -297,7 +298,7 @@ impl DFLSSOptimizer {
     }
 
     /// Explore phase: generate candidate improvements
-    pub fn explore(&self, measurement: &Measurement) -> Vec<Candidate> {
+    pub fn explore(&self, _measurement: &Measurement) -> Vec<Candidate> {
         vec![
             Candidate {
                 id: "candidate_cache".to_string(),
@@ -371,7 +372,7 @@ impl DFLSSOptimizer {
     }
 
     /// Implement phase: apply design (canary deployment)
-    pub fn implement(&self, design: &Design) -> DeploymentStatus {
+    pub fn implement(&self, _design: &Design) -> DeploymentStatus {
         DeploymentStatus {
             phase: DeploymentPhase::Canary,
             traffic_pct: 1,
@@ -395,7 +396,7 @@ impl DFLSSOptimizer {
     pub fn verify(
         &self,
         baseline: &Measurement,
-        observed: &Measurement,
+        _observed: &Measurement,
         criteria: &SuccessCriteria,
     ) -> VerificationResult {
         let improvement_pct = baseline.improvement_pct(baseline.mean);

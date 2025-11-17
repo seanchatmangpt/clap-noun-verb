@@ -11,11 +11,6 @@
 //! 4. **Zero-Copy Parsing**: Single-pass argument extraction
 //! 5. **Branch Reduction**: Minimal decision trees in critical path
 
-use super::{
-    capability_id::CapabilityId,
-    effects::EffectMetadata,
-    tenancy::{AgentIdentity, TenantIdentity},
-};
 use crossbeam::queue::ArrayQueue;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

@@ -15,7 +15,6 @@ use crate::kernel::broker::{BrokerRequest, BrokerResponse};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::sync::Arc;
 
 /// Binary invocation frame - transport-agnostic message unit
 #[derive(Debug, Clone, Serialize, Deserialize)]

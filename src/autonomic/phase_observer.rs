@@ -69,6 +69,7 @@ pub struct PhaseObserver {
     stats: Arc<ObserverStats>,
 
     /// Running flag
+    #[allow(dead_code)]
     running: Arc<AtomicBool>,
 }
 

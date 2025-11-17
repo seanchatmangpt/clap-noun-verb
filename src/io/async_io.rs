@@ -24,8 +24,6 @@
 //! ```
 
 use tokio::io::{AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt};
-use std::pin::Pin;
-use std::task::{Context, Poll};
 use bytes::BytesMut;
 
 /// Configuration for backpressure handling
@@ -179,6 +177,7 @@ impl<T: AsyncWrite + Unpin + ?Sized> AsyncOutputExt for T {}
 pub struct BidirectionalStream<T: AsyncRead + AsyncWrite + Unpin> {
     inner: T,
     read_buffer: BytesMut,
+    #[allow(dead_code)]
     write_buffer: BytesMut,
     backpressure_config: BackpressureConfig,
 }

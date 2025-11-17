@@ -36,6 +36,7 @@ pub struct Replicated;
 /// S = Signing state (Unsigned | Signed)
 /// R = Replication state (Local | Replicated)
 pub struct SecureContext<E = Unverified, S = (), R = ()> {
+    #[allow(dead_code)]
     invocation_id: String,
     capability_id: String,
     attestation: Option<Vec<u8>>,

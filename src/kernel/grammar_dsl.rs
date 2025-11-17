@@ -124,7 +124,7 @@ macro_rules! __grammar_dsl_verbs {
             use $crate::kernel::capability::*;
 
             // Build capability contract
-            let mut contract = match stringify!($cap) {
+            let contract = match stringify!($cap) {
                 "Pure" => CapabilityContract::new(
                     CapabilityClass::Pure,
                     $crate::__grammar_dsl_resource!($resource),

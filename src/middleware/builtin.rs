@@ -261,6 +261,7 @@ pub struct RateLimitingMiddleware {
     /// Maximum requests per window
     max_requests: Arc<AtomicUsize>,
     /// Time window in seconds
+    #[allow(dead_code)]
     window_seconds: u64,
 }
 
@@ -303,6 +304,7 @@ pub struct CachingMiddleware {
     /// Command result cache
     cache: Arc<std::sync::Mutex<HashMap<String, String>>>,
     /// Cache TTL in seconds
+    #[allow(dead_code)]
     ttl_seconds: u64,
 }
 

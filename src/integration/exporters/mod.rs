@@ -23,6 +23,7 @@ pub trait PlatformExporter: Send + Sync {
 /// Datadog exporter for shipping metrics and logs to Datadog.
 #[derive(Clone, Debug)]
 pub struct DatadogExporter {
+    #[allow(dead_code)]
     api_key: String,
     site: String, // us1, us3, eu1, etc.
 }

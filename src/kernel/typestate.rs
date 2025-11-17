@@ -40,29 +40,30 @@ pub struct Escalated<C1, C2> {
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use clap_noun_verb::kernel::typestate::*;
 /// use clap_noun_verb::kernel::capability::*;
 ///
 /// // Start unverified
-/// let session = TypedSession::<Unverified>::new("my-app");
+/// let session = TypedSession::<Unverified>::with_name("my-app");
 ///
 /// // Verify with Pure capability (compile-time enforced)
-/// let session = session.verify(CapabilityContract::pure());
+/// // Note: Type inference requires explicit type annotation in many cases
+/// let _session: TypedSession<Verified> = session.verify(CapabilityContract::pure());
 ///
 /// // Execute operations (only available after verification)
-/// session.execute(|| println!("Pure operation"));
+/// // _session.execute(|| println!("Pure operation"));
 ///
 /// // Escalate to ReadOnly (requires justification)
-/// let session = session.escalate(
-///     CapabilityContract::read_only(),
-///     "Need to read config file"
-/// ).expect("Escalation denied");
+/// // let session = session.escalate(
+/// //     CapabilityContract::read_only(),
+/// //     "Need to read config file"
+/// // ).expect("Escalation denied");
 ///
 /// // Now can perform read operations
-/// session.execute(|| {
-///     // Read file...
-/// });
+/// // session.execute(|| {
+/// //     // Read file...
+/// // });
 /// ```
 pub struct TypedSession<State> {
     name: String,

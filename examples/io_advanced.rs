@@ -117,6 +117,7 @@ fn main() -> anyhow::Result<()> {
         }
 
         Commands::Merge { inputs, mut output } => {
+            let file_count = inputs.len();
             for (idx, mut input) in inputs.into_iter().enumerate() {
                 let mut content = String::new();
                 input.read_to_string(&mut content)?;
@@ -125,7 +126,7 @@ fn main() -> anyhow::Result<()> {
                     output.write_all(b"\n")?;
                 }
             }
-            eprintln!("Successfully merged {} files", inputs.len());
+            eprintln!("Successfully merged {} files", file_count);
             Ok(())
         }
 

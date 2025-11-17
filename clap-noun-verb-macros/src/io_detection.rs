@@ -2,6 +2,10 @@
 //!
 //! Provides advanced type detection for Input and Output types,
 //! enabling auto-wiring of I/O parameters in the #[verb] macro.
+//!
+//! Note: This module is currently unused but maintained for future feature enhancements.
+
+#![allow(dead_code)]
 
 use syn::{Type, GenericArgument, PathArguments};
 

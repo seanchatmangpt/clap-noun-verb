@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct EventBusPlugin {
+    #[allow(dead_code)]
     topics: Arc<Mutex<HashMap<String, Vec<String>>>>,
     loaded: bool,
 }

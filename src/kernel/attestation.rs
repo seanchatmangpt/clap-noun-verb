@@ -45,7 +45,7 @@ impl PublicKey {
     }
 
     /// Verify signature
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
+    pub fn verify(&self, _message: &[u8], signature: &Signature) -> bool {
         // Simplified verification (in production, use ed25519-dalek or similar)
         // For now, just check signature length and basic validation
         signature.0.len() == 64
@@ -421,7 +421,6 @@ impl Default for RevocationList {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kernel::*;
 
     #[test]
     fn test_key_generation() {
@@ -519,7 +518,7 @@ mod tests {
 
     #[test]
     fn test_revocation_list() {
-        let (authority_key, authority_pub) = PrivateKey::generate();
+        let (authority_key, _authority_pub) = PrivateKey::generate();
         let mut revocation_list = RevocationList::new();
 
         let attestation = CapabilityAttestation::new(

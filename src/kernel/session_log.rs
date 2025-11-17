@@ -43,7 +43,6 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::hash::Hash;
 use std::sync::Arc;
-use uuid::Uuid;
 
 /// Deterministic clock for replay - uses logical ticks + wall-clock envelope
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Hash)]

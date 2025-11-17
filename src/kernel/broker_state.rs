@@ -3,7 +3,7 @@
 //! Implements explicit broker state machine with timeout and queue controls
 
 use serde::{Deserialize, Serialize};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Broker lifecycle state machine
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

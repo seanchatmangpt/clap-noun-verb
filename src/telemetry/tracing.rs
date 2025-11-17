@@ -41,10 +41,13 @@ pub enum SpanStatus {
 #[derive(Debug, Clone)]
 pub struct SpanEvent {
     /// Event name
+    #[allow(dead_code)]
     name: String,
     /// Event timestamp (ms since epoch)
+    #[allow(dead_code)]
     timestamp: u64,
     /// Event attributes
+    #[allow(dead_code)]
     attributes: HashMap<String, String>,
 }
 

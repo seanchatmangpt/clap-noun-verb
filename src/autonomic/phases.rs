@@ -53,7 +53,6 @@ use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use super::*;
 use super::telemetry;
 
 // ============================================================================

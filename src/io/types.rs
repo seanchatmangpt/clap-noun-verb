@@ -138,7 +138,7 @@ impl Default for IoTypeRegistry {
     }
 }
 
-/// Global I/O type registry (lazily initialized)
+// Global I/O type registry (lazily initialized)
 lazy_static::lazy_static! {
     static ref GLOBAL_REGISTRY: IoTypeRegistry = IoTypeRegistry::new();
 }

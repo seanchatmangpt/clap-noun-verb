@@ -9,7 +9,7 @@
 use crate::plugin::{Plugin, PluginCapability, PluginMetadata};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime};
 
 /// Cache entry with TTL
 #[derive(Clone, Debug)]

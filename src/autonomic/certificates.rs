@@ -16,7 +16,7 @@ use super::{
     effects::EffectMetadata,
     policy::{PolicyDecision, PolicyResult},
     schema::{InputSchema, OutputSchema},
-    tenancy::{AgentIdentity, InvocationContext, TenantIdentity},
+    tenancy::{AgentIdentity, TenantIdentity},
 };
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;

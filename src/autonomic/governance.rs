@@ -12,8 +12,7 @@
 
 use super::{
     capability_id::CapabilityId,
-    delegation::DelegationChain,
-    policy::{PolicyDecision, PolicyResult},
+    policy::PolicyDecision,
     tenancy::{AgentIdentity, TenantIdentity},
 };
 use serde::{Deserialize, Serialize};
@@ -418,6 +417,7 @@ impl LedgerQuery {
 /// Persistent storage for governance ledger
 struct LedgerStorage {
     /// File path
+    #[allow(dead_code)]
     path: std::path::PathBuf,
 
     /// File handle for appending

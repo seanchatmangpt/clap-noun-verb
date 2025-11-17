@@ -3,8 +3,7 @@
 //! Uses type-state pattern to enforce correct execution flow at compile time.
 //! Supports both sync and async command execution with automatic instrumentation.
 
-use crate::middleware::{Middleware, MiddlewareRequest, MiddlewareResponse, MiddlewarePipeline};
-use crate::telemetry::SpanBuilder;
+use crate::middleware::{MiddlewareRequest, MiddlewareResponse, MiddlewarePipeline};
 use std::fmt;
 use std::marker::PhantomData;
 use std::time::Instant;

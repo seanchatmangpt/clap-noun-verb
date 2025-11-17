@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct MessageQueuePlugin {
+    #[allow(dead_code)]
     messages: Arc<Mutex<VecDeque<String>>>,
     loaded: bool,
 }

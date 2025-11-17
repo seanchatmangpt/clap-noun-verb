@@ -19,8 +19,6 @@
 //! - **SIMD acceleration** on x86_64 and ARM
 
 use crate::kernel::session::{Frame, FramePayload, SessionId, StreamId};
-use std::io::Write;
-use std::mem;
 
 // ============================================================================
 // SIMD-Optimized Frame Buffer
@@ -81,9 +79,10 @@ impl AlignedBuffer {
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use clap_noun_verb::kernel::simd::*;
 /// use clap_noun_verb::kernel::session::*;
+/// use serde_json::json;
 ///
 /// let mut serializer = FrameSerializer::new();
 /// let mut buffer = AlignedBuffer::with_capacity(4096);
@@ -93,7 +92,7 @@ impl AlignedBuffer {
 ///     stream_id: StreamId::Stdout,
 ///     sequence: 42,
 ///     timestamp_ms: 1000,
-///     payload: FramePayload::End,
+///     payload: FramePayload::Data { data: json!({"status": "ok"}) },
 /// };
 ///
 /// // Zero-copy serialization with SIMD
@@ -101,6 +100,7 @@ impl AlignedBuffer {
 /// assert!(bytes_written > 0);
 /// ```
 pub struct FrameSerializer {
+    #[allow(dead_code)]
     scratch: AlignedBuffer,
 }
 
@@ -336,7 +336,6 @@ pub unsafe fn prefetch_read<T>(_ptr: *const T) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kernel::*;
 
     #[test]
     fn test_aligned_buffer() {

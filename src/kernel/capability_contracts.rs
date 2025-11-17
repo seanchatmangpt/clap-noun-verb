@@ -10,7 +10,6 @@
 use crate::autonomic::capability_id::CapabilityId;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fmt;
 
 /// Capability contract - machine-verifiable guarantees
 #[derive(Debug, Clone, Serialize, Deserialize)]
