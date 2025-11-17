@@ -6,16 +6,16 @@ use clap_noun_verb::error::{NounVerbError, Result};
 
 #[test]
 fn test_validator_new() {
-    let _validator = ArgValidator::new();
-    // Validator should be created successfully
-    assert!(true); // Validator is zero-sized, just verify it compiles
+    let validator = ArgValidator::new();
+    // Validator construction succeeds (zero-sized type)
+    drop(validator);
 }
 
 #[test]
 fn test_validator_default() {
-    let _validator = ArgValidator::default();
-    // Default should work
-    assert!(true);
+    let validator = ArgValidator::default();
+    // Default trait implementation works
+    drop(validator);
 }
 
 #[test]

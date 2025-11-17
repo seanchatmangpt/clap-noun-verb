@@ -4,24 +4,8 @@ use clap::Arg;
 use clap_noun_verb::{noun, verb, Cli, CommandRegistry, NounVerbError, Result, VerbArgs};
 
 #[test]
-fn test_empty_noun_validation_direct() -> Result<()> {
-    // Test validation catches empty nouns
-    let registry =
-        CommandRegistry::new().name("test").register_noun(noun!("empty", "Empty noun", []));
-
-    let result = registry.validate();
-    assert!(result.is_err());
-    if let Err(NounVerbError::InvalidStructure { message }) = result {
-        assert!(message.contains("no verbs or sub-nouns"));
-    } else {
-        panic!("Expected InvalidStructure error");
-    }
-
-    Ok(())
-}
-
-#[test]
 fn test_empty_noun_validation() -> Result<()> {
+    // Test validation catches empty nouns (nouns must have verbs or sub-nouns)
     let registry =
         CommandRegistry::new().name("test").register_noun(noun!("empty", "Empty noun", []));
 
