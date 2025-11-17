@@ -150,6 +150,18 @@ impl StructuredError {
             crate::error::NounVerbError::ArgumentError { message } => {
                 Self::invalid_input(message)
             }
+            crate::error::NounVerbError::PluginError(message) => {
+                Self::new(ErrorKind::InternalError, message)
+            }
+            crate::error::NounVerbError::ValidationFailed(message) => {
+                Self::invalid_input(message)
+            }
+            crate::error::NounVerbError::MiddlewareError(message) => {
+                Self::new(ErrorKind::InternalError, message)
+            }
+            crate::error::NounVerbError::TelemetryError(message) => {
+                Self::new(ErrorKind::InternalError, message)
+            }
             crate::error::NounVerbError::Generic(message) => {
                 Self::new(ErrorKind::InternalError, message)
             }

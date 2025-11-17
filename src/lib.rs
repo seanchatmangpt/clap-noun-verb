@@ -79,6 +79,24 @@ pub mod kernel;
 // New in v4.0 - I/O Integration
 pub mod io;
 
+// New in v4.3 - Advanced clap Integration (Phase 7)
+pub mod clap;
+
+// New in v4.3 - Plugin System (Feature 1)
+pub mod plugin;
+
+// New in v4.3 - Middleware System (Feature 4)
+pub mod middleware;
+
+// New in v4.3 - Telemetry & Observability (Feature 5)
+pub mod telemetry;
+
+// New in v4.3 - Integration Layer (Middleware executor, custom implementations, configuration)
+pub mod integration;
+
+// New in v4.3 - 10 Production Plugins with Chicago-TDD Testing
+pub mod plugins;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
