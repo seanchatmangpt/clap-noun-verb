@@ -57,6 +57,7 @@ pub mod broker;
 pub mod broker_state;
 pub mod capability;
 pub mod capability_contracts;
+pub mod clnrm;
 pub mod concurrent;
 pub mod const_caps;
 pub mod contract_runtime_view;
@@ -102,6 +103,9 @@ pub use capability_contracts::{
     Guarantees, StabilityLevel, SafetyLevel, DeterminismGuarantee, IdempotencyGuarantee,
     ProofReferences, TestCoverage, StaticAnalysis, AuditReference, ProofObject,
     BuildMetadata, PathAccessPattern, AccessType,
+};
+pub use clnrm::{
+    HermeticContainer, MockServices, MockResponse, RecordedSpan, QuotaBudget, DeterministicClock,
 };
 pub use grammar::{Grammar, GrammarModel, GrammarNode};
 pub use io::{FileIO, InputSource, OutputSink};
