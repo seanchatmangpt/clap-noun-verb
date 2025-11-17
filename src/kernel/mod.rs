@@ -84,6 +84,12 @@ pub mod type_level_security;
 pub mod typestate;
 pub mod version;
 
+// CNV 4.1.0 Modules
+pub mod introspection_v41;
+pub mod session_streaming_v41;
+pub mod distributed_tracing_v41;
+pub mod schema_registry_v41;
+
 // Re-export key types for convenience
 pub use ahi_policy::{
     AhiPolicyAdapter, PolicyDecision, PolicyUpdate, PolicyState, PolicyValidator,
@@ -173,4 +179,22 @@ pub use telemetry::{ColorPolicy, TelemetryProfile, VerbosityLevel};
 pub use version::{
     ChangeType, ChangeSeverity, CompatibilityLevel, GrammarDelta, NegotiationRequest,
     NegotiationResponse, VersionNegotiator,
+};
+
+// CNV 4.1.0 Re-exports
+pub use introspection_v41::{
+    CapabilityInfo, EffectTypeV41, ResourceProfileV41, StabilityGuaranteeV41, SafetyProfileV41,
+    CapabilityRegistry, IntrospectionHandler, CapabilitiesOutput, ExplanationOutput,
+};
+pub use session_streaming_v41::{
+    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink, BackpressureErrorV41,
+    ServerStreamingHandler, ClientStreamingHandler, CollectedOutput,
+};
+pub use distributed_tracing_v41::{
+    TraceContext, TraceFlags, Span, SpanAttribute, SpanEvent, SpanStatus,
+    SamplingStrategy, AlwaysSampler, ProbabilisticSampler, SpanExporter,
+    InMemoryExporter, TracingProvider,
+};
+pub use schema_registry_v41::{
+    SchemaVersion, MerkleNode, SchemaEntry, CompatibilityType, EvolutionRule, SchemaRegistry,
 };
