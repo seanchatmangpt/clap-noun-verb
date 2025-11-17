@@ -72,9 +72,16 @@
 
 pub mod error;
 pub mod types;
+pub mod async_io;
 
 // Re-export core clio types with clap-parse support
 pub use clio::{Input, InputPath, Output, OutputPath};
+
+// Re-export async I/O types
+pub use async_io::{
+    AsyncInputExt, AsyncOutputExt, BidirectionalStream, BackpressureConfig,
+    LengthDelimitedFrameBuilder, LinesFrameBuilder,
+};
 
 // Re-export error types
 pub use error::{IoError, Result};

@@ -27,7 +27,6 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 toml = "0.8"
 async-trait = "0.1"
-tokio = { version = "1.0", features = ["rt", "sync"] }
 tokio-stream = "0.1"
 linkme = "0.3"
 clap-noun-verb-macros = { version = "3.8.0", path = "clap-noun-verb-macros" }
@@ -49,8 +48,14 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
 lazy_static = "1.4"
 
+# New in v4.1 - Async I/O and advanced features
+tokio = { version = "1.40", features = ["io-util", "net", "rt", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+bytes = "1.7"
+pin-project = "1.1"
+futures = "0.3"
+
 [dev-dependencies]
-tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
 cargo-make = "0.37"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
@@ -151,6 +156,10 @@ path = "examples/io_basic.rs"
 [[example]]
 name = "io_advanced"
 path = "examples/io_advanced.rs"
+
+[[example]]
+name = "async_io_example"
+path = "examples/async_io_example.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration
