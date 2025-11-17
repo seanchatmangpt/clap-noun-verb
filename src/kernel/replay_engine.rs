@@ -518,10 +518,10 @@ mod tests {
     use super::*;
     use crate::kernel::session_log::{LogicalClock, FrameMetadata, ExitCodeClass, ResultFrame, QuotaFootprint};
     use crate::kernel::telemetry::TelemetryProfile;
+    use crate::autonomic::{AgentIdentity, TenantIdentity, InvocationContext};
     use std::sync::Arc;
 
     fn create_test_context() -> Arc<InvocationContext> {
-        use crate::autonomic::tenancy::{AgentIdentity, TenantIdentity};
 
         Arc::new(InvocationContext {
             agent: AgentIdentity::new("test-agent", "test-type"),
@@ -530,7 +530,6 @@ mod tests {
                 tenant_name: Some("Test Tenant".to_string()),
                 organization_id: None,
                 environment: None,
-                custom_attributes: BTreeMap::new(),
             },
             policy: None,
             qos: Default::default(),

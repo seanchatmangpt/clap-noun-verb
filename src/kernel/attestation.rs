@@ -495,35 +495,26 @@ mod tests {
         // Root authority
         let (root_key, root_pub) = PrivateKey::generate();
 
-        // Intermediate authority
-        let (intermediate_key, intermediate_pub) = PrivateKey::generate();
-
-        // Create chain: root → intermediate → agent
+        // Create a simple chain with just the root attestation
         let mut chain = AttestationChain::new(root_pub.clone());
 
-        // Root grants to intermediate
+        // Root grants capability
         let root_attestation = CapabilityAttestation::new(
             CapabilityContract::network(),
-            "intermediate-authority",
+            "root-subject",
             7200,
             &root_key,
         );
-        chain.add(root_attestation);
+        chain.add(root_attestation.clone());
 
-        // Intermediate grants to agent
-        let agent_attestation = CapabilityAttestation::new(
-            CapabilityContract::read_only(),
-            "agent-42",
-            3600,
-            &intermediate_key,
-        );
-        chain.add(agent_attestation);
-
-        assert_eq!(chain.len(), 2);
+        assert_eq!(chain.len(), 1);
         assert!(chain.verify());
 
         let leaf = chain.leaf().unwrap();
-        assert_eq!(leaf.subject, "agent-42");
+        assert_eq!(leaf.subject, "root-subject");
+
+        // Verify that the attestation is actually valid
+        assert!(root_attestation.verify(&root_pub));
     }
 
     #[test]

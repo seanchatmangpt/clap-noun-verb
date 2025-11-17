@@ -181,7 +181,7 @@ fn default_invocation_context() -> Arc<InvocationContext> {
 /// - Hashable (content-addressed)
 /// - Reconstructible (enough data to replay deterministically)
 /// - Validated (invariants enforced on creation and deserialization)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SessionLogFrame {
     /// Frame schema version - for backward compatibility
     pub frame_schema_version: u32,
@@ -848,7 +848,7 @@ mod tests {
     use crate::autonomic::tenancy::InvocationContext;
 
     fn create_test_context() -> Arc<InvocationContext> {
-        use crate::autonomic::tenancy::{AgentIdentity, TenantIdentity};
+        use crate::autonomic::tenancy::{AgentIdentity, TenantIdentity, InvocationContext};
 
         Arc::new(InvocationContext {
             agent: AgentIdentity::new("test-agent", "test-type"),
@@ -857,7 +857,6 @@ mod tests {
                 tenant_name: Some("Test Tenant".to_string()),
                 organization_id: None,
                 environment: None,
-                custom_attributes: BTreeMap::new(),
             },
             policy: None,
             qos: Default::default(),

@@ -379,8 +379,8 @@ mod tests {
     #[test]
     fn test_validated_command() {
         let cmd = ValidatedCommand::<Pure, Fast>::new("test-command");
-        assert_eq!(cmd.risk_level(), 0);
-        assert!(cmd.is_agent_safe());
+        assert_eq!(ValidatedCommand::<Pure, Fast>::risk_level(), 0);
+        assert!(ValidatedCommand::<Pure, Fast>::is_agent_safe());
     }
 
     #[test]
