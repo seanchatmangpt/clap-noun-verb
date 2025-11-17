@@ -42,6 +42,13 @@ chrono = "0.4"
 crossbeam = "0.8"
 parking_lot = "0.12"
 
+# New in v4.0 - I/O Integration
+clio = { version = "0.3", features = ["clap-parse"] }
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
+lazy_static = "1.4"
+
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
@@ -51,6 +58,11 @@ criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.0"
 insta = { version = "1.0", features = ["json", "yaml"] }
 loom = "0.7"
+
+# New in v4.0 - CLI Testing
+assert_cmd = "2.0"
+predicates = "3.0"
+assert_fs = "1.0"
 
 [workspace.metadata.make]
 # Cargo-make configuration
@@ -131,6 +143,14 @@ path = "examples/autonomic_example.rs"
 [[example]]
 name = "cnv4_example"
 path = "examples/cnv4_example.rs"
+
+[[example]]
+name = "io_basic"
+path = "examples/io_basic.rs"
+
+[[example]]
+name = "io_advanced"
+path = "examples/io_advanced.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration

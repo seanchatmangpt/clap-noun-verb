@@ -183,11 +183,11 @@ pub use version::{
 
 // Re-exports for advanced capabilities
 pub use introspection::{
-    CapabilityInfo, EffectType, ResourceProfile, StabilityGuarantee, SafetyProfile,
+    CapabilityInfo, EffectType, ResourceProfile, StabilityGuarantee,
     CapabilityRegistry, IntrospectionHandler, CapabilitiesOutput, ExplanationOutput,
 };
 pub use session_streaming::{
-    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink, BackpressureError,
+    StreamFrame, LogLevel, ControlAction, StreamingSession, FrameSink,
     ServerStreamingHandler, ClientStreamingHandler, CollectedOutput,
 };
 pub use distributed_tracing::{
