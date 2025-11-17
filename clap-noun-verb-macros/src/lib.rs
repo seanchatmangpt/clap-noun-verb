@@ -492,14 +492,19 @@ fn generate_verb_registration(
             } else if is_vec {
                 // Vec<T> types - extract from input.args as comma-separated string, then parse
                 // The registry extracts multiple values and joins them
+                // Extract type reference before quote! block (quote! doesn't support field access)
+                let ty = &*pat_type.ty;
                 arg_extractions.push(quote! {
-                    let #arg_name: #pat_type.ty = if let Some(value_str) = input.args.get(#arg_name_str) {
+                    let #arg_name: #ty = if let Some(value_str) = input.args.get(#arg_name_str) {
                         // Parse comma-separated values
+                        // Note: For String type, parse() is infallible, so we handle errors gracefully
                         value_str.split(',')
-                            .map(|s| s.trim().parse::<#vec_inner_type>())
-                            .collect::<Result<Vec<_>, _>>()
-                            .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
-                                format!("Invalid value for argument '{}'", #arg_name_str)
+                            .map(|s| s.trim())
+                            .map(|s| s.parse::<#vec_inner_type>()
+                                .map_err(|e| format!("{}", e)))
+                            .collect::<std::result::Result<Vec<_>, _>>()
+                            .map_err(|e| ::clap_noun_verb::error::NounVerbError::argument_error(
+                                format!("Invalid value for argument '{}': {}", #arg_name_str, e)
                             ))?
                     } else {
                         Vec::new()
