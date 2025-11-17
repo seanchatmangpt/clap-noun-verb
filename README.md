@@ -17,6 +17,7 @@ A framework for building composable CLI patterns on top of clap using the **noun
 - **Application Context**: Share typed state across all commands
 - **Output Formats**: JSON, YAML, TOML, Table, and TSV support
 - **Shell Completions**: Auto-generate completions for bash, zsh, fish, powershell, and elvish
+- **Autonomic CLI Layer** (NEW in v3.8.0): Machine-grade interface with introspection, effect modeling, guards, and receipts for agents and MAPE-K loops
 
 ### The Noun-Verb Pattern
 
@@ -449,6 +450,7 @@ See the [`examples/`](examples/) directory for more examples.
 
 - [Examples](examples/) - Working examples
 - [Book Documentation](docs/book/src/) - Comprehensive guide for porting CLI applications
+- [Autonomic CLI Layer](AUTONOMIC.md) - Machine-grade interface for agents and MAPE-K loops
 - [Contributing](CONTRIBUTING.md) - Contribution guidelines
 - [Changelog](CHANGELOG.md) - Version history
 

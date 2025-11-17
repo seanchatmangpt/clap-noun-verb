@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "generated_at": "2025-11-17",
+    "report_type": "concept_gaps",
+    "codebase": "clap-noun-verb"
+  },
+  "gaps_summary": {
+    "total_concepts": 13,
+    "gaps_critical": 2,
+    "gaps_significant": 3,
+    "gaps_minor": 3,
+    "total_gaps": 8
+  },
+  "critical_gaps": [
+    {
+      "concept_id": "C_CLNRM_HERMETIC_TESTING",
+      "status": "ABSENT",
+      "priority": "critical",
+      "evidence_count": 0,
+      "max_strength": 0.0,
+      "reason": "Hermetic testing framework (clnrm) with OpenTelemetry + Weaver integration not implemented",
+      "impact": "Cannot verify isolation guarantees for high-security autonomic systems. Missing layer for validating 'no external services' constraint.",
+      "suggested_implementation": [
+        "Create clnrm module with hermetic container test framework",
+        "Integrate OpenTelemetry span validation",
+        "Add Weaver configuration parser for TOML-based hermetic specs",
+        "Implement span graph validation and assertion engine",
+        "Add tests to verify no external service calls occur",
+        "Document hermetic test patterns for agents"
+      ],
+      "blockers": [],
+      "estimated_effort": "high"
+    },
+    {
+      "concept_id": "C_DFLSS_FLOW",
+      "status": "ABSENT",
+      "priority": "critical",
+      "evidence_count": 0,
+      "max_strength": 0.0,
+      "reason": "Design for Lean Six Sigma (DFLSS) methodology not integrated with autonomic governance",
+      "impact": "Cannot execute closed-world optimization flows. Missing systematic approach to ontology evolution and policy optimization.",
+      "suggested_implementation": [
+        "Define DFLSS phases (Define, Measure, Explore, Design, Implement, Verify) as agent-native workflow",
+        "Integrate with AHI policy engine for DMEDI execution",
+        "Create proposal/evaluation/promotion pipeline for ΔΣ changes",
+        "Add metrics collection and optimization loops",
+        "Implement validation gates between DFLSS phases",
+        "Document closed-world optimization methodology"
+      ],
+      "blockers": [
+        "Requires formalization of optimization criteria (metrics, objectives)"
+      ],
+      "estimated_effort": "high"
+    }
+  ],
+  "significant_gaps": [
+    {
+      "concept_id": "C_KNHK_GRAPH_PRIMARY",
+      "status": "FOUNDATION",
+      "priority": "significant",
+      "evidence_count": 3,
+      "max_strength": 0.85,
+      "reason": "Graph system exists but lacks KNHK-specific terminology and kinetic/knowledge semantics",
+      "impact": "Cannot clearly articulate that ontology (KNHK) is primary vs. code. Projection model is implicit, not explicit.",
+      "suggested_implementation": [
+        "Rename internal 'graph' system references to 'KNHK' where appropriate",
+        "Add 'kinetic' aspect: temporal versioning, evolution tracking",
+        "Add 'knowledge' semantics: type hierarchies, semantic relationships",
+        "Document KNHK as Kinetic Knowledge Hypergraph (not just capability graph)",
+        "Create doctrine or spec file asserting 'Σ (ontology) is primary'",
+        "Add workflow-as-projection examples with A = μ(O) formula"
+      ],
+      "blockers": [],
+      "estimated_effort": "medium"
+    },
+    {
+      "concept_id": "C_GGEN_PROJECTION_ENGINE",
+      "status": "DESIGN",
+      "priority": "significant",
+      "evidence_count": 3,
+      "max_strength": 0.81,
+      "reason": "ggen is specified in docs but not implemented as runnable code generator",
+      "impact": "Cannot generate code, tests, CLIs from ontology. Core projection engine missing.",
+      "suggested_implementation": [
+        "Implement Σ (ontology) parser from CNV schema",
+        "Add Q (invariants/guards) extraction from contracts",
+        "Build template engine for code projection profiles",
+        "Create test projection pipeline (generating tests from specs)",
+        "Implement CLI projection (generating command structures)",
+        "Add config projection (generating TOML/YAML from ontology)",
+        "Integrate with CNV as downstream target (ggen → CNV instantiation)"
+      ],
+      "blockers": [
+        "Requires formalization of projection profiles"
+      ],
+      "estimated_effort": "very_high"
+    },
+    {
+      "concept_id": "C_GRAPH_UNIVERSE_PRIMARY",
+      "status": "PARTIAL",
+      "priority": "significant",
+      "evidence_count": 2,
+      "max_strength": 0.86,
+      "reason": "Graph-driven architecture is operational but philosophical framing is implicit, not explicit",
+      "impact": "Cannot clearly communicate that code is a derived view of the graph/ontology. External observers may not understand projection model.",
+      "suggested_implementation": [
+        "Create DOCTRINE or MANIFESTO file explicitly stating 'Σ is primary'",
+        "Add section to architecture docs: 'Why Graph Universe? Why Code-as-Projection?'",
+        "Document A = μ(O) formula: Application = μ-kernel(Ontology)",
+        "Add examples of how capability graph drives command implementations",
+        "Create visual diagrams (Σ → projections) for onboarding",
+        "Mark code files with '@projection-of(schema_id)' annotations"
+      ],
+      "blockers": [],
+      "estimated_effort": "low"
+    }
+  ],
+  "minor_gaps": [
+    {
+      "concept_id": "C_CODE_AS_PROJECTION",
+      "status": "PARTIAL",
+      "priority": "minor",
+      "evidence_count": 2,
+      "max_strength": 0.87,
+      "reason": "Projection patterns exist but no enforcement policy preventing direct code edits",
+      "impact": "Code could theoretically be edited by hand, violating projection model. No CI check ensures generated code integrity.",
+      "suggested_implementation": [
+        "Add CI check: regenerate code from schema and verify matches committed code",
+        "Create linter rule: flag direct edits to generated code sections",
+        "Add code markers (@generated from schema_id) to generated code",
+        "Document 'read-only code' policy for projection outputs",
+        "Add git pre-commit hook to prevent direct edits to marked sections"
+      ],
+      "blockers": [],
+      "estimated_effort": "low"
+    },
+    {
+      "concept_id": "C_NOMRG_GRAPH_OVERLAY",
+      "status": "FOUNDATION",
+      "priority": "minor",
+      "evidence_count": 1,
+      "max_strength": 0.72,
+      "reason": "ΔΣ overlays exist but nomrg 'no-merge' semantics are not formalized",
+      "impact": "Cannot guarantee that ontology changes avoid merge conflicts. CRDT or overlay algebra not proven.",
+      "suggested_implementation": [
+        "Formalize overlay algebra: proof that overlays commute and never conflict",
+        "Document nomrg semantics: why merges disappear in overlay model",
+        "Implement CRDT-style semantics for ΔΣ overlay application",
+        "Add invariant checks: overlay composition is always valid",
+        "Create tests verifying no text-diff conflicts occur with overlays",
+        "Add proofs (or proof sketches) of conflict-freedom properties"
+      ],
+      "blockers": [],
+      "estimated_effort": "medium"
+    },
+    {
+      "concept_id": "C_MU_KERNEL_PHYSICS",
+      "status": "IMPLEMENTED",
+      "priority": "minor",
+      "evidence_count": 3,
+      "max_strength": 0.90,
+      "reason": "μ-kernel implemented as 'session kernel' but lacks explicit timing physics nomenclature",
+      "impact": "Could confuse readers about whether timing guarantees are μ-kernel class or just 'fast'",
+      "suggested_implementation": [
+        "Add 'μ-kernel' nomenclature to session.rs documentation",
+        "Document timing physics assumptions (determinism, bounded latency)",
+        "Create reference to Chatman constant or equivalent (even if not exactly 8 ticks)",
+        "Add timing budget documentation for each μ-operation",
+        "Create diagrams showing operation→timing-bound mappings"
+      ],
+      "blockers": [],
+      "estimated_effort": "low"
+    }
+  ],
+  "gap_remediation_roadmap": {
+    "phase_1_immediate": [
+      "Document graph-universe philosophy (C_GRAPH_UNIVERSE_PRIMARY) - 1-2 days",
+      "Add code-as-projection enforcement (C_CODE_AS_PROJECTION) - 2-3 days",
+      "Clarify μ-kernel naming and timing physics (C_MU_KERNEL_PHYSICS) - 1-2 days"
+    ],
+    "phase_2_short_term": [
+      "Elaborate KNHK identity and kinetic/knowledge semantics (C_KNHK_GRAPH_PRIMARY) - 3-5 days",
+      "Formalize nomrg overlay semantics (C_NOMRG_GRAPH_OVERLAY) - 3-5 days"
+    ],
+    "phase_3_medium_term": [
+      "Implement clnrm hermetic testing framework (C_CLNRM_HERMETIC_TESTING) - 2-3 weeks",
+      "Build DFLSS integration with AHI policy engine (C_DFLSS_FLOW) - 2-3 weeks"
+    ],
+    "phase_4_long_term": [
+      "Implement ggen projection engine (C_GGEN_PROJECTION_ENGINE) - 1-2 months"
+    ]
+  },
+  "cross_concept_dependencies": [
+    {
+      "from": "C_GGEN_PROJECTION_ENGINE",
+      "to": "C_GRAPH_UNIVERSE_PRIMARY",
+      "dependency": "ggen requires clear articulation that Σ is primary",
+      "type": "requires_clarity"
+    },
+    {
+      "from": "C_GGEN_PROJECTION_ENGINE",
+      "to": "C_CODE_AS_PROJECTION",
+      "dependency": "ggen output is code-as-projection; policy needed to prevent edits",
+      "type": "requires_enforcement"
+    },
+    {
+      "from": "C_DFLSS_FLOW",
+      "to": "C_AHI_GOVERNANCE",
+      "dependency": "DFLSS phases execute within AHI governance framework",
+      "type": "integrates_with"
+    },
+    {
+      "from": "C_CLNRM_HERMETIC_TESTING",
+      "to": "C_CTT_12_PHASE_VERIFICATION",
+      "dependency": "clnrm provides verification layer for CTT phases",
+      "type": "extends"
+    },
+    {
+      "from": "C_KNHK_GRAPH_PRIMARY",
+      "to": "C_NOMRG_GRAPH_OVERLAY",
+      "dependency": "nomrg manages ΔΣ overlays on KNHK base graph",
+      "type": "depends_on"
+    }
+  ],
+  "recommendations": {
+    "high_priority": [
+      {
+        "action": "Create PHILOSOPHY.md documenting graph-universe thesis",
+        "rationale": "Readers need clear thesis statement before diving into code",
+        "effort": "1 day",
+        "impact": "high"
+      },
+      {
+        "action": "Implement clnrm hermetic testing framework",
+        "rationale": "Essential for validating security/isolation guarantees",
+        "effort": "2-3 weeks",
+        "impact": "high"
+      },
+      {
+        "action": "Begin ggen implementation (at least code projection)",
+        "rationale": "Core feature for demonstrating Σ → code relationship",
+        "effort": "1-2 months",
+        "impact": "high"
+      }
+    ],
+    "medium_priority": [
+      {
+        "action": "Integrate DFLSS with AHI for optimization loops",
+        "rationale": "Completes autonomic governance model",
+        "effort": "2-3 weeks",
+        "impact": "medium"
+      },
+      {
+        "action": "Formalize and document nomrg semantics",
+        "rationale": "Needed to support large-scale multi-branch development",
+        "effort": "1-2 weeks",
+        "impact": "medium"
+      },
+      {
+        "action": "Elevate KNHK from 'graph' to explicit knowledge hypergraph",
+        "rationale": "Distinguishes from generic graphs, adds semantic richness",
+        "effort": "1 week",
+        "impact": "medium"
+      }
+    ],
+    "low_priority": [
+      {
+        "action": "Add μ-kernel nomenclature and timing physics docs",
+        "rationale": "Clarifies design intent, aids onboarding",
+        "effort": "2-3 days",
+        "impact": "low"
+      },
+      {
+        "action": "Enforce code-as-projection via CI checks",
+        "rationale": "Prevents accidental violations of projection model",
+        "effort": "3-5 days",
+        "impact": "low"
+      }
+    ]
+  }
+}
