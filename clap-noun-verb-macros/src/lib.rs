@@ -127,6 +127,7 @@ pub fn noun(args: TokenStream, input: TokenStream) -> TokenStream {
         #output_fn
 
         // Auto-generated registration
+        #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__NOUN_REGISTRY)]
         static #init_fn_name: fn() = || {
             ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
