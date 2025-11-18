@@ -1,0 +1,49 @@
+%% Migration Phases - Timeline and Effort
+
+gantt
+    title Test Reorganization Migration Timeline
+    dateFormat  HH:mm
+    axisFormat %H:%M
+
+    section Phase 1: Setup
+    Create directories           :p1, 00:00, 30m
+    Create mod.rs files          :p2, after p1, 30m
+
+    section Phase 2: Priority 1 (Must Move)
+    Move async_operations        :p3, after p2, 15m
+    Move environment_vars        :p4, after p3, 15m
+    Move concurrency             :p5, after p4, 15m
+    Move edge_cases              :p6, after p5, 15m
+    Move hotpath_optimization    :p7, after p6, 15m
+    Move autonomic               :p8, after p7, 15m
+    Move contracts               :p9, after p8, 15m
+    Move governance              :p10, after p9, 15m
+
+    section Phase 3: Priority 2 (Should Move)
+    Move core tests (3 files)    :p11, after p10, 60m
+    Move cli tests (1 file)      :p12, after p11, 20m
+    Move runtime tests (1 file)  :p13, after p12, 20m
+    Move logic tests (1 file)    :p14, after p13, 20m
+    Move macro tests (1 file)    :p15, after p14, 20m
+    Move validation (1 file)     :p16, after p15, 20m
+    Move advanced (3 files)      :p17, after p16, 60m
+
+    section Phase 4: Merges
+    Merge cli_builder files      :p18, after p17, 30m
+    Merge cli_validator files    :p19, after p18, 30m
+    Merge runtime_executor       :p20, after p19, 30m
+    Merge logic_handler          :p21, after p20, 30m
+
+    section Phase 5: New Tests
+    Create hello_world           :p22, after p21, 45m
+    Create basic_noun_verb       :p23, after p22, 45m
+    Create adding_arguments      :p24, after p23, 45m
+
+    section Phase 6: Documentation
+    Update mod.rs re-exports     :p25, after p24, 30m
+    Write tests/README.md        :p26, after p25, 30m
+    Update main README           :p27, after p26, 15m
+
+    section Phase 7: Validation
+    Run full CI/CD               :p28, after p27, 15m
+    Verify backward compat       :p29, after p28, 15m

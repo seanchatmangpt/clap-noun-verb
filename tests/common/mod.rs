@@ -1,5 +1,7 @@
 //! Common test utilities for clap-noun-verb tests
 
+pub mod test_prelude;
+
 use clap_noun_verb::cli::registry::CommandRegistry;
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
 

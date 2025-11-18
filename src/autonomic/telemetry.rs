@@ -41,6 +41,18 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
 
+/// Distributed slice for span declarations
+///
+/// All declared spans are registered here at compile time via linkme.
+#[linkme::distributed_slice]
+pub static __SPAN_REGISTRY: [fn() -> (&'static str, &'static str, &'static str)] = [..];
+
+/// Distributed slice for span usage tracking
+///
+/// Each span! macro invocation registers usage here.
+#[linkme::distributed_slice]
+pub static __SPAN_USAGE: [fn() -> &'static str] = [..];
+
 /// Global telemetry collector singleton
 static TELEMETRY: once_cell::sync::Lazy<TelemetryCollector> =
     once_cell::sync::Lazy::new(TelemetryCollector::new);

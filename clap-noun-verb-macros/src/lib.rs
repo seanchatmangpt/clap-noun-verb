@@ -19,6 +19,7 @@
 
 mod io_detection;
 mod validation;
+mod telemetry_validation;
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -48,6 +49,177 @@ use syn::{parse::Parser, parse_macro_input, ItemFn};
 pub fn arg(_args: TokenStream, input: TokenStream) -> TokenStream {
     // Just pass through - the #[verb] macro will parse #[arg(...)] attributes
     input
+}
+
+/// Declare a telemetry span for compile-time validation
+///
+/// This macro creates a span constant and registers it in the distributed slice
+/// for compile-time validation. If the span is never used in a `span!` macro,
+/// compilation will fail.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::declare_span;
+///
+/// // Declare span
+/// declare_span!(PROCESS_REQUEST, "process_request");
+///
+/// // Use it (required or compilation fails)
+/// fn process() {
+///     span!(PROCESS_REQUEST, {
+///         // ... work ...
+///     })
+/// }
+/// ```
+#[proc_macro]
+pub fn declare_span(input: TokenStream) -> TokenStream {
+    let input = proc_macro2::TokenStream::from(input);
+
+    // Parse: IDENT, "name"
+    let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+    let args = match Parser::parse2(parser, input) {
+        Ok(args) => args,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    if args.len() != 2 {
+        return syn::Error::new_spanned(
+            quote::quote! { #args },
+            "declare_span! requires exactly 2 arguments: IDENT, \"name\"",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    let ident = match &args[0] {
+        syn::Expr::Path(path) => {
+            if let Some(ident) = path.path.get_ident() {
+                ident.clone()
+            } else {
+                return syn::Error::new_spanned(
+                    &args[0],
+                    "First argument must be an identifier (e.g., PROCESS_REQUEST)",
+                )
+                .to_compile_error()
+                .into();
+            }
+        }
+        _ => {
+            return syn::Error::new_spanned(
+                &args[0],
+                "First argument must be an identifier (e.g., PROCESS_REQUEST)",
+            )
+            .to_compile_error()
+            .into()
+        }
+    };
+
+    let name = match &args[1] {
+        syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Str(s),
+            ..
+        }) => s.value(),
+        _ => {
+            return syn::Error::new_spanned(
+                &args[1],
+                "Second argument must be a string literal (e.g., \"process_request\")",
+            )
+            .to_compile_error()
+            .into()
+        }
+    };
+
+    let output = telemetry_validation::generate_span_declaration(&ident, &name);
+    output.into()
+}
+
+/// Instrument a code block with a telemetry span
+///
+/// This macro wraps a block of code with span instrumentation and registers
+/// usage for compile-time validation.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::{declare_span, span};
+///
+/// declare_span!(PROCESS_DATA, "process_data");
+///
+/// fn process() -> Result<Data> {
+///     span!(PROCESS_DATA, {
+///         // Work happens here
+///         Ok(Data::new())
+///     })
+/// }
+/// ```
+#[proc_macro]
+pub fn span(input: TokenStream) -> TokenStream {
+    let input = proc_macro2::TokenStream::from(input);
+
+    // Parse: IDENT, { block }
+    let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+    let args = match Parser::parse2(parser, input.clone()) {
+        Ok(args) => args,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    if args.len() != 2 {
+        return syn::Error::new_spanned(
+            quote::quote! { #input },
+            "span! requires exactly 2 arguments: SPAN_CONST, { block }",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    let span_ident = match &args[0] {
+        syn::Expr::Path(path) => {
+            if let Some(ident) = path.path.get_ident() {
+                ident.clone()
+            } else {
+                return syn::Error::new_spanned(
+                    &args[0],
+                    "First argument must be a span constant (e.g., PROCESS_REQUEST)",
+                )
+                .to_compile_error()
+                .into();
+            }
+        }
+        _ => {
+            return syn::Error::new_spanned(
+                &args[0],
+                "First argument must be a span constant (e.g., PROCESS_REQUEST)",
+            )
+            .to_compile_error()
+            .into()
+        }
+    };
+
+    let block = &args[1];
+
+    // Register usage
+    let usage = telemetry_validation::generate_span_usage(&span_ident);
+
+    // Generate instrumented code
+    let expanded = quote::quote! {
+        {
+            #usage
+
+            // Create span
+            let mut _span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(#span_ident);
+
+            // Execute block
+            let _result = #block;
+
+            // Finish span
+            _span.finish();
+
+            _result
+        }
+    };
+
+    expanded.into()
 }
 
 /// Attribute macro for registering a noun command
@@ -932,6 +1104,13 @@ fn generate_verb_registration(
         fn_name,
     );
 
+    // Generate telemetry span instrumentation
+    let telemetry_instrumentation = telemetry_validation::generate_verb_instrumentation(
+        &verb_name,
+        noun_name_for_check,
+        fn_name,
+    );
+
     // Generate wrapper function
     let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
     let about_str = about.as_deref().unwrap_or("");
@@ -950,6 +1129,9 @@ fn generate_verb_registration(
     // and the #[verb] macro has already parsed them for metadata generation
 
     let expanded = quote! {
+        // Telemetry span declaration for this verb
+        #telemetry_instrumentation
+
         #output_fn
 
         // GAP 2: Compile-time duplicate verb detection
@@ -957,8 +1139,20 @@ fn generate_verb_registration(
 
         // Wrapper function that adapts HandlerInput to function signature
         fn #wrapper_name(input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
+            // Telemetry: Start span for this verb execution
+            let mut _verb_span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(
+                concat!(#noun_name_str, ".", #verb_name)
+            );
+            _verb_span.set_attribute("noun", #noun_name_str);
+            _verb_span.set_attribute("verb", #verb_name);
+
+            // Execute handler with argument extraction
             #(#arg_extractions)*
             let result = #fn_name(#(#arg_calls),*)?;
+
+            // Finish span and record duration
+            _verb_span.finish();
+
             ::clap_noun_verb::logic::HandlerOutput::from_data(result)
         }
 

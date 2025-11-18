@@ -1,0 +1,64 @@
+%% Effort vs ROI Analysis - Option A vs Option B
+
+graph TB
+    subgraph "Option A: Full Restructure"
+        A[Full Restructure]
+        A --> A1[Move ALL 39 files<br/>12-15 hours]
+        A --> A2[100% Diataxis alignment]
+        A --> A3[High CI/CD risk]
+        A --> A4[Breaking changes possible]
+
+        A1 --> A_ROI[ROI: Lower<br/>100% effort for<br/>100% alignment]
+
+        style A fill:#ffcccc
+        style A_ROI fill:#ff9999
+    end
+
+    subgraph "Option B: Logical Grouping (RECOMMENDED)"
+        B[Module-Based Grouping]
+        B --> B1[Move 20 files<br/>7.5 hours]
+        B --> B2[85% Diataxis alignment]
+        B --> B3[Low CI/CD risk]
+        B --> B4[100% backward compat]
+
+        B1 --> B_ROI[ROI: Higher<br/>50% effort for<br/>85% alignment]
+
+        style B fill:#ccffcc
+        style B_ROI fill:#99ff99
+    end
+
+    subgraph "Pareto Principle (80/20 Rule)"
+        P[20% of effort]
+        P --> P1[Move 8 high-impact files]
+        P --> P2[Create 3 tutorials]
+        P --> P3[Add mod.rs structure]
+
+        P1 --> P_RESULT[80% of alignment benefit<br/>4 hours total]
+
+        style P fill:#ffffcc
+        style P_RESULT fill:#ffff99
+    end
+
+    B -.Implements.-> P
+
+    subgraph "Comparison Matrix"
+        direction LR
+
+        C1[Effort: A=15h, B=7.5h, P=4h]
+        C2[Alignment: A=100%, B=85%, P=80%]
+        C3[Risk: A=High, B=Low, P=Low]
+        C4[ROI: A=6.7, B=11.3, P=20]
+
+        C1 --> Winner1[✅ B wins on effort]
+        C2 --> Winner2[⚖️ A marginal win]
+        C3 --> Winner3[✅ B wins on risk]
+        C4 --> Winner4[✅ P wins on ROI]
+    end
+
+    Winner1 --> Recommendation
+    Winner3 --> Recommendation
+    Winner4 --> Recommendation
+
+    Recommendation[🎯 RECOMMENDED: Option B<br/>Best balance of effort, alignment, and risk]
+
+    style Recommendation fill:#99ff99,stroke:#006600,stroke-width:4px

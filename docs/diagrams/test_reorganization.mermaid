@@ -1,0 +1,67 @@
+%% Test Reorganization Architecture - Diataxis Alignment
+
+graph TB
+    subgraph "Current State (Flat, 41 files)"
+        A[tests/]
+        A --> A1[*.rs x39 files]
+        A --> A2[common/mod.rs]
+        A --> A3[acceptance/]
+
+        style A fill:#ffcccc
+        style A1 fill:#ffeeee
+    end
+
+    subgraph "Target State (Organized, 41+ files)"
+        B[tests/]
+        B --> B1[tutorials/]
+        B --> B2[howto/]
+        B --> B3[reference/]
+        B --> B4[explanations/]
+        B --> B5[common/]
+        B --> B6[acceptance/]
+
+        B1 --> B1A[hello_world.rs]
+        B1 --> B1B[basic_noun_verb.rs]
+        B1 --> B1C[adding_arguments.rs]
+
+        B2 --> B2A[async_operations.rs]
+        B2 --> B2B[environment_vars.rs]
+        B2 --> B2C[concurrency.rs]
+        B2 --> B2D[7 more files...]
+
+        B3 --> B3A[core/]
+        B3 --> B3B[cli/]
+        B3 --> B3C[runtime/]
+        B3 --> B3D[logic/]
+        B3 --> B3E[advanced/]
+
+        B3A --> B3A1[unit.rs]
+        B3A --> B3A2[integration.rs]
+        B3A --> B3A3[kernel.rs]
+
+        B3B --> B3B1[builder.rs]
+        B3B --> B3B2[validator.rs]
+        B3B --> B3B3[router.rs]
+
+        B4 --> B4A[edge_cases.rs]
+        B4 --> B4B[hotpath_optimization.rs]
+        B4 --> B4C[architecture.rs]
+
+        style B fill:#ccffcc
+        style B1 fill:#e6f7ff
+        style B2 fill:#fff7e6
+        style B3 fill:#f0f0f0
+        style B4 fill:#ffe6f0
+    end
+
+    A -.Move & Organize.-> B
+
+    classDef tutorial fill:#e6f7ff,stroke:#0066cc,stroke-width:2px
+    classDef howto fill:#fff7e6,stroke:#cc8800,stroke-width:2px
+    classDef reference fill:#f0f0f0,stroke:#666,stroke-width:2px
+    classDef explanation fill:#ffe6f0,stroke:#cc0066,stroke-width:2px
+
+    class B1,B1A,B1B,B1C tutorial
+    class B2,B2A,B2B,B2C,B2D howto
+    class B3,B3A,B3B,B3C,B3D,B3E reference
+    class B4,B4A,B4B,B4C explanation

@@ -1,0 +1,57 @@
+%% Diataxis Quadrants - Test Mapping
+
+graph LR
+    subgraph "Diataxis Framework"
+        subgraph "Learning-Oriented"
+            T[📚 TUTORIALS<br/>tests/tutorials/]
+            T --> T1[hello_world.rs]
+            T --> T2[basic_noun_verb.rs]
+            T --> T3[adding_arguments.rs]
+        end
+
+        subgraph "Problem-Oriented"
+            H[🎯 HOW-TO<br/>tests/howto/]
+            H --> H1[async_operations.rs]
+            H --> H2[environment_vars.rs]
+            H --> H3[concurrency.rs]
+            H --> H4[io_integration.rs]
+            H --> H5[dx_improvements.rs]
+            H --> H6[+ 2 more...]
+        end
+
+        subgraph "Information-Oriented"
+            R[📖 REFERENCE<br/>tests/reference/]
+            R --> R1[core/ - 3 files]
+            R --> R2[cli/ - 3 files]
+            R --> R3[runtime/ - 2 files]
+            R --> R4[logic/ - 2 files]
+            R --> R5[macros/ - 1 file]
+            R --> R6[validation/ - 1 file]
+            R --> R7[advanced/ - 9 files]
+        end
+
+        subgraph "Understanding-Oriented"
+            E[🧠 EXPLANATIONS<br/>tests/explanations/]
+            E --> E1[edge_cases.rs]
+            E --> E2[hotpath_optimization.rs]
+            E --> E3[architecture.rs]
+            E --> E4[noun_verb_pattern.rs]
+        end
+    end
+
+    subgraph "Characteristics"
+        T -.Study.-> TC[Step-by-step<br/>Simplified<br/>Working examples]
+        H -.Goals.-> HC[Practical<br/>Solutions<br/>Real-world]
+        R -.Facts.-> RC[Complete<br/>Accurate<br/>Structured]
+        E -.Why.-> EC[Conceptual<br/>Theoretical<br/>Big-picture]
+    end
+
+    style T fill:#e6f7ff,stroke:#0066cc,stroke-width:3px
+    style H fill:#fff7e6,stroke:#cc8800,stroke-width:3px
+    style R fill:#f0f0f0,stroke:#666,stroke-width:3px
+    style E fill:#ffe6f0,stroke:#cc0066,stroke-width:3px
+
+    style TC fill:#e6f7ff
+    style HC fill:#fff7e6
+    style RC fill:#f0f0f0
+    style EC fill:#ffe6f0

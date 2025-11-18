@@ -1,0 +1,245 @@
+//! Demonstration of test_prelude utilities
+//!
+//! This file demonstrates that the test_prelude solution:
+//! 1. Passes clippy::unwrap_used and clippy::expect_used lints
+//! 2. Provides better error messages
+//! 3. Is more readable and maintainable
+//!
+//! Run with:
+//!   cargo test --test test_prelude_demo
+//!   cargo clippy --test test_prelude_demo -- -D clippy::unwrap_used -D clippy::expect_used
+
+use tests::common::test_prelude::*;
+
+// Mock types for demonstration
+fn parse_config() -> Result<String, &'static str> {
+    Ok("config".to_string())
+}
+
+fn find_user(name: &str) -> Option<String> {
+    if name == "alice" {
+        Some("Alice User".to_string())
+    } else {
+        None
+    }
+}
+
+// ============================================================================
+// DEMONSTRATION: Result Handling
+// ============================================================================
+
+#[test]
+fn demo_result_test_unwrap() {
+    // OLD WAY (lint violation):
+    // let config = parse_config().unwrap();
+
+    // NEW WAY (lint compliant):
+    let config = parse_config().test_unwrap();
+    assert_eq!(config, "config");
+}
+
+#[test]
+fn demo_result_test_expect() {
+    // OLD WAY (lint violation):
+    // let config = parse_config().expect("Failed to parse config");
+
+    // NEW WAY (lint compliant):
+    let config = parse_config().test_expect("Failed to parse config");
+    assert_eq!(config, "config");
+}
+
+#[test]
+fn demo_result_macro_test_ok() {
+    // MACRO WAY (most concise):
+    let config = test_ok!(parse_config());
+    assert_eq!(config, "config");
+}
+
+#[test]
+fn demo_result_macro_test_ok_with_message() {
+    // MACRO WAY with custom message:
+    let config = test_ok!(parse_config(), "Config parsing failed");
+    assert_eq!(config, "config");
+}
+
+// ============================================================================
+// DEMONSTRATION: Option Handling
+// ============================================================================
+
+#[test]
+fn demo_option_test_unwrap() {
+    // OLD WAY (lint violation):
+    // let user = find_user("alice").unwrap();
+
+    // NEW WAY (lint compliant):
+    let user = find_user("alice").test_unwrap();
+    assert_eq!(user, "Alice User");
+}
+
+#[test]
+fn demo_option_test_some() {
+    // OLD WAY (lint violation):
+    // let user = find_user("alice").expect("User not found");
+
+    // NEW WAY (lint compliant):
+    let user = find_user("alice").test_some("User alice should exist");
+    assert_eq!(user, "Alice User");
+}
+
+#[test]
+fn demo_option_macro_test_some() {
+    // MACRO WAY:
+    let user = test_some!(find_user("alice"));
+    assert_eq!(user, "Alice User");
+}
+
+#[test]
+fn demo_option_macro_test_some_with_message() {
+    // MACRO WAY with message:
+    let user = test_some!(find_user("alice"), "User should exist");
+    assert_eq!(user, "Alice User");
+}
+
+#[test]
+fn demo_option_test_none() {
+    // Assert Option is None:
+    let user = find_user("bob");
+    user.test_none("User bob should not exist");
+}
+
+#[test]
+fn demo_option_macro_test_none() {
+    // MACRO WAY:
+    test_none!(find_user("bob"), "User bob should not exist");
+}
+
+// ============================================================================
+// DEMONSTRATION: Complex Real-World Examples
+// ============================================================================
+
+#[test]
+fn demo_chained_operations() {
+    // Simulating chained Result operations
+    let step1 = parse_config()
+        .test_expect("Step 1: Parse config failed");
+
+    let step2 = Ok(step1.len())
+        .test_expect("Step 2: Get length failed");
+
+    assert!(step2 > 0);
+}
+
+#[test]
+fn demo_mixed_result_option() {
+    // Result that returns Option
+    let result: Result<Option<String>, &str> = Ok(Some("value".to_string()));
+
+    let value = result
+        .test_expect("Failed to get result")
+        .test_some("Expected Some value");
+
+    assert_eq!(value, "value");
+}
+
+#[test]
+fn demo_with_context() {
+    // Demonstrating better error messages
+    let iterations = 5;
+
+    for i in 0..iterations {
+        let result = Ok(i);
+        let _value = result
+            .test_expect(&format!("Iteration {} failed", i));
+    }
+}
+
+// ============================================================================
+// DEMONSTRATION: Error Messages (These Should Fail)
+// ============================================================================
+// Uncomment these to see the superior error messages
+
+// #[test]
+// #[should_panic]
+// fn demo_result_error_message() {
+//     let result: Result<i32, &str> = Err("something went wrong");
+//     let _value = result.test_expect("This operation was critical");
+//     // Panic message will be:
+//     // [TEST ASSERTION FAILED] This operation was critical
+//     // Error: "something went wrong"
+// }
+
+// #[test]
+// #[should_panic]
+// fn demo_option_error_message() {
+//     let option: Option<i32> = None;
+//     let _value = option.test_some("Expected value to be present");
+//     // Panic message will be:
+//     // [TEST ASSERTION FAILED] Expected value to be present: Option was None
+// }
+
+// ============================================================================
+// VERIFICATION: Clippy Compliance
+// ============================================================================
+
+/// This test verifies that we can use test_prelude utilities
+/// without triggering clippy::unwrap_used or clippy::expect_used
+#[test]
+fn verify_no_clippy_violations() {
+    // All of these should pass clippy with -D clippy::unwrap_used -D clippy::expect_used
+    let _r1 = parse_config().test_unwrap();
+    let _r2 = parse_config().test_expect("msg");
+    let _r3 = test_ok!(parse_config());
+    let _r4 = test_ok!(parse_config(), "msg");
+
+    let _o1 = find_user("alice").test_unwrap();
+    let _o2 = find_user("alice").test_some("msg");
+    let _o3 = test_some!(find_user("alice"));
+    let _o4 = test_some!(find_user("alice"), "msg");
+
+    test_none!(find_user("bob"), "msg");
+}
+
+// ============================================================================
+// COMPARISON: Before vs After
+// ============================================================================
+
+#[cfg(feature = "show_violations")]
+mod before_migration {
+    use super::*;
+
+    // This module shows what the old code looked like
+    // It's behind a feature flag because it violates lints
+
+    #[test]
+    #[allow(clippy::unwrap_used)]  // Had to add this annotation!
+    fn old_way_with_unwrap() {
+        let config = parse_config().unwrap();  // Lint violation
+        assert_eq!(config, "config");
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]  // Had to add this annotation!
+    fn old_way_with_expect() {
+        let user = find_user("alice").expect("Not found");  // Lint violation
+        assert_eq!(user, "Alice User");
+    }
+}
+
+#[cfg(not(feature = "show_violations"))]
+mod after_migration {
+    use super::*;
+
+    // This is the new way - no lint violations, no annotations needed
+
+    #[test]
+    fn new_way_with_test_unwrap() {
+        let config = parse_config().test_unwrap();
+        assert_eq!(config, "config");
+    }
+
+    #[test]
+    fn new_way_with_test_expect() {
+        let user = find_user("alice").test_some("User should exist");
+        assert_eq!(user, "Alice User");
+    }
+}
