@@ -11,6 +11,7 @@ pub mod emergence;
 pub mod optimization;
 pub mod resilience;
 pub mod communication;
+pub mod false_positives;
 
 pub use stigmergy::{PheromoneField, StigmergicProtocol};
 pub use collective_intelligence::{VotingProtocol, HiveMind, ConsensusType as SwarmConsensusType};
@@ -20,3 +21,11 @@ pub use emergence::{RuleEngine, SelfOrganizer, Rule};
 pub use optimization::{ParticleSwarmOptimizer, AntColonyOptimizer, FireflyAlgorithm};
 pub use resilience::{SwarmResilience, HealthStatus};
 pub use communication::{SwarmProtocol, SwarmMessage, MessageType};
+pub use false_positives::{
+    FalseAlertDetector, FalseAlert, AlertSeverity,
+    ConsensusRecoverySystem, ConsensusVerification,
+    TrustScoreVerifier, TrustScoreAudit,
+    BidValidator, BidValidation,
+    PheromoneValidator,
+    RoleVerifier, RoleVerification,
+};
