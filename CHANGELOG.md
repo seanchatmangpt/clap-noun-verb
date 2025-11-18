@@ -5,6 +5,39 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2025-11-18
+
+### Fixed
+
+- **Macro Lint Suppression** - Auto-suppress `non_upper_case_globals` warning in `#[noun]` macro
+  - Both `#[noun]` and `#[verb]` macros now automatically suppress the naming convention warning
+  - Eliminates need for manual `#[allow(non_upper_case_globals)]` attributes
+  - Consistent warning suppression across all macro-generated statics
+  - Improved developer experience and cleaner generated code
+
+### Documentation
+
+- Documentation audit against Diataxis framework completed
+- README version numbers updated to v4.0.1
+- Core team best practices verification passed
+
+### Migration Notes
+
+No breaking changes. All v4.0.0 code continues to work without modification.
+
+## [4.0.0] - 2025-11-16
+
+### Added - Major Release with Production-Ready Features
+
+- Comprehensive autonomic CLI layer with kernel capabilities
+- Production validation suite with 500+ tests
+- Deterministic execution framework for agent compatibility
+- Type-level security system
+
+### Migration Notes
+
+Breaking changes from v3.x. See migration guide in docs/book/
+
 ## [3.7.1] - 2025-11-15
 
 ### Changed

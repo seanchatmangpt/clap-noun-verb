@@ -50,8 +50,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "3.7.1"
-clap-noun-verb-macros = "3.7.1"
+clap-noun-verb = "4.0.1"
+clap-noun-verb-macros = "4.0.1"
 ```
 
 Create your first command:
