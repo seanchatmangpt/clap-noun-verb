@@ -97,6 +97,9 @@ pub mod integration;
 // New in v4.3 - 10 Production Plugins with Chicago-TDD Testing
 pub mod plugins;
 
+// New in v5.0 - 2028 Innovations: Trillion-Agent Ecosystems
+pub mod agent2028;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
