@@ -915,6 +915,7 @@ fn generate_verb_registration(
         }
 
         // Auto-generated registration
+        #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__VERB_REGISTRY)]
         static #init_fn_name: fn() = || {
             // Core team approach: Auto-infer noun name from filename if not explicitly provided
