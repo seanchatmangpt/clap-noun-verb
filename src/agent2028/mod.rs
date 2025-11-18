@@ -15,6 +15,10 @@ pub mod prediction;
 // 2029-2030+ Innovations: AI Agent Swarm Ecosystems
 pub mod swarm;
 
+// Orchestration & Integration Layer
+pub mod orchestration;
+pub mod event_bus;
+
 pub use coordination::{AgentRegistry, CommandBroker, ConsensusEngine};
 pub use learning::{ExecutionProfiler, ModelInference, AdaptationEngine};
 pub use quantum_crypto::QuantumSafeAttestation;
@@ -28,3 +32,5 @@ pub use swarm::{
     HerdingBehavior, SwarmingBehavior, FormationController, TaskMarket, RuleEngine,
     ParticleSwarmOptimizer, AntColonyOptimizer, FireflyAlgorithm, SwarmResilience, SwarmProtocol,
 };
+pub use orchestration::{Orchestrator, OperationRequest, OperationResult, IntegrationBridge, AgentTier};
+pub use event_bus::{EventBus, Event, EventType, EventHandlerRegistry};
