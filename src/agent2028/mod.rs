@@ -19,6 +19,9 @@ pub mod swarm;
 pub mod orchestration;
 pub mod event_bus;
 
+// Thesis Framework (Hyper-Thesis Framework Integration)
+pub mod thesis_framework;
+
 pub use coordination::{AgentRegistry, CommandBroker, ConsensusEngine};
 pub use learning::{ExecutionProfiler, ModelInference, AdaptationEngine};
 pub use quantum_crypto::QuantumSafeAttestation;
@@ -34,3 +37,6 @@ pub use swarm::{
 };
 pub use orchestration::{Orchestrator, OperationRequest, OperationResult, IntegrationBridge, AgentTier};
 pub use event_bus::{EventBus, Event, EventType, EventHandlerRegistry};
+pub use thesis_framework::{
+    Shard, ShardFamily, ShardStatus, LambdaSchedule, PiProfile, GammaChecker, CheckReport,
+};
