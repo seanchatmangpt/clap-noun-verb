@@ -1,4 +1,4 @@
-/// 2028 Innovations: Trillion-Agent Ecosystems
+/// CNV 2028 Innovations: Trillion-Agent Ecosystems
 ///
 /// This module contains cutting-edge features for distributed multi-agent coordination,
 /// learning systems, quantum-safe cryptography, trust networks, and self-healing autonomic systems.
@@ -12,6 +12,9 @@ pub mod self_healing;
 pub mod audit_ledger;
 pub mod prediction;
 
+// 2029-2030+ Innovations: AI Agent Swarm Ecosystems
+pub mod swarm;
+
 pub use coordination::{AgentRegistry, CommandBroker, ConsensusEngine};
 pub use learning::{ExecutionProfiler, ModelInference, AdaptationEngine};
 pub use quantum_crypto::QuantumSafeAttestation;
@@ -20,3 +23,8 @@ pub use marketplace::CapabilityMarket;
 pub use self_healing::Autonomic;
 pub use audit_ledger::DistributedAuditLedger;
 pub use prediction::{WorkloadForecaster, CapacityPlanner};
+pub use swarm::{
+    PheromoneField, StigmergicProtocol, VotingProtocol, HiveMind, BoidAgent, FlockingBehavior,
+    HerdingBehavior, SwarmingBehavior, FormationController, TaskMarket, RuleEngine,
+    ParticleSwarmOptimizer, AntColonyOptimizer, FireflyAlgorithm, SwarmResilience, SwarmProtocol,
+};
