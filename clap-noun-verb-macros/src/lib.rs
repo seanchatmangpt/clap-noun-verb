@@ -8,13 +8,21 @@
 //! The #[verb] macro now auto-detects clio::Input and clio::Output types
 //! in function parameters and automatically wires them with appropriate
 //! clap configuration.
+//!
+//! # Compile-Time Error Proofing (Poka-Yoke)
+//!
+//! The macro system includes advanced compile-time validation:
+//! - Gap 1: Forgotten #[verb] detection
+//! - Gap 2: Duplicate verb detection
+//! - Gap 3: Return type must implement Serialize
+//! - Gap 4: Enhanced attribute syntax validation
 
 mod io_detection;
+mod validation;
 
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, parse_macro_input, ItemFn};
-use io_detection::{detect_io_type, DetectedIoType, IoArgConfig};
 
 // Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
 // because Rust doesn't allow proc_macro_attribute on parameters - only on items.
@@ -147,14 +155,42 @@ pub fn noun(args: TokenStream, input: TokenStream) -> TokenStream {
 /// #[verb("status")]
 /// fn show_status() -> Result<Status> {}
 /// ```
+///
+/// # Compile-Time Validation
+///
+/// This macro performs extensive compile-time validation:
+/// - Return type must exist and implement Serialize
+/// - Attribute syntax must be correct (helpful error messages)
+/// - Duplicate verb registration detection
+/// - Parameter attributes (#[arg]) must be valid
 #[proc_macro_attribute]
 pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(input as ItemFn);
+    let args_tokens = proc_macro2::TokenStream::from(args.clone());
+
+    // GAP 3: Validate return type implements Serialize
+    if let Err(e) = validation::validate_return_type(&input_fn.sig.output, &input_fn.sig.ident) {
+        return e.to_compile_error().into();
+    }
+
+    // GAP 4: Validate attribute syntax with helpful errors
+    if let Err(e) = validation::validate_verb_attribute_syntax(&args_tokens, &input_fn) {
+        return e.to_compile_error().into();
+    }
+
+    // Validate #[arg] attributes on parameters
+    for input in &input_fn.sig.inputs {
+        if let syn::FnArg::Typed(pat_type) = input {
+            if let Err(e) = validation::validate_arg_attribute_syntax(&pat_type.attrs) {
+                return e.to_compile_error().into();
+            }
+        }
+    }
 
     // Parse verb name from args
     let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
     let args_vec: syn::punctuated::Punctuated<_, _> =
-        match Parser::parse2(parser, proc_macro2::TokenStream::from(args)) {
+        match Parser::parse2(parser, args_tokens.clone()) {
             Ok(args) => args,
             Err(_) => {
                 // If parsing fails, extract verb name from function name
@@ -888,6 +924,14 @@ fn generate_verb_registration(
         }
     }
 
+    // GAP 2: Generate duplicate verb detection
+    let noun_name_for_check = noun_name.as_deref().unwrap_or("__auto__");
+    let duplicate_check = validation::generate_duplicate_detection(
+        &verb_name,
+        noun_name_for_check,
+        fn_name,
+    );
+
     // Generate wrapper function
     let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
     let about_str = about.as_deref().unwrap_or("");
@@ -907,6 +951,9 @@ fn generate_verb_registration(
 
     let expanded = quote! {
         #output_fn
+
+        // GAP 2: Compile-time duplicate verb detection
+        #duplicate_check
 
         // Wrapper function that adapts HandlerInput to function signature
         fn #wrapper_name(input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
