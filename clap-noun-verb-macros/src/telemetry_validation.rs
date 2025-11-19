@@ -295,24 +295,14 @@ pub fn generate_verb_instrumentation(
 
     let span_name = format!("{}.{}", noun_name, verb_name);
 
-    // Generate span declaration
+    // Generate span declaration ONLY
+    // Note: The wrapper function (in the #[verb] macro) already includes the telemetry instrumentation.
+    // We only generate the compile-time span declaration here, not the runtime usage code.
     let decl = generate_span_declaration(&span_const_name, &span_name);
 
-    // Generate automatic usage in wrapper
-    let usage = quote! {
-        // Automatically instrument verb with telemetry
-        let mut _verb_span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(#span_name);
-        _verb_span.set_attribute("noun", #noun_name);
-        _verb_span.set_attribute("verb", #verb_name);
-        _verb_span.set_attribute("function", stringify!(#fn_name));
-    };
-
-    quote! {
-        #decl
-
-        // Instrumentation code for wrapper function
-        #usage
-    }
+    // Return only the declaration (which is module-level code)
+    // The wrapper function in lib.rs lines 1141-1157 handles the actual instrumentation
+    decl
 }
 
 /// Sanitize identifier for use in span const names

@@ -662,9 +662,25 @@ impl CommandRegistry {
     /// Run CLI with auto-discovered commands
     pub fn run(&self, args: Vec<String>) -> Result<()> {
         let cmd = self.build_command();
-        let matches = cmd
-            .try_get_matches_from(args)
-            .map_err(|e| crate::error::NounVerbError::argument_error(e.to_string()))?;
+        let matches = match cmd.try_get_matches_from(args) {
+            Ok(m) => m,
+            Err(e) => {
+                // Clap returns an error for help/version, but with exit code 0
+                // In this case, we should print it and exit successfully
+                let exit_code = e.exit_code();
+                let help_or_version_msg = e.to_string();
+
+                // Print the message (help or version)
+                print!("{}", help_or_version_msg);
+
+                // Exit with the code clap wants (0 for help/version, non-0 for errors)
+                if exit_code == 0 {
+                    return Ok(());
+                } else {
+                    return Err(crate::error::NounVerbError::argument_error(help_or_version_msg));
+                }
+            }
+        };
 
         // Route command
         if let Some((noun_name, noun_matches)) = matches.subcommand() {

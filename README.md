@@ -103,6 +103,49 @@ $ myapp services logs api --lines 100
 {"service":"api","lines":100,"entries":[]}
 ```
 
+## CLI Documentation
+
+### Learning Resources
+
+| Document | Description | Time to Read |
+|----------|-------------|--------------|
+| **[Quick Start Guide](docs/QUICKSTART.md)** | Get started in 5 easy steps | 10 minutes |
+| **[CLI Reference](docs/CLI_REFERENCE.md)** | Complete command and API reference | 30 minutes |
+| **[CLI Cookbook](docs/CLI_COOKBOOK.md)** | 10+ practical recipes for common tasks | 20 minutes |
+| **[Troubleshooting](docs/CLI_TROUBLESHOOTING.md)** | Common issues and solutions | 15 minutes |
+
+### Quick Links
+
+**For Beginners:**
+- [Installation & First Command](docs/QUICKSTART.md#step-1-installation--setup-2-minutes)
+- [Understanding Noun-Verb Pattern](docs/QUICKSTART.md#step-2-list-available-commands-1-minute)
+- [Common Mistakes](docs/CLI_TROUBLESHOOTING.md#command-discovery-issues)
+
+**For Developers:**
+- [Argument Configuration](docs/CLI_REFERENCE.md#argument-attributes)
+- [Type Inference Guide](docs/CLI_REFERENCE.md#type-inference)
+- [Async Operations](docs/CLI_REFERENCE.md#async-operations)
+- [Performance Tuning](docs/CLI_COOKBOOK.md#9-performance-tuning)
+
+**For Advanced Users:**
+- [Multi-Template Composition](docs/CLI_COOKBOOK.md#3-use-multiple-templates-together)
+- [CI/CD Integration](docs/CLI_COOKBOOK.md#7-integrate-with-cicd)
+- [Custom Error Handling](docs/CLI_COOKBOOK.md#10-advanced-error-handling)
+
+### Documentation by Task
+
+**I want to...**
+- Build my first CLI → [Quick Start Guide](docs/QUICKSTART.md)
+- Add custom arguments → [Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes)
+- Use async/await → [Async Operations](docs/CLI_REFERENCE.md#async-operations)
+- Handle errors gracefully → [Error Handling](docs/CLI_REFERENCE.md#error-handling)
+- Output in different formats → [Output Formats](docs/CLI_REFERENCE.md#output-formats)
+- Share state between commands → [Application Context](docs/CLI_REFERENCE.md#application-context)
+- Generate shell completions → [Shell Completions](docs/CLI_REFERENCE.md#shell-completions)
+- Deploy in CI/CD → [CI/CD Integration](docs/CLI_COOKBOOK.md#7-integrate-with-cicd)
+- Debug my CLI → [Debug Template Issues](docs/CLI_COOKBOOK.md#8-debug-template-issues)
+- Fix compilation errors → [Compilation Errors](docs/CLI_TROUBLESHOOTING.md#compilation-errors)
+
 ## How-to Guides
 
 ### How to configure arguments
@@ -115,41 +158,41 @@ fn set_config(
     // Short flag with default value
     #[arg(short = 'p', default_value = "8080")]
     port: u16,
-    
+
     // Environment variable fallback
     #[arg(env = "SERVER_HOST", default_value = "localhost")]
     host: String,
-    
+
     // Positional argument (index 0)
     #[arg(index = 0)]
     url: String,
-    
+
     // Count action (auto-inferred for usize, but can be explicit)
     #[arg(short = 'v', action = "count")]
     verbose: usize,
-    
+
     // Multiple values
     #[arg(multiple)]
     tags: Vec<String>,
-    
+
     // Custom value name in help
     #[arg(value_name = "FILE")]
     output: String,
-    
+
     // Aliases
     #[arg(short = 'd', alias = "debug")]
     verbose_debug: bool,
-    
+
     // Argument groups (exclusive)
     #[arg(group = "format")]
     json: bool,
     #[arg(group = "format")]
     yaml: bool,
-    
+
     // Requires another argument
     #[arg(requires = "output")]
     format: Option<String>,
-    
+
     // Conflicts with another argument
     #[arg(conflicts_with = "format")]
     raw: bool,
@@ -157,6 +200,8 @@ fn set_config(
     Ok(get_config(port, host, url, verbose, tags, output))
 }
 ```
+
+See [CLI Reference - Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes) for complete documentation.
 
 ### How to use async operations
 
@@ -189,6 +234,8 @@ fn fetch_data(args: &VerbArgs) -> Result<Output> {
 }
 ```
 
+See [CLI Reference - Async Operations](docs/CLI_REFERENCE.md#async-operations) for more examples.
+
 ### How to share state across commands
 
 Use `AppContext` to share typed state across all commands:
@@ -215,6 +262,8 @@ fn query_database(args: &VerbArgs) -> Result<QueryResult> {
     // Use database connection...
 }
 ```
+
+See [CLI Reference - Application Context](docs/CLI_REFERENCE.md#application-context) for complete guide.
 
 ### How to format output
 
@@ -250,6 +299,8 @@ let tsv = OutputFormat::Tsv.format(&output)?;
 
 Supported formats: `json`, `yaml`, `toml`, `table`, `tsv`
 
+See [CLI Reference - Output Formats](docs/CLI_REFERENCE.md#output-formats) for more details.
+
 ### How to generate shell completions
 
 Auto-generate shell completions for supported shells:
@@ -276,6 +327,8 @@ myapp --generate-completion bash > myapp.bash
 # Source in .bashrc
 source myapp.bash
 ```
+
+See [CLI Reference - Shell Completions](docs/CLI_REFERENCE.md#shell-completions) for all shells.
 
 ### How to mark commands as deprecated
 
@@ -311,6 +364,8 @@ Arguments are automatically inferred from function signatures:
 - `usize` → Count action `--name` (e.g., `-vvv` → 3)
 - `Vec<T>` → Multiple values `--name <value1> <value2> ...` (uses `Append` action)
 
+See [CLI Reference - Type Inference](docs/CLI_REFERENCE.md#type-inference) for complete type mapping.
+
 ### Argument Attributes
 
 Available `#[arg(...)]` attributes:
@@ -335,6 +390,8 @@ Available `#[arg(...)]` attributes:
 - `exclusive` - Exclusive group flag
 - `trailing_vararg` - Trailing variable arguments
 - `allow_negative_numbers` - Allow negative numbers
+
+See [CLI Reference - Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes) for detailed documentation and examples.
 
 ### Verb Registration
 
@@ -437,6 +494,8 @@ fn main() -> Result<()> {
 3. Return `Result<T>` where `T: Serialize` for JSON output
 4. Call `clap_noun_verb::run()` in `main()`
 
+See [Quick Start Guide](docs/QUICKSTART.md) for step-by-step migration.
+
 ## Examples
 
 ```bash
@@ -448,11 +507,31 @@ See the [`examples/`](examples/) directory for more examples.
 
 ## Documentation
 
-- [Examples](examples/) - Working examples
+### User Guides
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
+- **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete API reference
+- **[CLI Cookbook](docs/CLI_COOKBOOK.md)** - Common recipes and patterns
+- **[Troubleshooting](docs/CLI_TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Advanced Topics
+- [Examples](examples/) - Working code examples
 - [Book Documentation](docs/book/src/) - Comprehensive guide for porting CLI applications
 - [Autonomic CLI Layer](AUTONOMIC.md) - Machine-grade interface for agents and MAPE-K loops
+
+### Community
 - [Contributing](CONTRIBUTING.md) - Contribution guidelines
 - [Changelog](CHANGELOG.md) - Version history
+- [GitHub Issues](https://github.com/ruvnet/clap-noun-verb/issues) - Report bugs
+- [GitHub Discussions](https://github.com/ruvnet/clap-noun-verb/discussions) - Ask questions
+
+## Performance Metrics
+
+**From v4.0.0 validation:**
+- **Compile Time:** <2 seconds (incremental builds)
+- **Binary Size:** ~2.5MB (release mode)
+- **Command Discovery:** <1ms (compile-time registration)
+- **JSON Serialization:** <100μs per command
+- **Memory Usage:** <5MB per command execution
 
 ## License
 

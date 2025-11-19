@@ -546,7 +546,7 @@ mod tests {
             Shard::new(
                 "method".to_string(),
                 "Method".to_string(),
-                ShardFamily::Method,
+                ShardFamily::IMRaD,
                 "Methodology".to_string(),
             ),
         ];
