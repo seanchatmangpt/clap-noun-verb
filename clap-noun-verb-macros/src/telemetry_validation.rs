@@ -285,7 +285,7 @@ pub fn generate_span_macro() -> TokenStream {
 pub fn generate_verb_instrumentation(
     verb_name: &str,
     noun_name: &str,
-    fn_name: &syn::Ident,
+    _fn_name: &syn::Ident,
 ) -> TokenStream {
     let span_const_name = quote::format_ident!(
         "SPAN_{}_{}",
