@@ -51,6 +51,34 @@ See `docs/MIGRATION_V4_TO_V5.md` for comprehensive upgrade instructions includin
 - Machine integration quickstart
 - Troubleshooting common issues
 
+### Deferred Features (Planned for v5.1.0 - Q1 2026)
+
+The following advanced features are **not included** in v5.0.0 but are planned for v5.1.0:
+
+- **Guards API** (`[v5.1 PLANNED]`) - Autonomic resource constraint enforcement
+  - Runtime budget enforcement for agent operations
+  - Declarative resource limits (memory, CPU, time)
+  - Automatic violation handling and recovery
+  - Status: Deferred (not in critical path for basic CLI usage)
+
+- **Delegation API** (`[v5.1 PLANNED]`) - Multi-agent delegation chains
+  - Agent-to-agent capability transfer
+  - Cryptographic delegation proofs
+  - Delegation chain verification
+  - Status: Deferred (Agent2028 advanced feature)
+
+- **Complete MCP Integration** (`[v5.1 PLANNED]`) - Full Model Context Protocol support
+  - MCP server implementation
+  - Tool discovery and registration
+  - Resource management protocol
+  - Status: Partial (introspection API complete, server integration in progress)
+
+**Rationale for Deferral:**
+- These are advanced features for autonomous agent systems
+- v5.0.0 focuses on core CLI functionality and machine-grade introspection
+- Deferring allows faster release of production-ready core features
+- All critical functionality (domain separation, telemetry, introspection) is complete
+
 ### Deprecations
 
 - Direct access to autonomic layer APIs (use introspection API instead)
