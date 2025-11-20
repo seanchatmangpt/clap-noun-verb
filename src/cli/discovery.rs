@@ -74,8 +74,22 @@ impl CommandDiscovery {
             }
         }
 
-        // Sort by score (highest first)
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        // Sort by score (highest first), treating NaN/Inf as lowest priority
+        results.sort_by(|a, b| {
+            match b.score.partial_cmp(&a.score) {
+                Some(ordering) => ordering,
+                None => {
+                    // Handle NaN/Inf cases - neither is a valid score
+                    if a.score.is_nan() && b.score.is_nan() {
+                        std::cmp::Ordering::Equal
+                    } else if b.score.is_nan() {
+                        std::cmp::Ordering::Less  // a is "greater" if b is NaN
+                    } else {
+                        std::cmp::Ordering::Greater  // b is "greater" if a is NaN
+                    }
+                }
+            }
+        });
 
         results
     }
@@ -121,7 +135,13 @@ impl CommandDiscovery {
 
     /// Simple fuzzy matching algorithm
     fn fuzzy_match(&self, text: &str, pattern: &str) -> f32 {
+        // Empty pattern matches everything (no constraints = perfect match)
         if pattern.is_empty() {
+            return 1.0;
+        }
+
+        // Empty text cannot match non-empty pattern
+        if text.is_empty() {
             return 0.0;
         }
 
@@ -294,7 +314,23 @@ pub fn generate_search_output(
     let results = discovery.search(keyword);
 
     if results.is_empty() {
-        return Err(NounVerbError::argument_error(format!("No commands found matching '{}'", keyword)));
+        // Get suggestions instead of failing hard
+        let suggestions = discovery.suggest(keyword);
+
+        if !suggestions.is_empty() {
+            eprintln!("No exact match for '{}'. Did you mean:", keyword);
+            for (i, suggestion) in suggestions.iter().take(3).enumerate() {
+                eprintln!("  {}. {} ({})", i + 1, suggestion.command, suggestion.reason);
+            }
+        } else {
+            eprintln!(
+                "No commands found matching '{}'. Run 'ggen help' for all commands.",
+                keyword
+            );
+        }
+
+        // Return empty result instead of error, allowing further processing
+        return Ok(SearchOutput { keyword: keyword.to_string(), results: vec![], total: 0 });
     }
 
     let total = results.len();
@@ -465,6 +501,10 @@ mod tests {
         let discovery = create_test_discovery();
         let output = generate_search_output(&discovery, "nonexistent_xyz_123");
 
-        assert!(output.is_err());
+        // Should return OK with empty results instead of error (improved UX)
+        assert!(output.is_ok());
+        let result = output.unwrap();
+        assert_eq!(result.total, 0);
+        assert!(result.results.is_empty());
     }
 }

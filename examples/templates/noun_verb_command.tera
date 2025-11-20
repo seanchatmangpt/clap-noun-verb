@@ -1,0 +1,213 @@
+//! Generated {{noun}} {{verb}} command
+//!
+//! This command is auto-generated from the clap-noun-verb RDF ontology
+//! using Tera templating + SPARQL queries.
+//!
+//! Noun: {{noun}}
+//! Verb: {{verb}}
+//! Operation: {{operation}}
+//! Result Type: {{result_type}}
+
+use clap::Parser;
+use clap_noun_verb::Result;
+use serde::{Deserialize, Serialize};
+use std::fmt;
+
+/// {{noun}} {{verb}} command
+///
+/// Performs {{verb | lowercase}} operation on {{noun | lowercase}} entity.
+///
+/// # Example
+/// ```text
+/// $ cargo run --example {{example_name}} -- {{verb | lowercase}}-{{noun | lowercase}} --help
+/// ```
+#[derive(Debug, Parser)]
+pub struct {{noun}}{{verb}}Args {
+    /// Entity identifier
+    #[arg(short, long, help = "{{noun}} entity ID or name")]
+    pub id: Option<String>,
+
+    /// Detailed output
+    #[arg(short, long, help = "Show detailed information")]
+    pub detailed: bool,
+
+    /// Output format
+    #[arg(short, long, default_value = "text", help = "Output format: text, json, markdown")]
+    pub format: OutputFormat,
+}
+
+/// Output format options
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum OutputFormat {
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "json")]
+    Json,
+    #[serde(rename = "markdown")]
+    Markdown,
+}
+
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            OutputFormat::Text => write!(f, "text"),
+            OutputFormat::Json => write!(f, "json"),
+            OutputFormat::Markdown => write!(f, "markdown"),
+        }
+    }
+}
+
+impl std::str::FromStr for OutputFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "text" => Ok(OutputFormat::Text),
+            "json" => Ok(OutputFormat::Json),
+            "markdown" => Ok(OutputFormat::Markdown),
+            _ => Err(format!("Invalid format: {}", s)),
+        }
+    }
+}
+
+/// Result type for {{noun}} {{verb}} operation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{noun}}{{verb}}Result {
+    /// Operation status
+    pub success: bool,
+
+    /// Result message
+    pub message: String,
+
+    /// Entity data (if applicable)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+
+    /// Execution metadata
+    pub metadata: OperationMetadata,
+}
+
+/// Operation metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OperationMetadata {
+    /// Operation type
+    pub operation: String,
+
+    /// HTTP status code equivalent
+    pub status: u16,
+
+    /// Execution timestamp
+    pub timestamp: String,
+
+    /// Execution duration (ms)
+    pub duration_ms: u64,
+}
+
+/// Implementation of {{noun}} {{verb}} command handler
+pub fn {{verb | lowercase}}_{{noun | lowercase}}(args: {{noun}}{{verb}}Args) -> Result<{{noun}}{{verb}}Result> {
+    let start = std::time::Instant::now();
+
+    // Placeholder implementation - would be customized per noun/verb combination
+    let result = {{noun}}{{verb}}Result {
+        success: true,
+        message: format!("Successfully performed {{verb | lowercase}} on {{noun | lowercase}}"),
+        data: args.id.map(|id| serde_json::json!({{ "id": id }})),
+        metadata: OperationMetadata {
+            operation: "{{operation}}".to_string(),
+            status: 200,
+            timestamp: chrono::Local::now().to_rfc3339(),
+            duration_ms: start.elapsed().as_millis() as u64,
+        },
+    };
+
+    match args.format {
+        OutputFormat::Text => {
+            println!("Operation: {{verb | lowercase}} {{noun | lowercase}}");
+            println!("Status: {}", if result.success { "Success" } else { "Failed" });
+            println!("Message: {}", result.message);
+            if let Some(data) = &result.data {
+                println!("Data: {}", serde_json::to_string_pretty(data).unwrap_or_default());
+            }
+        }
+        OutputFormat::Json => {
+            println!("{}", serde_json::to_string_pretty(&result).unwrap_or_default());
+        }
+        OutputFormat::Markdown => {
+            println!("# {{noun}} {{verb}}");
+            println!();
+            println!("**Status**: {}", if result.success { "✅ Success" } else { "❌ Failed" });
+            println!();
+            println!("**Message**: {}", result.message);
+            println!();
+            if let Some(data) = &result.data {
+                println!("**Data**:");
+                println!();
+                println!("```json");
+                println!("{}", serde_json::to_string_pretty(data).unwrap_or_default());
+                println!("```");
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_{{verb | lowercase}}_{{noun | lowercase}}_basic() {
+        let args = {{noun}}{{verb}}Args {
+            id: Some("test-entity".to_string()),
+            detailed: false,
+            format: OutputFormat::Text,
+        };
+
+        let result = {{verb | lowercase}}_{{noun | lowercase}}(args).unwrap();
+        assert!(result.success);
+        assert!(!result.message.is_empty());
+    }
+
+    #[test]
+    fn test_{{verb | lowercase}}_{{noun | lowercase}}_with_details() {
+        let args = {{noun}}{{verb}}Args {
+            id: Some("test-entity".to_string()),
+            detailed: true,
+            format: OutputFormat::Json,
+        };
+
+        let result = {{verb | lowercase}}_{{noun | lowercase}}(args).unwrap();
+        assert!(result.success);
+        assert!(result.data.is_some());
+    }
+
+    #[test]
+    fn test_output_formats() {
+        let formats = [OutputFormat::Text, OutputFormat::Json, OutputFormat::Markdown];
+
+        for format in formats.iter() {
+            let args = {{noun}}{{verb}}Args {
+                id: None,
+                detailed: false,
+                format: *format,
+            };
+
+            let result = {{verb | lowercase}}_{{noun | lowercase}}(args).unwrap();
+            assert!(result.success);
+        }
+    }
+
+    #[test]
+    fn test_metadata() {
+        let args = {{noun}}{{verb}}Args {
+            id: None,
+            detailed: false,
+            format: OutputFormat::Text,
+        };
+
+        let result = {{verb | lowercase}}_{{noun | lowercase}}(args).unwrap();
+        assert_eq!(result.metadata.operation, "{{operation}}");
+        assert_eq!(result.metadata.status, 200);
+    }
+}

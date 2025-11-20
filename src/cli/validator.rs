@@ -120,32 +120,36 @@ impl ArgValidator {
 
     /// Extract all validated options as a map
     ///
-    /// This extracts options (flags, counts, etc.) into a map.
-    /// Only extracts arguments that are actually present in matches.
+    /// This extracts only flags (boolean arguments) into a map.
+    /// Does NOT extract count-based arguments (use validate_flag_count() directly for those).
+    ///
+    /// NOTE: This method only handles flags. For count arguments, call validate_flag_count()
+    /// directly since get_count() may panic if called on non-count arguments.
     pub fn extract_opts(&self, matches: &ArgMatches) -> HashMap<String, String> {
         let mut opts = HashMap::new();
 
-        // Extract flags and counts from arguments that are present
-        // Only process arguments that exist in the matches to avoid panics
+        // Extract flags only - get_flag is safe to call on all argument types
+        // It returns false for non-flag arguments, so no panics are possible
         for id in matches.ids() {
             let name = id.as_str();
-
-            // Try to get flag value - get_flag is safe to call, returns false if not a flag
-            let flag_value = matches.get_flag(name);
-            if flag_value {
+            if matches.get_flag(name) {
                 opts.insert(name.to_string(), "true".to_string());
-                continue; // Skip count check if we found a flag
             }
-
-            // Only check count for arguments that might be count arguments
-            // We check if the argument was provided by checking if it has a count > 0
-            // This avoids panicking on non-count arguments
-            // Note: get_count may panic if called on non-count args, so we only call it
-            // after checking for flags. For safety, we'll only extract counts we're sure about.
-            // In practice, this method should be called with known argument structures.
         }
 
         opts
+    }
+
+    /// Safely check if a flag or count argument is present
+    ///
+    /// Returns true if the argument is a flag set to true or a count with value > 0.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called with an argument that is neither a flag nor a count argument.
+    /// Use this method when you know an argument is a flag or count type.
+    pub fn is_present(&self, matches: &ArgMatches, name: &str) -> bool {
+        matches.get_flag(name) || matches.get_count(name) > 0
     }
 }
 

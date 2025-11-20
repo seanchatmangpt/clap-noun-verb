@@ -105,8 +105,13 @@ impl CommandInfo {
         self
     }
 
-    /// Set popularity score
+    /// Set popularity score (0-100)
+    ///
+    /// # Panics
+    ///
+    /// Panics if score > 100
     pub fn with_popularity(mut self, score: u8) -> Self {
+        assert!(score <= 100, "popularity score must be 0-100, got {}", score);
         self.popularity = score;
         self
     }

@@ -145,14 +145,19 @@ impl InteractiveHelp {
         }
 
         print!("\nEnter your choice: ");
-        io::stdout().flush().ok();
+        // Log flush errors but don't fail - stdout might be unavailable
+        if let Err(e) = io::stdout().flush() {
+            eprintln!("Warning: Failed to flush stdout: {}", e);
+        }
     }
 
     /// Read user input
     fn read_input(&self) -> Result<String> {
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
-            crate::error::NounVerbError::execution_error(format!("Failed to read input: {}", e))
+            crate::error::NounVerbError::execution_error(
+                format!("Failed to read input from stdin: {}", e)
+            )
         })?;
         Ok(input.trim().to_string())
     }
