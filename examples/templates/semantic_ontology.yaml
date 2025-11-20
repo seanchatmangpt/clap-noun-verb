@@ -1,0 +1,248 @@
+# Semantic CLI Ontology Template
+# Defines RDF entity types and properties for academic research submissions
+
+namespace: "http://research.acm.org/ontology/"
+version: "1.0"
+description: "RDF ontology for semantic research submission management"
+
+# Entity Types
+entities:
+  Paper:
+    uri: "{{namespace}}Paper"
+    description: "A research paper or academic submission"
+    properties:
+      - title
+      - authors
+      - abstract
+      - keywords
+      - contributions
+      - sections
+      - word_count
+
+  Conference:
+    uri: "{{namespace}}Conference"
+    description: "A target conference venue"
+    properties:
+      - name
+      - year
+      - track
+      - page_limit
+      - acceptance_probability
+      - key_requirements
+
+  Projection:
+    uri: "{{namespace}}Projection"
+    description: "A venue-specific view of a paper"
+    properties:
+      - source_paper
+      - target_venue
+      - sparql_query
+      - transformation_rules
+
+  Section:
+    uri: "{{namespace}}Section"
+    description: "A document section with specific content type"
+    properties:
+      - name
+      - content
+      - order
+      - type
+
+  Contribution:
+    uri: "{{namespace}}Contribution"
+    description: "A key contribution claimed by the paper"
+    properties:
+      - description
+      - significance
+      - type
+
+# Venues with Projection Metadata
+venues:
+  arxiv:
+    name: "arXiv"
+    venue_key: "arxiv"
+    pascal_case: "ArXiv"
+    track: "Open Preprint Server"
+    page_limit: 0
+    acceptance_probability: 100
+    emphasis:
+      - "Complete and comprehensive presentation"
+      - "Reproducibility and open access"
+      - "Citation-ready format"
+    required_sections:
+      - "Title and Abstract"
+      - "Introduction"
+      - "Background"
+      - "Main Contributions"
+      - "Evaluation"
+      - "Conclusion"
+    optional_sections:
+      - "Appendices"
+      - "Extended Proofs"
+    constraints:
+      format: "PDF"
+      max_size: "10MB"
+
+  icse:
+    name: "ICSE 2026"
+    venue_key: "icse"
+    pascal_case: "Icse"
+    track: "Software Engineering Practice"
+    page_limit: 12
+    acceptance_probability: 65
+    emphasis:
+      - "Practical impact on software engineering"
+      - "Real-world applicability"
+      - "Industry relevance"
+      - "Empirical validation"
+    required_sections:
+      - "Title and Abstract"
+      - "Introduction"
+      - "Problem Statement"
+      - "Proposed Approach"
+      - "Implementation Details"
+      - "Evaluation"
+      - "Limitations"
+      - "Conclusions"
+    optional_sections:
+      - "Case Studies"
+      - "Tool Availability"
+    constraints:
+      format: "PDF"
+      margins: "1 inch"
+      font_size: "10pt"
+      line_spacing: "1.5"
+
+  ecsa:
+    name: "ECSA 2026"
+    venue_key: "ecsa"
+    pascal_case: "Ecsa"
+    track: "Software Architecture & Design"
+    page_limit: 14
+    acceptance_probability: 70
+    emphasis:
+      - "Architectural patterns and decisions"
+      - "Design trade-offs and rationale"
+      - "Generalizability to other domains"
+      - "Scalability considerations"
+    required_sections:
+      - "Title and Abstract"
+      - "Introduction"
+      - "Architecture Overview"
+      - "Design Decisions"
+      - "Trade-offs Analysis"
+      - "Implementation"
+      - "Evaluation"
+      - "Applicability"
+      - "Conclusions"
+    optional_sections:
+      - "Case Studies"
+      - "Pattern Library"
+      - "Tool Support"
+    constraints:
+      format: "PDF"
+      margins: "0.75 inch"
+      font_size: "11pt"
+
+  pldi_oopsla:
+    name: "PLDI/OOPSLA 2026"
+    venue_key: "pldi_oopsla"
+    pascal_case: "PldiOopsla"
+    track: "Type Systems & Language Innovation"
+    page_limit: 15
+    acceptance_probability: 68
+    emphasis:
+      - "Type-driven semantic generation"
+      - "Formal verification and safety"
+      - "Language design innovation"
+      - "Performance characteristics"
+    required_sections:
+      - "Abstract"
+      - "Introduction"
+      - "Motivation"
+      - "Technical Approach"
+      - "Type System Formalization"
+      - "Implementation"
+      - "Evaluation"
+      - "Related Work"
+      - "Conclusions"
+    optional_sections:
+      - "Formal Proofs"
+      - "Benchmark Suites"
+      - "Language Artifacts"
+    constraints:
+      format: "PDF"
+      margins: "1 inch"
+      font_size: "10pt"
+
+  ase_workshop:
+    name: "ASE 2026 Workshop"
+    venue_key: "ase_workshop"
+    pascal_case: "AseWorkshop"
+    track: "DSL Design Lessons Learned"
+    page_limit: 8
+    acceptance_probability: 85
+    emphasis:
+      - "Lessons learned from DSL design"
+      - "Design decisions and alternatives"
+      - "Open research questions"
+      - "Community discussion"
+    required_sections:
+      - "Abstract"
+      - "Introduction"
+      - "Key Lessons"
+      - "Design Decisions"
+      - "Open Questions"
+      - "Conclusion"
+    optional_sections:
+      - "Discussion Points"
+      - "Resources"
+    constraints:
+      format: "PDF"
+      page_limit: "8"
+      focus: "workshop paper format"
+
+# Properties with RDF types
+properties:
+  title:
+    type: "string"
+    cardinality: "1"
+    description: "Paper or resource title"
+
+  authors:
+    type: "array<string>"
+    cardinality: "*"
+    description: "List of author names"
+
+  abstract:
+    type: "string"
+    cardinality: "1"
+    description: "Paper abstract"
+
+  venue:
+    type: "string"
+    cardinality: "1"
+    description: "Target conference venue"
+
+  page_limit:
+    type: "integer"
+    cardinality: "1"
+    description: "Maximum page limit"
+
+  acceptance_probability:
+    type: "integer"
+    cardinality: "1"
+    description: "Estimated acceptance percentage"
+
+  sparql_query:
+    type: "string"
+    cardinality: "1"
+    description: "SPARQL CONSTRUCT query for projection"
+
+# Template Helpers
+helpers:
+  pascal_case: "Convert snake_case to PascalCase"
+  snake_case: "Convert PascalCase to snake_case"
+  upper_case: "Convert to UPPER_CASE"
+  format_emphasis: "Format emphasis list as markdown"
+  count_sections: "Count required and optional sections"

@@ -68,6 +68,7 @@ schemars = { version = "0.8", features = ["uuid", "chrono"] }
 oxigraph = "0.5.1"
 lru = "0.12"
 ahash = "0.8"
+handlebars = "5.1"
 
 [dev-dependencies]
 anyhow = "1.0"
@@ -174,6 +175,18 @@ path = "examples/io_advanced.rs"
 [[example]]
 name = "async_io_example"
 path = "examples/async_io_example.rs"
+
+[[example]]
+name = "conference_management"
+path = "examples/conference_management.rs"
+
+[[example]]
+name = "semantic_submissions"
+path = "examples/semantic_submissions.rs"
+
+[[example]]
+name = "template_generator"
+path = "examples/template_generator.rs"
 
 [package.metadata.docs.rs]
 # docs.rs build configuration

@@ -1,0 +1,232 @@
+//! Generated semantic projection command for {{venue_name}}
+//!
+//! This command is generated from ggen templates using the {{venue_name}} projection
+//! metadata defined in the research ontology. It provides structured access to
+//! venue-specific submission requirements and formatting constraints.
+
+use clap::Parser;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+/// {{venue_name}} submission projection command
+///
+/// Generates {{venue_name}}-specific submission requirements from the semantic
+/// research knowledge graph. Uses RDF projections to transform base research
+/// metadata into venue-specific output.
+#[derive(Debug, Parser)]
+pub struct {{pascal_venue_key}}ProjectionArgs {
+    /// Output format: text, json, or markdown
+    #[arg(long, default_value = "text")]
+    pub format: OutputFormat,
+
+    /// Include detailed section breakdown
+    #[arg(long)]
+    pub detailed: bool,
+
+    /// Filter sections by type
+    #[arg(long)]
+    pub section_filter: Option<String>,
+
+    /// Output file path (default: stdout)
+    #[arg(long, short)]
+    pub output: Option<std::path::PathBuf>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum OutputFormat {
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "json")]
+    Json,
+    #[serde(rename = "markdown")]
+    Markdown,
+}
+
+impl std::str::FromStr for OutputFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "text" => Ok(OutputFormat::Text),
+            "json" => Ok(OutputFormat::Json),
+            "markdown" => Ok(OutputFormat::Markdown),
+            _ => Err(format!("Unknown format: {}", s)),
+        }
+    }
+}
+
+/// Semantic metadata for {{venue_name}} projection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{pascal_venue_key}}Metadata {
+    /// Venue name
+    pub venue: String,
+
+    /// Track or category
+    pub track: String,
+
+    /// Page limit
+    pub page_limit: u32,
+
+    /// Estimated acceptance probability (%)
+    pub acceptance_probability: u32,
+
+    /// Key emphasis areas
+    pub emphasis: Vec<String>,
+
+    /// Required sections
+    pub required_sections: Vec<String>,
+
+    /// Optional sections
+    pub optional_sections: Vec<String>,
+
+    /// Formatting constraints
+    pub constraints: HashMap<String, String>,
+}
+
+impl {{pascal_venue_key}}Metadata {
+    /// Get the canonical ontology URI for this venue
+    pub fn ontology_uri() -> String {
+        format!("http://research.acm.org/ontology/{}", "{{venue_name}}")
+    }
+
+    /// Get SPARQL projection query for this venue
+    pub fn sparql_projection() -> String {
+        r#"
+PREFIX research: <http://research.acm.org/ontology/>
+
+CONSTRUCT {
+    ?paper research:venue "{{venue_name}}" ;
+            research:track "{{track}}" ;
+            research:pageCount {{page_limit}} ;
+            research:acceptanceProbability {{acceptance_probability}} ;
+            research:title ?title ;
+            research:abstract ?abstractShort ;
+            research:contributions ?contributions ;
+            research:hasSection ?section .
+    ?section research:content ?sectionContent ;
+             research:order ?sectionOrder .
+}
+WHERE {
+    ?paper a research:Paper ;
+           research:title ?title ;
+           research:contributions ?contributions ;
+           research:hasSection ?section .
+}
+"#.to_string()
+    }
+}
+
+/// Execute {{venue_name}} projection command
+pub async fn execute(args: {{pascal_venue_key}}ProjectionArgs) -> anyhow::Result<()> {
+    let metadata = {{pascal_venue_key}}Metadata {
+        venue: "{{venue_name}}".to_string(),
+        track: "{{track}}".to_string(),
+        page_limit: {{page_limit}},
+        acceptance_probability: {{acceptance_probability}},
+        emphasis: vec![
+            {{#each emphasis}}"{{this}}".to_string(),{{/each}}
+        ],
+        required_sections: vec![
+            {{#each required_sections}}"{{this}}".to_string(),{{/each}}
+        ],
+        optional_sections: vec![
+            {{#each optional_sections}}"{{this}}".to_string(),{{/each}}
+        ],
+        constraints: {
+            let mut map = HashMap::new();
+            {{#each constraints}}
+            map.insert("{{@key}}".to_string(), "{{this}}".to_string());
+            {{/each}}
+            map
+        },
+    };
+
+    match args.format {
+        OutputFormat::Text => print_text(&metadata, args.detailed),
+        OutputFormat::Json => print_json(&metadata)?,
+        OutputFormat::Markdown => print_markdown(&metadata),
+    }
+
+    Ok(())
+}
+
+fn print_text(metadata: &{{pascal_venue_key}}Metadata, detailed: bool) {
+    println!("📋 {{venue_name}} Projection");
+    println!();
+    println!("Venue: {}", metadata.venue);
+    println!("Track: {}", metadata.track);
+    println!("Page Limit: {} pages", metadata.page_limit);
+    println!("Acceptance Probability: {}%", metadata.acceptance_probability);
+    println!();
+
+    if detailed {
+        println!("Key Emphasis:");
+        for emphasis in &metadata.emphasis {
+            println!("  • {}", emphasis);
+        }
+        println!();
+
+        println!("Required Sections:");
+        for section in &metadata.required_sections {
+            println!("  • {}", section);
+        }
+        println!();
+
+        if !metadata.optional_sections.is_empty() {
+            println!("Optional Sections:");
+            for section in &metadata.optional_sections {
+                println!("  • {}", section);
+            }
+            println!();
+        }
+    }
+}
+
+fn print_json(metadata: &{{pascal_venue_key}}Metadata) -> anyhow::Result<()> {
+    let json = serde_json::to_string_pretty(metadata)?;
+    println!("{}", json);
+    Ok(())
+}
+
+fn print_markdown(metadata: &{{pascal_venue_key}}Metadata) {
+    println!("# {} Submission Requirements", metadata.venue);
+    println!();
+    println!("**Track**: {}", metadata.track);
+    println!();
+    println!("**Page Limit**: {} pages", metadata.page_limit);
+    println!();
+    println!("**Estimated Acceptance**: {}%", metadata.acceptance_probability);
+    println!();
+
+    println!("## Key Emphasis");
+    println!();
+    for emphasis in &metadata.emphasis {
+        println!("- {}", emphasis);
+    }
+    println!();
+
+    println!("## Required Sections");
+    println!();
+    for section in &metadata.required_sections {
+        println!("- {}", section);
+    }
+    println!();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ontology_uri() {
+        let uri = {{pascal_venue_key}}Metadata::ontology_uri();
+        assert!(uri.contains("{{venue_name}}"));
+    }
+
+    #[test]
+    fn test_sparql_projection() {
+        let query = {{pascal_venue_key}}Metadata::sparql_projection();
+        assert!(query.contains("PREFIX research:"));
+        assert!(query.contains("{{venue_name}}"));
+    }
+}
