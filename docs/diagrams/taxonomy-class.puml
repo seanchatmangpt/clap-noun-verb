@@ -1,0 +1,239 @@
+@startuml Failure Mode Taxonomy Class Diagram
+!theme plain
+skinparam backgroundColor white
+skinparam classAttributeIconSize 0
+
+title FMEA Failure Mode Taxonomy - Object-Oriented Classification
+
+abstract class FailureMode {
+  + id: String
+  + severity: u8 (1-10)
+  + occurrence: u8 (1-10)
+  + detection: u8 (1-10)
+  + rpn: u16
+  + document: Document
+  + location: LineRange
+  --
+  + calculate_rpn(): u16
+  + get_mitigation(): String
+  + get_acceptance_criteria(): Vec<String>
+}
+
+enum Document {
+  TUTORIALS
+  HOW_TO_GUIDES
+  REFERENCE
+  EXPLANATIONS
+  INDEX
+}
+
+enum Severity {
+  CATASTROPHIC = 9-10
+  CRITICAL = 8
+  HIGH = 7
+  MODERATE = 5-6
+  LOW = 3-4
+  MINOR = 1-2
+}
+
+enum Occurrence {
+  CERTAIN = 9-10
+  VERY_LIKELY = 8
+  LIKELY = 7
+  POSSIBLE = 6
+  OCCASIONAL = 5
+  RARE = 3-4
+  VERY_RARE = 1-2
+}
+
+enum Detection {
+  ALMOST_IMPOSSIBLE = 9-10
+  REQUIRES_EXPERT = 8
+  REQUIRES_TESTING = 7
+  REQUIRES_INTEGRATION = 6
+  REQUIRES_RUNTIME = 5
+  REQUIRES_UNIT_TEST = 4
+  REQUIRES_REVIEW = 3
+  COMPILER_CATCHES = 2
+  OBVIOUS = 1
+}
+
+' Category 1: Aspirational APIs
+class AspirationalAPI extends FailureMode {
+  + planned_version: String
+  + workaround: Option<String>
+  --
+  Examples:
+  - Guard::new() builder
+  - DelegationPolicy type
+  - MCP hypothetical API
+  - SPARQL RDF export
+}
+
+' Category 2: Compilation Errors
+class CompilationError extends FailureMode {
+  + error_code: String
+  + missing_imports: Vec<String>
+  + type_errors: Vec<String>
+  --
+  Examples:
+  - FM-01: Tutorial 1 (#[noun])
+  - FM-02: Tutorial 2 (Result<()>)
+  - FM-04: Undefined Capability
+  - FM-15: Missing async/await
+}
+
+' Category 3: Schema Drift
+class SchemaDrift extends FailureMode {
+  + doc_schema: JsonSchema
+  + actual_schema: JsonSchema
+  + diff: SchemaDiff
+  --
+  Examples:
+  - FM-06: JSON introspection
+  - FM-10: Error code table
+  - FM-11: Streaming format
+  - FM-13: Certificate structure
+}
+
+' Category 4: Implementation Missing
+class ImplementationMissing extends FailureMode {
+  + missing_details: Vec<String>
+  + pseudocode: bool
+  --
+  Examples:
+  - FM-07: Guard evaluation
+  - FM-16: Error handling
+  - FM-19: Guard condition syntax
+  - FM-23: Command spawn failures
+}
+
+' Category 5: Prerequisite Assumptions
+class PrerequisiteViolation extends FailureMode {
+  + assumed_context: Vec<String>
+  + missing_checks: Vec<String>
+  --
+  Examples:
+  - FM-25: Non-linear navigation
+}
+
+' Machine Impact Classes
+class MachineImpact {
+  + learning_blockage: bool
+  + trust_degradation: f64
+  + pattern_contamination: bool
+  + recovery_cost_hours: f64
+  --
+  + assess_impact(): ImpactReport
+}
+
+class ImpactReport {
+  + can_learn: bool
+  + can_execute: bool
+  + requires_workaround: bool
+  + time_wasted_hours: f64
+  + trust_score: f64
+}
+
+' Mitigation Classes
+abstract class Mitigation {
+  + priority: u8
+  + estimated_hours: f64
+  + acceptance_criteria: Vec<String>
+  --
+  + apply(): Result<(), Error>
+  + verify(): bool
+}
+
+class CIPipeline extends Mitigation {
+  + extract_code_blocks(): Vec<CodeBlock>
+  + compile_examples(): Result<(), Vec<CompileError>>
+  + validate_schemas(): Result<(), Vec<SchemaDiff>>
+}
+
+class MarkAspirational extends Mitigation {
+  + badge: String
+  + version_target: String
+  + provide_workaround(): Option<WorkingExample>
+}
+
+class SchemaValidation extends Mitigation {
+  + run_integration_tests(): Result<(), Vec<MismatchError>>
+  + compare_to_runtime(): SchemaDiff
+}
+
+class CompleteExamples extends Mitigation {
+  + add_error_handling(): Result<(), Error>
+  + add_imports(): Result<(), Error>
+  + qualify_types(): Result<(), Error>
+}
+
+' Risk Priority Number Calculation
+class RPNCalculator {
+  - severity: u8
+  - occurrence: u8
+  - detection: u8
+  --
+  + calculate(): u16
+  + classify_priority(): Priority
+}
+
+enum Priority {
+  CRITICAL = RPN > 600
+  HIGH = RPN 500-599
+  MEDIUM = RPN 400-499
+  LOW = RPN < 400
+}
+
+' Relationships
+FailureMode --> Document
+FailureMode --> Severity
+FailureMode --> Occurrence
+FailureMode --> Detection
+FailureMode --> MachineImpact
+FailureMode --> Mitigation
+
+MachineImpact --> ImpactReport
+
+CompilationError --> CIPipeline : requires
+CompilationError --> CompleteExamples : requires
+
+AspirationalAPI --> MarkAspirational : requires
+
+SchemaDrift --> SchemaValidation : requires
+SchemaDrift --> CIPipeline : requires
+
+RPNCalculator --> Priority : produces
+
+' Critical failure modes (RPN > 600)
+note right of CompilationError #Red
+  **5 CRITICAL Failures**
+
+  FM-01: Tutorial 1 (RPN 672)
+  FM-02: Tutorial 2 (RPN 672)
+  FM-03: Tutorial 3 (RPN 672)
+  FM-04: How-To helper (RPN 640)
+  FM-05: Tutorial 4 (RPN 640)
+
+  **Total RPN: 3,296**
+  **68% of total risk**
+end note
+
+note bottom of SchemaDrift #Orange
+  **Schema Drift Impact**
+
+  - Machines learn wrong structure
+  - Runtime errors guaranteed
+  - Trust degradation
+  - Requires runtime validation
+end note
+
+note bottom of AspirationalAPI #Yellow
+  **9 Aspirational Features**
+
+  - Documentation ahead of code
+  - Machines try non-existent APIs
+  - Requires clear "Future" badges
+end note
+
+@enduml

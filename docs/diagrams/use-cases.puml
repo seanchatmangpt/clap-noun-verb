@@ -1,0 +1,182 @@
+@startuml Diataxis Use Case Diagram with Failure Points
+!theme plain
+skinparam backgroundColor white
+
+title Diataxis Documentation Use Cases - Machine Agent Scenarios
+
+left to right direction
+
+actor "AI Agent\n(Learning)" as AgentL #LightBlue
+actor "AI Agent\n(Implementing)" as AgentI #LightGreen
+actor "AI Agent\n(Debugging)" as AgentD #LightCoral
+actor "Human Developer" as Human #LightYellow
+
+rectangle "Diataxis Documentation System" {
+
+  package "Learning Path (Tutorials)" {
+    usecase "Learn Basic Commands" as UC1 #Red
+    usecase "Integrate with Agent" as UC2 #Red
+    usecase "Implement Guards" as UC3 #Red
+    usecase "Setup Delegation" as UC4 #Orange
+    usecase "Configure MCP" as UC5 #Orange
+
+    note right of UC1
+      **FM-01: RPN 672**
+      ❌ Code doesn't compile
+      Blocks: 100% of agents
+      Impact: Cannot learn
+    end note
+
+    note right of UC2
+      **FM-02: RPN 672**
+      ❌ Type errors
+      Blocks: 100% of agents
+      Impact: Pattern contamination
+    end note
+
+    note right of UC3
+      **FM-03: RPN 672**
+      ❌ API doesn't exist
+      Blocks: 100% of agents
+      Impact: Feature inaccessible
+    end note
+  }
+
+  package "Task Execution (How-To)" {
+    usecase "Query Capabilities" as UC6 #Orange
+    usecase "Validate Inputs" as UC7 #Orange
+    usecase "Evaluate Guards" as UC8 #Orange
+    usecase "Chain Workflows" as UC9 #Yellow
+    usecase "Handle Streaming" as UC10 #Yellow
+
+    note right of UC6
+      **FM-04: RPN 640**
+      ❌ Helper undefined
+      Blocks: 90% of agents
+      Impact: Validation unusable
+    end note
+
+    note right of UC8
+      **FM-07: RPN 504**
+      ❌ Pseudocode only
+      Blocks: 90% of agents
+      Impact: Cannot execute
+    end note
+  }
+
+  package "Information Lookup (Reference)" {
+    usecase "Check JSON Schema" as UC11 #Orange
+    usecase "Lookup Error Codes" as UC12 #Yellow
+    usecase "Verify Receipt Structure" as UC13 #Orange
+    usecase "Parse Streaming Format" as UC14 #Yellow
+    usecase "Export to OpenAPI" as UC15 #Yellow
+
+    note right of UC11
+      **FM-06: RPN 567**
+      ❌ Schema mismatch
+      Impact: Wrong structure
+      Runtime errors guaranteed
+    end note
+
+    note right of UC12
+      **FM-10: RPN 432**
+      ❌ Codes don't match
+      Impact: Error handling fails
+      Debugging confusion
+    end note
+  }
+
+  package "Understanding (Explanations)" {
+    usecase "Understand Architecture" as UC16 #Green
+    usecase "Learn Schema System" as UC17 #Green
+    usecase "Study Effect Isolation" as UC18 #Green
+    usecase "Review Cryptography" as UC19 #Yellow
+
+    note right of UC19
+      **FM-22: RPN 270**
+      ⚠️ Aspirational feature
+      Impact: Misleading claim
+      Not yet implemented
+    end note
+  }
+
+  package "Navigation (Index)" {
+    usecase "Find Quick Start" as UC20 #Green
+    usecase "Navigate by Role" as UC21 #Green
+    usecase "Jump to Advanced" as UC22 #Yellow
+  }
+}
+
+' Learning Agent relationships
+AgentL --> UC1
+AgentL --> UC2
+AgentL --> UC3
+AgentL --> UC16
+AgentL --> UC17
+
+' Implementing Agent relationships
+AgentI --> UC6
+AgentI --> UC7
+AgentI --> UC8
+AgentI --> UC9
+AgentI --> UC11
+
+' Debugging Agent relationships
+AgentD --> UC12
+AgentD --> UC13
+AgentD --> UC14
+AgentD --> UC15
+
+' Human Developer (workaround)
+Human --> UC1 : Fixes broken\nexamples manually
+Human --> UC2 : Reverse engineers\nfrom codebase
+Human --> UC3 : Implements\nmissing APIs
+
+' Failure cascades
+UC1 ..> UC2 : Trust degradation\ncarries forward
+UC2 ..> UC3 : Pattern\ncontamination
+UC3 ..> UC6 : API confusion\npropagates
+
+UC6 ..> UC7 : Type errors\npropagate
+UC7 ..> UC8 : Validation\nfails
+
+UC11 ..> UC13 : Schema drift\ncompounds
+UC12 ..> UC14 : Error handling\nbroken
+
+' Success dependencies (blocked)
+UC1 -[#Red,dashed]-> UC6 : Required\nbut BLOCKED
+UC2 -[#Red,dashed]-> UC7 : Required\nbut BLOCKED
+UC3 -[#Red,dashed]-> UC8 : Required\nbut BLOCKED
+
+' Working paths (explanations only)
+UC16 -[#Green]-> UC17 : Works (prose)
+UC17 -[#Green]-> UC18 : Works (prose)
+
+legend right
+  |= Color |= Status |= RPN |
+  | <#Red> | CRITICAL - Blocked | > 600 |
+  | <#Orange> | HIGH - Degraded | 500-599 |
+  | <#Yellow> | MEDIUM - Risky | 300-499 |
+  | <#Green> | LOW - Working | < 300 |
+
+  **Critical Finding**:
+  All executable use cases (tutorials, how-to)
+  are BLOCKED or DEGRADED.
+
+  Only understanding (explanations) works.
+endlegend
+
+note bottom
+  **Machine Learning Flow Analysis**
+
+  Typical agent journey:
+  1. Start at UC1 (Tutorial 1) → ❌ BLOCKED
+  2. OR start at UC6 (How-To) → ❌ BLOCKED
+  3. Fall back to UC11 (Reference) → ❌ Schema wrong
+  4. Give up OR ask human for help
+
+  **Success Rate: 0%** for autonomous learning
+  **Human intervention required: 100%** of cases
+end note
+
+@enduml

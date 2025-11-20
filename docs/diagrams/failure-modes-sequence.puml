@@ -1,0 +1,165 @@
+@startuml Machine Learning Failure Sequence
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam backgroundColor white
+
+title Machine Learning Journey - Failure Mode Sequence Diagram
+
+actor "AI Agent" as Agent
+participant "Tutorial 1\n(Basic Command)" as T1
+participant "Rust Compiler" as Compiler
+participant "Tutorial 2\n(Agent Integration)" as T2
+participant "How-To Guide\n(Validation)" as HowTo
+participant "Code Execution" as Exec
+database "Trust Score" as Trust
+
+== Initial Learning Attempt ==
+
+Agent -> T1 : Read tutorial
+activate T1
+T1 --> Agent : Code example (lines 26-46)
+deactivate T1
+
+note right of Agent
+  Agent reads:
+  ```rust
+  #[noun]
+  pub struct Pack {
+      #[verb]
+      pub async fn list() -> Result<Vec<String>>
+  ```
+end note
+
+Agent -> Compiler : Attempt to compile example
+activate Compiler
+Compiler --> Agent : ❌ **COMPILATION ERROR**
+deactivate Compiler
+
+note right of Compiler #Red
+  **FM-01: RPN 672 (CRITICAL)**
+
+  Errors:
+  - Cannot find attribute 'noun' in scope
+  - Cannot find attribute 'verb' in scope
+  - Unqualified 'Result' type
+  - Missing imports
+
+  **BLOCKAGE**: Machine cannot proceed
+end note
+
+Agent -> Trust : Decrease trust (-30%)
+activate Trust
+Trust --> Agent : Trust = 70%
+deactivate Trust
+
+== Retry with Tutorial 2 ==
+
+Agent -> T2 : Try next tutorial
+activate T2
+T2 --> Agent : Agent integration code (lines 168-191)
+deactivate T2
+
+note right of Agent
+  Agent reads:
+  ```rust
+  use reqwest;  // Why imported?
+  async fn discover_capabilities() -> Result<()> {
+      let output = Command::new("./myapp")
+          .arg("--introspect")
+          .output()?;
+  ```
+end note
+
+Agent -> Compiler : Attempt to compile
+activate Compiler
+Compiler --> Agent : ❌ **COMPILATION ERROR**
+deactivate Compiler
+
+note right of Compiler #Red
+  **FM-02: RPN 672 (CRITICAL)**
+
+  Errors:
+  - Result<()> ambiguous type
+  - Unused reqwest import
+  - Missing error type
+
+  **BLOCKAGE**: Second failure
+end note
+
+Agent -> Trust : Decrease trust (-40%)
+activate Trust
+Trust --> Agent : Trust = 30%
+deactivate Trust
+
+== Attempt How-To Guide ==
+
+Agent -> HowTo : Try practical guide
+activate HowTo
+HowTo --> Agent : Validation example (lines 32-52)
+deactivate HowTo
+
+note right of Agent
+  Agent reads:
+  ```rust
+  async fn get_all_capabilities() -> Result<Vec<Capability>> {
+      // ... implementation
+      .map(|c| Capability {
+          id: c["id"].as_str().unwrap(),
+          name: c["name"].as_str().unwrap(),
+      })
+  ```
+end note
+
+Agent -> Compiler : Attempt to compile
+activate Compiler
+Compiler --> Agent : ❌ **TYPE ERROR**
+deactivate Compiler
+
+note right of Compiler #Orange
+  **FM-04: RPN 640 (CRITICAL)**
+
+  Errors:
+  - Type 'Capability' not found
+  - Function signature incomplete
+  - Cannot infer type
+
+  **BLOCKAGE**: Third failure
+end note
+
+Agent -> Trust : Critical trust loss (-30%)
+activate Trust
+Trust --> Agent : Trust = 0%
+deactivate Trust
+
+== Machine Gives Up ==
+
+Agent -> Agent : **LEARNING FAILURE**
+
+note over Agent #Red
+  **Machine Learning Blocked**
+
+  Outcome:
+  - 3 attempts, 3 failures
+  - Trust degraded to 0%
+  - Cannot learn v5 from documentation
+  - Requires human intervention
+
+  **Success Rate: 0%**
+  **RPN Total: 1,984 (Combined risk)**
+end note
+
+== Alternative: Manual Workaround Required ==
+
+Agent -> Agent : Reverse-engineer from\nactual codebase
+
+note right of Agent #Yellow
+  Workaround:
+  1. Read source code directly
+  2. Ignore documentation
+  3. Trial and error with compiler
+  4. Time wasted: Hours
+
+  **Documentation Failed Its Purpose**
+end note
+
+@enduml

@@ -1,0 +1,138 @@
+@startuml Documentation Workflow Activity Diagram
+!theme plain
+skinparam backgroundColor white
+
+title Documentation Validation Workflow - Current vs Required
+
+|Machine Agent|
+start
+:Read Diataxis\nDocumentation;
+
+|Current Process (Broken)|
+partition "Current State - 0% Success Rate" #LightPink {
+  :Extract Code Example;
+
+  if (Attempt Compilation?) then (yes)
+    :Compile with rustc;
+
+    #Red:❌ **Compilation Fails**
+    FM-01, FM-02, FM-03, FM-04, FM-05
+    (RPN: 672-640);
+
+    :Trust Degraded;
+
+    if (Retry with Next Example?) then (yes)
+      #Red:❌ **All Examples Fail**
+      Zero compiling examples;
+      stop
+    else (no - give up)
+      :Learning Blocked;
+      stop
+    endif
+
+  else (no - try execution)
+    :Execute Example Code;
+
+    #Orange:❌ **Runtime Errors**
+    FM-06, FM-07, FM-08
+    Schema mismatch, undefined APIs;
+
+    :API Confusion;
+    stop
+  endif
+}
+
+|Required Process (Fixed)|
+partition "Required State - 100% Success Rate" #LightGreen {
+  start
+  :Read Diataxis\nDocumentation;
+
+  :Extract Code Example;
+
+  if (Code Marked as Executable?) then (yes)
+    :Compile with cargo make check;
+
+    #Green:✅ **Compilation Succeeds**
+    All examples validated in CI;
+
+    :Execute Example;
+
+    if (Schema Validation?) then (yes)
+      :Compare against\nActual CLI Output;
+
+      #Green:✅ **Schema Matches**
+      Runtime validation passed;
+
+      :Trust Maintained;
+
+      :Learn API Successfully;
+      stop
+
+    else (no - schema mismatch)
+      #Yellow:⚠️ **Schema Drift Detected**
+      CI catches discrepancy;
+
+      :Fix Documentation;
+      :Re-validate;
+      stop
+    endif
+
+  else (no - marked as pseudocode)
+    :Read for Understanding Only;
+
+    note right
+      **Clear Labeling**:
+      - ```rust,ignore
+      - ```pseudocode
+      - "Future API (v5.2)"
+
+      Machine knows not to compile
+    end note
+
+    :Proceed to\nExecutable Example;
+    stop
+  endif
+}
+
+|CI Pipeline|
+partition "Continuous Validation (Required)" #LightBlue {
+  fork
+    :Extract All\nRust Code Blocks;
+  fork again
+    :Extract All\nJSON Schemas;
+  fork again
+    :Extract API\nReferences;
+  end fork
+
+  :Compile Each\nCode Block;
+
+  if (Any Compilation Errors?) then (yes)
+    #Red:❌ **CI Fails**
+    Block documentation merge;
+    stop
+  else (no)
+    :Run Integration Tests;
+
+    if (Schema Matches CLI?) then (yes)
+      #Green:✅ **CI Passes**
+      Documentation validated;
+
+      :Merge Documentation;
+      stop
+    else (no)
+      #Orange:❌ **Schema Drift**
+      Block merge;
+      stop
+    endif
+  endif
+}
+
+legend right
+  |= Symbol |= Meaning |
+  | <#Red> | Critical Failure (RPN > 600) |
+  | <#Orange> | High Failure (RPN 500-599) |
+  | <#Yellow> | Medium Issue (RPN 300-499) |
+  | <#Green> | Success / Low Risk |
+endlegend
+
+@enduml

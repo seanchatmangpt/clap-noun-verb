@@ -1,0 +1,177 @@
+@startuml Documentation State Machine
+!theme plain
+skinparam backgroundColor white
+
+title Documentation State Transitions - Machine Agent Learning States
+
+[*] --> ReadingDocumentation : Agent starts learning
+
+state "Reading Documentation" as ReadingDocumentation #LightBlue {
+  state "Select Learning Path" as SelectPath
+  state "Read Code Example" as ReadExample
+  state "Parse Syntax" as ParseSyntax
+
+  [*] --> SelectPath
+  SelectPath --> ReadExample : Choose Tutorial 1
+  ReadExample --> ParseSyntax
+}
+
+state "Compilation Attempt" as Compiling #LightCoral {
+  state "Extract Code Block" as Extract
+  state "Setup Rust Project" as Setup
+  state "Run Cargo Check" as CargoCheck
+  state "Analyze Errors" as AnalyzeErrors
+
+  [*] --> Extract
+  Extract --> Setup
+  Setup --> CargoCheck
+  CargoCheck --> AnalyzeErrors : Errors found
+}
+
+state "Error State (FM-01, FM-02, FM-03)" as ErrorState #Red {
+  state "Compilation Failed" as CompileFailed
+  state "Type Error" as TypeError
+  state "Missing Import" as MissingImport
+  state "API Not Found" as APINotFound
+
+  [*] --> CompileFailed
+  CompileFailed --> TypeError : RPN 672
+  CompileFailed --> MissingImport : RPN 672
+  CompileFailed --> APINotFound : RPN 672
+}
+
+state "Trust Degradation" as TrustDegraded #Orange {
+  state "Trust = 100%" as Trust100
+  state "Trust = 70%" as Trust70
+  state "Trust = 30%" as Trust30
+  state "Trust = 0%" as Trust0
+
+  [*] --> Trust100 : Initial state
+  Trust100 --> Trust70 : First failure
+  Trust70 --> Trust30 : Second failure
+  Trust30 --> Trust0 : Third failure
+}
+
+state "Recovery Attempts" as Recovery #Yellow {
+  state "Retry with Next Tutorial" as RetryTutorial
+  state "Try How-To Guide" as TryHowTo
+  state "Check Reference" as CheckReference
+  state "Read Explanations" as ReadExplanations
+
+  [*] --> RetryTutorial
+  RetryTutorial --> TryHowTo : Tutorial failed
+  TryHowTo --> CheckReference : How-To failed (FM-04)
+  CheckReference --> ReadExplanations : Reference wrong (FM-06)
+}
+
+state "Schema Validation" as SchemaValidation #LightYellow {
+  state "Parse JSON Example" as ParseJSON
+  state "Execute CLI" as ExecuteCLI
+  state "Compare Outputs" as CompareOutputs
+  state "Schema Mismatch" as Mismatch
+
+  [*] --> ParseJSON
+  ParseJSON --> ExecuteCLI
+  ExecuteCLI --> CompareOutputs
+  CompareOutputs --> Mismatch : FM-06 (RPN 567)
+}
+
+state "Final Outcome" as Outcome {
+  state "Learning Success" as Success #Green
+  state "Learning Blocked" as Blocked #Red
+  state "Workaround Required" as Workaround #Orange
+
+  [*] --> Blocked
+}
+
+' State transitions
+ReadingDocumentation --> Compiling : Extract code example
+
+Compiling --> ErrorState : ❌ Compilation fails\n(FM-01, FM-02, FM-03)
+Compiling --> SchemaValidation : ✓ Compiles (none found)
+
+ErrorState --> TrustDegraded : Update trust score
+
+TrustDegraded --> Recovery : Trust > 0%\nTry alternatives
+TrustDegraded --> Outcome : Trust = 0%\nGive up
+
+Recovery --> Compiling : Retry with\nnext example
+Recovery --> SchemaValidation : Try reference\ninstead
+
+SchemaValidation --> TrustDegraded : ❌ Schema wrong\n(FM-06, FM-10)
+SchemaValidation --> Outcome : ✓ Schema matches\n(not found)
+
+Outcome --> [*] : Learning complete\n(blocked or success)
+
+' Failure annotations
+note right of ErrorState
+  **CRITICAL FAILURES**
+
+  FM-01: Tutorial 1 (#[noun]) - RPN 672
+  FM-02: Tutorial 2 (Result<()>) - RPN 672
+  FM-03: Tutorial 3 (Guard::new()) - RPN 672
+  FM-04: How-To (Capability) - RPN 640
+  FM-05: Tutorial 4 (DelegationPolicy) - RPN 640
+
+  **100% of agents blocked here**
+end note
+
+note right of TrustDegraded
+  **Trust Degradation Model**
+
+  Initial: 100% (optimistic)
+  After FM-01: 70% (first failure)
+  After FM-02: 30% (pattern visible)
+  After FM-03: 0% (system broken)
+
+  **Recovery impossible at 0% trust**
+end note
+
+note right of SchemaValidation
+  **Schema Drift Failures**
+
+  FM-06: JSON schema mismatch - RPN 567
+  FM-10: Error codes wrong - RPN 432
+  FM-11: Streaming format idealized - RPN 441
+  FM-13: Certificate structure - RPN 432
+
+  **Runtime errors guaranteed**
+end note
+
+note bottom of Outcome
+  **Actual Statistics from FMEA**
+
+  Success rate: 0%
+  Blocked rate: 100%
+  Average RPN: 384
+
+  Top 5 failures: 68% of total risk
+  Critical failures (>600 RPN): 5
+
+  **All tutorial paths blocked**
+  **All how-to paths blocked**
+  **Reference contains wrong schemas**
+end note
+
+' Current state marker
+note right of Blocked #Red
+  **CURRENT STATE**
+
+  All agents end here.
+  Zero compiling examples.
+  Documentation unusable
+  without human intervention.
+end note
+
+' Required state marker
+note right of Success #Green
+  **REQUIRED STATE**
+  (After mitigation)
+
+  All examples compile.
+  All schemas validated.
+  Trust maintained.
+  Machine learning works.
+end note
+
+@enduml

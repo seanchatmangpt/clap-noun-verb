@@ -1,0 +1,161 @@
+@startuml Diataxis Overview with Failure Modes
+!theme plain
+skinparam componentStyle rectangle
+skinparam backgroundColor white
+skinparam shadowing false
+
+title Diataxis Documentation Framework - V5 with FMEA Failure Points
+
+package "Diataxis Quadrants" {
+
+  package "Tutorials (Learning-Oriented)" #LightBlue {
+    component [Tutorial 1:\nBasic Command] as T1 #Red
+    component [Tutorial 2:\nAgent Integration] as T2 #Red
+    component [Tutorial 3:\nGuard Implementation] as T3 #Red
+    component [Tutorial 4:\nDelegation] as T4 #Orange
+    component [Tutorial 5:\nMCP Integration] as T5 #Orange
+
+    note right of T1
+      **FM-01: RPN 672 (CRITICAL)**
+      Code doesn't compile
+      - Missing imports
+      - Wrong attribute syntax
+      - Unqualified Result type
+    end note
+
+    note right of T2
+      **FM-02: RPN 672 (CRITICAL)**
+      Compilation failure
+      - Unused reqwest import
+      - Unqualified Result<()>
+      - Missing error types
+    end note
+
+    note right of T3
+      **FM-03: RPN 672 (CRITICAL)**
+      Guard API doesn't exist
+      - Guard::new() not implemented
+      - Builder pattern missing
+      - TemplateRegistry undefined
+    end note
+
+    note right of T4
+      **FM-05: RPN 640 (CRITICAL)**
+      DelegationPolicy type missing
+      - Type not in codebase
+      - AgentRole enum undefined
+      - Builder API aspirational
+    end note
+  }
+
+  package "How-To Guides (Task-Oriented)" #LightGreen {
+    component [Query Commands] as H1 #Orange
+    component [Guard Evaluation] as H2 #Orange
+    component [Workflow Chain] as H3 #Yellow
+    component [Streaming] as H4 #Yellow
+
+    note right of H1
+      **FM-04: RPN 640 (CRITICAL)**
+      Undefined function
+      - get_all_capabilities() missing
+      - Capability type undefined
+      - Helper function incomplete
+    end note
+
+    note right of H2
+      **FM-07: RPN 504 (HIGH)**
+      Pseudocode not executable
+      - Guard evaluation theoretical
+      - Machines can't run
+      - No implementation
+    end note
+  }
+
+  package "Reference (Information-Oriented)" #LightYellow {
+    component [JSON Schema] as R1 #Orange
+    component [Error Codes] as R2 #Yellow
+    component [Receipt Structure] as R3 #Orange
+    component [Streaming Format] as R4 #Yellow
+
+    note right of R1
+      **FM-06: RPN 567 (HIGH)**
+      Schema mismatch
+      - Docs != actual CLI output
+      - No runtime validation
+      - Schema drift
+    end note
+
+    note right of R2
+      **FM-10: RPN 432 (MEDIUM)**
+      Error codes wrong
+      - Table != actual errors
+      - No integration tests
+      - Documentation drift
+    end note
+  }
+
+  package "Explanations (Understanding-Oriented)" #LightPink {
+    component [Autonomic Architecture] as E1 #Green
+    component [Schema System] as E2 #Yellow
+    component [Effect Isolation] as E3 #Green
+    component [Cryptographic Signatures] as E4 #Yellow
+
+    note right of E4
+      **FM-22: RPN 270 (LOW)**
+      Aspirational feature
+      - Claims crypto signatures
+      - No implementation shown
+      - Feature not yet implemented
+    end note
+  }
+}
+
+package "Machine Learning Flow" {
+  actor "AI Agent" as Agent
+  usecase "Read Documentation" as Read
+  usecase "Compile Examples" as Compile
+  usecase "Execute Code" as Execute
+  usecase "Learn API" as Learn
+
+  Agent --> Read
+  Read --> Compile #Red : **BLOCKED**
+  Compile --> Execute #Red : **BLOCKED**
+  Execute --> Learn #Red : **BLOCKED**
+
+  note bottom of Compile
+    **0% Success Rate**
+    All tutorial examples fail compilation
+    Machine learning blocked at step 1
+  end note
+}
+
+' Failure severity legend
+legend right
+  |= Color |= RPN Range |= Severity |
+  | <#Red> | 600-700 | CRITICAL - Stop the Line |
+  | <#Orange> | 500-599 | HIGH - Fix Immediately |
+  | <#Yellow> | 300-499 | MEDIUM - Fix Soon |
+  | <#Green> | <300 | LOW - Minor Issue |
+endlegend
+
+' Relationships showing failure propagation
+T1 ..> H1 : Pattern\nContamination
+T2 ..> H2 : Error\nPropagation
+T3 ..> R1 : API\nMismatch
+T4 ..> H3 : Type\nUndefined
+
+' Critical path highlighting
+T1 -[#Red,thickness=4]-> T2
+T2 -[#Red,thickness=4]-> T3
+T3 -[#Red,thickness=4]-> T4
+
+note bottom
+  **Critical Finding**:
+  Every major learning path hits
+  CRITICAL failure within first 3 steps
+
+  **Zero compiling examples** in Tutorials
+  **100% blockage rate** for machine learning
+end note
+
+@enduml

@@ -5,6 +5,10 @@
 //! 2. Duplicate verb detection
 //! 3. Return type validation (must implement Serialize)
 //! 4. Enhanced attribute syntax validation
+//!
+//! FUTURE: v5.1 - Complete validation feature set
+
+#![allow(dead_code)] // FUTURE: v5.1 - integrate enhanced validation
 
 use proc_macro2::TokenStream;
 use quote::quote;

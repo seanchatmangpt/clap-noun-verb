@@ -6,6 +6,11 @@
 use syn::{GenericArgument, PathArguments, Type};
 
 /// Represents detected I/O types in function parameters
+// FUTURE: v4.0 Phase 2 - I/O type detection for #[verb] macro auto-wiring
+// This enum will be integrated into verb macro expansion for automatic
+// clio::Input/Output parameter detection and clap configuration generation.
+// Keeping this code for future macro enhancement work.
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DetectedIoType {
     /// clio::Input - required input file/stdin
@@ -20,11 +25,15 @@ pub enum DetectedIoType {
 
 impl DetectedIoType {
     /// Check if this is an I/O type
+    // FUTURE: v4.0 Phase 2 - Used for filtering I/O parameters during macro expansion
+    #[allow(dead_code)]
     pub fn is_io(&self) -> bool {
         !matches!(self, Self::NonIo)
     }
 
     /// Get value parser expression for this type
+    // FUTURE: v4.0 Phase 2 - Generates clap::value_parser() calls in macro output
+    #[allow(dead_code)]
     pub fn value_parser(&self) -> &'static str {
         match self {
             Self::Input => "clio::Input::value_parser()",
@@ -34,6 +43,8 @@ impl DetectedIoType {
     }
 
     /// Get help text for this type
+    // FUTURE: v4.0 Phase 2 - Generates automatic help text in macro output
+    #[allow(dead_code)]
     pub fn help_text(&self) -> &'static str {
         match self {
             Self::Input => "Input file or path (use '-' for stdin)",
@@ -45,6 +56,8 @@ impl DetectedIoType {
 }
 
 /// Detect I/O type from a syn::Type
+// FUTURE: v4.0 Phase 2 - Main detection function called during #[verb] macro expansion
+#[allow(dead_code)]
 pub fn detect_io_type(ty: &Type) -> DetectedIoType {
     // Check for Option<T> first
     if let Type::Path(type_path) = ty {
@@ -73,6 +86,8 @@ pub fn detect_io_type(ty: &Type) -> DetectedIoType {
 }
 
 /// Check if a type is clio::Input
+// FUTURE: v4.0 Phase 2 - Helper for detect_io_type()
+#[allow(dead_code)]
 fn is_input_type(ty: &Type) -> bool {
     if let Type::Path(type_path) = ty {
         // Check last segment for "Input"
@@ -84,6 +99,8 @@ fn is_input_type(ty: &Type) -> bool {
 }
 
 /// Check if a type is clio::Output
+// FUTURE: v4.0 Phase 2 - Helper for detect_io_type()
+#[allow(dead_code)]
 fn is_output_type(ty: &Type) -> bool {
     if let Type::Path(type_path) = ty {
         // Check last segment for "Output"
@@ -95,6 +112,8 @@ fn is_output_type(ty: &Type) -> bool {
 }
 
 /// Check if a type path represents Option<T>
+// FUTURE: v4.0 Phase 2 - Helper for detecting Option<clio::Output>
+#[allow(dead_code)]
 fn is_option_path(type_path: &syn::TypePath) -> bool {
     if let Some(last_seg) = type_path.path.segments.last() {
         return last_seg.ident == "Option";
@@ -103,6 +122,8 @@ fn is_option_path(type_path: &syn::TypePath) -> bool {
 }
 
 /// Extract inner type from Option<T>
+// FUTURE: v4.0 Phase 2 - Helper for extracting T from Option<T>
+#[allow(dead_code)]
 fn extract_option_inner(type_path: &syn::TypePath) -> Option<Type> {
     if let Some(last_seg) = type_path.path.segments.last() {
         if let PathArguments::AngleBracketed(args) = &last_seg.arguments {
@@ -116,6 +137,8 @@ fn extract_option_inner(type_path: &syn::TypePath) -> Option<Type> {
 }
 
 /// I/O argument configuration
+// FUTURE: v4.0 Phase 2 - Configuration struct for generating clap attributes
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct IoArgConfig {
     pub io_type: DetectedIoType,
@@ -126,6 +149,8 @@ pub struct IoArgConfig {
 
 impl IoArgConfig {
     /// Create configuration from detected type
+    // FUTURE: v4.0 Phase 2 - Factory method for creating clap configuration
+    #[allow(dead_code)]
     pub fn from_detected(detected: DetectedIoType, arg_name: &str) -> Option<Self> {
         if detected.is_io() {
             Some(Self {
@@ -142,6 +167,8 @@ impl IoArgConfig {
     }
 
     /// Generate clap configuration tokens
+    // FUTURE: v4.0 Phase 2 - Generates code for clap attribute methods
+    #[allow(dead_code)]
     pub fn clap_config(&self) -> String {
         format!(".value_parser({})\n.help(\"{}\")", self.value_parser, self.help)
     }

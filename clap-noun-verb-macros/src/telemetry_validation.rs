@@ -2,12 +2,16 @@
 //!
 //! This module prevents the "48 RPN failure mode" - spans registered but never emitted (dead telemetry).
 //!
+//! FUTURE: v5.1 - Enhanced telemetry validation
+//!
 //! # Problem
 //!
 //! Spans can be declared at compile time but never actually used in code:
 //! - Wastes memory for unused span metadata
 //! - Creates confusion about what telemetry is active
 //! - Prevents detection of stale/abandoned instrumentation
+
+#![allow(dead_code)] // FUTURE: v5.1 - complete validation features
 //!
 //! # Solution
 //!
@@ -298,11 +302,9 @@ pub fn generate_verb_instrumentation(
     // Generate span declaration ONLY
     // Note: The wrapper function (in the #[verb] macro) already includes the telemetry instrumentation.
     // We only generate the compile-time span declaration here, not the runtime usage code.
-    let decl = generate_span_declaration(&span_const_name, &span_name);
-
     // Return only the declaration (which is module-level code)
     // The wrapper function in lib.rs lines 1141-1157 handles the actual instrumentation
-    decl
+    generate_span_declaration(&span_const_name, &span_name)
 }
 
 /// Sanitize identifier for use in span const names

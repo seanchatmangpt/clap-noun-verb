@@ -3,6 +3,10 @@
 //! This module generates Turtle RDF triples and SHACL shapes from verb metadata
 //! extracted during macro expansion. The generated RDF describes commands, arguments,
 //! and validation constraints in a machine-queryable format.
+//!
+//! FUTURE: v5.1 - RDF/SHACL semantic metadata export
+
+#![allow(dead_code)] // FUTURE: v5.1 - complete RDF export feature
 
 use proc_macro2::TokenStream;
 use quote::quote;
