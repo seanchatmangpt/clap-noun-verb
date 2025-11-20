@@ -143,7 +143,7 @@ mod tests {
     fn test_dependency_resolution() {
         let mut graph = PluginDependencyGraph::new();
 
-        let mut plugin_a = PluginConfig::new("a", "1.0.0", "lib.so");
+        let plugin_a = PluginConfig::new("a", "1.0.0", "lib.so");
         let mut plugin_b = PluginConfig::new("b", "1.0.0", "lib.so");
         plugin_b.dependencies = vec!["a".to_string()];
 

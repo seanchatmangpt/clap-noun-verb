@@ -69,11 +69,11 @@ fn update_config(key: String, value: String) -> Result<TestOutput> {
 // DX Improvement 2: Noun name auto-detection when both #[noun] and #[verb] on same function
 // Expected: #[noun("services", "...")] + #[verb] → noun name "services" auto-detected
 
-/// Status command with noun auto-detection
+/// Health command with noun auto-detection
 #[noun("services", "Manage services")]
 #[verb] // Should auto-detect noun "services" from #[noun] attribute
-fn status() -> Result<TestOutput> {
-    Ok(TestOutput { value: "status".to_string() })
+fn health() -> Result<TestOutput> {
+    Ok(TestOutput { value: "health".to_string() })
 }
 
 /// Restart command with noun auto-detection

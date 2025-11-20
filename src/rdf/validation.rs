@@ -263,6 +263,7 @@ impl ShaclShape {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeMap;
 
     fn create_test_invocation() -> ParsedInvocation {
         ParsedInvocation {

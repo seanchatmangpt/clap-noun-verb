@@ -297,6 +297,7 @@ impl ValidationResult {
     }
 }
 
+#[derive(Debug)]
 struct Violation;
 
 impl Violation {

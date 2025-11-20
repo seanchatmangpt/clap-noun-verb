@@ -641,7 +641,7 @@ mod tests {
             "test2",
         );
 
-        let events = ledger.query().agent("user1".to_string()).execute();
+        let events = ledger.query().agent("user1".to_string()).execute().unwrap_or_default();
         assert_eq!(events.len(), 1);
     }
 

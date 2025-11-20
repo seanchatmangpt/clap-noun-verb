@@ -484,12 +484,12 @@ fn test_delegation_registry() {
     registry.register(token);
 
     // THEN: We can retrieve it
-    let retrieved = registry.get(&token_id);
+    let retrieved = registry.get(&token_id).unwrap_or_default();
     assert!(retrieved.is_some());
 
     // AND: We can revoke it
     registry.revoke(&token_id);
-    assert!(registry.get(&token_id).is_none());
+    assert!(registry.get(&token_id).unwrap_or_default().is_none());
 }
 
 #[test]

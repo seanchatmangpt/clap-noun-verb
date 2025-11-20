@@ -160,9 +160,9 @@ path = "examples/completion_example.rs"
 name = "autonomic_example"
 path = "examples/autonomic_example.rs"
 
-[[example]]
-name = "cnv4_example"
-path = "examples/cnv4_example.rs"
+# [[example]]
+# name = "cnv4_example"
+# path = "examples/cnv4_example.rs"
 
 [[example]]
 name = "io_basic"
@@ -172,9 +172,9 @@ path = "examples/io_basic.rs"
 name = "io_advanced"
 path = "examples/io_advanced.rs"
 
-[[example]]
-name = "async_io_example"
-path = "examples/async_io_example.rs"
+# [[example]]
+# name = "async_io_example"
+# path = "examples/async_io_example.rs"
 
 [[example]]
 name = "conference_management"

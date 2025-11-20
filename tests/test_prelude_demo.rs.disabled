@@ -9,7 +9,9 @@
 //!   cargo test --test test_prelude_demo
 //!   cargo clippy --test test_prelude_demo -- -D clippy::unwrap_used -D clippy::expect_used
 
-use tests::common::test_prelude::*;
+mod common;
+
+use common::test_prelude::*;
 
 // Mock types for demonstration
 fn parse_config() -> Result<String, &'static str> {

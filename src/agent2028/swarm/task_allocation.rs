@@ -247,7 +247,7 @@ mod tests {
         let task =
             SwarmTask::new("Process data".to_string(), vec!["ml.inference".to_string()], 5, 100.0);
 
-        let task_id = task.task_id.clone();
+        let _task_id = task.task_id.clone();
         market.list_task(task).await;
 
         let open_tasks = market.get_open_tasks().await;
