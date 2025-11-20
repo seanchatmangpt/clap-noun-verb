@@ -18,6 +18,7 @@
 //! - Gap 4: Enhanced attribute syntax validation
 
 mod io_detection;
+mod rdf_generation;
 mod validation;
 mod telemetry_validation;
 

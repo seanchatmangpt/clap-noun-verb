@@ -100,6 +100,9 @@ pub mod plugins;
 // New in v5.0 - 2028 Innovations: Trillion-Agent Ecosystems
 pub mod agent2028;
 
+// New in v5.0 - RDF/Ontology Control Layer
+pub mod rdf;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 

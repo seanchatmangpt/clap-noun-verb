@@ -1,0 +1,670 @@
+{
+  "@context": "claude-md-context.jsonld",
+  "@graph": [
+    {
+      "@id": "project:clap-noun-verb",
+      "@type": "Project",
+      "projectName": "clap-noun-verb",
+      "description": "Rust CLI tool that parses Clap arguments and generates noun-verb command structures",
+      "language": "Rust",
+      "architecture": "Binary crate (main) with supporting modules",
+      "version": "1.0.0",
+      "corePrinciples": [
+        "Type-first thinking",
+        "Zero-cost abstractions",
+        "Memory safety",
+        "Deterministic outputs"
+      ],
+      "methodology": {
+        "@id": "method:sparc"
+      },
+      "testingStrategy": {
+        "@id": "test:chicago-tdd"
+      },
+      "performanceSLOs": [
+        {"@id": "perf:compilation-incremental"},
+        {"@id": "perf:test-unit"},
+        {"@id": "perf:test-integration"},
+        {"@id": "perf:cli-execution"},
+        {"@id": "perf:memory-usage"}
+      ]
+    },
+
+    {
+      "@id": "method:sparc",
+      "@type": "SPARC",
+      "methodologyName": "SPARC",
+      "fullName": "Specification, Pseudocode, Architecture, Refinement, Completion",
+      "description": "Systematic development methodology with Test-Driven Development",
+      "phases": [
+        {
+          "@id": "method:sparc-specification",
+          "@type": "Methodology",
+          "phaseName": "Specification",
+          "phaseCommand": "sparc run spec-pseudocode",
+          "phaseOrder": 1,
+          "description": "Requirements analysis"
+        },
+        {
+          "@id": "method:sparc-pseudocode",
+          "@type": "Methodology",
+          "phaseName": "Pseudocode",
+          "phaseCommand": "sparc run spec-pseudocode",
+          "phaseOrder": 2,
+          "description": "Algorithm design"
+        },
+        {
+          "@id": "method:sparc-architecture",
+          "@type": "Methodology",
+          "phaseName": "Architecture",
+          "phaseCommand": "sparc run architect",
+          "phaseOrder": 3,
+          "description": "System design"
+        },
+        {
+          "@id": "method:sparc-refinement",
+          "@type": "Methodology",
+          "phaseName": "Refinement",
+          "phaseCommand": "sparc tdd",
+          "phaseOrder": 4,
+          "description": "TDD implementation"
+        },
+        {
+          "@id": "method:sparc-completion",
+          "@type": "Methodology",
+          "phaseName": "Completion",
+          "phaseCommand": "sparc run integration",
+          "phaseOrder": 5,
+          "description": "Integration"
+        }
+      ]
+    },
+
+    {
+      "@id": "test:chicago-tdd",
+      "@type": "ChicagoTDD",
+      "name": "Chicago TDD",
+      "description": "State-based testing with real collaborators and behavior verification",
+      "testPrinciple": "State-based testing",
+      "testPattern": "AAA (Arrange-Act-Assert)",
+      "verifies": [
+        "Return values",
+        "State changes",
+        "Side effects",
+        "Execution order"
+      ],
+      "requires": [
+        "Real collaborators",
+        "Behavior verification",
+        "Observable outputs",
+        "No meaningless tests"
+      ],
+      "coverageTarget": 0.80
+    },
+
+    {
+      "@id": "agent:production-validator",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "production-validator",
+      "name": "Production Validator",
+      "useCase": "Production readiness validation",
+      "whenToUse": "Validating deployments, infrastructure, dependencies, release readiness",
+      "capabilities": [
+        "Dependency validation",
+        "Security auditing",
+        "SLO compliance verification",
+        "Infrastructure readiness checks",
+        "Release validation"
+      ],
+      "specialization": "Production systems validation",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "agent:code-analyzer",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "code-analyzer",
+      "name": "Code Analyzer",
+      "useCase": "Advanced code quality analysis",
+      "whenToUse": "Deep code review, technical debt analysis, architecture assessment",
+      "capabilities": [
+        "Type safety analysis",
+        "Architecture assessment",
+        "Technical debt identification",
+        "Code quality metrics",
+        "Design pattern recognition"
+      ],
+      "specialization": "Code quality and architecture analysis",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "agent:system-architect",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "system-architect",
+      "name": "System Architect",
+      "useCase": "System architecture design",
+      "whenToUse": "Designing systems, integration patterns, architectural decisions",
+      "capabilities": [
+        "API design",
+        "Type-level solutions",
+        "Integration patterns",
+        "System architecture",
+        "Design patterns"
+      ],
+      "specialization": "System and API architecture design",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "agent:performance-benchmarker",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "performance-benchmarker",
+      "name": "Performance Benchmarker",
+      "useCase": "Performance measurement & optimization",
+      "whenToUse": "Benchmarking, performance analysis, bottleneck identification",
+      "capabilities": [
+        "Performance benchmarking",
+        "SLO verification",
+        "Bottleneck identification",
+        "Optimization recommendations",
+        "Performance profiling"
+      ],
+      "specialization": "Performance analysis and optimization",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "agent:backend-dev",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "backend-dev",
+      "name": "Backend Developer",
+      "useCase": "Backend implementation",
+      "whenToUse": "Docker, containers, APIs, databases, infrastructure code",
+      "capabilities": [
+        "API implementation",
+        "Database design",
+        "Docker containerization",
+        "Infrastructure code",
+        "Backend services"
+      ],
+      "specialization": "Backend systems implementation",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "agent:task-orchestrator",
+      "@type": "HyperAdvancedAgent",
+      "agentType": "task-orchestrator",
+      "name": "Task Orchestrator",
+      "useCase": "Complex workflow orchestration",
+      "whenToUse": "Multi-phase workflows, coordination, dependency management",
+      "capabilities": [
+        "Workflow coordination",
+        "Dependency management",
+        "Multi-phase orchestration",
+        "Task distribution",
+        "Progress tracking"
+      ],
+      "specialization": "Complex workflow management",
+      "priority": 1,
+      "category": "Hyper-Advanced"
+    },
+
+    {
+      "@id": "rule:always-cargo-make",
+      "@type": "AbsoluteRule",
+      "ruleType": "Build System",
+      "name": "Always Use Cargo Make",
+      "requirement": "ALWAYS USE cargo make - NEVER direct cargo commands",
+      "rationale": "Ensures timeout wrappers, consistent build environment, and standardized workflows",
+      "violationConsequence": "Builds may hang, tests may run indefinitely, CI/CD pipelines fail",
+      "enforcement": "NON-NEGOTIABLE",
+      "mandatoryPattern": "cargo make <command>",
+      "examples": [
+        "cargo make check (NOT cargo check)",
+        "cargo make test (NOT cargo test)",
+        "cargo make lint (NOT cargo clippy)"
+      ]
+    },
+
+    {
+      "@id": "rule:concurrent-execution",
+      "@type": "AbsoluteRule",
+      "ruleType": "Execution Pattern",
+      "name": "Concurrent Execution",
+      "requirement": "ALL operations MUST be concurrent/parallel in a single message",
+      "rationale": "Maximizes performance, prevents sequential bottlenecks, enables parallel agent coordination",
+      "violationConsequence": "Severe performance degradation, coordination failures",
+      "enforcement": "CRITICAL",
+      "mandatoryPattern": "1 MESSAGE = ALL RELATED OPERATIONS",
+      "examples": [
+        "Spawn all agents in ONE message",
+        "Batch all file operations in ONE message",
+        "Execute all bash commands in ONE message"
+      ]
+    },
+
+    {
+      "@id": "rule:no-root-files",
+      "@type": "AbsoluteRule",
+      "ruleType": "File Organization",
+      "name": "Never Save to Root Folder",
+      "requirement": "NEVER save working files, text/mds and tests to the root folder",
+      "rationale": "Maintains clean project structure, prevents clutter, enforces organization",
+      "violationConsequence": "Project disorganization, difficult navigation, merge conflicts",
+      "enforcement": "ABSOLUTE",
+      "mandatoryPattern": "Use appropriate subdirectories: /src, /tests, /docs, /scripts, /benches, /examples",
+      "examples": [
+        "Save tests to /tests directory",
+        "Save documentation to /docs directory",
+        "Save source code to /src directory"
+      ]
+    },
+
+    {
+      "@id": "rule:andon-signals",
+      "@type": "AbsoluteRule",
+      "ruleType": "Quality Assurance",
+      "name": "Andon Signal Compliance",
+      "requirement": "Stop the line when Andon signals appear - fix root cause before proceeding",
+      "rationale": "Prevents defect propagation, ensures quality at source, maintains production readiness",
+      "violationConsequence": "Defects propagate through codebase, quality degradation, production failures",
+      "enforcement": "CRITICAL",
+      "mandatoryPattern": "Monitor -> Stop -> Investigate -> Fix -> Verify",
+      "examples": [
+        "Compiler errors (CRITICAL) - stop immediately",
+        "Test failures (CRITICAL) - stop immediately",
+        "Clippy warnings (HIGH) - should stop"
+      ]
+    },
+
+    {
+      "@id": "rule:batch-todos",
+      "@type": "AbsoluteRule",
+      "ruleType": "Task Management",
+      "name": "Batch Todo Lists",
+      "requirement": "TodoWrite ALWAYS has 10+ todos in a single batch",
+      "rationale": "Ensures comprehensive task planning, prevents fragmentation, improves coordination",
+      "violationConsequence": "Incomplete task tracking, poor coordination, missing steps",
+      "enforcement": "MANDATORY",
+      "mandatoryPattern": "TodoWrite { todos: [...10+ todos...] }",
+      "examples": [
+        "Minimum 10 todos per batch",
+        "All related tasks in single TodoWrite call",
+        "Comprehensive task breakdown"
+      ]
+    },
+
+    {
+      "@id": "build:cargo-make-check",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make check",
+      "commandType": "Quick Feedback",
+      "timeout": "PT5S",
+      "purpose": "Quick compilation check",
+      "category": "Development",
+      "replacesDirectCommand": "cargo check",
+      "sloTarget": {
+        "@id": "perf:compilation-incremental"
+      }
+    },
+
+    {
+      "@id": "build:cargo-make-test",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make test",
+      "commandType": "Full Validation",
+      "timeout": "PT40S",
+      "purpose": "All tests (unit + integration)",
+      "category": "Testing",
+      "replacesDirectCommand": "cargo test",
+      "sloTarget": [
+        {"@id": "perf:test-unit"},
+        {"@id": "perf:test-integration"}
+      ]
+    },
+
+    {
+      "@id": "build:cargo-make-lint",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make lint",
+      "commandType": "Quick Feedback",
+      "timeout": "PT10S",
+      "purpose": "Clippy linting",
+      "category": "Development",
+      "replacesDirectCommand": "cargo clippy"
+    },
+
+    {
+      "@id": "build:cargo-make-bench",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make bench",
+      "commandType": "Performance",
+      "timeout": "PT60S",
+      "purpose": "Run benchmarks",
+      "category": "Performance",
+      "replacesDirectCommand": "cargo bench"
+    },
+
+    {
+      "@id": "build:cargo-make-slo-check",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make slo-check",
+      "commandType": "Performance",
+      "timeout": "PT30S",
+      "purpose": "Verify performance SLOs",
+      "category": "Validation",
+      "sloTarget": [
+        {"@id": "perf:compilation-incremental"},
+        {"@id": "perf:test-unit"},
+        {"@id": "perf:test-integration"},
+        {"@id": "perf:cli-execution"},
+        {"@id": "perf:memory-usage"}
+      ]
+    },
+
+    {
+      "@id": "build:cargo-make-pre-commit",
+      "@type": "CargoMakeCommand",
+      "command": "cargo make pre-commit",
+      "commandType": "Full Validation",
+      "timeout": "PT30S",
+      "purpose": "Format + lint + unit tests",
+      "category": "Development",
+      "replacesDirectCommand": "cargo fmt && cargo clippy && cargo test"
+    },
+
+    {
+      "@id": "perf:compilation-incremental",
+      "@type": "PerformanceSLO",
+      "sloName": "Incremental Compilation",
+      "metric": "Compilation time",
+      "target": "≤ 2s",
+      "unit": "seconds",
+      "threshold": 2.0,
+      "verificationCommand": "cargo make check"
+    },
+
+    {
+      "@id": "perf:test-unit",
+      "@type": "PerformanceSLO",
+      "sloName": "Unit Tests",
+      "metric": "Test execution time",
+      "target": "≤ 10s",
+      "unit": "seconds",
+      "threshold": 10.0,
+      "verificationCommand": "cargo make test-unit"
+    },
+
+    {
+      "@id": "perf:test-integration",
+      "@type": "PerformanceSLO",
+      "sloName": "Integration Tests",
+      "metric": "Test execution time",
+      "target": "≤ 30s",
+      "unit": "seconds",
+      "threshold": 30.0,
+      "verificationCommand": "cargo make test"
+    },
+
+    {
+      "@id": "perf:cli-execution",
+      "@type": "PerformanceSLO",
+      "sloName": "CLI Execution",
+      "metric": "End-to-end execution time",
+      "target": "≤ 100ms",
+      "unit": "milliseconds",
+      "threshold": 100.0,
+      "verificationCommand": "cargo make bench"
+    },
+
+    {
+      "@id": "perf:memory-usage",
+      "@type": "PerformanceSLO",
+      "sloName": "Memory Usage",
+      "metric": "Peak memory consumption",
+      "target": "≤ 10MB",
+      "unit": "megabytes",
+      "threshold": 10.0,
+      "verificationCommand": "cargo make profile"
+    },
+
+    {
+      "@id": "andon:compiler-error",
+      "@type": "AndonSignal",
+      "signalType": "Compiler Error",
+      "severity": "CRITICAL",
+      "action": "STOP THE LINE - Fix immediately",
+      "pattern": "error[E...]",
+      "detectionCommand": "cargo make check",
+      "workflow": [
+        "Monitor: Run cargo make check",
+        "Stop: Immediately stop when error appears",
+        "Investigate: Use 5 Whys for root cause",
+        "Fix: Address root cause",
+        "Verify: Re-run check to confirm cleared"
+      ]
+    },
+
+    {
+      "@id": "andon:test-failure",
+      "@type": "AndonSignal",
+      "signalType": "Test Failure",
+      "severity": "CRITICAL",
+      "action": "STOP THE LINE - Fix failing tests",
+      "pattern": "test ... FAILED",
+      "detectionCommand": "cargo make test",
+      "workflow": [
+        "Monitor: Run cargo make test",
+        "Stop: Immediately stop when failure appears",
+        "Investigate: Extract failing test details",
+        "Fix: Address test failure root cause",
+        "Verify: Re-run tests to confirm pass"
+      ]
+    },
+
+    {
+      "@id": "andon:clippy-warning",
+      "@type": "AndonSignal",
+      "signalType": "Clippy Warning",
+      "severity": "HIGH",
+      "action": "SHOULD STOP - Fix warnings",
+      "pattern": "warning:",
+      "detectionCommand": "cargo make lint",
+      "workflow": [
+        "Monitor: Run cargo make lint",
+        "Stop: Stop when warning appears",
+        "Investigate: Review clippy suggestion",
+        "Fix: Apply recommended fix",
+        "Verify: Re-run lint to confirm cleared"
+      ]
+    },
+
+    {
+      "@id": "dir:src",
+      "@type": "Directory",
+      "directoryPath": "/src",
+      "directoryPurpose": "Source code files",
+      "allowedFileTypes": ["*.rs"],
+      "prohibited": false
+    },
+
+    {
+      "@id": "dir:tests",
+      "@type": "Directory",
+      "directoryPath": "/tests",
+      "directoryPurpose": "Integration tests",
+      "allowedFileTypes": ["*.rs"],
+      "prohibited": false
+    },
+
+    {
+      "@id": "dir:docs",
+      "@type": "Directory",
+      "directoryPath": "/docs",
+      "directoryPurpose": "Documentation and markdown files",
+      "allowedFileTypes": ["*.md", "*.jsonld", "*.ttl"],
+      "prohibited": false
+    },
+
+    {
+      "@id": "dir:scripts",
+      "@type": "Directory",
+      "directoryPath": "/scripts",
+      "directoryPurpose": "Utility scripts with timeout wrappers",
+      "allowedFileTypes": ["*.sh", "*.bash"],
+      "prohibited": false
+    },
+
+    {
+      "@id": "dir:benches",
+      "@type": "Directory",
+      "directoryPath": "/benches",
+      "directoryPurpose": "Benchmark suites",
+      "allowedFileTypes": ["*.rs"],
+      "prohibited": false
+    },
+
+    {
+      "@id": "dir:root",
+      "@type": "Directory",
+      "directoryPath": "/",
+      "directoryPurpose": "Project root - configuration files only",
+      "allowedFileTypes": ["Cargo.toml", "Cargo.lock", "Makefile.toml", ".gitignore"],
+      "prohibited": true,
+      "description": "NEVER save working files, tests, or documentation to root"
+    },
+
+    {
+      "@id": "pattern:concurrent-execution",
+      "@type": "ExecutionPattern",
+      "patternName": "Concurrent Execution",
+      "goldenRule": "1 MESSAGE = ALL RELATED OPERATIONS",
+      "batchingStrategy": "Single message for all operations",
+      "minimumBatchSize": 1,
+      "examples": [
+        "TodoWrite: Batch ALL todos in ONE call (10+ minimum)",
+        "Task tool: Spawn ALL agents in ONE message",
+        "File operations: Batch ALL reads/writes/edits in ONE message",
+        "Bash commands: Batch ALL terminal operations in ONE message"
+      ]
+    },
+
+    {
+      "@id": "mcp:coordination",
+      "@type": "MCPCoordination",
+      "toolType": "MCP",
+      "name": "MCP Tools - Coordination Only",
+      "description": "MCP tools ONLY coordinate - Claude Code Task tool executes",
+      "responsibilities": [
+        "Swarm initialization (topology setup)",
+        "Agent type definitions (coordination patterns)",
+        "Task orchestration (high-level planning)",
+        "Memory management",
+        "Performance tracking"
+      ],
+      "mcpTools": [
+        "mcp__claude-flow__swarm_init",
+        "mcp__claude-flow__agent_spawn",
+        "mcp__claude-flow__task_orchestrate",
+        "mcp__claude-flow__memory_usage",
+        "mcp__claude-flow__benchmark_run"
+      ]
+    },
+
+    {
+      "@id": "claude:execution",
+      "@type": "ExecutionPattern",
+      "toolType": "Claude Code",
+      "name": "Claude Code - All Execution",
+      "description": "Claude Code Task tool spawns agents that do actual work",
+      "responsibilities": [
+        "Task tool: Spawn and run agents concurrently",
+        "File operations (Read, Write, Edit, Glob, Grep)",
+        "Code generation and programming",
+        "Bash commands with timeout wrappers",
+        "Implementation work",
+        "TodoWrite and task management",
+        "Git operations",
+        "Testing and debugging"
+      ]
+    },
+
+    {
+      "@id": "prohibited:direct-cargo",
+      "@type": "ProhibitedPattern",
+      "prohibitedAction": "Using direct cargo commands",
+      "reason": "No timeout wrappers, inconsistent environment, may hang indefinitely",
+      "correctAlternative": "Always use cargo make commands",
+      "enforcementLevel": "NON-NEGOTIABLE",
+      "examples": [
+        "WRONG: cargo test",
+        "CORRECT: cargo make test",
+        "WRONG: cargo clippy",
+        "CORRECT: cargo make lint"
+      ]
+    },
+
+    {
+      "@id": "prohibited:sequential-execution",
+      "@type": "ProhibitedPattern",
+      "prohibitedAction": "Sequential execution in multiple messages",
+      "reason": "Breaks parallel coordination, severe performance degradation",
+      "correctAlternative": "Batch all related operations in single message",
+      "enforcementLevel": "CRITICAL",
+      "examples": [
+        "WRONG: Message 1: spawn agent 1, Message 2: spawn agent 2",
+        "CORRECT: Single message with all agents spawned in parallel"
+      ]
+    },
+
+    {
+      "@id": "prohibited:root-files",
+      "@type": "ProhibitedPattern",
+      "prohibitedAction": "Saving working files to root folder",
+      "reason": "Project disorganization, difficult navigation, merge conflicts",
+      "correctAlternative": "Use appropriate subdirectories",
+      "enforcementLevel": "ABSOLUTE",
+      "examples": [
+        "WRONG: /test.rs",
+        "CORRECT: /tests/integration_test.rs",
+        "WRONG: /ANALYSIS.md",
+        "CORRECT: /docs/analysis.md"
+      ]
+    },
+
+    {
+      "@id": "prohibited:ignoring-andon",
+      "@type": "ProhibitedPattern",
+      "prohibitedAction": "Ignoring Andon signals (compiler errors, test failures, warnings)",
+      "reason": "Defect propagation, quality degradation, production failures",
+      "correctAlternative": "Stop the line immediately, fix root cause, verify cleared",
+      "enforcementLevel": "CRITICAL",
+      "examples": [
+        "WRONG: Proceed with compiler errors present",
+        "CORRECT: Stop, fix errors, verify with cargo make check",
+        "WRONG: Suppress warnings with #[allow(...)]",
+        "CORRECT: Fix root cause of warning"
+      ]
+    },
+
+    {
+      "@id": "prohibited:small-todos",
+      "@type": "ProhibitedPattern",
+      "prohibitedAction": "TodoWrite with less than 10 todos",
+      "reason": "Incomplete task tracking, poor coordination, missing steps",
+      "correctAlternative": "Always batch 10+ todos in single TodoWrite call",
+      "enforcementLevel": "MANDATORY",
+      "examples": [
+        "WRONG: TodoWrite { todos: [3 todos] }",
+        "CORRECT: TodoWrite { todos: [12 comprehensive todos] }"
+      ]
+    }
+  ]
+}

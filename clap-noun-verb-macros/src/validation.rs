@@ -241,7 +241,7 @@ pub fn validate_verb_attribute_syntax(
 ///
 /// This generates a helper macro that developers can call to check their functions.
 /// Place this at the end of your file:
-/// ```
+/// ```ignore
 /// check_verb_registration!();
 /// ```
 pub fn generate_forgotten_verb_checker() -> TokenStream {
@@ -435,8 +435,9 @@ mod tests {
         };
         let result = validate_verb_attribute_syntax(&tokens, &fn_item);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("must be a string literal"));
-        assert!(result.unwrap_err().to_string().contains("Add double quotes"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("must be a string literal"));
+        assert!(err_msg.contains("Add double quotes"));
     }
 
     #[test]

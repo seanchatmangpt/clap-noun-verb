@@ -1,0 +1,844 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+# Namespace declarations
+@prefix cnv: <https://clap-noun-verb.io/ontology/> .
+@prefix sparc: <https://sparc.io/ontology/> .
+@prefix agents: <https://claude-flow.io/agents/> .
+@prefix config: <https://claude-flow.io/config/> .
+@prefix rules: <https://claude-flow.io/rules/> .
+@prefix methods: <https://claude-flow.io/methods/> .
+
+# ============================================================================
+# ONTOLOGY METADATA
+# ============================================================================
+
+cnv:ClaudeConfigOntology a owl:Ontology ;
+    rdfs:label "Claude Code Configuration Ontology"@en ;
+    rdfs:comment "Comprehensive ontology for CLAUDE.md configuration systems, SPARC methodology, and agent-based development."@en ;
+    owl:versionInfo "1.0.0" ;
+    owl:versionIRI <https://clap-noun-verb.io/ontology/1.0.0/> .
+
+# ============================================================================
+# CORE CLASSES - Project Identity
+# ============================================================================
+
+cnv:Project a owl:Class ;
+    rdfs:label "Project"@en ;
+    rdfs:comment "A software project with specific configuration and methodology."@en .
+
+cnv:ProjectIdentity a owl:Class ;
+    rdfs:subClassOf cnv:Project ;
+    rdfs:label "Project Identity"@en ;
+    rdfs:comment "Core identity properties of a project including language, architecture, and principles."@en .
+
+cnv:Language a owl:Class ;
+    rdfs:label "Programming Language"@en ;
+    rdfs:comment "Primary programming language used in the project."@en .
+
+cnv:Architecture a owl:Class ;
+    rdfs:label "Architecture"@en ;
+    rdfs:comment "Software architecture pattern (e.g., binary crate, microservices)."@en .
+
+cnv:Principle a owl:Class ;
+    rdfs:label "Core Principle"@en ;
+    rdfs:comment "Fundamental design principle (e.g., type-first thinking, zero-cost abstractions)."@en .
+
+# ============================================================================
+# METHODOLOGY CLASSES - SPARC & TDD
+# ============================================================================
+
+sparc:Methodology a owl:Class ;
+    rdfs:label "Development Methodology"@en ;
+    rdfs:comment "Structured development methodology (SPARC, TDD, DfLSS)."@en .
+
+sparc:SPARCPhase a owl:Class ;
+    rdfs:subClassOf sparc:Methodology ;
+    rdfs:label "SPARC Phase"@en ;
+    rdfs:comment "A phase in the SPARC methodology workflow."@en .
+
+sparc:Specification a owl:Class ;
+    rdfs:subClassOf sparc:SPARCPhase ;
+    rdfs:label "Specification"@en ;
+    rdfs:comment "Requirements analysis and specification phase."@en .
+
+sparc:Pseudocode a owl:Class ;
+    rdfs:subClassOf sparc:SPARCPhase ;
+    rdfs:label "Pseudocode"@en ;
+    rdfs:comment "Algorithm design and pseudocode phase."@en .
+
+sparc:Architecture a owl:Class ;
+    rdfs:subClassOf sparc:SPARCPhase ;
+    rdfs:label "Architecture"@en ;
+    rdfs:comment "System design and architecture phase."@en .
+
+sparc:Refinement a owl:Class ;
+    rdfs:subClassOf sparc:SPARCPhase ;
+    rdfs:label "Refinement"@en ;
+    rdfs:comment "TDD implementation and refinement phase."@en .
+
+sparc:Completion a owl:Class ;
+    rdfs:subClassOf sparc:SPARCPhase ;
+    rdfs:label "Completion"@en ;
+    rdfs:comment "Integration and completion phase."@en .
+
+methods:ChicagoTDD a owl:Class ;
+    rdfs:subClassOf sparc:Methodology ;
+    rdfs:label "Chicago TDD"@en ;
+    rdfs:comment "State-based testing with real collaborators and behavior verification."@en .
+
+methods:AAAPattern a owl:Class ;
+    rdfs:label "Arrange-Act-Assert Pattern"@en ;
+    rdfs:comment "Test structure pattern: Arrange inputs, Act on system, Assert outputs."@en .
+
+methods:AndonSignal a owl:Class ;
+    rdfs:label "Andon Signal"@en ;
+    rdfs:comment "Visual problem indicator that requires stopping work to fix root cause."@en .
+
+methods:AndonCritical a owl:Class ;
+    rdfs:subClassOf methods:AndonSignal ;
+    rdfs:label "Critical Andon Signal"@en ;
+    rdfs:comment "Red signal requiring immediate stop: compiler errors, test failures."@en .
+
+methods:AndonHigh a owl:Class ;
+    rdfs:subClassOf methods:AndonSignal ;
+    rdfs:label "High Andon Signal"@en ;
+    rdfs:comment "Yellow signal requiring attention: compiler warnings, linting errors."@en .
+
+# ============================================================================
+# AGENT CLASSES
+# ============================================================================
+
+agents:Agent a owl:Class ;
+    rdfs:label "Agent"@en ;
+    rdfs:comment "An AI agent with specific capabilities and role."@en .
+
+agents:AgentTier a owl:Class ;
+    rdfs:label "Agent Tier"@en ;
+    rdfs:comment "Classification tier for agent specialization level."@en .
+
+agents:HyperAdvancedAgent a owl:Class ;
+    rdfs:subClassOf agents:Agent ;
+    rdfs:label "Hyper-Advanced Agent"@en ;
+    rdfs:comment "Elite agent with specialized domain expertise (5x output quality)."@en .
+
+agents:CoreAgent a owl:Class ;
+    rdfs:subClassOf agents:Agent ;
+    rdfs:label "Core Agent"@en ;
+    rdfs:comment "Basic agent for simple, straightforward tasks."@en .
+
+agents:Capability a owl:Class ;
+    rdfs:label "Agent Capability"@en ;
+    rdfs:comment "A specific capability or skill an agent possesses."@en .
+
+agents:UseCase a owl:Class ;
+    rdfs:label "Use Case"@en ;
+    rdfs:comment "Scenario where a specific agent type should be used."@en .
+
+# ============================================================================
+# RULE & CONSTRAINT CLASSES
+# ============================================================================
+
+rules:Rule a owl:Class ;
+    rdfs:label "Configuration Rule"@en ;
+    rdfs:comment "A mandatory rule that must be followed in the project."@en .
+
+rules:AbsoluteRule a owl:Class ;
+    rdfs:subClassOf rules:Rule ;
+    rdfs:label "Absolute Rule"@en ;
+    rdfs:comment "Non-negotiable rule that must always be followed."@en .
+
+rules:ProhibitedPattern a owl:Class ;
+    rdfs:subClassOf rules:Rule ;
+    rdfs:label "Prohibited Pattern"@en ;
+    rdfs:comment "Anti-pattern or practice that is explicitly forbidden."@en .
+
+rules:FileOrganization a owl:Class ;
+    rdfs:subClassOf rules:Rule ;
+    rdfs:label "File Organization Rule"@en ;
+    rdfs:comment "Rule governing where files should be saved."@en .
+
+rules:ConcurrencyRule a owl:Class ;
+    rdfs:subClassOf rules:Rule ;
+    rdfs:label "Concurrency Rule"@en ;
+    rdfs:comment "Rule requiring parallel/concurrent execution patterns."@en .
+
+# ============================================================================
+# BUILD & EXECUTION CLASSES
+# ============================================================================
+
+config:BuildCommand a owl:Class ;
+    rdfs:label "Build Command"@en ;
+    rdfs:comment "A command used for building, testing, or validating the project."@en .
+
+config:CargoMakeCommand a owl:Class ;
+    rdfs:subClassOf config:BuildCommand ;
+    rdfs:label "Cargo Make Command"@en ;
+    rdfs:comment "Command executed via cargo make (never direct cargo)."@en .
+
+config:PerformanceSLO a owl:Class ;
+    rdfs:label "Performance Service Level Objective"@en ;
+    rdfs:comment "Quantitative performance target that must be met."@en .
+
+config:TestCategory a owl:Class ;
+    rdfs:label "Test Category"@en ;
+    rdfs:comment "Classification of test type (unit, integration, property, snapshot)."@en .
+
+# ============================================================================
+# PROPERTIES - Object Properties
+# ============================================================================
+
+cnv:hasLanguage a owl:ObjectProperty ;
+    rdfs:domain cnv:ProjectIdentity ;
+    rdfs:range cnv:Language ;
+    rdfs:label "has language"@en .
+
+cnv:hasArchitecture a owl:ObjectProperty ;
+    rdfs:domain cnv:ProjectIdentity ;
+    rdfs:range cnv:Architecture ;
+    rdfs:label "has architecture"@en .
+
+cnv:followsPrinciple a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range cnv:Principle ;
+    rdfs:label "follows principle"@en .
+
+cnv:followsMethodology a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range sparc:Methodology ;
+    rdfs:label "follows methodology"@en .
+
+cnv:hasPhase a owl:ObjectProperty ;
+    rdfs:domain sparc:Methodology ;
+    rdfs:range sparc:SPARCPhase ;
+    rdfs:label "has phase"@en .
+
+cnv:hasAgent a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range agents:Agent ;
+    rdfs:label "has agent"@en .
+
+agents:hasCapability a owl:ObjectProperty ;
+    rdfs:domain agents:Agent ;
+    rdfs:range agents:Capability ;
+    rdfs:label "has capability"@en .
+
+agents:hasTier a owl:ObjectProperty ;
+    rdfs:domain agents:Agent ;
+    rdfs:range agents:AgentTier ;
+    rdfs:label "has tier"@en .
+
+agents:hasUseCase a owl:ObjectProperty ;
+    rdfs:domain agents:Agent ;
+    rdfs:range agents:UseCase ;
+    rdfs:label "has use case"@en .
+
+cnv:enforcesRule a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range rules:Rule ;
+    rdfs:label "enforces rule"@en .
+
+cnv:prohibitsPattern a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range rules:ProhibitedPattern ;
+    rdfs:label "prohibits pattern"@en .
+
+cnv:hasBuildCommand a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range config:BuildCommand ;
+    rdfs:label "has build command"@en .
+
+cnv:hasSLO a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range config:PerformanceSLO ;
+    rdfs:label "has SLO"@en .
+
+cnv:hasTestCategory a owl:ObjectProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range config:TestCategory ;
+    rdfs:label "has test category"@en .
+
+methods:triggersAndonSignal a owl:ObjectProperty ;
+    rdfs:domain config:BuildCommand ;
+    rdfs:range methods:AndonSignal ;
+    rdfs:label "triggers Andon signal"@en .
+
+# ============================================================================
+# PROPERTIES - Data Properties
+# ============================================================================
+
+cnv:projectName a owl:DatatypeProperty ;
+    rdfs:domain cnv:Project ;
+    rdfs:range xsd:string ;
+    rdfs:label "project name"@en .
+
+cnv:description a owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string ;
+    rdfs:label "description"@en .
+
+cnv:priority a owl:DatatypeProperty ;
+    rdfs:domain agents:Agent ;
+    rdfs:range xsd:integer ;
+    rdfs:label "priority"@en ;
+    rdfs:comment "Agent priority level (1=highest, 10=lowest)."@en .
+
+cnv:mandatory a owl:DatatypeProperty ;
+    rdfs:domain rules:Rule ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "mandatory"@en .
+
+config:commandString a owl:DatatypeProperty ;
+    rdfs:domain config:BuildCommand ;
+    rdfs:range xsd:string ;
+    rdfs:label "command string"@en .
+
+config:timeoutSeconds a owl:DatatypeProperty ;
+    rdfs:domain config:BuildCommand ;
+    rdfs:range xsd:integer ;
+    rdfs:label "timeout seconds"@en .
+
+config:targetValue a owl:DatatypeProperty ;
+    rdfs:domain config:PerformanceSLO ;
+    rdfs:range xsd:string ;
+    rdfs:label "target value"@en .
+
+config:metric a owl:DatatypeProperty ;
+    rdfs:domain config:PerformanceSLO ;
+    rdfs:range xsd:string ;
+    rdfs:label "metric"@en .
+
+agents:agentType a owl:DatatypeProperty ;
+    rdfs:domain agents:Agent ;
+    rdfs:range xsd:string ;
+    rdfs:label "agent type"@en .
+
+# ============================================================================
+# AGENT INSTANCES - Hyper-Advanced Agents (Priority)
+# ============================================================================
+
+agents:ProductionValidator a agents:HyperAdvancedAgent ;
+    rdfs:label "Production Validator"@en ;
+    agents:agentType "production-validator" ;
+    cnv:priority 1 ;
+    cnv:description "Production readiness validation: Docker, OTEL, dependencies, SLO compliance."@en ;
+    agents:hasCapability agents:Cap_ValidationExpertise, agents:Cap_InfrastructureKnowledge, agents:Cap_ComplianceChecking ;
+    agents:hasUseCase agents:UC_ProductionReadiness, agents:UC_DependencyValidation, agents:UC_ReleaseValidation .
+
+agents:CodeAnalyzer a agents:HyperAdvancedAgent ;
+    rdfs:label "Code Analyzer"@en ;
+    agents:agentType "code-analyzer" ;
+    cnv:priority 1 ;
+    cnv:description "Advanced code quality analysis: type safety, technical debt, architecture assessment."@en ;
+    agents:hasCapability agents:Cap_StaticAnalysis, agents:Cap_ArchitectureReview, agents:Cap_DebtDetection ;
+    agents:hasUseCase agents:UC_CodeReview, agents:UC_QualityAssessment, agents:UC_ArchitectureReview .
+
+agents:SystemArchitect a agents:HyperAdvancedAgent ;
+    rdfs:label "System Architect"@en ;
+    agents:agentType "system-architect" ;
+    cnv:priority 1 ;
+    cnv:description "System architecture design: API design, integration patterns, architectural decisions."@en ;
+    agents:hasCapability agents:Cap_APIDesign, agents:Cap_PatternSelection, agents:Cap_TypeLevelDesign ;
+    agents:hasUseCase agents:UC_SystemDesign, agents:UC_APIDesign, agents:UC_ArchitecturalDecisions .
+
+agents:PerformanceBenchmarker a agents:HyperAdvancedAgent ;
+    rdfs:label "Performance Benchmarker"@en ;
+    agents:agentType "performance-benchmarker" ;
+    cnv:priority 1 ;
+    cnv:description "Performance measurement & optimization: benchmarking, bottleneck identification, SLO verification."@en ;
+    agents:hasCapability agents:Cap_Benchmarking, agents:Cap_Profiling, agents:Cap_OptimizationStrategies ;
+    agents:hasUseCase agents:UC_PerformanceAnalysis, agents:UC_BottleneckDetection, agents:UC_SLOVerification .
+
+agents:BackendDev a agents:HyperAdvancedAgent ;
+    rdfs:label "Backend Developer"@en ;
+    agents:agentType "backend-dev" ;
+    cnv:priority 1 ;
+    cnv:description "Backend implementation: Docker, containers, APIs, databases, infrastructure code."@en ;
+    agents:hasCapability agents:Cap_DockerExpertise, agents:Cap_APIImplementation, agents:Cap_DatabaseDesign ;
+    agents:hasUseCase agents:UC_DockerSetup, agents:UC_APIImplementation, agents:UC_InfrastructureCode .
+
+agents:TaskOrchestrator a agents:HyperAdvancedAgent ;
+    rdfs:label "Task Orchestrator"@en ;
+    agents:agentType "task-orchestrator" ;
+    cnv:priority 1 ;
+    cnv:description "Complex workflow orchestration: multi-phase workflows, coordination, dependency management."@en ;
+    agents:hasCapability agents:Cap_WorkflowDesign, agents:Cap_DependencyManagement, agents:Cap_Coordination ;
+    agents:hasUseCase agents:UC_ComplexWorkflows, agents:UC_MultiPhaseCoordination, agents:UC_DependencyOrchestration .
+
+# ============================================================================
+# AGENT INSTANCES - Core Development Agents
+# ============================================================================
+
+agents:Coder a agents:CoreAgent ;
+    rdfs:label "Coder"@en ;
+    agents:agentType "coder" ;
+    cnv:priority 5 ;
+    cnv:description "Basic code implementation for simple, straightforward tasks."@en ;
+    agents:hasCapability agents:Cap_BasicCoding ;
+    agents:hasUseCase agents:UC_SimpleImplementation .
+
+agents:Reviewer a agents:CoreAgent ;
+    rdfs:label "Reviewer"@en ;
+    agents:agentType "reviewer" ;
+    cnv:priority 5 ;
+    cnv:description "Basic code review for simple tasks."@en ;
+    agents:hasCapability agents:Cap_BasicReview ;
+    agents:hasUseCase agents:UC_SimpleReview .
+
+agents:Tester a agents:CoreAgent ;
+    rdfs:label "Tester"@en ;
+    agents:agentType "tester" ;
+    cnv:priority 5 ;
+    cnv:description "Test creation and execution."@en ;
+    agents:hasCapability agents:Cap_TestWriting, agents:Cap_ChicagoTDD ;
+    agents:hasUseCase agents:UC_TestCreation, agents:UC_TDDImplementation .
+
+agents:Planner a agents:CoreAgent ;
+    rdfs:label "Planner"@en ;
+    agents:agentType "planner" ;
+    cnv:priority 5 ;
+    cnv:description "Task planning and breakdown."@en ;
+    agents:hasCapability agents:Cap_TaskBreakdown ;
+    agents:hasUseCase agents:UC_Planning .
+
+agents:Researcher a agents:CoreAgent ;
+    rdfs:label "Researcher"@en ;
+    agents:agentType "researcher" ;
+    cnv:priority 5 ;
+    cnv:description "Research and analysis of requirements and patterns."@en ;
+    agents:hasCapability agents:Cap_ResearchAnalysis ;
+    agents:hasUseCase agents:UC_RequirementsAnalysis .
+
+# ============================================================================
+# CAPABILITY INSTANCES
+# ============================================================================
+
+agents:Cap_ValidationExpertise a agents:Capability ;
+    rdfs:label "Validation Expertise"@en .
+
+agents:Cap_InfrastructureKnowledge a agents:Capability ;
+    rdfs:label "Infrastructure Knowledge"@en .
+
+agents:Cap_ComplianceChecking a agents:Capability ;
+    rdfs:label "Compliance Checking"@en .
+
+agents:Cap_StaticAnalysis a agents:Capability ;
+    rdfs:label "Static Analysis"@en .
+
+agents:Cap_ArchitectureReview a agents:Capability ;
+    rdfs:label "Architecture Review"@en .
+
+agents:Cap_DebtDetection a agents:Capability ;
+    rdfs:label "Technical Debt Detection"@en .
+
+agents:Cap_APIDesign a agents:Capability ;
+    rdfs:label "API Design"@en .
+
+agents:Cap_PatternSelection a agents:Capability ;
+    rdfs:label "Pattern Selection"@en .
+
+agents:Cap_TypeLevelDesign a agents:Capability ;
+    rdfs:label "Type-Level Design"@en .
+
+agents:Cap_Benchmarking a agents:Capability ;
+    rdfs:label "Benchmarking"@en .
+
+agents:Cap_Profiling a agents:Capability ;
+    rdfs:label "Profiling"@en .
+
+agents:Cap_OptimizationStrategies a agents:Capability ;
+    rdfs:label "Optimization Strategies"@en .
+
+agents:Cap_DockerExpertise a agents:Capability ;
+    rdfs:label "Docker Expertise"@en .
+
+agents:Cap_APIImplementation a agents:Capability ;
+    rdfs:label "API Implementation"@en .
+
+agents:Cap_DatabaseDesign a agents:Capability ;
+    rdfs:label "Database Design"@en .
+
+agents:Cap_WorkflowDesign a agents:Capability ;
+    rdfs:label "Workflow Design"@en .
+
+agents:Cap_DependencyManagement a agents:Capability ;
+    rdfs:label "Dependency Management"@en .
+
+agents:Cap_Coordination a agents:Capability ;
+    rdfs:label "Multi-Agent Coordination"@en .
+
+agents:Cap_BasicCoding a agents:Capability ;
+    rdfs:label "Basic Coding"@en .
+
+agents:Cap_BasicReview a agents:Capability ;
+    rdfs:label "Basic Review"@en .
+
+agents:Cap_TestWriting a agents:Capability ;
+    rdfs:label "Test Writing"@en .
+
+agents:Cap_ChicagoTDD a agents:Capability ;
+    rdfs:label "Chicago TDD"@en .
+
+agents:Cap_TaskBreakdown a agents:Capability ;
+    rdfs:label "Task Breakdown"@en .
+
+agents:Cap_ResearchAnalysis a agents:Capability ;
+    rdfs:label "Research Analysis"@en .
+
+# ============================================================================
+# USE CASE INSTANCES
+# ============================================================================
+
+agents:UC_ProductionReadiness a agents:UseCase ;
+    rdfs:label "Production Readiness Validation"@en .
+
+agents:UC_DependencyValidation a agents:UseCase ;
+    rdfs:label "Dependency Validation"@en .
+
+agents:UC_ReleaseValidation a agents:UseCase ;
+    rdfs:label "Release Validation"@en .
+
+agents:UC_CodeReview a agents:UseCase ;
+    rdfs:label "Deep Code Review"@en .
+
+agents:UC_QualityAssessment a agents:UseCase ;
+    rdfs:label "Quality Assessment"@en .
+
+agents:UC_ArchitectureReview a agents:UseCase ;
+    rdfs:label "Architecture Review"@en .
+
+agents:UC_SystemDesign a agents:UseCase ;
+    rdfs:label "System Design"@en .
+
+agents:UC_APIDesign a agents:UseCase ;
+    rdfs:label "API Design"@en .
+
+agents:UC_ArchitecturalDecisions a agents:UseCase ;
+    rdfs:label "Architectural Decisions"@en .
+
+agents:UC_PerformanceAnalysis a agents:UseCase ;
+    rdfs:label "Performance Analysis"@en .
+
+agents:UC_BottleneckDetection a agents:UseCase ;
+    rdfs:label "Bottleneck Detection"@en .
+
+agents:UC_SLOVerification a agents:UseCase ;
+    rdfs:label "SLO Verification"@en .
+
+agents:UC_DockerSetup a agents:UseCase ;
+    rdfs:label "Docker Setup"@en .
+
+agents:UC_APIImplementation a agents:UseCase ;
+    rdfs:label "API Implementation"@en .
+
+agents:UC_InfrastructureCode a agents:UseCase ;
+    rdfs:label "Infrastructure Code"@en .
+
+agents:UC_ComplexWorkflows a agents:UseCase ;
+    rdfs:label "Complex Workflows"@en .
+
+agents:UC_MultiPhaseCoordination a agents:UseCase ;
+    rdfs:label "Multi-Phase Coordination"@en .
+
+agents:UC_DependencyOrchestration a agents:UseCase ;
+    rdfs:label "Dependency Orchestration"@en .
+
+agents:UC_SimpleImplementation a agents:UseCase ;
+    rdfs:label "Simple Implementation"@en .
+
+agents:UC_SimpleReview a agents:UseCase ;
+    rdfs:label "Simple Review"@en .
+
+agents:UC_TestCreation a agents:UseCase ;
+    rdfs:label "Test Creation"@en .
+
+agents:UC_TDDImplementation a agents:UseCase ;
+    rdfs:label "TDD Implementation"@en .
+
+agents:UC_Planning a agents:UseCase ;
+    rdfs:label "Planning"@en .
+
+agents:UC_RequirementsAnalysis a agents:UseCase ;
+    rdfs:label "Requirements Analysis"@en .
+
+# ============================================================================
+# RULE INSTANCES
+# ============================================================================
+
+rules:AlwaysCargoMake a rules:AbsoluteRule ;
+    rdfs:label "Always Use Cargo Make"@en ;
+    cnv:mandatory true ;
+    cnv:description "NEVER USE DIRECT CARGO COMMANDS - ALWAYS USE cargo make. This is non-negotiable."@en .
+
+rules:NeverSaveToRoot a rules:AbsoluteRule ;
+    rdfs:label "Never Save to Root Folder"@en ;
+    cnv:mandatory true ;
+    cnv:description "NEVER save working files, text/mds and tests to the root folder. Always organize in subdirectories."@en .
+
+rules:ConcurrentExecution a rules:ConcurrencyRule ;
+    rdfs:label "Concurrent Execution Required"@en ;
+    cnv:mandatory true ;
+    cnv:description "ALL operations MUST be concurrent/parallel in a single message."@en .
+
+rules:BatchTodos a rules:ConcurrencyRule ;
+    rdfs:label "Batch All Todos"@en ;
+    cnv:mandatory true ;
+    cnv:description "TodoWrite ALWAYS batches ALL todos in ONE call (10+ todos minimum)."@en .
+
+rules:StopOnAndon a rules:AbsoluteRule ;
+    rdfs:label "Stop on Andon Signal"@en ;
+    cnv:mandatory true ;
+    cnv:description "NEVER IGNORE ANDON SIGNALS. Stop the line when compiler errors, test failures, or warnings appear."@en .
+
+rules:NoUnwrap a rules:ProhibitedPattern ;
+    rdfs:label "No unwrap() in Production"@en ;
+    cnv:mandatory true ;
+    cnv:description "No unwrap()/expect() in production code. Use Result<T, E> error handling."@en .
+
+rules:NoTODO a rules:ProhibitedPattern ;
+    rdfs:label "No TODO Comments"@en ;
+    cnv:mandatory true ;
+    cnv:description "No TODO comments except FUTURE: prefix for documented future enhancements."@en .
+
+rules:NoPlaceholders a rules:ProhibitedPattern ;
+    rdfs:label "No Placeholders"@en ;
+    cnv:mandatory true ;
+    cnv:description "No placeholders - No 'In production, this would...' comments."@en .
+
+rules:ChicagoTDDMandatory a rules:AbsoluteRule ;
+    rdfs:label "Chicago TDD Mandatory"@en ;
+    cnv:mandatory true ;
+    cnv:description "Must use state-based testing, real collaborators, AAA pattern, behavior verification."@en .
+
+# ============================================================================
+# BUILD COMMAND INSTANCES
+# ============================================================================
+
+config:CargoMakeCheck a config:CargoMakeCommand ;
+    rdfs:label "cargo make check"@en ;
+    config:commandString "cargo make check" ;
+    config:timeoutSeconds 5 ;
+    cnv:description "Quick compilation check - detects compiler errors (Andon signal)."@en ;
+    methods:triggersAndonSignal methods:CompilerErrorSignal .
+
+config:CargoMakeTest a config:CargoMakeCommand ;
+    rdfs:label "cargo make test"@en ;
+    config:commandString "cargo make test" ;
+    config:timeoutSeconds 40 ;
+    cnv:description "All tests (unit + integration) - detects test failures (Andon signal)."@en ;
+    methods:triggersAndonSignal methods:TestFailureSignal .
+
+config:CargoMakeLint a config:CargoMakeCommand ;
+    rdfs:label "cargo make lint"@en ;
+    config:commandString "cargo make lint" ;
+    config:timeoutSeconds 10 ;
+    cnv:description "Clippy linting - detects code quality issues (Andon signal)."@en ;
+    methods:triggersAndonSignal methods:LintingErrorSignal .
+
+config:CargoMakeSLOCheck a config:CargoMakeCommand ;
+    rdfs:label "cargo make slo-check"@en ;
+    config:commandString "cargo make slo-check" ;
+    config:timeoutSeconds 30 ;
+    cnv:description "Verify performance SLOs are met."@en .
+
+config:CargoMakeBench a config:CargoMakeCommand ;
+    rdfs:label "cargo make bench"@en ;
+    config:commandString "cargo make bench" ;
+    config:timeoutSeconds 60 ;
+    cnv:description "Run performance benchmarks."@en .
+
+config:CargoMakePreCommit a config:CargoMakeCommand ;
+    rdfs:label "cargo make pre-commit"@en ;
+    config:commandString "cargo make pre-commit" ;
+    config:timeoutSeconds 30 ;
+    cnv:description "Pre-commit validation: format + lint + unit tests."@en .
+
+# ============================================================================
+# ANDON SIGNAL INSTANCES
+# ============================================================================
+
+methods:CompilerErrorSignal a methods:AndonCritical ;
+    rdfs:label "Compiler Error Signal"@en ;
+    cnv:description "Red signal: error[E...] pattern detected. Must stop immediately and fix root cause."@en .
+
+methods:TestFailureSignal a methods:AndonCritical ;
+    rdfs:label "Test Failure Signal"@en ;
+    cnv:description "Red signal: test ... FAILED pattern detected. Must stop immediately and fix root cause."@en .
+
+methods:CompilerWarningSignal a methods:AndonHigh ;
+    rdfs:label "Compiler Warning Signal"@en ;
+    cnv:description "Yellow signal: warning: pattern detected. Should stop and fix before proceeding."@en .
+
+methods:LintingErrorSignal a methods:AndonHigh ;
+    rdfs:label "Linting Error Signal"@en ;
+    cnv:description "Yellow signal: clippy warnings/errors detected. Should stop and fix before proceeding."@en .
+
+# ============================================================================
+# PERFORMANCE SLO INSTANCES
+# ============================================================================
+
+config:CompilationSLO a config:PerformanceSLO ;
+    rdfs:label "Compilation SLO"@en ;
+    config:metric "Incremental compilation time" ;
+    config:targetValue "≤ 2 seconds" ;
+    cnv:description "Incremental builds must complete in 2 seconds or less."@en .
+
+config:UnitTestSLO a config:PerformanceSLO ;
+    rdfs:label "Unit Test SLO"@en ;
+    config:metric "Unit test execution time" ;
+    config:targetValue "≤ 10 seconds" ;
+    cnv:description "Unit tests must complete in 10 seconds or less."@en .
+
+config:IntegrationTestSLO a config:PerformanceSLO ;
+    rdfs:label "Integration Test SLO"@en ;
+    config:metric "Integration test execution time" ;
+    config:targetValue "≤ 30 seconds" ;
+    cnv:description "Integration tests must complete in 30 seconds or less."@en .
+
+config:CLIExecutionSLO a config:PerformanceSLO ;
+    rdfs:label "CLI Execution SLO"@en ;
+    config:metric "CLI end-to-end execution time" ;
+    config:targetValue "≤ 100 milliseconds" ;
+    cnv:description "CLI commands must complete in 100ms or less."@en .
+
+config:MemoryUsageSLO a config:PerformanceSLO ;
+    rdfs:label "Memory Usage SLO"@en ;
+    config:metric "Peak memory usage" ;
+    config:targetValue "≤ 10 MB" ;
+    cnv:description "Peak memory usage must not exceed 10 MB."@en .
+
+# ============================================================================
+# TEST CATEGORY INSTANCES
+# ============================================================================
+
+config:UnitTests a config:TestCategory ;
+    rdfs:label "Unit Tests"@en ;
+    cnv:description "Colocated with source in src/*_test.rs or #[cfg(test)] mod tests."@en .
+
+config:IntegrationTests a config:TestCategory ;
+    rdfs:label "Integration Tests"@en ;
+    cnv:description "Located in /tests directory."@en .
+
+config:PropertyTests a config:TestCategory ;
+    rdfs:label "Property Tests"@en ;
+    cnv:description "Using proptest for command parsing and invariant verification."@en .
+
+config:SnapshotTests a config:TestCategory ;
+    rdfs:label "Snapshot Tests"@en ;
+    cnv:description "Using insta for deterministic output verification."@en .
+
+# ============================================================================
+# SHACL VALIDATION SHAPES
+# ============================================================================
+
+config:ProjectShape a sh:NodeShape ;
+    sh:targetClass cnv:Project ;
+    sh:property [
+        sh:path cnv:projectName ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Project must have exactly one name."@en ;
+    ] ;
+    sh:property [
+        sh:path cnv:hasLanguage ;
+        sh:minCount 1 ;
+        sh:message "Project must specify at least one language."@en ;
+    ] ;
+    sh:property [
+        sh:path cnv:followsMethodology ;
+        sh:minCount 1 ;
+        sh:message "Project must follow at least one methodology (SPARC, TDD, DfLSS)."@en ;
+    ] .
+
+config:HyperAdvancedAgentShape a sh:NodeShape ;
+    sh:targetClass agents:HyperAdvancedAgent ;
+    sh:property [
+        sh:path agents:agentType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Hyper-advanced agent must have exactly one agent type."@en ;
+    ] ;
+    sh:property [
+        sh:path cnv:priority ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 1 ;
+        sh:message "Hyper-advanced agents must have priority 1."@en ;
+    ] ;
+    sh:property [
+        sh:path agents:hasCapability ;
+        sh:minCount 3 ;
+        sh:message "Hyper-advanced agent must have at least 3 capabilities."@en ;
+    ] ;
+    sh:property [
+        sh:path agents:hasUseCase ;
+        sh:minCount 3 ;
+        sh:message "Hyper-advanced agent must have at least 3 use cases."@en ;
+    ] .
+
+config:AbsoluteRuleShape a sh:NodeShape ;
+    sh:targetClass rules:AbsoluteRule ;
+    sh:property [
+        sh:path cnv:mandatory ;
+        sh:hasValue true ;
+        sh:message "Absolute rules must be mandatory."@en ;
+    ] ;
+    sh:property [
+        sh:path cnv:description ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Absolute rule must have a description."@en ;
+    ] .
+
+config:CargoMakeCommandShape a sh:NodeShape ;
+    sh:targetClass config:CargoMakeCommand ;
+    sh:property [
+        sh:path config:commandString ;
+        sh:pattern "^cargo make " ;
+        sh:message "CargoMakeCommand must start with 'cargo make '."@en ;
+    ] ;
+    sh:property [
+        sh:path config:timeoutSeconds ;
+        sh:minCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:message "CargoMakeCommand must have a positive timeout."@en ;
+    ] .
+
+config:PerformanceSLOShape a sh:NodeShape ;
+    sh:targetClass config:PerformanceSLO ;
+    sh:property [
+        sh:path config:metric ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "SLO must specify exactly one metric."@en ;
+    ] ;
+    sh:property [
+        sh:path config:targetValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "SLO must specify exactly one target value."@en ;
+    ] .
+
+config:AndonSignalShape a sh:NodeShape ;
+    sh:targetClass methods:AndonSignal ;
+    sh:property [
+        sh:path cnv:description ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "Andon signal must have a description explaining when to stop."@en ;
+    ] .
+
+# ============================================================================
+# END OF ONTOLOGY
+# ============================================================================

@@ -1,0 +1,417 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@vocab": "http://example.org/claude-md#",
+
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "dc": "http://purl.org/dc/terms/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "sh": "http://www.w3.org/ns/shacl#",
+
+    "claudemd": "http://example.org/claude-md#",
+    "project": "http://example.org/project#",
+    "agent": "http://example.org/agent#",
+    "rule": "http://example.org/rule#",
+    "build": "http://example.org/build#",
+    "test": "http://example.org/test#",
+    "method": "http://example.org/methodology#",
+    "perf": "http://example.org/performance#",
+
+    "Project": {
+      "@id": "claudemd:Project",
+      "@type": "@id"
+    },
+    "Agent": {
+      "@id": "claudemd:Agent",
+      "@type": "@id"
+    },
+    "HyperAdvancedAgent": {
+      "@id": "claudemd:HyperAdvancedAgent",
+      "@type": "@id"
+    },
+    "CoreAgent": {
+      "@id": "claudemd:CoreAgent",
+      "@type": "@id"
+    },
+    "AbsoluteRule": {
+      "@id": "claudemd:AbsoluteRule",
+      "@type": "@id"
+    },
+    "BuildCommand": {
+      "@id": "claudemd:BuildCommand",
+      "@type": "@id"
+    },
+    "CargoMakeCommand": {
+      "@id": "claudemd:CargoMakeCommand",
+      "@type": "@id"
+    },
+    "TestStrategy": {
+      "@id": "claudemd:TestStrategy",
+      "@type": "@id"
+    },
+    "ChicagoTDD": {
+      "@id": "claudemd:ChicagoTDD",
+      "@type": "@id"
+    },
+    "Methodology": {
+      "@id": "claudemd:Methodology",
+      "@type": "@id"
+    },
+    "SPARC": {
+      "@id": "claudemd:SPARC",
+      "@type": "@id"
+    },
+    "PerformanceSLO": {
+      "@id": "claudemd:PerformanceSLO",
+      "@type": "@id"
+    },
+    "AndonSignal": {
+      "@id": "claudemd:AndonSignal",
+      "@type": "@id"
+    },
+    "FileOrganization": {
+      "@id": "claudemd:FileOrganization",
+      "@type": "@id"
+    },
+    "Directory": {
+      "@id": "claudemd:Directory",
+      "@type": "@id"
+    },
+    "ExecutionPattern": {
+      "@id": "claudemd:ExecutionPattern",
+      "@type": "@id"
+    },
+    "MCPCoordination": {
+      "@id": "claudemd:MCPCoordination",
+      "@type": "@id"
+    },
+    "ProhibitedPattern": {
+      "@id": "claudemd:ProhibitedPattern",
+      "@type": "@id"
+    },
+
+    "name": {
+      "@id": "rdfs:label",
+      "@type": "xsd:string"
+    },
+    "description": {
+      "@id": "dc:description",
+      "@type": "xsd:string"
+    },
+    "identifier": {
+      "@id": "dc:identifier",
+      "@type": "xsd:string"
+    },
+    "version": {
+      "@id": "owl:versionInfo",
+      "@type": "xsd:string"
+    },
+    "created": {
+      "@id": "dc:created",
+      "@type": "xsd:dateTime"
+    },
+    "modified": {
+      "@id": "dc:modified",
+      "@type": "xsd:dateTime"
+    },
+
+    "projectName": {
+      "@id": "project:name",
+      "@type": "xsd:string"
+    },
+    "language": {
+      "@id": "project:language",
+      "@type": "xsd:string"
+    },
+    "architecture": {
+      "@id": "project:architecture",
+      "@type": "xsd:string"
+    },
+    "methodology": {
+      "@id": "project:methodology",
+      "@type": "@id"
+    },
+    "corePrinciples": {
+      "@id": "project:corePrinciples",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "testingStrategy": {
+      "@id": "project:testingStrategy",
+      "@type": "@id"
+    },
+    "performanceSLOs": {
+      "@id": "project:performanceSLOs",
+      "@container": "@set",
+      "@type": "@id"
+    },
+
+    "agentType": {
+      "@id": "agent:agentType",
+      "@type": "xsd:string"
+    },
+    "useCase": {
+      "@id": "agent:useCase",
+      "@type": "xsd:string"
+    },
+    "whenToUse": {
+      "@id": "agent:whenToUse",
+      "@type": "xsd:string"
+    },
+    "capabilities": {
+      "@id": "agent:capabilities",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "specialization": {
+      "@id": "agent:specialization",
+      "@type": "xsd:string"
+    },
+    "priority": {
+      "@id": "agent:priority",
+      "@type": "xsd:integer"
+    },
+    "category": {
+      "@id": "agent:category",
+      "@type": "xsd:string"
+    },
+
+    "ruleType": {
+      "@id": "rule:ruleType",
+      "@type": "xsd:string"
+    },
+    "requirement": {
+      "@id": "rule:requirement",
+      "@type": "xsd:string"
+    },
+    "rationale": {
+      "@id": "rule:rationale",
+      "@type": "xsd:string"
+    },
+    "violationConsequence": {
+      "@id": "rule:violationConsequence",
+      "@type": "xsd:string"
+    },
+    "enforcement": {
+      "@id": "rule:enforcement",
+      "@type": "xsd:string"
+    },
+    "mandatoryPattern": {
+      "@id": "rule:mandatoryPattern",
+      "@type": "xsd:string"
+    },
+    "examples": {
+      "@id": "rule:examples",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+
+    "command": {
+      "@id": "build:command",
+      "@type": "xsd:string"
+    },
+    "commandType": {
+      "@id": "build:commandType",
+      "@type": "xsd:string"
+    },
+    "timeout": {
+      "@id": "build:timeout",
+      "@type": "xsd:duration"
+    },
+    "purpose": {
+      "@id": "build:purpose",
+      "@type": "xsd:string"
+    },
+    "category": {
+      "@id": "build:category",
+      "@type": "xsd:string"
+    },
+    "replacesDirectCommand": {
+      "@id": "build:replacesDirectCommand",
+      "@type": "xsd:string"
+    },
+    "sloTarget": {
+      "@id": "build:sloTarget",
+      "@type": "@id"
+    },
+
+    "testCategory": {
+      "@id": "test:testCategory",
+      "@type": "xsd:string"
+    },
+    "testPrinciple": {
+      "@id": "test:testPrinciple",
+      "@type": "xsd:string"
+    },
+    "testPattern": {
+      "@id": "test:testPattern",
+      "@type": "xsd:string"
+    },
+    "verifies": {
+      "@id": "test:verifies",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "requires": {
+      "@id": "test:requires",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "location": {
+      "@id": "test:location",
+      "@type": "xsd:string"
+    },
+    "coverageTarget": {
+      "@id": "test:coverageTarget",
+      "@type": "xsd:decimal"
+    },
+
+    "methodologyName": {
+      "@id": "method:methodologyName",
+      "@type": "xsd:string"
+    },
+    "fullName": {
+      "@id": "method:fullName",
+      "@type": "xsd:string"
+    },
+    "phases": {
+      "@id": "method:phases",
+      "@container": "@list",
+      "@type": "@id"
+    },
+    "phaseName": {
+      "@id": "method:phaseName",
+      "@type": "xsd:string"
+    },
+    "phaseCommand": {
+      "@id": "method:phaseCommand",
+      "@type": "xsd:string"
+    },
+    "phaseOrder": {
+      "@id": "method:phaseOrder",
+      "@type": "xsd:integer"
+    },
+
+    "sloName": {
+      "@id": "perf:sloName",
+      "@type": "xsd:string"
+    },
+    "metric": {
+      "@id": "perf:metric",
+      "@type": "xsd:string"
+    },
+    "target": {
+      "@id": "perf:target",
+      "@type": "xsd:string"
+    },
+    "unit": {
+      "@id": "perf:unit",
+      "@type": "xsd:string"
+    },
+    "threshold": {
+      "@id": "perf:threshold",
+      "@type": "xsd:decimal"
+    },
+    "verificationCommand": {
+      "@id": "perf:verificationCommand",
+      "@type": "xsd:string"
+    },
+
+    "signalType": {
+      "@id": "claudemd:signalType",
+      "@type": "xsd:string"
+    },
+    "severity": {
+      "@id": "claudemd:severity",
+      "@type": "xsd:string"
+    },
+    "action": {
+      "@id": "claudemd:action",
+      "@type": "xsd:string"
+    },
+    "pattern": {
+      "@id": "claudemd:pattern",
+      "@type": "xsd:string"
+    },
+    "detectionCommand": {
+      "@id": "claudemd:detectionCommand",
+      "@type": "xsd:string"
+    },
+    "workflow": {
+      "@id": "claudemd:workflow",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+
+    "directoryPath": {
+      "@id": "claudemd:directoryPath",
+      "@type": "xsd:string"
+    },
+    "directoryPurpose": {
+      "@id": "claudemd:directoryPurpose",
+      "@type": "xsd:string"
+    },
+    "allowedFileTypes": {
+      "@id": "claudemd:allowedFileTypes",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "prohibited": {
+      "@id": "claudemd:prohibited",
+      "@type": "xsd:boolean"
+    },
+
+    "patternName": {
+      "@id": "claudemd:patternName",
+      "@type": "xsd:string"
+    },
+    "goldenRule": {
+      "@id": "claudemd:goldenRule",
+      "@type": "xsd:string"
+    },
+    "batchingStrategy": {
+      "@id": "claudemd:batchingStrategy",
+      "@type": "xsd:string"
+    },
+    "minimumBatchSize": {
+      "@id": "claudemd:minimumBatchSize",
+      "@type": "xsd:integer"
+    },
+
+    "toolType": {
+      "@id": "claudemd:toolType",
+      "@type": "xsd:string"
+    },
+    "responsibilities": {
+      "@id": "claudemd:responsibilities",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+    "mcpTools": {
+      "@id": "claudemd:mcpTools",
+      "@container": "@list",
+      "@type": "xsd:string"
+    },
+
+    "prohibitedAction": {
+      "@id": "claudemd:prohibitedAction",
+      "@type": "xsd:string"
+    },
+    "reason": {
+      "@id": "claudemd:reason",
+      "@type": "xsd:string"
+    },
+    "correctAlternative": {
+      "@id": "claudemd:correctAlternative",
+      "@type": "xsd:string"
+    },
+    "enforcementLevel": {
+      "@id": "claudemd:enforcementLevel",
+      "@type": "xsd:string"
+    }
+  }
+}

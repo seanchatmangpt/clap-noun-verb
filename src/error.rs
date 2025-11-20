@@ -47,6 +47,25 @@ pub enum NounVerbError {
 }
 
 impl NounVerbError {
+    /// Enhance error with recovery suggestions from RDF guard validation
+    ///
+    /// Attempts to provide helpful suggestions using the RDF ontology and SPARQL queries.
+    pub fn with_recovery_suggestions(self) -> String {
+        let msg = self.to_string();
+
+        // Try to load middleware and get suggestions
+        #[cfg(feature = "rdf-control")]
+        {
+            use crate::rdf::{GuardValidationMiddleware, recover_from_error};
+            let middleware = GuardValidationMiddleware::global();
+            if let Ok(Some(suggestion)) = recover_from_error(&self, &middleware) {
+                return format!("{}\n\n{}", msg, suggestion);
+            }
+        }
+
+        msg
+    }
+
     /// Create a command not found error
     pub fn command_not_found(noun: impl Into<String>) -> Self {
         Self::CommandNotFound { noun: noun.into() }

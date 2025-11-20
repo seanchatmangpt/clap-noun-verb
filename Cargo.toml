@@ -57,6 +57,13 @@ bytes = "1.7"
 pin-project = "1.1"
 futures = "0.3"
 
+# New in v5.0 - RDF/Ontology Control Layer
+blake3 = "1.5"
+
+# New in v5.0.2 - Official MCP SDK
+rmcp = { version = "0.9", features = ["server", "macros"] }
+schemars = { version = "0.8", features = ["uuid", "chrono"] }
+
 [dev-dependencies]
 anyhow = "1.0"
 cargo-make = "0.37"

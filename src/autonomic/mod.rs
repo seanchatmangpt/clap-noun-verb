@@ -66,7 +66,7 @@ pub use graph::{
 };
 pub use guards::{GuardConfig, GuardResult, GuardStatus};
 pub use hotpath::{
-    AgentHandle, ContextPool, EffectFlags, HotPathContext, HotPathInvocation, HotPathMetrics,
+    AgentHandle, ContextPool, EffectFlags, FlagSet, HotPathContext, HotPathInvocation, HotPathMetrics,
     InvocationArena, InvocationQueue, TenantHandle, ZeroCopyParser,
 };
 pub use introspection::{
