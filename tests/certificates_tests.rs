@@ -8,8 +8,8 @@
 //! - Serialization/deserialization
 //! - Certificate caching
 
-use clap_noun_verb::autonomic::*;
 use clap_noun_verb::autonomic::certificates::Verified;
+use clap_noun_verb::autonomic::*;
 use std::time::Duration;
 
 #[test]
@@ -167,6 +167,7 @@ fn test_certificate_with_effects() {
             required_role: Some("admin".to_string()),
             data_sensitivity: vec![DataSensitivityTag::Pii],
             isolation: IsolationRequirement::Isolated,
+            supports_dry_run: false,
         },
         EffectMetadata {
             effect_type: EffectType::NetworkAccess,
@@ -175,6 +176,7 @@ fn test_certificate_with_effects() {
             required_role: None,
             data_sensitivity: vec![],
             isolation: IsolationRequirement::Shared,
+            supports_dry_run: false,
         },
     ];
 
@@ -197,13 +199,15 @@ fn test_certificate_with_effects() {
 fn test_certified_invocation_wrapping() {
     // GIVEN: A verified certificate and parsed arguments
     let cert = create_verified_certificate();
+    let cert_id = cert.certificate_id.clone();
     let args = vec!["arg1".to_string(), "arg2".to_string()];
+    let args_for_invocation = args.clone();
 
     // WHEN: We create a certified invocation
-    let invocation = CertifiedInvocation::new(cert.clone(), args.clone());
+    let invocation = CertifiedInvocation::new(cert, args_for_invocation);
 
     // THEN: Both certificate and args are accessible
-    assert_eq!(invocation.certificate().certificate_id, cert.certificate_id);
+    assert_eq!(invocation.certificate().certificate_id, cert_id);
     assert_eq!(invocation.args(), &args);
 
     // AND: Can decompose back
