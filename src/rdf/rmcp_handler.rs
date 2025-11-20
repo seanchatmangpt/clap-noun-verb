@@ -5,7 +5,7 @@
 
 use crate::rdf::{Lockchain, Ontology, SparqlPlanner};
 use rmcp::model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo};
-use rmcp::{Json, ServerHandler, ServiceExt};
+use rmcp::ServerHandler;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -159,7 +159,7 @@ impl RdfMcpHandler {
     pub fn record_receipt(
         &self,
         command: &str,
-        exit_code: i32,
+        _exit_code: i32,
     ) -> Result<RecordReceiptResult, String> {
         // Create a unique receipt ID for this command execution
         let receipt_id = format!("receipt_{}", uuid::Uuid::new_v4());

@@ -2,7 +2,7 @@
 
 ## Quick Links
 
-- **Executive Summary**: [docs/test_unwrap_solution_summary.md](docs/test_unwrap_solution_summary.md)
+- **Executive Summary**: Archived (see CHANGELOG.md for historical information)
 - **User Guide**: [docs/test_unwrap_migration_guide.md](docs/test_unwrap_migration_guide.md)
 - **Technical Spec**: [docs/test_unwrap_technical_spec.md](docs/test_unwrap_technical_spec.md)
 - **Core Implementation**: [tests/common/test_prelude.rs](tests/common/test_prelude.rs)
@@ -18,7 +18,7 @@ tests/common/mod.rs              # Updated to export test_prelude
 ### Documentation (60KB total)
 ```
 docs/test_unwrap_migration_guide.md    # 14KB - Comprehensive user guide
-docs/test_unwrap_solution_summary.md   # 8KB - Executive summary
+# Archived - See CHANGELOG.md for historical information
 docs/test_unwrap_technical_spec.md     # 20KB - Technical deep-dive
 UNWRAP_SOLUTION_INDEX.md               # This file
 ```
@@ -114,7 +114,7 @@ Priority files for migration:
 ## Documentation Details
 
 ### Executive Summary (8KB)
-**File**: docs/test_unwrap_solution_summary.md
+**Note**: Historical summary archived. See CHANGELOG.md for implementation history.
 
 Contents:
 - Problem statement

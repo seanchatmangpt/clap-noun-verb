@@ -85,7 +85,7 @@ impl PheromoneField {
     pub async fn gradient(&self, x: i32, y: i32) -> (f64, f64) {
         let cells = self.cells.read().await;
 
-        let center = cells.get(&(x, y)).map(|c| c.intensity).unwrap_or(0.0);
+        let _center = cells.get(&(x, y)).map(|c| c.intensity).unwrap_or(0.0);
         let left = cells.get(&(x - 1, y)).map(|c| c.intensity).unwrap_or(0.0);
         let right = cells.get(&(x + 1, y)).map(|c| c.intensity).unwrap_or(0.0);
         let up = cells.get(&(x, y - 1)).map(|c| c.intensity).unwrap_or(0.0);

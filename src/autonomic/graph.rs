@@ -391,7 +391,9 @@ impl CapabilityGraph {
         for &start in &start_nodes {
             for &end in &end_nodes {
                 if let Some(path) = self.shortest_path(start, end) {
-                    if shortest.is_none() || path.len() < shortest.as_ref().unwrap().len() {
+                    if shortest.is_none()
+                        || path.len() < shortest.as_ref().map_or(usize::MAX, |p| p.len())
+                    {
                         shortest = Some(path);
                     }
                 }

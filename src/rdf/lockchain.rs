@@ -91,29 +91,29 @@ impl Lockchain {
 
     /// Get all entries (cloned)
     pub fn entries(&self) -> Vec<LockchainEntry> {
-        self.entries.lock().unwrap().clone()
+        self.entries.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// Get entry by index
     pub fn get_entry(&self, index: u64) -> Option<LockchainEntry> {
-        let entries = self.entries.lock().unwrap();
+        let entries = self.entries.lock().unwrap_or_else(|e| e.into_inner());
         entries.get(index as usize).cloned()
     }
 
     /// Get latest entry
     pub fn latest(&self) -> Option<LockchainEntry> {
-        let entries = self.entries.lock().unwrap();
+        let entries = self.entries.lock().unwrap_or_else(|e| e.into_inner());
         entries.last().cloned()
     }
 
     /// Get current head hash
     pub fn head(&self) -> Option<Blake3Hash> {
-        *self.head.lock().unwrap()
+        *self.head.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     /// Get chain length
     pub fn len(&self) -> usize {
-        self.entries.lock().unwrap().len()
+        self.entries.lock().unwrap_or_else(|e| e.into_inner()).len()
     }
 
     /// Check if chain is empty

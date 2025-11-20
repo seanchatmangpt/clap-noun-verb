@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 /// Distributed Agent Coordination System
 ///
 /// Enables safe coordination of millions of agents across distributed systems
@@ -159,18 +160,18 @@ impl CommandBroker {
         let selected = match self.strategy {
             RoutingStrategy::MinLatency => agents
                 .iter()
-                .min_by(|a, b| a.latency_ms.partial_cmp(&b.latency_ms).unwrap())
+                .min_by(|a, b| a.latency_ms.partial_cmp(&b.latency_ms).unwrap_or(Ordering::Equal))
                 .cloned(),
             RoutingStrategy::MaxReliability => agents
                 .iter()
-                .max_by(|a, b| a.reliability.partial_cmp(&b.reliability).unwrap())
+                .max_by(|a, b| a.reliability.partial_cmp(&b.reliability).unwrap_or(Ordering::Equal))
                 .cloned(),
             RoutingStrategy::BestFit => agents
                 .iter()
                 .max_by(|a, b| {
                     a.fitness_score(capability, 0.5, 0.5)
                         .partial_cmp(&b.fitness_score(capability, 0.5, 0.5))
-                        .unwrap()
+                        .unwrap_or(Ordering::Equal)
                 })
                 .cloned(),
             RoutingStrategy::LeastLoaded => agents.iter().min_by_key(|a| a.current_load).cloned(),

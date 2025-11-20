@@ -4,7 +4,6 @@
 //! For Phase 3, we use simple string-based query execution.
 
 use crate::rdf::ontology::Ontology;
-use crate::Result;
 use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::Arc;

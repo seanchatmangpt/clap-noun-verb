@@ -102,7 +102,7 @@ impl PhaseObserver {
         self.check_alerts(&event);
 
         // Store event (with capacity limit)
-        let mut events = self.events.lock().unwrap();
+        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.push_back(event);
 
         // Keep only last 10,000 events to prevent memory growth
@@ -113,13 +113,13 @@ impl PhaseObserver {
 
     /// Add an alert rule
     pub fn add_rule(&self, rule: AlertRule) {
-        let mut rules = self.rules.lock().unwrap();
+        let mut rules = self.rules.lock().unwrap_or_else(|e| e.into_inner());
         rules.push(rule);
     }
 
     /// Check event against alert rules
     fn check_alerts(&self, event: &PhaseEvent) {
-        let rules = self.rules.lock().unwrap();
+        let rules = self.rules.lock().unwrap_or_else(|e| e.into_inner());
 
         for rule in rules.iter() {
             if rule.matches(event) {
@@ -133,13 +133,13 @@ impl PhaseObserver {
 
     /// Get recent events
     pub fn recent_events(&self, count: usize) -> Vec<PhaseEvent> {
-        let events = self.events.lock().unwrap();
+        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.iter().rev().take(count).cloned().collect()
     }
 
     /// Get phase transition matrix (from -> to counts)
     pub fn transition_matrix(&self) -> TransitionMatrix {
-        let events = self.events.lock().unwrap();
+        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         let mut matrix = TransitionMatrix::new();
 
         for event in events.iter() {
@@ -151,7 +151,7 @@ impl PhaseObserver {
 
     /// Detect phase anomalies using statistical analysis
     pub fn detect_anomalies(&self) -> Vec<PhaseAnomaly> {
-        let events = self.events.lock().unwrap();
+        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         let mut anomalies = Vec::new();
 
         // Calculate phase duration statistics
@@ -213,8 +213,8 @@ impl PhaseObserver {
         ObserverSnapshot {
             total_events: self.stats.total_events.load(Ordering::Relaxed),
             total_alerts_fired: self.stats.alerts_fired.load(Ordering::Relaxed),
-            events_buffered: self.events.lock().unwrap().len(),
-            rules_active: self.rules.lock().unwrap().len(),
+            events_buffered: self.events.lock().unwrap_or_else(|e| e.into_inner()).len(),
+            rules_active: self.rules.lock().unwrap_or_else(|e| e.into_inner()).len(),
         }
     }
 

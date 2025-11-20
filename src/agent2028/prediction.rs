@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 /// ML-based workload forecasting, capacity planning, and resource provisioning
 /// to proactively allocate resources before bottlenecks occur.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -45,7 +46,11 @@ impl WorkloadForecast {
 
     /// Get peak predicted load in forecast
     pub fn peak_load(&self) -> Option<f64> {
-        self.predictions.iter().map(|(_, v)| v).copied().max_by(|a, b| a.partial_cmp(b).unwrap())
+        self.predictions
+            .iter()
+            .map(|(_, v)| v)
+            .copied()
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
     }
 
     /// Get average predicted load

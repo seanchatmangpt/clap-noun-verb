@@ -43,10 +43,10 @@ impl AsyncDelegationRegistry {
     /// Register a delegation token asynchronously
     pub async fn register_async(&self, token: DelegationToken) -> Result<(), String> {
         // Acquire write lock
-        let mut local = self.local.write().await;
+        let local = self.local.write().await;
 
         // Register locally
-        local.register(token.clone());
+        local.register(token.clone()).map_err(|e| format!("Failed to register token: {}", e))?;
 
         // Broadcast to distributed nodes
         let _ = self.sync_tx.send(DelegationSyncMessage::Register(token));
@@ -57,13 +57,15 @@ impl AsyncDelegationRegistry {
     /// Get token asynchronously
     pub async fn get_token_async(&self, token_id: &str) -> Option<DelegationToken> {
         let local = self.local.read().await;
-        local.get(&TokenId(token_id.to_string()))
+        local.get(&TokenId(token_id.to_string())).ok().flatten()
     }
 
     /// Revoke token asynchronously
-    pub async fn revoke_async(&self, token_id: &str) {
-        let mut local = self.local.write().await;
-        local.revoke(&TokenId(token_id.to_string()));
+    pub async fn revoke_async(&self, token_id: &str) -> Result<(), String> {
+        let local = self.local.write().await;
+        local
+            .revoke(&TokenId(token_id.to_string()))
+            .map_err(|e| format!("Failed to revoke token: {}", e))
     }
 }
 

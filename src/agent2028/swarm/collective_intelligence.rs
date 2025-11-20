@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 /// Enables millions of agents to achieve consensus and make collective decisions
 /// through voting, aggregation, and Byzantine-resistant mechanisms.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -86,7 +87,7 @@ impl VotingPool {
             *decision_scores.entry(vote.decision.clone()).or_insert(0.0) += vote.weighted_score();
         }
 
-        decision_scores.into_iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        decision_scores.into_iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal))
     }
 
     /// Get consensus confidence (0.0 to 1.0)
@@ -112,7 +113,7 @@ impl VotingPool {
         let max_score = decision_scores
             .values()
             .copied()
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
             .unwrap_or(0.0);
         (max_score / total_weight).min(1.0)
     }
@@ -269,7 +270,7 @@ impl HiveMind {
         state
             .collective_beliefs
             .iter()
-            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(Ordering::Equal))
             .map(|(k, v)| (k.clone(), *v))
     }
 

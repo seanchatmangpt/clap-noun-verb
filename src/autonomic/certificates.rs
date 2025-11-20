@@ -123,8 +123,7 @@ impl SchemaHash {
     pub fn from_input_schema(schema: &InputSchema) -> Self {
         use sha2::{Digest, Sha256};
         // Use debug representation as fallback if serialization fails
-        let serialized = serde_json::to_string(schema)
-            .unwrap_or_else(|_| format!("{:?}", schema));
+        let serialized = serde_json::to_string(schema).unwrap_or_else(|_| format!("{:?}", schema));
         let hash = Sha256::digest(serialized.as_bytes());
         Self(hex::encode(&hash[..16]))
     }
@@ -133,8 +132,7 @@ impl SchemaHash {
     pub fn from_output_schema(schema: &OutputSchema) -> Self {
         use sha2::{Digest, Sha256};
         // Use debug representation as fallback if serialization fails
-        let serialized = serde_json::to_string(schema)
-            .unwrap_or_else(|_| format!("{:?}", schema));
+        let serialized = serde_json::to_string(schema).unwrap_or_else(|_| format!("{:?}", schema));
         let hash = Sha256::digest(serialized.as_bytes());
         Self(hex::encode(&hash[..16]))
     }

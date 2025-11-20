@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 /// Self-organizing task markets where agents bid on tasks based on
 /// capability, load, and availability.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -147,7 +148,7 @@ impl TaskMarket {
     }
 
     /// Run auction for a task (Dutch auction: price descends)
-    pub async fn run_auction(&self, task_id: &str, rounds: u32) -> Option<String> {
+    pub async fn run_auction(&self, task_id: &str, _rounds: u32) -> Option<String> {
         let tasks = self.open_tasks.read().await;
 
         if !tasks.contains_key(task_id) {
@@ -164,7 +165,9 @@ impl TaskMarket {
         }
 
         // Find best bid (lowest score)
-        let winner = task_bids.iter().min_by(|a, b| a.score().partial_cmp(&b.score()).unwrap())?;
+        let winner = task_bids
+            .iter()
+            .min_by(|a, b| a.score().partial_cmp(&b.score()).unwrap_or(Ordering::Equal))?;
 
         let winning_agent = winner.agent_id.clone();
         drop(bids);

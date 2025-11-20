@@ -2,9 +2,7 @@
 //!
 //! FUTURE v5: This module is a placeholder for later implementation
 
-use crate::error::Result;
 use crate::rdf::invocation::ParsedInvocation;
-use std::collections::BTreeMap;
 use thiserror::Error;
 
 /// SHACL shape validator

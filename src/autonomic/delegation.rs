@@ -490,6 +490,9 @@ pub enum DelegationError {
 
     #[error("Invalid delegation")]
     InvalidDelegation,
+
+    #[error("Lock poisoned: {0}")]
+    LockPoisoned(String),
 }
 
 /// Delegation registry for managing active delegations
@@ -505,33 +508,46 @@ impl DelegationRegistry {
     }
 
     /// Register a delegation token
-    pub fn register(&self, token: DelegationToken) {
-        let mut tokens = self.tokens.write().unwrap();
+    pub fn register(&self, token: DelegationToken) -> Result<(), DelegationError> {
+        let mut tokens = self.tokens.write().map_err(|e| {
+            DelegationError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
+        })?;
         tokens.insert(token.token_id.clone(), token);
+        Ok(())
     }
 
     /// Revoke a delegation token
-    pub fn revoke(&self, token_id: &TokenId) {
-        let mut tokens = self.tokens.write().unwrap();
+    pub fn revoke(&self, token_id: &TokenId) -> Result<(), DelegationError> {
+        let mut tokens = self.tokens.write().map_err(|e| {
+            DelegationError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
+        })?;
         tokens.remove(token_id);
+        Ok(())
     }
 
     /// Get a token by ID
-    pub fn get(&self, token_id: &TokenId) -> Option<DelegationToken> {
-        let tokens = self.tokens.read().unwrap();
-        tokens.get(token_id).cloned()
+    pub fn get(&self, token_id: &TokenId) -> Result<Option<DelegationToken>, DelegationError> {
+        let tokens = self.tokens.read().map_err(|e| {
+            DelegationError::LockPoisoned(format!("Failed to acquire read lock: {}", e))
+        })?;
+        Ok(tokens.get(token_id).cloned())
     }
 
     /// Cleanup expired tokens
-    pub fn cleanup_expired(&self) {
-        let mut tokens = self.tokens.write().unwrap();
+    pub fn cleanup_expired(&self) -> Result<(), DelegationError> {
+        let mut tokens = self.tokens.write().map_err(|e| {
+            DelegationError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
+        })?;
         tokens.retain(|_, token| token.temporal.is_valid());
+        Ok(())
     }
 
     /// Get all active tokens
-    pub fn active_tokens(&self) -> Vec<DelegationToken> {
-        let tokens = self.tokens.read().unwrap();
-        tokens.values().filter(|t| t.temporal.is_valid()).cloned().collect()
+    pub fn active_tokens(&self) -> Result<Vec<DelegationToken>, DelegationError> {
+        let tokens = self.tokens.read().map_err(|e| {
+            DelegationError::LockPoisoned(format!("Failed to acquire read lock: {}", e))
+        })?;
+        Ok(tokens.values().filter(|t| t.temporal.is_valid()).cloned().collect())
     }
 }
 

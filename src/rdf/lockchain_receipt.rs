@@ -37,8 +37,10 @@ impl LockchainReceipt {
     pub fn from_data(invocation: &[u8], result: &[u8], agent_id: impl Into<String>) -> Self {
         let invocation_hash = Blake3Hash::hash(invocation);
         let result_hash = Blake3Hash::hash(result);
-        let timestamp =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
 
         Self::new(invocation_hash, result_hash, timestamp, agent_id)
     }

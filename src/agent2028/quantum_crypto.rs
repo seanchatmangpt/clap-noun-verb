@@ -170,7 +170,7 @@ impl QuantumKeyEncapsulation {
 
     fn generate_placeholder_key(size: usize) -> Vec<u8> {
         let mut hasher = Keccak256::new();
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
         hasher.update(timestamp.to_le_bytes());
         let hash = hasher.finalize();
 

@@ -54,7 +54,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::telemetry;
-use super::*;
 
 // ============================================================================
 // Phase States (Zero-Sized Types for Compile-Time Guarantees)
@@ -372,7 +371,7 @@ impl PhaseContext<Shutdown> {
         let active_agents = self.metadata.active_agents.load(Ordering::Relaxed);
         let failed_agents = self.metadata.failed_agents.load(Ordering::Relaxed);
 
-        let metrics = self.metadata.metrics.lock().unwrap().clone();
+        let metrics = self.metadata.metrics.lock().unwrap_or_else(|e| e.into_inner()).clone();
 
         ShutdownReport {
             total_duration: elapsed,
@@ -420,7 +419,7 @@ impl<S> PhaseContext<S> {
         self.metadata.transitions.fetch_add(1, Ordering::Relaxed);
 
         // Record transition
-        let mut metrics = self.metadata.metrics.lock().unwrap();
+        let mut metrics = self.metadata.metrics.lock().unwrap_or_else(|e| e.into_inner());
         metrics.transitions.push(PhaseTransition {
             from: from_phase,
             to: to_phase,
@@ -467,7 +466,7 @@ impl<S> PhaseContext<S> {
 
     /// Get phase metrics snapshot
     pub fn metrics_snapshot(&self) -> PhaseMetrics {
-        self.metadata.metrics.lock().unwrap().clone()
+        self.metadata.metrics.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 }
 
@@ -495,13 +494,13 @@ impl PhaseCoordinator {
 
     /// Register a new swarm
     pub fn register_swarm(&self, swarm_id: String, context: &PhaseContext<impl Sized>) {
-        let mut swarms = self.swarms.write().unwrap();
+        let mut swarms = self.swarms.write().unwrap_or_else(|e| e.into_inner());
         swarms.insert(swarm_id, Arc::clone(&context.metadata));
     }
 
     /// Get current phase for a swarm
     pub fn get_phase(&self, swarm_id: &str) -> Option<PhaseId> {
-        let swarms = self.swarms.read().unwrap();
+        let swarms = self.swarms.read().unwrap_or_else(|e| e.into_inner());
         swarms.get(swarm_id).map(|metadata| {
             PhaseId::from_u8(metadata.current_phase.load(Ordering::Acquire))
                 .unwrap_or(PhaseId::Bootstrap)
@@ -510,7 +509,7 @@ impl PhaseCoordinator {
 
     /// Get aggregate statistics across all swarms
     pub fn aggregate_stats(&self) -> AggregateStats {
-        let swarms = self.swarms.read().unwrap();
+        let swarms = self.swarms.read().unwrap_or_else(|e| e.into_inner());
 
         let mut stats = AggregateStats::default();
 

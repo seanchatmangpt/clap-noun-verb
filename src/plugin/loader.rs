@@ -1,6 +1,6 @@
 //! Plugin loader for dynamic discovery and loading from manifests.
 
-use super::{Plugin, PluginRegistry};
+use super::PluginRegistry;
 use std::path::{Path, PathBuf};
 
 /// Plugin manifest metadata from TOML or JSON.

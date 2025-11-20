@@ -3,6 +3,7 @@
 /// Particle Swarm Optimization (PSO), Ant Colony Optimization (ACO),
 /// and other swarm-based metaheuristics for solving optimization problems.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 /// Solution quality score
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -235,8 +236,11 @@ impl AntColonyOptimizer {
 
     /// Get best solution
     pub fn best_solution(&self) -> Solution {
-        let best_ant =
-            self.ants.iter().max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap()).unwrap();
+        let best_ant = self
+            .ants
+            .iter()
+            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap_or(Ordering::Equal))
+            .unwrap_or(&self.ants[0]);
 
         Solution::new(
             best_ant.path.iter().map(|&i| i as f64).collect(),
@@ -309,9 +313,9 @@ impl FireflyAlgorithm {
     pub fn best_solution(&self) -> Solution {
         self.fireflies
             .iter()
-            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap())
+            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap_or(Ordering::Equal))
             .cloned()
-            .unwrap()
+            .unwrap_or_else(|| self.fireflies[0].clone())
     }
 }
 

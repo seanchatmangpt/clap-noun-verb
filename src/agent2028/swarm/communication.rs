@@ -129,7 +129,7 @@ impl SwarmProtocol {
         let neighbors = self.get_neighbors(&agent_id);
 
         for neighbor in neighbors.iter() {
-            let mut forwarded = message.clone();
+            let forwarded = message.clone();
             self.gossip.receive(forwarded, neighbor.clone());
         }
 
@@ -143,7 +143,7 @@ impl SwarmProtocol {
 
     /// Compress message (simulated)
     pub fn compress_message(&self, message: &SwarmMessage) -> usize {
-        let original_size = serde_json::to_string(message).unwrap().len();
+        let original_size = serde_json::to_string(message).unwrap_or_default().len();
 
         if self.compression_enabled {
             (original_size as f64 * 0.7) as usize // 30% reduction
@@ -166,7 +166,7 @@ impl SwarmProtocol {
     }
 
     /// Protocol negotiation: agree on message format
-    pub fn negotiate_protocol(&self, agent_a: &str, agent_b: &str) -> String {
+    pub fn negotiate_protocol(&self, _agent_a: &str, _agent_b: &str) -> String {
         // Simple negotiation: both support compression or neither does
         if self.compression_enabled {
             "compressed".to_string()

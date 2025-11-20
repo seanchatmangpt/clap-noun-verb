@@ -122,7 +122,7 @@ impl Orchestrator {
     }
 
     /// Route operation to appropriate tier
-    pub async fn route_operation(&self, mut request: OperationRequest) -> OperationResult {
+    pub async fn route_operation(&self, request: OperationRequest) -> OperationResult {
         let start = std::time::Instant::now();
         let operation_id = request.operation_id.clone();
 

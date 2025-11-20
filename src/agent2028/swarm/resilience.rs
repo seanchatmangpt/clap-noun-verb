@@ -134,12 +134,12 @@ impl SwarmResilience {
     }
 
     /// Implement role flexibility (agents switch roles)
-    pub fn adapt_role_assignment(&mut self, swarm_goal: &str) {
+    pub fn adapt_role_assignment(&mut self, _swarm_goal: &str) {
         // Simple heuristic: agents with critical status should change roles
         for agent in self.agent_states.keys().cloned().collect::<Vec<_>>() {
             if let Some(HealthStatus::Critical) = self.agent_states.get(&agent) {
                 // Try to find less loaded role
-                if let Some((role, agents)) =
+                if let Some((_role, agents)) =
                     self.role_redundancy.iter_mut().min_by_key(|(_, a)| a.len())
                 {
                     if !agents.contains(&agent) {

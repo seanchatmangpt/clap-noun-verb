@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Successfully eliminated **10 outdated documentation files** totaling **~4,300 lines** of waste from the documentation directory. All tests pass, no broken references, and controls are in place to prevent waste from returning.
+Successfully eliminated **22 outdated documentation files** totaling **~7,700 lines** of waste from the documentation directory. All tests pass, no broken references, and controls are in place to prevent waste from returning.
 
 ---
 
@@ -46,7 +46,40 @@ These files contained ephemeral session notes:
 - `docs/SESSION_COMPLETION_SUMMARY.md` - Historical session summary
 - `docs/COMPLETE_SESSION_INDEX.md` - Historical session index
 
-**Rationale**: Session summaries are ephemeral and belong in git history, not permanent documentation. They accumulate without value.
+**Rationale**: Session summaries are ephemeral and belong in git history, not permanent documentation.
+
+---
+
+### Category 4: Historical V4 Audit & Validation Reports
+**8 files deleted** - ~3,400 lines
+
+These files documented historical v4 audits and validations:
+- `docs/V4_AUDIT_COMPLETION_SUMMARY.md` - Historical v4 audit completion
+- `docs/V4_CLI_AUDIT_REPORT.md` - Historical v4 CLI audit
+- `docs/DOCUMENTATION_AUDIT_V4_0_1.md` - Historical documentation audit
+- `docs/PRODUCTION_VALIDATION_REPORT_v4.0.0.md` - Historical validation report
+- `docs/ARCHITECTURE_REVIEW_V4.md` - Historical v4 architecture review
+- `docs/PERFORMANCE_ASSESSMENT_V4.md` - Historical v4 performance assessment
+- `docs/V4_TO_V5_FILE_MIGRATION.md` - Historical implementation plan
+- `docs/V4_VS_V5_ARCHITECTURE_COMPARISON.md` - Historical comparison
+
+**Rationale**: Historical audit and validation reports for completed versions are no longer needed. Current v5 documentation is maintained.
+
+---
+
+### Category 5: Historical Implementation Summaries
+**6 files deleted** - ~2,200 lines
+
+These files documented completed implementations:
+- `docs/RPN_576_COMPLETION.md` - Historical completion report
+- `docs/ggen_implementation_summary.md` - Historical implementation summary
+- `docs/test_unwrap_solution_summary.md` - Historical solution summary
+- `docs/POKA_YOKE_IMPLEMENTATION_SUMMARY.md` - Historical implementation summary
+- `docs/TRIZ_IMPLEMENTATION_SKETCH.md` - Historical implementation sketch
+- `docs/TELEMETRY_VALIDATION_IMPLEMENTATION.md` - Historical implementation summary
+- `docs/IMPLEMENTATION_VERIFICATION_REPORT.md` - Historical verification report
+
+**Rationale**: Implementation summaries for completed work are historical. Current implementation status is in code and CHANGELOG.md. They accumulate without value.
 
 ---
 
@@ -86,8 +119,8 @@ Created `docs/MUDA_INVENTORY.md`:
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Documentation files | 208 | 198 | -10 files (-4.8%) |
-| Total lines | ~4,300 waste | 0 waste | 100% waste eliminated |
+| Documentation files | 208 | 186 | -22 files (-10.6%) |
+| Total lines | ~7,700 waste | 0 waste | 100% waste eliminated |
 | Confusion factor | High (outdated v4 docs) | Low (current docs only) | ✅ |
 | Maintenance cost | High (outdated docs) | Low (current docs only) | ✅ |
 

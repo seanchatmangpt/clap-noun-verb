@@ -43,8 +43,8 @@ pub use sparql::SparqlPlanner;
 pub use types::{Invocation, RdfTriple, RdfValue};
 pub use validation::ShapeValidator;
 
-/// Feature gate: enable RDF control layer (defaults to true)
-pub const FEATURE_ENABLED: bool = cfg!(feature = "rdf-control");
+/// Feature gate: enable RDF control layer (always enabled in v5.0)
+pub const FEATURE_ENABLED: bool = true;
 
 /// Ontology namespace
 pub const CNV_NAMESPACE: &str = "https://cnv.dev/ontology#";

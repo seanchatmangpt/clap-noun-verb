@@ -12,6 +12,7 @@
 
 use super::{
     capability_id::CapabilityId,
+    errors::StructuredError,
     policy::PolicyDecision,
     tenancy::{AgentIdentity, TenantIdentity},
 };
@@ -152,8 +153,13 @@ impl GovernanceLedger {
     }
 
     /// Append an event to the ledger
-    pub fn append(&self, mut event: GovernanceEvent) -> EventId {
-        let mut next_id = self.next_event_id.write().unwrap();
+    pub fn append(&self, mut event: GovernanceEvent) -> Result<EventId, StructuredError> {
+        let mut next_id = self.next_event_id.write().map_err(|e| {
+            StructuredError::new(
+                super::errors::ErrorKind::InternalError,
+                format!("Failed to acquire write lock for next_event_id: {}", e),
+            )
+        })?;
         let event_id = EventId::new(*next_id);
         *next_id += 1;
 
@@ -165,10 +171,15 @@ impl GovernanceLedger {
         }
 
         // Add to in-memory events
-        let mut events = self.events.write().unwrap();
+        let mut events = self.events.write().map_err(|e| {
+            StructuredError::new(
+                super::errors::ErrorKind::InternalError,
+                format!("Failed to acquire write lock for events: {}", e),
+            )
+        })?;
         events.push(event);
 
-        event_id
+        Ok(event_id)
     }
 
     /// Record a capability grant
@@ -179,7 +190,7 @@ impl GovernanceLedger {
         agent: AgentIdentity,
         tenant: TenantIdentity,
         correlation_id: impl Into<String>,
-    ) -> EventId {
+    ) -> Result<EventId, StructuredError> {
         let event = GovernanceEvent {
             event_id: EventId::new(0), // Will be set by append
             timestamp: SystemTime::now(),
@@ -202,7 +213,7 @@ impl GovernanceLedger {
         agent: AgentIdentity,
         tenant: TenantIdentity,
         correlation_id: impl Into<String>,
-    ) -> EventId {
+    ) -> Result<EventId, StructuredError> {
         let event = GovernanceEvent {
             event_id: EventId::new(0),
             timestamp: SystemTime::now(),
@@ -229,7 +240,7 @@ impl GovernanceLedger {
         agent: AgentIdentity,
         tenant: TenantIdentity,
         correlation_id: impl Into<String>,
-    ) -> EventId {
+    ) -> Result<EventId, StructuredError> {
         let event = GovernanceEvent {
             event_id: EventId::new(0),
             timestamp: SystemTime::now(),
@@ -256,7 +267,7 @@ impl GovernanceLedger {
         agent: AgentIdentity,
         tenant: TenantIdentity,
         correlation_id: impl Into<String>,
-    ) -> EventId {
+    ) -> Result<EventId, StructuredError> {
         let event = GovernanceEvent {
             event_id: EventId::new(0),
             timestamp: SystemTime::now(),
@@ -280,9 +291,14 @@ impl GovernanceLedger {
     }
 
     /// Get total event count
-    pub fn event_count(&self) -> usize {
-        let events = self.events.read().unwrap();
-        events.len()
+    pub fn event_count(&self) -> Result<usize, StructuredError> {
+        let events = self.events.read().map_err(|e| {
+            StructuredError::new(
+                super::errors::ErrorKind::InternalError,
+                format!("Failed to acquire read lock for events: {}", e),
+            )
+        })?;
+        Ok(events.len())
     }
 
     /// Create a checkpoint
@@ -291,8 +307,8 @@ impl GovernanceLedger {
         checkpoint_id: impl Into<String>,
         agent: AgentIdentity,
         tenant: TenantIdentity,
-    ) -> EventId {
-        let events_since_last = self.event_count() as u64;
+    ) -> Result<EventId, StructuredError> {
+        let events_since_last = self.event_count()? as u64;
 
         let event = GovernanceEvent {
             event_id: EventId::new(0),
@@ -354,24 +370,34 @@ impl LedgerQuery {
     }
 
     /// Execute query and return matching events
-    pub fn execute(self) -> Vec<GovernanceEvent> {
-        let events = self.events.read().unwrap();
+    pub fn execute(self) -> Result<Vec<GovernanceEvent>, StructuredError> {
+        let events = self.events.read().map_err(|e| {
+            StructuredError::new(
+                super::errors::ErrorKind::InternalError,
+                format!("Failed to acquire read lock for events: {}", e),
+            )
+        })?;
 
-        events.iter().filter(|event| self.filters.iter().all(|f| f(event))).cloned().collect()
+        Ok(events.iter().filter(|event| self.filters.iter().all(|f| f(event))).cloned().collect())
     }
 
     /// Count matching events
-    pub fn count(self) -> usize {
-        let events = self.events.read().unwrap();
+    pub fn count(self) -> Result<usize, StructuredError> {
+        let events = self.events.read().map_err(|e| {
+            StructuredError::new(
+                super::errors::ErrorKind::InternalError,
+                format!("Failed to acquire read lock for events: {}", e),
+            )
+        })?;
 
-        events.iter().filter(|event| self.filters.iter().all(|f| f(event))).count()
+        Ok(events.iter().filter(|event| self.filters.iter().all(|f| f(event))).count())
     }
 }
 
 /// Persistent storage for governance ledger
 struct LedgerStorage {
-    /// File path
-    path: std::path::PathBuf,
+    /// File path (kept for future use)
+    _path: std::path::PathBuf,
 
     /// File handle for appending
     file: Arc<RwLock<std::fs::File>>,
@@ -384,12 +410,17 @@ impl LedgerStorage {
 
         let file = OpenOptions::new().create(true).append(true).open(&path)?;
 
-        Ok(Self { path: path.as_ref().to_path_buf(), file: Arc::new(RwLock::new(file)) })
+        Ok(Self { _path: path.as_ref().to_path_buf(), file: Arc::new(RwLock::new(file)) })
     }
 
     /// Append an event
     fn append(&self, event: &GovernanceEvent) -> std::io::Result<()> {
-        let mut file = self.file.write().unwrap();
+        let mut file = self.file.write().map_err(|e| {
+            std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to acquire write lock: {}", e),
+            )
+        })?;
 
         // Serialize as JSON line
         let json = serde_json::to_string(event)?;
@@ -401,7 +432,7 @@ impl LedgerStorage {
 
     /// Load all events
     fn load_all(&self) -> std::io::Result<Vec<GovernanceEvent>> {
-        let file = std::fs::File::open(&self.path)?;
+        let file = std::fs::File::open(&self._path)?;
         let reader = BufReader::new(file);
 
         let mut events = Vec::new();
@@ -430,7 +461,7 @@ impl ReplayEngine {
 
     /// Replay a time slice with original policies
     pub fn replay_timeslice(&self, start: SystemTime, end: SystemTime) -> ReplayResult {
-        let events = self.ledger.query().time_range(start, end).execute();
+        let events = self.ledger.query().time_range(start, end).execute().unwrap_or_default();
 
         // Extract policy decisions
         let decisions: Vec<_> = events
@@ -464,7 +495,7 @@ impl ReplayEngine {
     where
         F: Fn(&CapabilityId, &str) -> PolicyDecision,
     {
-        let events = self.ledger.query().time_range(start, end).execute();
+        let events = self.ledger.query().time_range(start, end).execute().unwrap_or_default();
 
         let mut original_decisions = Vec::new();
         let mut new_decisions = Vec::new();
@@ -584,7 +615,7 @@ mod tests {
             "test",
         );
 
-        assert_eq!(ledger.event_count(), 1);
+        assert_eq!(ledger.event_count().unwrap(), 1);
     }
 
     #[test]

@@ -280,7 +280,8 @@ impl LengthDelimitedFrameBuilder {
             return Ok(None);
         }
 
-        let len_bytes: [u8; 4] = frame[..4].try_into().unwrap();
+        let len_bytes: [u8; 4] =
+            frame[..4].try_into().map_err(|_| std::io::Error::other("Invalid frame header"))?;
         let len = u32::from_le_bytes(len_bytes);
 
         if len > self.max_frame_size {

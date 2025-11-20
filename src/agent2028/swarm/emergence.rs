@@ -2,6 +2,7 @@
 ///
 /// Simple rules that lead to complex emergent behaviors without central control.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 /// State transition rule
@@ -70,7 +71,8 @@ impl RuleEngine {
     /// Get most successful rules
     pub fn get_best_rules(&self, top_n: usize) -> Vec<&Rule> {
         let mut sorted_rules: Vec<&Rule> = self.rules.iter().collect();
-        sorted_rules.sort_by(|a, b| b.success_rate.partial_cmp(&a.success_rate).unwrap());
+        sorted_rules
+            .sort_by(|a, b| b.success_rate.partial_cmp(&a.success_rate).unwrap_or(Ordering::Equal));
         sorted_rules.into_iter().take(top_n).collect()
     }
 }

@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 /// Dynamic marketplace for agents to buy/sell capabilities with flexible pricing models,
 /// SLA guarantees, and smart contract enforcement.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -200,7 +201,7 @@ impl CapabilityMarket {
         let listings = self.find_capability(capability_name).await;
         listings
             .iter()
-            .min_by(|a, b| a.value_score().partial_cmp(&b.value_score()).unwrap())
+            .min_by(|a, b| a.value_score().partial_cmp(&b.value_score()).unwrap_or(Ordering::Equal))
             .cloned()
     }
 
@@ -209,7 +210,9 @@ impl CapabilityMarket {
         let listings = self.find_capability(capability_name).await;
         listings
             .iter()
-            .max_by(|a, b| a.sla.uptime_percent.partial_cmp(&b.sla.uptime_percent).unwrap())
+            .max_by(|a, b| {
+                a.sla.uptime_percent.partial_cmp(&b.sla.uptime_percent).unwrap_or(Ordering::Equal)
+            })
             .cloned()
     }
 
@@ -284,7 +287,7 @@ impl CapabilityMarket {
     }
 
     /// Rate a capability provider
-    pub async fn rate_provider(&self, listing_id: &str, rating: f64, review: String) {
+    pub async fn rate_provider(&self, listing_id: &str, rating: f64, _review: String) {
         let mut listings = self.listings.write().await;
         if let Some(listing) = listings.get_mut(listing_id) {
             let new_rating = (listing.rating * listing.review_count as f64 + rating)

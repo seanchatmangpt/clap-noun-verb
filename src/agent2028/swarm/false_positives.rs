@@ -4,6 +4,7 @@
 /// false alarms, bad decisions, misleading signals, and incorrect information
 /// in agent swarms.
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 /// False alert severity
@@ -138,7 +139,7 @@ impl FalseAlertDetector {
             }
         }
 
-        faulty_agents.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        faulty_agents.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
         faulty_agents
     }
 }
@@ -233,7 +234,7 @@ impl ConsensusRecoverySystem {
             }
         }
 
-        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
         unreliable
     }
 }
@@ -394,7 +395,7 @@ impl BidValidator {
             }
         }
 
-        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
         unreliable
     }
 }
@@ -442,7 +443,7 @@ impl PheromoneValidator {
             }
         }
 
-        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        unreliable.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
         unreliable
     }
 
@@ -482,7 +483,7 @@ impl RoleVerifier {
 
     /// Record role performance
     pub fn record_performance(&mut self, agent_id: String, role: String, success: bool) {
-        let mut verification = self
+        let verification = self
             .verifications
             .iter_mut()
             .find(|v| v.agent_id == agent_id && v.assigned_role == role);
@@ -495,7 +496,7 @@ impl RoleVerifier {
             v.performance_score = v.successes as f64 / v.assignments as f64;
             v.can_perform = v.performance_score > 0.6;
         } else {
-            let mut v = RoleVerification {
+            let v = RoleVerification {
                 agent_id,
                 assigned_role: role,
                 can_perform: success,
@@ -525,7 +526,7 @@ impl RoleVerifier {
             .map(|v| (v.agent_id.clone(), v.performance_score))
             .collect();
 
-        agents.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        agents.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
         agents
     }
 }
