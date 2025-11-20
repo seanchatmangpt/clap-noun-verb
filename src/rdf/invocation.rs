@@ -41,13 +41,14 @@ impl InvocationParser {
 
     /// Create a parser with ontology reference
     pub fn with_ontology(ontology: Arc<Ontology>) -> Self {
-        Self {
-            ontology: Some(ontology),
-        }
+        Self { ontology: Some(ontology) }
     }
 
     /// Parse Turtle RDF into a ParsedInvocation
-    pub fn parse_turtle(&self, ttl: &str) -> std::result::Result<ParsedInvocation, InvocationError> {
+    pub fn parse_turtle(
+        &self,
+        ttl: &str,
+    ) -> std::result::Result<ParsedInvocation, InvocationError> {
         let triples = self.parse_turtle_to_triples(ttl)?;
         self.parse_triples(&triples)
     }
@@ -92,17 +93,17 @@ impl InvocationParser {
             }
         }
 
-        let command = command.ok_or_else(|| InvocationError::MissingField("command".to_string()))?;
+        let command =
+            command.ok_or_else(|| InvocationError::MissingField("command".to_string()))?;
 
-        Ok(ParsedInvocation {
-            command,
-            args,
-            output_format,
-        })
+        Ok(ParsedInvocation { command, args, output_format })
     }
 
     /// Parse Turtle syntax to RDF triples (simple parser)
-    fn parse_turtle_to_triples(&self, ttl: &str) -> std::result::Result<Vec<RdfTriple>, InvocationError> {
+    fn parse_turtle_to_triples(
+        &self,
+        ttl: &str,
+    ) -> std::result::Result<Vec<RdfTriple>, InvocationError> {
         let mut triples = Vec::new();
         let lines: Vec<&str> = ttl.lines().collect();
 
@@ -152,7 +153,8 @@ impl InvocationParser {
         let subject = if parts[0].starts_with('_') || parts[0].contains(':') {
             parts[0].trim_matches(['<', '>'].as_ref()).to_string()
         } else {
-            current_subject.as_ref()
+            current_subject
+                .as_ref()
                 .ok_or_else(|| InvocationError::ParseError("Missing subject".to_string()))?
                 .clone()
         };

@@ -164,9 +164,7 @@ impl TemporalContract {
         let timeout = self.timeout.or(Some(self.duration_class.max_duration()));
 
         match self.deadline {
-            DeadlineSpec::Hard { duration } => {
-                Some(timeout.map_or(duration, |t| t.min(duration)))
-            }
+            DeadlineSpec::Hard { duration } => Some(timeout.map_or(duration, |t| t.min(duration))),
             _ => timeout,
         }
     }
@@ -185,23 +183,13 @@ pub enum RetryPolicy {
     None,
 
     /// Fixed number of retries with exponential backoff
-    ExponentialBackoff {
-        max_attempts: u32,
-        initial_delay: Duration,
-        max_delay: Duration,
-    },
+    ExponentialBackoff { max_attempts: u32, initial_delay: Duration, max_delay: Duration },
 
     /// Fixed number of retries with linear backoff
-    LinearBackoff {
-        max_attempts: u32,
-        delay: Duration,
-    },
+    LinearBackoff { max_attempts: u32, delay: Duration },
 
     /// Retry forever with exponential backoff (for critical operations)
-    Forever {
-        initial_delay: Duration,
-        max_delay: Duration,
-    },
+    Forever { initial_delay: Duration, max_delay: Duration },
 }
 
 /// Concurrency contract - execution shape and resource limits
@@ -322,11 +310,7 @@ pub struct ExecutionContract {
 impl ExecutionContract {
     /// Create a new execution contract
     pub fn new(temporal: TemporalContract, concurrency: ConcurrencyContract) -> Self {
-        Self {
-            temporal,
-            concurrency,
-            metadata: ContractMetadata::default(),
-        }
+        Self { temporal, concurrency, metadata: ContractMetadata::default() }
     }
 
     /// Builder pattern
@@ -379,11 +363,7 @@ pub struct ContractMetadata {
 
 impl Default for ContractMetadata {
     fn default() -> Self {
-        Self {
-            version: "1.0.0".to_string(),
-            experimental: false,
-            description: None,
-        }
+        Self { version: "1.0.0".to_string(), experimental: false, description: None }
     }
 }
 
@@ -496,9 +476,8 @@ impl ExecutionContractBuilder {
             temporal = temporal.idempotent();
         }
 
-        let mut concurrency = ConcurrencyContract::new(
-            self.concurrency_model.unwrap_or(ConcurrencyModel::Unlimited)
-        );
+        let mut concurrency =
+            ConcurrencyContract::new(self.concurrency_model.unwrap_or(ConcurrencyModel::Unlimited));
         if let Some(isolation) = self.isolation {
             concurrency = concurrency.with_isolation(isolation);
         }
@@ -554,9 +533,7 @@ mod tests {
     fn test_contract_builder() {
         let contract = ExecutionContract::builder()
             .duration_class(DurationClass::FastPath)
-            .deadline(DeadlineSpec::Hard {
-                duration: Duration::from_millis(10),
-            })
+            .deadline(DeadlineSpec::Hard { duration: Duration::from_millis(10) })
             .idempotent()
             .concurrency_model(ConcurrencyModel::TenantWideShared { max_concurrent: 5 })
             .build();

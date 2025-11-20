@@ -1,33 +1,26 @@
+use chrono::{DateTime, Utc};
 /// Collective Intelligence Engine
 ///
 /// Enables millions of agents to achieve consensus and make collective decisions
 /// through voting, aggregation, and Byzantine-resistant mechanisms.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc};
 
 /// Vote cast by an agent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vote {
     pub agent_id: String,
     pub decision: String,
-    pub confidence: f64,          // 0.0 to 1.0
-    pub weight: f64,              // Based on agent reputation
+    pub confidence: f64, // 0.0 to 1.0
+    pub weight: f64,     // Based on agent reputation
     pub timestamp: DateTime<Utc>,
 }
 
 impl Vote {
     pub fn new(agent_id: String, decision: String, confidence: f64, weight: f64) -> Self {
-        Self {
-            agent_id,
-            decision,
-            confidence,
-            weight,
-            timestamp: Utc::now(),
-        }
+        Self { agent_id, decision, confidence, weight, timestamp: Utc::now() }
     }
 
     /// Weighted vote score
@@ -69,7 +62,7 @@ impl VotingPool {
             voting_id: uuid::Uuid::new_v4().to_string(),
             topic,
             votes: Vec::new(),
-            quorum_required: 1,  // Will be set based on swarm size
+            quorum_required: 1, // Will be set based on swarm size
             created_at: Utc::now(),
             closes_at: Utc::now() + chrono::Duration::seconds(duration_secs),
             consensus_type,
@@ -93,9 +86,7 @@ impl VotingPool {
             *decision_scores.entry(vote.decision.clone()).or_insert(0.0) += vote.weighted_score();
         }
 
-        decision_scores
-            .into_iter()
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        decision_scores.into_iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
     /// Get consensus confidence (0.0 to 1.0)
@@ -118,7 +109,11 @@ impl VotingPool {
         }
 
         // Confidence = (winning score / total weight)^2
-        let max_score = decision_scores.values().copied().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(0.0);
+        let max_score = decision_scores
+            .values()
+            .copied()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or(0.0);
         (max_score / total_weight).min(1.0)
     }
 }
@@ -130,13 +125,16 @@ pub struct VotingProtocol {
 
 impl VotingProtocol {
     pub fn new() -> Self {
-        Self {
-            pools: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { pools: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     /// Start a new voting pool
-    pub async fn create_pool(&self, topic: String, consensus_type: String, duration_secs: i64) -> String {
+    pub async fn create_pool(
+        &self,
+        topic: String,
+        consensus_type: String,
+        duration_secs: i64,
+    ) -> String {
         let pool = VotingPool::new(topic, consensus_type, duration_secs);
         let voting_id = pool.voting_id.clone();
 
@@ -201,7 +199,7 @@ impl Default for VotingProtocol {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HiveMindState {
     pub generation: u64,
-    pub collective_beliefs: HashMap<String, f64>,  // Belief -> confidence
+    pub collective_beliefs: HashMap<String, f64>, // Belief -> confidence
     pub collective_intentions: Vec<String>,
     pub consensus_topics: Vec<String>,
     pub updated_at: DateTime<Utc>,
@@ -227,10 +225,7 @@ pub struct HiveMind {
 
 impl HiveMind {
     pub fn new(voting_protocol: Arc<VotingProtocol>) -> Self {
-        Self {
-            state: Arc::new(RwLock::new(HiveMindState::new())),
-            voting_protocol,
-        }
+        Self { state: Arc::new(RwLock::new(HiveMindState::new())), voting_protocol }
     }
 
     /// All agents read the current hivemind state
@@ -298,7 +293,8 @@ mod tests {
     #[tokio::test]
     async fn test_voting_pool() {
         let protocol = VotingProtocol::new();
-        let voting_id = protocol.create_pool("test_decision".to_string(), "majority".to_string(), 60).await;
+        let voting_id =
+            protocol.create_pool("test_decision".to_string(), "majority".to_string(), 60).await;
 
         protocol.vote(&voting_id, "agent-1".to_string(), "yes".to_string(), 0.9, 1.0).await;
         protocol.vote(&voting_id, "agent-2".to_string(), "yes".to_string(), 0.8, 1.0).await;

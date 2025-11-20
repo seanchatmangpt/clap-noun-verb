@@ -12,12 +12,12 @@
 //! 9. Event Bus - Pub/sub system
 //! 10. Circuit Breaker - Failure detection
 
-use clap_noun_verb::plugin::{Plugin, PluginRegistry};
-use clap_noun_verb::plugins::*;
 use clap_noun_verb::cli::registry::CommandRegistry;
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
-use std::sync::Arc;
+use clap_noun_verb::plugin::{Plugin, PluginRegistry};
+use clap_noun_verb::plugins::*;
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 /// Test fixture for plugin CLI testing
 struct PluginCliFixture {
@@ -224,10 +224,7 @@ fn test_rate_limiter_plugin_blocks_over_limit() {
     }
 
     // Assert - 6th request should be blocked
-    assert!(
-        limiter.check_rate_limit("user1").is_err(),
-        "Request over limit should be blocked"
-    );
+    assert!(limiter.check_rate_limit("user1").is_err(), "Request over limit should be blocked");
 }
 
 #[test]
@@ -260,10 +257,7 @@ fn test_rate_limiter_plugin_refill_over_time() {
     std::thread::sleep(std::time::Duration::from_secs(2));
 
     // Assert - Should have tokens again
-    assert!(
-        limiter.check_rate_limit("user1").is_ok(),
-        "Tokens should refill after window expires"
-    );
+    assert!(limiter.check_rate_limit("user1").is_ok(), "Tokens should refill after window expires");
 }
 
 #[test]
@@ -292,10 +286,7 @@ fn test_rate_limiter_plugin_reset_user_limit() {
     limiter.reset("user1");
 
     // Assert
-    assert!(
-        limiter.check_rate_limit("user1").is_ok(),
-        "Reset should restore tokens"
-    );
+    assert!(limiter.check_rate_limit("user1").is_ok(), "Reset should restore tokens");
 }
 
 // ============================================================================

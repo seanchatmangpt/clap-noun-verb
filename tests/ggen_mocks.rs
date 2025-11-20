@@ -3,8 +3,8 @@
 //! This module provides complete mocks of the ggen library's external interfaces
 //! to test the clap-noun-verb ggen CLI integration without external dependencies.
 
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// Mock ggen API client for AI generation
 pub struct MockGgenApi {
@@ -25,23 +25,11 @@ pub struct ApiCall {
 /// Mock API response
 #[derive(Debug, Clone)]
 pub enum ApiResponse {
-    GenerateSuccess {
-        content: String,
-        tokens: u32,
-    },
-    ProjectSuccess {
-        files: Vec<String>,
-    },
-    GraphSuccess {
-        triples: usize,
-    },
-    SearchSuccess {
-        results: Vec<PackageResult>,
-    },
-    Error {
-        code: u32,
-        message: String,
-    },
+    GenerateSuccess { content: String, tokens: u32 },
+    ProjectSuccess { files: Vec<String> },
+    GraphSuccess { triples: usize },
+    SearchSuccess { results: Vec<PackageResult> },
+    Error { code: u32, message: String },
 }
 
 /// Mock package search result
@@ -269,10 +257,7 @@ impl MockPackageRegistry {
             .collect();
 
         let mut history = self.search_history.lock().unwrap();
-        history.push(SearchQuery {
-            query: query.to_string(),
-            results_count: results.len(),
-        });
+        history.push(SearchQuery { query: query.to_string(), results_count: results.len() });
 
         results
     }
@@ -343,10 +328,7 @@ mod tests {
     #[test]
     fn test_mock_template_rendering() {
         let engine = MockTemplateEngine::new();
-        engine.register_template(
-            "test".to_string(),
-            "Hello {{name}}!".to_string(),
-        );
+        engine.register_template("test".to_string(), "Hello {{name}}!".to_string());
 
         let mut vars = HashMap::new();
         vars.insert("name".to_string(), "World".to_string());

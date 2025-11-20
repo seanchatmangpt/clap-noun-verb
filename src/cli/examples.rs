@@ -52,10 +52,7 @@ impl Example {
 
     /// Add a variation
     pub fn with_variation(mut self, desc: impl Into<String>, cmd: impl Into<String>) -> Self {
-        self.variations.push(Variation {
-            description: desc.into(),
-            command: cmd.into(),
-        });
+        self.variations.push(Variation { description: desc.into(), command: cmd.into() });
         self
     }
 
@@ -149,8 +146,14 @@ impl Default for ExamplesRegistry {
   "status": "success"
 }"#,
             )
-            .with_variation("Use specific template", r#"ggen ai generate --template rust-api "User login endpoint""#)
-            .with_variation("Generate with context", r#"ggen ai generate --context src/models "CRUD operations for Product""#)
+            .with_variation(
+                "Use specific template",
+                r#"ggen ai generate --template rust-api "User login endpoint""#,
+            )
+            .with_variation(
+                "Generate with context",
+                r#"ggen ai generate --context src/models "CRUD operations for Product""#,
+            )
             .with_tags(vec!["ai".into(), "generate".into(), "advanced".into()]),
         );
 
@@ -183,8 +186,14 @@ impl Default for ExamplesRegistry {
   "status": "success"
 }"#,
             )
-            .with_variation("Use variables file", "ggen template render my-template --vars config.json")
-            .with_variation("Render to stdout", "ggen template render api-handler --name Auth --stdout")
+            .with_variation(
+                "Use variables file",
+                "ggen template render my-template --vars config.json",
+            )
+            .with_variation(
+                "Render to stdout",
+                "ggen template render api-handler --name Auth --stdout",
+            )
             .with_tags(vec!["template".into(), "render".into(), "intermediate".into()]),
         );
 
@@ -235,8 +244,14 @@ impl Default for ExamplesRegistry {
   "type": "handlebars"
 }"#,
             )
-            .with_variation("Create from existing", "ggen template create api-endpoint --from examples/rest.hbs")
-            .with_variation("Interactive creation", "ggen template create my-template --interactive")
+            .with_variation(
+                "Create from existing",
+                "ggen template create api-endpoint --from examples/rest.hbs",
+            )
+            .with_variation(
+                "Interactive creation",
+                "ggen template create my-template --interactive",
+            )
             .with_tags(vec!["template".into(), "create".into(), "advanced".into()]),
         );
 
@@ -252,8 +267,14 @@ impl Default for ExamplesRegistry {
   "manifest": "packs/my-pack/pack.toml"
 }"#,
             )
-            .with_variation("Create with template", "ggen pack create web-api --template typescript")
-            .with_variation("Create with metadata", r#"ggen pack create my-pack --author "John Doe" --license MIT"#)
+            .with_variation(
+                "Create with template",
+                "ggen pack create web-api --template typescript",
+            )
+            .with_variation(
+                "Create with metadata",
+                r#"ggen pack create my-pack --author "John Doe" --license MIT"#,
+            )
             .with_tags(vec!["pack".into(), "create".into(), "advanced".into()]),
         );
 
@@ -270,9 +291,19 @@ impl Default for ExamplesRegistry {
   "installed": true
 }"#,
             )
-            .with_variation("Install specific version", "ggen marketplace install react-components --version 2.0")
-            .with_variation("Install with dependencies", "ggen marketplace install full-stack --with-deps")
-            .with_tags(vec!["marketplace".into(), "install".into(), "intermediate".into()]),
+            .with_variation(
+                "Install specific version",
+                "ggen marketplace install react-components --version 2.0",
+            )
+            .with_variation(
+                "Install with dependencies",
+                "ggen marketplace install full-stack --with-deps",
+            )
+            .with_tags(vec![
+                "marketplace".into(),
+                "install".into(),
+                "intermediate".into(),
+            ]),
         );
 
         // Example 10: AI Analyze

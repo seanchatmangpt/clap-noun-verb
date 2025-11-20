@@ -29,10 +29,7 @@ mod shacl_validation_tests {
         );
 
         let violations = validation_result.violations();
-        assert!(
-            violations.len() > 0,
-            "Should have at least one violation"
-        );
+        assert!(violations.len() > 0, "Should have at least one violation");
 
         let violation = &violations[0];
         assert!(
@@ -54,15 +51,11 @@ mod shacl_validation_tests {
         let agent = Agent {
             name: "test-agent".to_string(),
             agent_type: AgentType::HyperAdvanced,
-            capabilities: vec![
-                "capability1".to_string(),
-                "capability2".to_string(),
-            ], // Only 2 capabilities (should be 3+)
+            capabilities: vec!["capability1".to_string(), "capability2".to_string()], // Only 2 capabilities (should be 3+)
             use_case: "Test use case".to_string(),
         };
 
-        let agent_rdf = agent.to_rdf()
-            .expect("Agent should convert to RDF");
+        let agent_rdf = agent.to_rdf().expect("Agent should convert to RDF");
 
         let shacl_shapes = load_shacl_shapes("tests/fixtures/claude_shapes.ttl");
 
@@ -76,13 +69,10 @@ mod shacl_validation_tests {
         );
 
         let violations = validation_result.violations();
-        let min_count_violation = violations.iter()
-            .find(|v| v.constraint_component().contains("minCount"));
+        let min_count_violation =
+            violations.iter().find(|v| v.constraint_component().contains("minCount"));
 
-        assert!(
-            min_count_violation.is_some(),
-            "Should have minCount violation for capabilities"
-        );
+        assert!(min_count_violation.is_some(), "Should have minCount violation for capabilities");
 
         let violation = min_count_violation.unwrap();
         assert!(
@@ -107,8 +97,7 @@ mod shacl_validation_tests {
             unit: "seconds".to_string(),
         };
 
-        let slo_rdf = slo.to_rdf()
-            .expect("SLO should convert to RDF");
+        let slo_rdf = slo.to_rdf().expect("SLO should convert to RDF");
 
         let shacl_shapes = load_shacl_shapes("tests/fixtures/claude_shapes.ttl");
 
@@ -116,22 +105,15 @@ mod shacl_validation_tests {
         let validation_result = shacl_shapes.validate(&slo_rdf);
 
         // Assert
-        assert!(
-            !validation_result.is_valid(),
-            "Validation should fail for negative SLO value"
-        );
+        assert!(!validation_result.is_valid(), "Validation should fail for negative SLO value");
 
         let violations = validation_result.violations();
-        let value_violation = violations.iter()
-            .find(|v| {
-                v.constraint_component().contains("minExclusive") ||
-                v.property_path().contains("targetValue")
-            });
+        let value_violation = violations.iter().find(|v| {
+            v.constraint_component().contains("minExclusive")
+                || v.property_path().contains("targetValue")
+        });
 
-        assert!(
-            value_violation.is_some(),
-            "Should have minExclusive violation for SLO value"
-        );
+        assert!(value_violation.is_some(), "Should have minExclusive violation for SLO value");
     }
 
     /// Test: SHACL shape validation catches missing properties
@@ -156,8 +138,8 @@ mod shacl_validation_tests {
         );
 
         let violations = validation_result.violations();
-        let missing_property_violation = violations.iter()
-            .find(|v| v.constraint_component().contains("minCount"));
+        let missing_property_violation =
+            violations.iter().find(|v| v.constraint_component().contains("minCount"));
 
         assert!(
             missing_property_violation.is_some(),
@@ -166,8 +148,7 @@ mod shacl_validation_tests {
 
         let violation = missing_property_violation.unwrap();
         assert!(
-            violation.property_path().contains("name") ||
-            violation.message().contains("name"),
+            violation.property_path().contains("name") || violation.message().contains("name"),
             "Violation should mention missing 'name' property"
         );
     }
@@ -188,19 +169,13 @@ mod shacl_validation_tests {
         let validation_result = shacl_shapes.validate(&rule_rdf);
 
         // Assert
-        assert!(
-            !validation_result.is_valid(),
-            "Validation should fail for invalid datatype"
-        );
+        assert!(!validation_result.is_valid(), "Validation should fail for invalid datatype");
 
         let violations = validation_result.violations();
-        let datatype_violation = violations.iter()
-            .find(|v| v.constraint_component().contains("datatype"));
+        let datatype_violation =
+            violations.iter().find(|v| v.constraint_component().contains("datatype"));
 
-        assert!(
-            datatype_violation.is_some(),
-            "Should have datatype violation"
-        );
+        assert!(datatype_violation.is_some(), "Should have datatype violation");
 
         let violation = datatype_violation.unwrap();
         assert!(
@@ -222,16 +197,11 @@ mod shacl_validation_tests {
         let agent = Agent {
             name: "Invalid Name With Spaces!".to_string(), // Invalid: should be kebab-case
             agent_type: AgentType::HyperAdvanced,
-            capabilities: vec![
-                "cap1".to_string(),
-                "cap2".to_string(),
-                "cap3".to_string(),
-            ],
+            capabilities: vec!["cap1".to_string(), "cap2".to_string(), "cap3".to_string()],
             use_case: "Test".to_string(),
         };
 
-        let agent_rdf = agent.to_rdf()
-            .expect("Agent should convert to RDF");
+        let agent_rdf = agent.to_rdf().expect("Agent should convert to RDF");
 
         let shacl_shapes = load_shacl_shapes("tests/fixtures/claude_shapes.ttl");
 
@@ -241,7 +211,11 @@ mod shacl_validation_tests {
         // Assert
         // This test assumes SHACL shapes define a pattern constraint for agent names
         // If pattern constraint exists, validation should fail
-        if validation_result.violations().iter().any(|v| v.constraint_component().contains("pattern")) {
+        if validation_result
+            .violations()
+            .iter()
+            .any(|v| v.constraint_component().contains("pattern"))
+        {
             assert!(
                 !validation_result.is_valid(),
                 "Validation should fail for agent name violating pattern"

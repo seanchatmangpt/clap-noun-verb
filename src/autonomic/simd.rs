@@ -116,10 +116,7 @@ unsafe fn batch_hash_neon(ids: &[&str]) -> Vec<u64> {
 /// Compares multiple capability IDs against a set of allowed capabilities
 /// in parallel, returning a bitmask of matches.
 #[inline]
-pub fn batch_capability_check(
-    requested: &[&str],
-    allowed: &[&str],
-) -> Vec<bool> {
+pub fn batch_capability_check(requested: &[&str], allowed: &[&str]) -> Vec<bool> {
     #[cfg(target_arch = "x86_64")]
     {
         if is_x86_feature_detected!("avx2") {
@@ -133,22 +130,13 @@ pub fn batch_capability_check(
 
 /// Scalar fallback for capability checking
 #[inline]
-fn batch_capability_check_scalar(
-    requested: &[&str],
-    allowed: &[&str],
-) -> Vec<bool> {
-    requested
-        .iter()
-        .map(|req| allowed.iter().any(|allow| req == allow))
-        .collect()
+fn batch_capability_check_scalar(requested: &[&str], allowed: &[&str]) -> Vec<bool> {
+    requested.iter().map(|req| allowed.iter().any(|allow| req == allow)).collect()
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
-unsafe fn batch_capability_check_avx2(
-    requested: &[&str],
-    allowed: &[&str],
-) -> Vec<bool> {
+unsafe fn batch_capability_check_avx2(requested: &[&str], allowed: &[&str]) -> Vec<bool> {
     // For string comparison, vectorization gains are limited
     // Use scalar implementation for correctness
     batch_capability_check_scalar(requested, allowed)
@@ -183,7 +171,7 @@ pub fn simd_zero_memory(buffer: &mut [u8]) {
 #[target_feature(enable = "avx2")]
 #[allow(unsafe_code)]
 unsafe fn simd_zero_memory_avx2(buffer: &mut [u8]) {
-    use std::arch::x86_64::{_mm256_storeu_si256, _mm256_setzero_si256};
+    use std::arch::x86_64::{_mm256_setzero_si256, _mm256_storeu_si256};
 
     let zero = _mm256_setzero_si256();
     let mut ptr = buffer.as_mut_ptr();
@@ -207,7 +195,7 @@ unsafe fn simd_zero_memory_avx2(buffer: &mut [u8]) {
 #[target_feature(enable = "sse2")]
 #[allow(unsafe_code)]
 unsafe fn simd_zero_memory_sse2(buffer: &mut [u8]) {
-    use std::arch::x86_64::{_mm_storeu_si128, _mm_setzero_si128};
+    use std::arch::x86_64::{_mm_setzero_si128, _mm_storeu_si128};
 
     let zero = _mm_setzero_si128();
     let mut ptr = buffer.as_mut_ptr();
@@ -231,7 +219,7 @@ unsafe fn simd_zero_memory_sse2(buffer: &mut [u8]) {
 #[target_feature(enable = "neon")]
 #[allow(unsafe_code)]
 unsafe fn simd_zero_memory_neon(buffer: &mut [u8]) {
-    use std::arch::aarch64::{vst1q_u8, vdupq_n_u8};
+    use std::arch::aarch64::{vdupq_n_u8, vst1q_u8};
 
     let zero = vdupq_n_u8(0);
     let mut ptr = buffer.as_mut_ptr();
@@ -264,9 +252,7 @@ impl SimdEffectBatch {
     /// Create a new SIMD batch from individual flags
     #[inline]
     pub fn new(f0: u16, f1: u16, f2: u16, f3: u16) -> Self {
-        Self {
-            flags: [f0, f1, f2, f3],
-        }
+        Self { flags: [f0, f1, f2, f3] }
     }
 
     /// Batch OR operation

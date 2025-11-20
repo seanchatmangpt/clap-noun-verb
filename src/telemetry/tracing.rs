@@ -51,10 +51,8 @@ pub struct SpanEvent {
 impl Span {
     /// Create a new span.
     pub fn new(name: impl Into<String>, trace_id: impl Into<String>) -> Self {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let now =
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
         Self {
             name: name.into(),
@@ -85,32 +83,23 @@ impl Span {
     pub fn end_ok(&mut self) {
         self.status = SpanStatus::Ok;
         self.end_time = Some(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64,
         );
     }
 
     /// Mark the span as having encountered an error.
     pub fn end_error(&mut self, error: impl Into<String>) {
         self.status = SpanStatus::Error;
-        self.attributes
-            .insert("error.message".to_string(), error.into());
+        self.attributes.insert("error.message".to_string(), error.into());
         self.end_time = Some(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64,
         );
     }
 
     /// Record an event in this span.
     pub fn add_event(&mut self, name: impl Into<String>) {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let now =
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
         self.events.push(SpanEvent {
             name: name.into(),
@@ -171,11 +160,7 @@ pub struct SpanBuilder {
 impl SpanBuilder {
     /// Create a new span builder.
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            parent_id: None,
-            attributes: HashMap::new(),
-        }
+        Self { name: name.into(), parent_id: None, attributes: HashMap::new() }
     }
 
     /// Set the parent span ID.
@@ -213,10 +198,7 @@ pub struct TracingCollector {
 impl TracingCollector {
     /// Create a new tracing collector.
     pub fn new() -> Self {
-        Self {
-            spans: Vec::new(),
-            current_trace_id: uuid::Uuid::new_v4().to_string(),
-        }
+        Self { spans: Vec::new(), current_trace_id: uuid::Uuid::new_v4().to_string() }
     }
 
     /// Create a new trace.
@@ -257,10 +239,7 @@ impl TracingCollector {
 
     /// Get the total duration of all spans.
     pub fn total_duration_ms(&self) -> u64 {
-        self.spans
-            .iter()
-            .filter_map(|s| s.duration_ms())
-            .sum()
+        self.spans.iter().filter_map(|s| s.duration_ms()).sum()
     }
 }
 

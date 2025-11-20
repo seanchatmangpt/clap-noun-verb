@@ -11,8 +11,8 @@
 //!
 //! This is the template generation pipeline for clap-noun-verb framework.
 
-use oxigraph::store::Store;
 use oxigraph::sparql::QueryResults;
+use oxigraph::store::Store;
 use std::fs;
 use std::path::PathBuf;
 
@@ -130,7 +130,11 @@ pub struct GgenTemplateGenerator {
 impl GgenTemplateGenerator {
     /// Create a new template generator
     pub fn new(ontology_path: PathBuf, output_dir: PathBuf) -> Self {
-        GgenTemplateGenerator { store: Store::new().expect("Failed to create RDF store"), ontology_path, output_dir }
+        GgenTemplateGenerator {
+            store: Store::new().expect("Failed to create RDF store"),
+            ontology_path,
+            output_dir,
+        }
     }
 
     /// Load RDF ontology from Turtle file
@@ -241,7 +245,9 @@ impl GgenTemplateGenerator {
     }
 
     /// Query noun-verb combinations from ontology
-    pub fn query_noun_verb_combinations(&self) -> Result<Vec<NounVerbCombination>, Box<dyn std::error::Error>> {
+    pub fn query_noun_verb_combinations(
+        &self,
+    ) -> Result<Vec<NounVerbCombination>, Box<dyn std::error::Error>> {
         let results = self.store.query(SPARQL_NOUN_VERB_COMBINATIONS_QUERY)?;
         let mut combinations = Vec::new();
 
@@ -261,7 +267,9 @@ impl GgenTemplateGenerator {
     }
 
     /// Query argument patterns
-    pub fn query_argument_patterns(&self) -> Result<Vec<ArgumentPattern>, Box<dyn std::error::Error>> {
+    pub fn query_argument_patterns(
+        &self,
+    ) -> Result<Vec<ArgumentPattern>, Box<dyn std::error::Error>> {
         let results = self.store.query(SPARQL_ARGUMENT_PATTERN_QUERY)?;
         let mut patterns = Vec::new();
 
@@ -282,7 +290,9 @@ impl GgenTemplateGenerator {
     }
 
     /// Query async patterns
-    pub fn query_async_patterns(&self) -> Result<Vec<AsyncPatternInfo>, Box<dyn std::error::Error>> {
+    pub fn query_async_patterns(
+        &self,
+    ) -> Result<Vec<AsyncPatternInfo>, Box<dyn std::error::Error>> {
         let results = self.store.query(SPARQL_ASYNC_PATTERN_QUERY)?;
         let mut patterns = Vec::new();
 
@@ -351,7 +361,12 @@ impl GgenTemplateGenerator {
         println!("  Async Patterns: {}", async_patterns.len());
         println!("  Error Types: {}", error_types.len());
         println!("\n📈 Estimated Template Generation\n");
-        println!("  360 Templates: {} nouns × {} verbs × {} output formats", nouns.len(), verbs.len(), 1);
+        println!(
+            "  360 Templates: {} nouns × {} verbs × {} output formats",
+            nouns.len(),
+            verbs.len(),
+            1
+        );
 
         Ok(())
     }
@@ -460,7 +475,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nCapabilities (Sample - 46 total):");
     let capabilities = generator.query_capabilities()?;
     for (i, cap) in capabilities.iter().take(10).enumerate() {
-        println!("  {}. {:?}: {}", i + 1, cap.label, cap.comment.as_ref().unwrap_or(&"No comment".to_string()));
+        println!(
+            "  {}. {:?}: {}",
+            i + 1,
+            cap.label,
+            cap.comment.as_ref().unwrap_or(&"No comment".to_string())
+        );
     }
     if capabilities.len() > 10 {
         println!("  ... and {} more capabilities", capabilities.len() - 10);

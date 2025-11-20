@@ -57,18 +57,20 @@ impl ConfigManagerPlugin {
 
     /// Set a configuration value
     pub fn set(&self, key: &str, value: ConfigValue) -> crate::Result<()> {
-        let mut config = self.config.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Config lock failed".to_string())
-        })?;
+        let mut config = self
+            .config
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Config lock failed".to_string()))?;
         config.insert(key.to_string(), value);
         Ok(())
     }
 
     /// Get a configuration value
     pub fn get(&self, key: &str) -> crate::Result<Option<ConfigValue>> {
-        let config = self.config.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Config lock failed".to_string())
-        })?;
+        let config = self
+            .config
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Config lock failed".to_string()))?;
 
         Ok(config.get(key).cloned().or_else(|| {
             // Fall back to defaults
@@ -115,26 +117,29 @@ impl ConfigManagerPlugin {
 
     /// Clear all configuration (keep defaults)
     pub fn clear(&self) -> crate::Result<()> {
-        let mut config = self.config.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Config lock failed".to_string())
-        })?;
+        let mut config = self
+            .config
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Config lock failed".to_string()))?;
         config.clear();
         Ok(())
     }
 
     /// Get all configuration keys
     pub fn keys(&self) -> crate::Result<Vec<String>> {
-        let config = self.config.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Config lock failed".to_string())
-        })?;
+        let config = self
+            .config
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Config lock failed".to_string()))?;
         Ok(config.keys().cloned().collect())
     }
 
     /// Check if key exists
     pub fn has_key(&self, key: &str) -> crate::Result<bool> {
-        let config = self.config.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Config lock failed".to_string())
-        })?;
+        let config = self
+            .config
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Config lock failed".to_string()))?;
         Ok(config.contains_key(key))
     }
 }
@@ -275,7 +280,9 @@ mod tests {
         plugin.clear().unwrap();
 
         // Defaults should still exist
-        plugin.set_default("default_key", ConfigValue::String("default_value".to_string())).unwrap();
+        plugin
+            .set_default("default_key", ConfigValue::String("default_value".to_string()))
+            .unwrap();
         let val = plugin.get("default_key").unwrap();
         assert!(val.is_some());
     }

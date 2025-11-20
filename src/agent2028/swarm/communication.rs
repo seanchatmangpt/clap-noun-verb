@@ -2,7 +2,6 @@
 ///
 /// Efficient bandwidth-limited communication for swarms with millions of agents.
 /// Implements gossip protocols, layered broadcasting, and dynamic topology adaptation.
-
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -13,15 +12,15 @@ pub struct SwarmMessage {
     pub sender_id: String,
     pub content: String,
     pub message_type: MessageType,
-    pub ttl: u8,                  // Time to live (hops)
-    pub seen_by: Vec<String>,     // Agents that have seen this
+    pub ttl: u8,              // Time to live (hops)
+    pub seen_by: Vec<String>, // Agents that have seen this
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MessageType {
-    LocalBroadcast,   // Within local cluster only
-    RegionalGossip,   // Regional cluster gossip
-    GlobalAlert,      // Critical swarm-wide message
+    LocalBroadcast, // Within local cluster only
+    RegionalGossip, // Regional cluster gossip
+    GlobalAlert,    // Critical swarm-wide message
 }
 
 impl SwarmMessage {
@@ -60,10 +59,7 @@ pub struct GossipProtocol {
 
 impl GossipProtocol {
     pub fn new() -> Self {
-        Self {
-            message_buffer: HashMap::new(),
-            propagation_history: HashMap::new(),
-        }
+        Self { message_buffer: HashMap::new(), propagation_history: HashMap::new() }
     }
 
     /// Receive and buffer message
@@ -75,8 +71,7 @@ impl GossipProtocol {
             .or_insert_with(Vec::new)
             .push(agent_id);
 
-        self.message_buffer
-            .insert(message.message_id.clone(), message);
+        self.message_buffer.insert(message.message_id.clone(), message);
     }
 
     /// Get message to propagate to peer (random from buffer)
@@ -116,11 +111,7 @@ pub struct SwarmProtocol {
 
 impl SwarmProtocol {
     pub fn new(compression_enabled: bool) -> Self {
-        Self {
-            local_neighbors: HashMap::new(),
-            gossip: GossipProtocol::new(),
-            compression_enabled,
-        }
+        Self { local_neighbors: HashMap::new(), gossip: GossipProtocol::new(), compression_enabled }
     }
 
     /// Register agent and its neighbors
@@ -130,10 +121,7 @@ impl SwarmProtocol {
 
     /// Get local neighbors
     pub fn get_neighbors(&self, agent_id: &str) -> Vec<String> {
-        self.local_neighbors
-            .get(agent_id)
-            .cloned()
-            .unwrap_or_default()
+        self.local_neighbors.get(agent_id).cloned().unwrap_or_default()
     }
 
     /// Broadcast message locally (to neighbors only)
@@ -173,10 +161,7 @@ impl SwarmProtocol {
                 .or_insert_with(Vec::new)
                 .push(agent_b.clone());
 
-            self.local_neighbors
-                .entry(agent_b)
-                .or_insert_with(Vec::new)
-                .push(agent_a);
+            self.local_neighbors.entry(agent_b).or_insert_with(Vec::new).push(agent_a);
         }
     }
 
@@ -218,7 +203,11 @@ mod tests {
 
     #[test]
     fn test_swarm_message() {
-        let msg = SwarmMessage::new("agent-1".to_string(), "hello".to_string(), MessageType::LocalBroadcast);
+        let msg = SwarmMessage::new(
+            "agent-1".to_string(),
+            "hello".to_string(),
+            MessageType::LocalBroadcast,
+        );
 
         assert!(msg.should_propagate());
         assert_eq!(msg.ttl, 2);
@@ -227,7 +216,11 @@ mod tests {
     #[test]
     fn test_gossip_protocol() {
         let mut gossip = GossipProtocol::new();
-        let msg = SwarmMessage::new("agent-1".to_string(), "test".to_string(), MessageType::RegionalGossip);
+        let msg = SwarmMessage::new(
+            "agent-1".to_string(),
+            "test".to_string(),
+            MessageType::RegionalGossip,
+        );
 
         gossip.receive(msg, "agent-1".to_string());
         assert!(gossip.spread_percentage(&"test".to_string(), 100) >= 0.0);
@@ -239,7 +232,11 @@ mod tests {
 
         protocol.register_agent("agent-1".to_string(), vec!["agent-2".to_string()]);
 
-        let msg = SwarmMessage::new("agent-1".to_string(), "hello".to_string(), MessageType::LocalBroadcast);
+        let msg = SwarmMessage::new(
+            "agent-1".to_string(),
+            "hello".to_string(),
+            MessageType::LocalBroadcast,
+        );
         let neighbors = protocol.local_broadcast(msg, "agent-1".to_string());
 
         assert_eq!(neighbors.len(), 1);

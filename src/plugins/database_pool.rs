@@ -8,11 +8,19 @@ pub struct DatabasePoolPlugin {
 }
 
 impl DatabasePoolPlugin {
-    pub fn new() -> Self { Self { connections: Arc::new(Mutex::new(vec![false; 10])), loaded: false } }
-    pub fn acquire(&self) -> crate::Result<u32> { Ok(1) }
+    pub fn new() -> Self {
+        Self { connections: Arc::new(Mutex::new(vec![false; 10])), loaded: false }
+    }
+    pub fn acquire(&self) -> crate::Result<u32> {
+        Ok(1)
+    }
 }
 
-impl Default for DatabasePoolPlugin { fn default() -> Self { Self::new() } }
+impl Default for DatabasePoolPlugin {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl std::fmt::Debug for DatabasePoolPlugin {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DatabasePoolPlugin").finish()
@@ -20,13 +28,22 @@ impl std::fmt::Debug for DatabasePoolPlugin {
 }
 
 impl Plugin for DatabasePoolPlugin {
-    fn name(&self) -> &str { "database-pool" }
-    fn version(&self) -> &str { "1.0.0" }
+    fn name(&self) -> &str {
+        "database-pool"
+    }
+    fn version(&self) -> &str {
+        "1.0.0"
+    }
     fn metadata(&self) -> PluginMetadata {
         PluginMetadata::new(self.name(), self.version()).with_description("Connection pooling")
     }
-    fn capabilities(&self) -> Vec<PluginCapability> { vec![PluginCapability::Middleware] }
-    fn load(&mut self) -> crate::Result<()> { self.loaded = true; Ok(()) }
+    fn capabilities(&self) -> Vec<PluginCapability> {
+        vec![PluginCapability::Middleware]
+    }
+    fn load(&mut self) -> crate::Result<()> {
+        self.loaded = true;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

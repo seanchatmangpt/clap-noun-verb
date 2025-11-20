@@ -3,17 +3,16 @@
 /// Comprehensive systems for detecting, recovering from, and correcting
 /// false alarms, bad decisions, misleading signals, and incorrect information
 /// in agent swarms.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// False alert severity
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AlertSeverity {
-    LowRisk,      // Minor false positive
-    Medium,       // Moderate impact
-    HighRisk,     // Significant misalignment
-    Critical,     // Major swarm dysfunction
+    LowRisk,  // Minor false positive
+    Medium,   // Moderate impact
+    HighRisk, // Significant misalignment
+    Critical, // Major swarm dysfunction
 }
 
 /// False alert record
@@ -23,18 +22,14 @@ pub struct FalseAlert {
     pub source_agent_id: String,
     pub alert_type: String,
     pub claimed_severity: f64,
-    pub verified_severity: f64,  // What it actually was
+    pub verified_severity: f64, // What it actually was
     pub is_false_positive: bool,
     pub falseness_confidence: f64, // How sure we are it's false
     pub affected_agents: Vec<String>,
 }
 
 impl FalseAlert {
-    pub fn new(
-        source_agent_id: String,
-        alert_type: String,
-        claimed_severity: f64,
-    ) -> Self {
+    pub fn new(source_agent_id: String, alert_type: String, claimed_severity: f64) -> Self {
         Self {
             alert_id: uuid::Uuid::new_v4().to_string(),
             source_agent_id,
@@ -89,9 +84,8 @@ impl FalseAlertDetector {
 
                 if alert.is_false_positive {
                     // Penalize agent accuracy
-                    let accuracy = self.agent_accuracy
-                        .entry(alert.source_agent_id.clone())
-                        .or_insert(1.0);
+                    let accuracy =
+                        self.agent_accuracy.entry(alert.source_agent_id.clone()).or_insert(1.0);
                     *accuracy *= 0.95; // Reduce accuracy
                 }
 
@@ -114,10 +108,8 @@ impl FalseAlertDetector {
 
     /// Get false positive rate for agent
     pub fn agent_false_positive_rate(&self, agent_id: &str) -> f64 {
-        let agent_alerts: Vec<_> = self.historical_alerts
-            .iter()
-            .filter(|a| a.source_agent_id == agent_id)
-            .collect();
+        let agent_alerts: Vec<_> =
+            self.historical_alerts.iter().filter(|a| a.source_agent_id == agent_id).collect();
 
         if agent_alerts.is_empty() {
             return 0.0;
@@ -131,7 +123,8 @@ impl FalseAlertDetector {
     pub fn identify_faulty_sources(&self) -> Vec<(String, f64)> {
         let mut faulty_agents = Vec::new();
 
-        let unique_agents: Vec<_> = self.historical_alerts
+        let unique_agents: Vec<_> = self
+            .historical_alerts
             .iter()
             .map(|a| a.source_agent_id.clone())
             .collect::<std::collections::HashSet<_>>()
@@ -174,14 +167,16 @@ pub struct ConsensusRecoverySystem {
 
 impl ConsensusRecoverySystem {
     pub fn new() -> Self {
-        Self {
-            verifications: Vec::new(),
-            decision_success_rates: HashMap::new(),
-        }
+        Self { verifications: Vec::new(), decision_success_rates: HashMap::new() }
     }
 
     /// Verify if consensus decision was actually correct
-    pub fn verify_decision(&mut self, voting_id: String, original_decision: String, actual_outcome: String) -> bool {
+    pub fn verify_decision(
+        &mut self,
+        voting_id: String,
+        original_decision: String,
+        actual_outcome: String,
+    ) -> bool {
         let was_wrong = original_decision != actual_outcome;
 
         if was_wrong {
@@ -197,18 +192,14 @@ impl ConsensusRecoverySystem {
             self.verifications.push(verification);
 
             // Update success rate
-            let stats = self.decision_success_rates
-                .entry(original_decision)
-                .or_insert((0, 0));
+            let stats = self.decision_success_rates.entry(original_decision).or_insert((0, 0));
             stats.1 += 1; // Total
-            // stats.0 stays same (no success)
+                          // stats.0 stays same (no success)
 
             true
         } else {
             // Update success rate
-            let stats = self.decision_success_rates
-                .entry(original_decision)
-                .or_insert((0, 0));
+            let stats = self.decision_success_rates.entry(original_decision).or_insert((0, 0));
             stats.0 += 1; // Success
             stats.1 += 1; // Total
 
@@ -270,9 +261,7 @@ pub struct TrustScoreVerifier {
 
 impl TrustScoreVerifier {
     pub fn new() -> Self {
-        Self {
-            audits: Vec::new(),
-        }
+        Self { audits: Vec::new() }
     }
 
     /// Verify trust score by checking agent's actual performance
@@ -309,11 +298,7 @@ impl TrustScoreVerifier {
 
     /// Get audit history for agent
     pub fn audit_history(&self, agent_id: &str) -> Vec<TrustScoreAudit> {
-        self.audits
-            .iter()
-            .filter(|a| a.agent_id == agent_id)
-            .cloned()
-            .collect()
+        self.audits.iter().filter(|a| a.agent_id == agent_id).cloned().collect()
     }
 }
 
@@ -342,10 +327,7 @@ pub struct BidValidator {
 
 impl BidValidator {
     pub fn new() -> Self {
-        Self {
-            bid_history: Vec::new(),
-            agent_reliability: HashMap::new(),
-        }
+        Self { bid_history: Vec::new(), agent_reliability: HashMap::new() }
     }
 
     /// Record bid outcome
@@ -371,9 +353,7 @@ impl BidValidator {
         self.bid_history.push(validation);
 
         // Update reliability
-        let reliability = self.agent_reliability
-            .entry(agent_id)
-            .or_insert(1.0);
+        let reliability = self.agent_reliability.entry(agent_id).or_insert(1.0);
 
         if fulfilled {
             *reliability = (*reliability * 0.9) + 0.1; // Increase
@@ -384,10 +364,8 @@ impl BidValidator {
 
     /// Get agent bid fulfillment rate
     pub fn fulfillment_rate(&self, agent_id: &str) -> f64 {
-        let agent_bids: Vec<_> = self.bid_history
-            .iter()
-            .filter(|b| b.agent_id == agent_id)
-            .collect();
+        let agent_bids: Vec<_> =
+            self.bid_history.iter().filter(|b| b.agent_id == agent_id).collect();
 
         if agent_bids.is_empty() {
             return 1.0; // Unknown - assume good
@@ -401,7 +379,8 @@ impl BidValidator {
     pub fn unreliable_bidders(&self) -> Vec<(String, f64)> {
         let mut unreliable = Vec::new();
 
-        let unique_agents: Vec<_> = self.bid_history
+        let unique_agents: Vec<_> = self
+            .bid_history
             .iter()
             .map(|b| b.agent_id.clone())
             .collect::<std::collections::HashSet<_>>()
@@ -434,10 +413,7 @@ pub struct PheromoneValidator {
 
 impl PheromoneValidator {
     pub fn new() -> Self {
-        Self {
-            trail_confidence: HashMap::new(),
-            failed_trails: Vec::new(),
-        }
+        Self { trail_confidence: HashMap::new(), failed_trails: Vec::new() }
     }
 
     /// Validate pheromone trail led to promised resource
@@ -447,9 +423,7 @@ impl PheromoneValidator {
         }
 
         // Update confidence
-        let confidence = self.trail_confidence
-            .entry(trail_id)
-            .or_insert(0.5);
+        let confidence = self.trail_confidence.entry(trail_id).or_insert(0.5);
 
         if success {
             *confidence = (*confidence * 0.8) + 0.2; // Boost
@@ -503,14 +477,13 @@ pub struct RoleVerifier {
 
 impl RoleVerifier {
     pub fn new() -> Self {
-        Self {
-            verifications: Vec::new(),
-        }
+        Self { verifications: Vec::new() }
     }
 
     /// Record role performance
     pub fn record_performance(&mut self, agent_id: String, role: String, success: bool) {
-        let mut verification = self.verifications
+        let mut verification = self
+            .verifications
             .iter_mut()
             .find(|v| v.agent_id == agent_id && v.assigned_role == role);
 
@@ -545,7 +518,8 @@ impl RoleVerifier {
 
     /// Get best agents for a role
     pub fn best_agents_for_role(&self, role: &str) -> Vec<(String, f64)> {
-        let mut agents: Vec<_> = self.verifications
+        let mut agents: Vec<_> = self
+            .verifications
             .iter()
             .filter(|v| v.assigned_role == role && v.assignments >= 2)
             .map(|v| (v.agent_id.clone(), v.performance_score))

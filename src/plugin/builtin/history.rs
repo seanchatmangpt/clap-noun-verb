@@ -14,11 +14,7 @@ pub struct HistoryPlugin {
 impl HistoryPlugin {
     /// Create a new history plugin.
     pub fn new() -> Self {
-        Self {
-            loaded: false,
-            max_history: 1000,
-            history: VecDeque::new(),
-        }
+        Self { loaded: false, max_history: 1000, history: VecDeque::new() }
     }
 
     /// Set maximum history size.

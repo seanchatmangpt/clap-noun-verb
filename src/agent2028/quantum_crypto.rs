@@ -1,12 +1,11 @@
+use chrono::{DateTime, Duration, Utc};
 /// Quantum-Safe Cryptography Module
 ///
 /// Post-quantum cryptographic operations resistant to attacks by cryptographically relevant
 /// quantum computers (CRQCs). Uses lattice-based cryptography for forward-looking security.
-
 use serde::{Deserialize, Serialize};
-use sha3::{Keccak256, Digest};
+use sha3::{Digest, Keccak256};
 use std::time::{SystemTime, UNIX_EPOCH};
-use chrono::{DateTime, Utc, Duration};
 
 /// Quantum-safe capability attestation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,12 +106,7 @@ impl QuantumAttestationProof {
         signature: QuantumSignature,
         issuer_id: String,
     ) -> Self {
-        Self {
-            capability,
-            signature,
-            issuer_id,
-            proof_id: uuid::Uuid::new_v4().to_string(),
-        }
+        Self { capability, signature, issuer_id, proof_id: uuid::Uuid::new_v4().to_string() }
     }
 
     /// Verify the attestation proof is valid
@@ -176,10 +170,7 @@ impl QuantumKeyEncapsulation {
 
     fn generate_placeholder_key(size: usize) -> Vec<u8> {
         let mut hasher = Keccak256::new();
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
         hasher.update(timestamp.to_le_bytes());
         let hash = hasher.finalize();
 
@@ -293,11 +284,7 @@ mod tests {
 
     #[test]
     fn test_quantum_capability() {
-        let cap = QuantumCapability::new(
-            "agent-1".to_string(),
-            "database.query".to_string(),
-            30,
-        );
+        let cap = QuantumCapability::new("agent-1".to_string(), "database.query".to_string(), 30);
 
         assert!(cap.is_valid());
         assert!(cap.time_remaining_secs() > 0);
@@ -306,22 +293,14 @@ mod tests {
     #[test]
     fn test_quantum_signature() {
         let data = b"test data";
-        let sig = QuantumSignature::new_dual(
-            data,
-            vec![1, 2, 3],
-            vec![4, 5, 6],
-        );
+        let sig = QuantumSignature::new_dual(data, vec![1, 2, 3], vec![4, 5, 6]);
 
         assert!(sig.verify_dual(data));
     }
 
     #[test]
     fn test_attestation_proof() {
-        let cap = QuantumCapability::new(
-            "agent-1".to_string(),
-            "compute".to_string(),
-            30,
-        );
+        let cap = QuantumCapability::new("agent-1".to_string(), "compute".to_string(), 30);
 
         let sig = QuantumSignature::new_dual(b"test", vec![1], vec![2]);
         let proof = QuantumAttestationProof::new(cap, sig, "issuer-1".to_string());

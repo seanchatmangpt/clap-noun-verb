@@ -41,11 +41,7 @@ pub struct TelemetryCollector {
 impl TelemetryCollector {
     /// Create a new telemetry collector.
     pub fn new() -> Self {
-        Self {
-            metrics: MetricsCollector::new(),
-            tracing: TracingCollector::new(),
-            enabled: true,
-        }
+        Self { metrics: MetricsCollector::new(), tracing: TracingCollector::new(), enabled: true }
     }
 
     /// Enable the telemetry collector.

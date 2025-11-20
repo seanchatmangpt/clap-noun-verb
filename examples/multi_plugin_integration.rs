@@ -9,8 +9,8 @@
 //!
 //! This example simulates an API server handling user requests
 
-use std::sync::Arc;
 use clap_noun_verb::plugin::Plugin;
+use std::sync::Arc;
 
 fn main() {
     println!("=== Multi-Plugin Integration Example ===\n");
@@ -25,14 +25,12 @@ fn main() {
     let mut metrics = clap_noun_verb::plugins::metrics_aggregator::MetricsAggregatorPlugin::new();
     metrics.load().expect("Failed to load metrics");
 
-    let mut rate_limiter =
-        clap_noun_verb::plugins::rate_limiter::RateLimiterPlugin::new()
-            .with_rate(10.0)
-            .with_capacity(20.0);
+    let mut rate_limiter = clap_noun_verb::plugins::rate_limiter::RateLimiterPlugin::new()
+        .with_rate(10.0)
+        .with_capacity(20.0);
     rate_limiter.load().expect("Failed to load rate limiter");
 
-    let mut cache = clap_noun_verb::plugins::cache::CacheManagerPlugin::new()
-        .with_max_size(100);
+    let mut cache = clap_noun_verb::plugins::cache::CacheManagerPlugin::new().with_max_size(100);
     cache.load().expect("Failed to load cache");
 
     println!("✓ All plugins loaded\n");

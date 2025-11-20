@@ -285,9 +285,7 @@ struct ResearchKnowledgeGraph {
 
 impl ResearchKnowledgeGraph {
     pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-        }
+        Self { data: HashMap::new() }
     }
 
     pub fn load_semantic_cli_research(&mut self) {
@@ -395,10 +393,7 @@ impl ResearchKnowledgeGraph {
             ]
         });
 
-        self.data.insert(
-            "semantic-cli-paper".to_string(),
-            paper,
-        );
+        self.data.insert("semantic-cli-paper".to_string(), paper);
     }
 
     /// Apply a SPARQL projection to generate venue-specific output
@@ -407,23 +402,12 @@ impl ResearchKnowledgeGraph {
 
         match venue {
             "arxiv" => {
-                format!(
-                    "📄 arXiv Projection\n\n{}",
-                    serde_json::to_string_pretty(paper).unwrap()
-                )
+                format!("📄 arXiv Projection\n\n{}", serde_json::to_string_pretty(paper).unwrap())
             }
-            "icse" => {
-                self.icse_projection(paper)
-            }
-            "ecsa" => {
-                self.ecsa_projection(paper)
-            }
-            "pldi-oopsla" => {
-                self.pldi_oopsla_projection(paper)
-            }
-            "ase-workshop" => {
-                self.ase_workshop_projection(paper)
-            }
+            "icse" => self.icse_projection(paper),
+            "ecsa" => self.ecsa_projection(paper),
+            "pldi-oopsla" => self.pldi_oopsla_projection(paper),
+            "ase-workshop" => self.ase_workshop_projection(paper),
             _ => "Unknown venue".to_string(),
         }
     }

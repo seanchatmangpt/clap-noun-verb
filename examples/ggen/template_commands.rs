@@ -8,8 +8,8 @@ use clap_noun_verb_macros::verb;
 use serde::Serialize;
 use std::collections::HashMap;
 
-use super::errors::{UserError, ErrorCategory};
-use super::validators::{validate_template_vars, validate_output_path};
+use super::errors::{ErrorCategory, UserError};
+use super::validators::{validate_output_path, validate_template_vars};
 
 // ============================================================================
 // Data Types
@@ -67,11 +67,7 @@ fn generate_from_template(
 ) -> Result<GenerateOutput, UserError> {
     // Check template file exists
     if !std::path::Path::new(template_path).exists() {
-        return Err(super::errors::file_error(
-            template_path,
-            "read",
-            "template file not found"
-        ));
+        return Err(super::errors::file_error(template_path, "read", "template file not found"));
     }
 
     // Get template info to check required variables
@@ -79,18 +75,14 @@ fn generate_from_template(
 
     // Check all required variables are provided
     let provided: Vec<String> = vars.iter().map(|(k, _)| k.clone()).collect();
-    let missing: Vec<_> = template_info
-        .required_vars
-        .iter()
-        .filter(|v| !provided.contains(v))
-        .cloned()
-        .collect();
+    let missing: Vec<_> =
+        template_info.required_vars.iter().filter(|v| !provided.contains(v)).cloned().collect();
 
     if !missing.is_empty() {
         return Err(super::errors::missing_template_vars(
             template_path,
             &template_info.required_vars,
-            &provided
+            &provided,
         ));
     }
 
@@ -116,11 +108,7 @@ fn render_template(
 ) -> Result<RenderOutput, UserError> {
     // Check template exists
     if !std::path::Path::new(template_path).exists() {
-        return Err(super::errors::file_error(
-            template_path,
-            "read",
-            "template file not found"
-        ));
+        return Err(super::errors::file_error(template_path, "read", "template file not found"));
     }
 
     // Build variable substitution
@@ -132,22 +120,14 @@ fn render_template(
 
     content.push_str("\npub fn example() {\n    // Template output here\n}\n");
 
-    Ok(RenderOutput {
-        template: template_path.to_string(),
-        content,
-        success: true,
-    })
+    Ok(RenderOutput { template: template_path.to_string(), content, success: true })
 }
 
 /// Validate a template file
 fn validate_template(template_path: &str) -> Result<ValidateOutput, UserError> {
     // Check template exists
     if !std::path::Path::new(template_path).exists() {
-        return Err(super::errors::file_error(
-            template_path,
-            "read",
-            "template file not found"
-        ));
+        return Err(super::errors::file_error(template_path, "read", "template file not found"));
     }
 
     // Get template info
@@ -191,7 +171,8 @@ fn list_templates(source: &str) -> Result<ListOutput, UserError> {
                 3. Install templates: ggen marketplace search template",
                 source
             ),
-        ).with_docs("https://docs.ggen.io/templates"));
+        )
+        .with_docs("https://docs.ggen.io/templates"));
     }
 
     // Mock templates
@@ -214,10 +195,7 @@ fn list_templates(source: &str) -> Result<ListOutput, UserError> {
 
     let count = templates.len();
 
-    Ok(ListOutput {
-        templates,
-        total_count: count,
-    })
+    Ok(ListOutput { templates, total_count: count })
 }
 
 /// Get template metadata
@@ -236,10 +214,7 @@ fn get_template_info(template_path: &str) -> Result<TemplateInfo, UserError> {
             name: name.clone(),
             path: template_path.to_string(),
             description: "Rust library project".to_string(),
-            required_vars: vec![
-                "name".to_string(),
-                "author".to_string(),
-            ],
+            required_vars: vec!["name".to_string(), "author".to_string()],
             optional_vars: vec![
                 "version".to_string(),
                 "license".to_string(),
@@ -304,7 +279,7 @@ pub fn template_generate(
     // Validate template path
     if template.trim().is_empty() {
         return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            "Template path cannot be empty".to_string()
+            "Template path cannot be empty".to_string(),
         ));
     }
 
@@ -340,14 +315,11 @@ pub fn template_generate(
 /// ggen template render rust-lib.tmpl name=mylib author="John" > lib.rs
 /// ```
 #[verb("render", "template")]
-pub fn template_render(
-    template: String,
-    vars: Vec<String>,
-) -> CnvResult<RenderOutput> {
+pub fn template_render(template: String, vars: Vec<String>) -> CnvResult<RenderOutput> {
     // Validate template path
     if template.trim().is_empty() {
         return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            "Template path cannot be empty".to_string()
+            "Template path cannot be empty".to_string(),
         ));
     }
 
@@ -375,13 +347,11 @@ pub fn template_render(
 ///     ggen template generate rust-lib.tmpl name=mylib
 /// ```
 #[verb("validate", "template")]
-pub fn template_validate(
-    template: String,
-) -> CnvResult<ValidateOutput> {
+pub fn template_validate(template: String) -> CnvResult<ValidateOutput> {
     // Validate template path
     if template.trim().is_empty() {
         return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            "Template path cannot be empty".to_string()
+            "Template path cannot be empty".to_string(),
         ));
     }
 

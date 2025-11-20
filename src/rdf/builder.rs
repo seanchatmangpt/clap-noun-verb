@@ -12,9 +12,7 @@ pub struct OntologyBuilder {
 impl OntologyBuilder {
     /// Create a new ontology builder
     pub fn new() -> Self {
-        Self {
-            ontology: Ontology::new(),
-        }
+        Self { ontology: Ontology::new() }
     }
 
     /// Add a command definition
@@ -75,12 +73,8 @@ impl OntologyBuilder {
         arg_type: &str,
         required: bool,
     ) -> std::result::Result<&mut Self, String> {
-        let arg_uri = format!(
-            "{}Argument-{}-{}",
-            crate::rdf::CNV_NAMESPACE,
-            command_name,
-            arg_name
-        );
+        let arg_uri =
+            format!("{}Argument-{}-{}", crate::rdf::CNV_NAMESPACE, command_name, arg_name);
         let rdf_type = format!("{}type", crate::rdf::RDF_NS);
         let argument_class = format!("{}Argument", crate::rdf::CNV_NAMESPACE);
 
@@ -129,11 +123,7 @@ impl OntologyBuilder {
         let node_shape = format!("{}NodeShape", crate::rdf::SHACL_NS);
 
         // Shape is a sh:NodeShape
-        self.ontology.add_triple(RdfTriple::new(
-            &shape_uri,
-            &rdf_type,
-            RdfValue::uri(&node_shape),
-        ));
+        self.ontology.add_triple(RdfTriple::new(&shape_uri, &rdf_type, RdfValue::uri(&node_shape)));
 
         // Add target class
         self.ontology.add_triple(RdfTriple::new(
@@ -183,19 +173,11 @@ mod tests {
     fn test_add_command() {
         let mut builder = OntologyBuilder::new();
         builder
-            .add_command(
-                "services-status",
-                "services",
-                "status",
-                "Get service status",
-            )
+            .add_command("services-status", "services", "status", "Get service status")
             .expect("Failed to add command");
 
         let ontology = builder.build().expect("Failed to build ontology");
-        let cmd_uri = format!(
-            "{}Command-services-status",
-            crate::rdf::CNV_NAMESPACE
-        );
+        let cmd_uri = format!("{}Command-services-status", crate::rdf::CNV_NAMESPACE);
         assert!(ontology.get_triples(&cmd_uri).is_some());
     }
 
@@ -203,22 +185,14 @@ mod tests {
     fn test_add_argument() {
         let mut builder = OntologyBuilder::new();
         builder
-            .add_command(
-                "services-status",
-                "services",
-                "status",
-                "Get service status",
-            )
+            .add_command("services-status", "services", "status", "Get service status")
             .expect("Failed to add command");
         builder
             .add_argument("services-status", "format", "string", false)
             .expect("Failed to add argument");
 
         let ontology = builder.build().expect("Failed to build ontology");
-        let arg_uri = format!(
-            "{}Argument-services-status-format",
-            crate::rdf::CNV_NAMESPACE
-        );
+        let arg_uri = format!("{}Argument-services-status-format", crate::rdf::CNV_NAMESPACE);
         assert!(ontology.get_triples(&arg_uri).is_some());
     }
 

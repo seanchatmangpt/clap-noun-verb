@@ -18,18 +18,13 @@ pub struct PluginDependencyGraph {
 impl PluginDependencyGraph {
     /// Create a new empty dependency graph.
     pub fn new() -> Self {
-        Self {
-            nodes: HashSet::new(),
-            edges: HashMap::new(),
-            reverse_edges: HashMap::new(),
-        }
+        Self { nodes: HashSet::new(), edges: HashMap::new(), reverse_edges: HashMap::new() }
     }
 
     /// Add a plugin to the graph with its dependencies.
     pub fn add_plugin(&mut self, config: &PluginConfig) {
         self.nodes.insert(config.name.clone());
-        self.edges
-            .insert(config.name.clone(), config.dependencies.clone());
+        self.edges.insert(config.name.clone(), config.dependencies.clone());
 
         for dep in &config.dependencies {
             self.reverse_edges
@@ -48,7 +43,8 @@ impl PluginDependencyGraph {
     /// Returns an error if there's a circular dependency.
     pub fn resolve(&self) -> crate::Result<Vec<String>> {
         // Calculate in-degrees
-        let mut in_degree: HashMap<String, usize> = self.nodes.iter().map(|n| (n.clone(), 0)).collect();
+        let mut in_degree: HashMap<String, usize> =
+            self.nodes.iter().map(|n| (n.clone(), 0)).collect();
 
         for (_, deps) in &self.edges {
             for dep in deps {
@@ -57,11 +53,8 @@ impl PluginDependencyGraph {
         }
 
         // Find all nodes with in-degree 0
-        let mut queue: VecDeque<String> = in_degree
-            .iter()
-            .filter(|(_, deg)| **deg == 0)
-            .map(|(name, _)| name.clone())
-            .collect();
+        let mut queue: VecDeque<String> =
+            in_degree.iter().filter(|(_, deg)| **deg == 0).map(|(name, _)| name.clone()).collect();
 
         let mut result = Vec::new();
 

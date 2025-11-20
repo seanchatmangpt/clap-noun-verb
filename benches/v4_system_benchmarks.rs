@@ -1,7 +1,9 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
-use clap_noun_verb::plugin::{Plugin, PluginRegistry, PluginCapability, PluginMetadata};
-use clap_noun_verb::middleware::{Middleware, MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse};
-use clap_noun_verb::telemetry::{TelemetryCollector, MetricsCollector};
+use clap_noun_verb::middleware::{
+    Middleware, MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse,
+};
+use clap_noun_verb::plugin::{Plugin, PluginCapability, PluginMetadata, PluginRegistry};
+use clap_noun_verb::telemetry::{MetricsCollector, TelemetryCollector};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::time::Duration;
 
 /// Benchmark plugin registration and discovery
@@ -46,24 +48,20 @@ fn bench_plugin_loading(c: &mut Criterion) {
 
     // Benchmark plugin discovery with multiple plugins
     for count in [1, 5, 10, 20].iter() {
-        group.bench_with_input(
-            BenchmarkId::new("registry_lookup", count),
-            count,
-            |b, &count| {
-                let mut registry = PluginRegistry::new();
-                for i in 0..count {
-                    let plugin = Box::new(TestPlugin {
-                        name: format!("plugin-{}", i),
-                        version: "1.0.0".to_string(),
-                    });
-                    registry.register(plugin).ok();
-                }
-
-                b.iter(|| {
-                    black_box(registry.list_all());
+        group.bench_with_input(BenchmarkId::new("registry_lookup", count), count, |b, &count| {
+            let mut registry = PluginRegistry::new();
+            for i in 0..count {
+                let plugin = Box::new(TestPlugin {
+                    name: format!("plugin-{}", i),
+                    version: "1.0.0".to_string(),
                 });
-            },
-        );
+                registry.register(plugin).ok();
+            }
+
+            b.iter(|| {
+                black_box(registry.list_all());
+            });
+        });
     }
 
     // Plugin metadata overhead
@@ -73,7 +71,7 @@ fn bench_plugin_loading(c: &mut Criterion) {
                 PluginMetadata::new("test", "1.0.0")
                     .with_author("Benchmark")
                     .with_description("Test plugin for benchmarking")
-                    .with_dependency("core-plugin")
+                    .with_dependency("core-plugin"),
             );
         });
     });
@@ -115,9 +113,8 @@ fn bench_middleware_chain(c: &mut Criterion) {
             |b, &layer_count| {
                 let mut pipeline = MiddlewarePipeline::new();
                 for i in 0..layer_count {
-                    pipeline = pipeline.add(Box::new(BenchMiddleware {
-                        name: format!("middleware-{}", i),
-                    }));
+                    pipeline = pipeline
+                        .add(Box::new(BenchMiddleware { name: format!("middleware-{}", i) }));
                 }
 
                 let request = MiddlewareRequest::new("test-command")
@@ -137,9 +134,8 @@ fn bench_middleware_chain(c: &mut Criterion) {
             |b, &layer_count| {
                 let mut pipeline = MiddlewarePipeline::new();
                 for i in 0..layer_count {
-                    pipeline = pipeline.add(Box::new(BenchMiddleware {
-                        name: format!("middleware-{}", i),
-                    }));
+                    pipeline = pipeline
+                        .add(Box::new(BenchMiddleware { name: format!("middleware-{}", i) }));
                 }
 
                 let response = MiddlewareResponse::success("Command executed")
@@ -157,14 +153,11 @@ fn bench_middleware_chain(c: &mut Criterion) {
     group.bench_function("full_pipeline_5_layers", |b| {
         let mut pipeline = MiddlewarePipeline::new();
         for i in 0..5 {
-            pipeline = pipeline.add(Box::new(BenchMiddleware {
-                name: format!("middleware-{}", i),
-            }));
+            pipeline =
+                pipeline.add(Box::new(BenchMiddleware { name: format!("middleware-{}", i) }));
         }
 
-        let request = MiddlewareRequest::new("test-command")
-            .with_arg("input")
-            .with_arg("file.txt");
+        let request = MiddlewareRequest::new("test-command").with_arg("input").with_arg("file.txt");
         let response = MiddlewareResponse::success("OK");
 
         b.iter(|| {
@@ -302,18 +295,15 @@ fn bench_startup_simulation(c: &mut Criterion) {
             // Plugin system initialization
             let mut registry = PluginRegistry::new();
             for i in 0..3 {
-                let plugin = Box::new(TestPlugin {
-                    name: format!("plugin-{}", i),
-                });
+                let plugin = Box::new(TestPlugin { name: format!("plugin-{}", i) });
                 registry.register(plugin).ok();
             }
 
             // Middleware pipeline setup
             let mut pipeline = MiddlewarePipeline::new();
             for i in 0..3 {
-                pipeline = pipeline.add(Box::new(BenchMiddleware {
-                    name: format!("middleware-{}", i),
-                }));
+                pipeline =
+                    pipeline.add(Box::new(BenchMiddleware { name: format!("middleware-{}", i) }));
             }
 
             // Telemetry initialization
@@ -339,7 +329,7 @@ fn bench_memory_patterns(c: &mut Criterion) {
                     .with_arg("file.txt")
                     .with_arg("output")
                     .with_arg("result.txt")
-                    .with_requester("user-123")
+                    .with_requester("user-123"),
             );
         });
     });
@@ -350,7 +340,7 @@ fn bench_memory_patterns(c: &mut Criterion) {
                 MiddlewareResponse::success("Command completed successfully")
                     .with_metadata("duration", "250ms")
                     .with_metadata("bytes_processed", "1024")
-                    .with_metadata("status_code", "200")
+                    .with_metadata("status_code", "200"),
             );
         });
     });

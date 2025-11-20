@@ -66,13 +66,16 @@ impl TypeSchema {
     /// Check if this schema is compatible with another (for output -> input matching)
     pub fn is_compatible_with(&self, other: &TypeSchema) -> bool {
         match (self, other) {
-            (TypeSchema::Primitive { primitive_type: a }, TypeSchema::Primitive { primitive_type: b }) => {
-                a == b
-            }
+            (
+                TypeSchema::Primitive { primitive_type: a },
+                TypeSchema::Primitive { primitive_type: b },
+            ) => a == b,
             (TypeSchema::Array { items: a }, TypeSchema::Array { items: b }) => {
                 a.is_compatible_with(b)
             }
-            (TypeSchema::Reference { type_ref: a }, TypeSchema::Reference { type_ref: b }) => a == b,
+            (TypeSchema::Reference { type_ref: a }, TypeSchema::Reference { type_ref: b }) => {
+                a == b
+            }
             (TypeSchema::Union { options }, other) => {
                 options.iter().any(|opt| opt.is_compatible_with(other))
             }
@@ -165,12 +168,7 @@ pub struct OutputSchema {
 impl OutputSchema {
     /// Create a new output schema
     pub fn new(success: TypeSchema) -> Self {
-        Self {
-            success,
-            error: None,
-            outputs_stdout: true,
-            named_outputs: HashMap::new(),
-        }
+        Self { success, error: None, outputs_stdout: true, named_outputs: HashMap::new() }
     }
 
     /// Set error schema
@@ -218,11 +216,7 @@ pub struct Resource {
 impl Resource {
     /// Create a new resource
     pub fn new(resource_type: impl Into<String>, identifier: impl Into<String>) -> Self {
-        Self {
-            resource_type: resource_type.into(),
-            identifier: identifier.into(),
-            schema: None,
-        }
+        Self { resource_type: resource_type.into(), identifier: identifier.into(), schema: None }
     }
 
     /// Set schema
@@ -250,12 +244,7 @@ pub struct CompositionMetadata {
 impl CompositionMetadata {
     /// Create new composition metadata
     pub fn new(inputs: InputSchema, outputs: OutputSchema) -> Self {
-        Self {
-            inputs,
-            outputs,
-            consumes: Vec::new(),
-            produces: Vec::new(),
-        }
+        Self { inputs, outputs, consumes: Vec::new(), produces: Vec::new() }
     }
 
     /// Add a consumed resource
@@ -284,7 +273,10 @@ impl CompositionMetadata {
     }
 
     /// Find matching resources between this command's products and another's consumers
-    pub fn find_matching_resources(&self, other: &CompositionMetadata) -> Vec<(Resource, Resource)> {
+    pub fn find_matching_resources(
+        &self,
+        other: &CompositionMetadata,
+    ) -> Vec<(Resource, Resource)> {
         let mut matches = Vec::new();
 
         for produced in &self.produces {
@@ -314,11 +306,7 @@ pub struct EquivalenceClass {
 impl EquivalenceClass {
     /// Create a new equivalence class
     pub fn new(class_id: impl Into<String>, relationship: EquivalenceRelationship) -> Self {
-        Self {
-            class_id: class_id.into(),
-            commands: Vec::new(),
-            relationship,
-        }
+        Self { class_id: class_id.into(), commands: Vec::new(), relationship }
     }
 
     /// Add a command to the class
@@ -346,12 +334,7 @@ pub struct CommandReference {
 impl CommandReference {
     /// Create a new command reference
     pub fn new(noun: impl Into<String>, verb: impl Into<String>) -> Self {
-        Self {
-            cli: None,
-            noun: noun.into(),
-            verb: verb.into(),
-            capability_id: None,
-        }
+        Self { cli: None, noun: noun.into(), verb: verb.into(), capability_id: None }
     }
 
     /// Set CLI

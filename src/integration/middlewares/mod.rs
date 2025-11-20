@@ -5,14 +5,14 @@
 //! - Phantom types for zero-cost markers
 //! - Generic type parameters for flexible implementations
 
-mod observability;
 mod caching;
+mod observability;
 mod retry;
-mod tracing;
 mod security;
+mod tracing;
 
-pub use observability::ObservabilityMiddleware;
 pub use caching::DynamicCachingMiddleware;
+pub use observability::ObservabilityMiddleware;
 pub use retry::SmartRetryMiddleware;
-pub use tracing::DistributedTracingMiddleware;
 pub use security::SecurityMiddleware;
+pub use tracing::DistributedTracingMiddleware;

@@ -41,12 +41,7 @@ impl UserError {
         problem: impl Into<String>,
         solution: impl Into<String>,
     ) -> Self {
-        Self {
-            problem: problem.into(),
-            solution: solution.into(),
-            learn_more: None,
-            category,
-        }
+        Self { problem: problem.into(), solution: solution.into(), learn_more: None, category }
     }
 
     /// Add a documentation link
@@ -57,10 +52,7 @@ impl UserError {
 
     /// Format error with emoji markers for better readability
     pub fn format_pretty(&self) -> String {
-        let mut output = format!(
-            "❌ Problem: {}\n💡 Solution: {}",
-            self.problem, self.solution
-        );
+        let mut output = format!("❌ Problem: {}\n💡 Solution: {}", self.problem, self.solution);
 
         if let Some(link) = &self.learn_more {
             output.push_str(&format!("\n📚 Learn more: {}", link));
@@ -119,7 +111,8 @@ pub fn invalid_prompt(reason: &str) -> UserError {
         Tips for good prompts:\n  \
         - Be specific about what you want to generate\n  \
         - Include technology stack (e.g., 'using Rust and Axum')\n  \
-        - Mention any constraints or requirements".to_string();
+        - Mention any constraints or requirements"
+        .to_string();
 
     UserError::new(ErrorCategory::Validation, problem, solution)
         .with_docs("https://docs.ggen.io/prompts")
@@ -152,18 +145,20 @@ pub fn no_search_results(query: &str) -> UserError {
         Popular categories:\n  \
         - rust (Rust templates)\n  \
         - web (Web frameworks)\n  \
-        - api (API templates)".to_string();
+        - api (API templates)"
+        .to_string();
 
     UserError::new(ErrorCategory::NotFound, problem, solution)
         .with_docs("https://marketplace.ggen.io")
 }
 
 /// Validation error for template variable issues
-pub fn missing_template_vars(template: &str, required: &[String], provided: &[String]) -> UserError {
-    let missing: Vec<_> = required
-        .iter()
-        .filter(|r| !provided.contains(r))
-        .collect();
+pub fn missing_template_vars(
+    template: &str,
+    required: &[String],
+    provided: &[String],
+) -> UserError {
+    let missing: Vec<_> = required.iter().filter(|r| !provided.contains(r)).collect();
 
     let problem = format!(
         "Template '{}' requires {} variable(s) that were not provided",
@@ -171,11 +166,8 @@ pub fn missing_template_vars(template: &str, required: &[String], provided: &[St
         missing.len()
     );
 
-    let vars_list = missing
-        .iter()
-        .map(|v| format!("  {}=<value>", v))
-        .collect::<Vec<_>>()
-        .join("\n");
+    let vars_list =
+        missing.iter().map(|v| format!("  {}=<value>", v)).collect::<Vec<_>>().join("\n");
 
     let solution = format!(
         "Provide the following variables:\n{}\n\n  \
@@ -198,7 +190,8 @@ pub fn invalid_var_format(var: &str) -> UserError {
         Example: ggen template generate my-template.tmpl \\\n    \
         project_name=MyApp \\\n    \
         author='John Doe' \\\n    \
-        version=1.0.0".to_string();
+        version=1.0.0"
+        .to_string();
 
     UserError::new(ErrorCategory::Validation, problem, solution)
 }
@@ -211,22 +204,26 @@ pub fn api_request_failed(provider: &str, status: u16, message: &str) -> UserErr
         401 => "Check your API key:\n  \
             1. Verify the key is correct in your config\n  \
             2. Check if the key has expired\n  \
-            3. Ensure you have an active subscription".to_string(),
+            3. Ensure you have an active subscription"
+            .to_string(),
         429 => "Rate limit exceeded:\n  \
             1. Wait a few minutes before retrying\n  \
             2. Consider upgrading your API plan\n  \
-            3. Use --retry-after flag to auto-retry".to_string(),
+            3. Use --retry-after flag to auto-retry"
+            .to_string(),
         500..=599 => format!(
             "{} service is experiencing issues:\n  \
             1. Try again in a few minutes\n  \
             2. Check status: https://status.{}.com\n  \
             3. Use alternative provider with --model flag",
-            provider, provider.to_lowercase()
+            provider,
+            provider.to_lowercase()
         ),
         _ => "Check your network connection and try again:\n  \
             1. Verify internet connectivity\n  \
             2. Check firewall settings\n  \
-            3. Try with --verbose for detailed logs".to_string(),
+            3. Try with --verbose for detailed logs"
+            .to_string(),
     };
 
     UserError::new(ErrorCategory::Network, problem, solution)
@@ -288,11 +285,7 @@ mod tests {
 
     #[test]
     fn test_user_error_display() {
-        let error = UserError::new(
-            ErrorCategory::Validation,
-            "Test problem",
-            "Test solution"
-        );
+        let error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution");
 
         let display = error.to_string();
         assert!(display.contains("❌ Problem: Test problem"));
@@ -301,11 +294,8 @@ mod tests {
 
     #[test]
     fn test_user_error_with_docs() {
-        let error = UserError::new(
-            ErrorCategory::Validation,
-            "Test problem",
-            "Test solution"
-        ).with_docs("https://example.com");
+        let error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution")
+            .with_docs("https://example.com");
 
         let display = error.to_string();
         assert!(display.contains("📚 Learn more: https://example.com"));

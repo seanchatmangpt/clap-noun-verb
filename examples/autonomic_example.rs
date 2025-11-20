@@ -103,12 +103,7 @@ impl VerbCommand for RestartVerb {
     fn build_command(&self) -> clap::Command {
         clap::Command::new(self.name())
             .about(self.about())
-            .arg(
-                clap::Arg::new("service")
-                    .help("Service name to restart")
-                    .required(true)
-                    .index(1),
-            )
+            .arg(clap::Arg::new("service").help("Service name to restart").required(true).index(1))
     }
 }
 
@@ -121,12 +116,7 @@ impl AutonomicVerbCommand for RestartVerb {
                     .with_idempotent(false)
                     .with_required_role("admin"),
             )
-            .with_planes(
-                PlaneInteraction::new()
-                    .observe_write()
-                    .ontology_read()
-                    .invariants_check(),
-            )
+            .with_planes(PlaneInteraction::new().observe_write().ontology_read().invariants_check())
             .with_guards(GuardConfig::new().with_max_latency_ms(500))
             .with_output_type("ServiceStatus")
             .with_argument(
@@ -186,10 +176,7 @@ fn main() -> Result<()> {
         .name("autonomic-demo")
         .about("Autonomic CLI demonstration")
         .version("1.0.0")
-        .register_noun(noun!("services", "Manage services", [
-            StatusVerb,
-            RestartVerb,
-        ]));
+        .register_noun(noun!("services", "Manage services", [StatusVerb, RestartVerb,]));
 
     // Create autonomic CLI wrapper
     let app_metadata = AppMetadata::new("autonomic-demo")
@@ -240,7 +227,8 @@ fn main() -> Result<()> {
             );
 
         // Add edges for preconditions
-        graph = graph.add_edge(GraphEdge::new("services.restart", "services.status", "precondition"));
+        graph =
+            graph.add_edge(GraphEdge::new("services.restart", "services.status", "precondition"));
 
         println!("{}", serde_json::to_string_pretty(&graph).unwrap_or_default());
         return Ok(());

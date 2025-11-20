@@ -15,9 +15,9 @@ pub mod validator;
 pub(crate) mod value_parser;
 
 // New in v5.0 - Enhanced help system for improved usability
-pub mod help;
-pub mod examples;
 pub mod discovery;
+pub mod examples;
+pub mod help;
 pub mod interactive;
 
 pub use builder::CliBuilder;
@@ -26,9 +26,9 @@ pub use router::CommandRouter;
 pub use validator::ArgValidator;
 
 // Re-export help system components
-pub use help::{CommandCategory, CommandInfo, HelpSystem};
-pub use examples::{Example, ExamplesRegistry};
 pub use discovery::{CommandDiscovery, SearchResult};
+pub use examples::{Example, ExamplesRegistry};
+pub use help::{CommandCategory, CommandInfo, HelpSystem};
 pub use interactive::{InteractiveHelp, InteractiveOutput};
 
 /// Auto-run CLI with all registered commands

@@ -4,12 +4,12 @@
 //! exposing RDF ontology resources and SPARQL execution tools.
 
 use crate::rdf::{Lockchain, Ontology, Receipt, SparqlPlanner};
-use rmcp::{Json, ServerHandler, ServiceExt};
-use rmcp::model::{ServerInfo, ServerCapabilities, Implementation, ProtocolVersion};
-use serde::{Serialize, Deserialize};
-use schemars::JsonSchema;
-use std::sync::Arc;
 use chrono;
+use rmcp::model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo};
+use rmcp::{Json, ServerHandler, ServiceExt};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 /// SPARQL query request
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -106,11 +106,7 @@ impl RdfMcpHandler {
 
     /// Create with existing lockchain (for testing/recovery)
     pub fn with_lockchain(ontology: Arc<Ontology>, lockchain: Arc<Lockchain>) -> Self {
-        Self {
-            sparql_planner: SparqlPlanner::new(ontology.clone()),
-            ontology,
-            lockchain,
-        }
+        Self { sparql_planner: SparqlPlanner::new(ontology.clone()), ontology, lockchain }
     }
 
     /// Get reference to lockchain
@@ -124,9 +120,7 @@ impl RdfMcpHandler {
         match self.sparql_planner.execute_raw(query) {
             Ok(_bindings) => {
                 // For now, return basic empty results
-                Ok(SparqlQueryResult {
-                    results: serde_json::json!({"results": {"bindings": []}}),
-                })
+                Ok(SparqlQueryResult { results: serde_json::json!({"results": {"bindings": []}}) })
             }
             Err(e) => Err(format!("SPARQL execution error: {}", e)),
         }
@@ -135,15 +129,9 @@ impl RdfMcpHandler {
     /// Discover commands matching intent
     pub fn discover_commands(&self, _intent: &str) -> Result<DiscoverCommandsResult, String> {
         // Use SPARQL to find matching commands
-        let commands = vec![
-            "services-status".to_string(),
-            "config-show".to_string(),
-        ];
+        let commands = vec!["services-status".to_string(), "config-show".to_string()];
 
-        Ok(DiscoverCommandsResult {
-            count: commands.len(),
-            commands,
-        })
+        Ok(DiscoverCommandsResult { count: commands.len(), commands })
     }
 
     /// Validate invocation against SHACL shapes
@@ -169,14 +157,15 @@ impl RdfMcpHandler {
     }
 
     /// Record execution receipt in lockchain
-    pub fn record_receipt(&self, command: &str, exit_code: i32) -> Result<RecordReceiptResult, String> {
+    pub fn record_receipt(
+        &self,
+        command: &str,
+        exit_code: i32,
+    ) -> Result<RecordReceiptResult, String> {
         // Create a unique receipt ID for this command execution
         let receipt_id = format!("receipt_{}", uuid::Uuid::new_v4());
 
-        Ok(RecordReceiptResult {
-            receipt_id,
-            command: command.to_string(),
-        })
+        Ok(RecordReceiptResult { receipt_id, command: command.to_string() })
     }
 
     /// Get server implementation information
@@ -208,12 +197,7 @@ mod tests {
     fn create_test_ontology() -> Arc<Ontology> {
         let mut builder = OntologyBuilder::new();
         builder
-            .add_command(
-                "services-status",
-                "services",
-                "status",
-                "Get service status",
-            )
+            .add_command("services-status", "services", "status", "Get service status")
             .expect("add command");
 
         Arc::new(builder.build().expect("build ontology"))

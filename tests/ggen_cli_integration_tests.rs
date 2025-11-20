@@ -264,10 +264,7 @@ fn test_template_render_tracking() {
 
     let templates = ggen_mocks::MockTemplateEngine::new();
 
-    templates.register_template(
-        "test".to_string(),
-        "Value: {{value}}".to_string(),
-    );
+    templates.register_template("test".to_string(), "Value: {{value}}".to_string());
 
     // Render multiple times with different values
     for i in 1..=3 {
@@ -385,10 +382,8 @@ fn test_template_generation_workflow() {
     let templates = ggen_mocks::MockTemplateEngine::new();
 
     // Register templates
-    templates.register_template(
-        "service".to_string(),
-        "[{{name}}]\nversion = {{version}}".to_string(),
-    );
+    templates
+        .register_template("service".to_string(), "[{{name}}]\nversion = {{version}}".to_string());
 
     // Render with variables
     let mut vars = HashMap::new();

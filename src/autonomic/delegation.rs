@@ -34,29 +34,17 @@ pub struct Principal {
 impl Principal {
     /// Create a new principal
     pub fn new(agent: AgentIdentity, tenant: TenantIdentity) -> Self {
-        Self {
-            agent,
-            tenant,
-            principal_type: PrincipalType::Direct,
-        }
+        Self { agent, tenant, principal_type: PrincipalType::Direct }
     }
 
     /// Create a delegated principal
     pub fn delegated(agent: AgentIdentity, tenant: TenantIdentity) -> Self {
-        Self {
-            agent,
-            tenant,
-            principal_type: PrincipalType::Delegated,
-        }
+        Self { agent, tenant, principal_type: PrincipalType::Delegated }
     }
 
     /// Create a service principal
     pub fn service(agent: AgentIdentity, tenant: TenantIdentity) -> Self {
-        Self {
-            agent,
-            tenant,
-            principal_type: PrincipalType::Service,
-        }
+        Self { agent, tenant, principal_type: PrincipalType::Service }
     }
 }
 
@@ -158,11 +146,8 @@ impl CapabilityConstraint {
         };
 
         // Union forbidden capabilities
-        let forbidden_capabilities: HashSet<_> = self
-            .forbidden_capabilities
-            .union(&other.forbidden_capabilities)
-            .cloned()
-            .collect();
+        let forbidden_capabilities: HashSet<_> =
+            self.forbidden_capabilities.union(&other.forbidden_capabilities).cloned().collect();
 
         // Intersect allowed nouns
         let allowed_nouns = match (&self.allowed_nouns, &other.allowed_nouns) {
@@ -224,20 +209,12 @@ impl TemporalConstraint {
     /// Create a constraint valid for a duration
     pub fn valid_for(duration: Duration) -> Self {
         let now = SystemTime::now();
-        Self {
-            not_before: now,
-            not_after: now + duration,
-            max_uses: None,
-        }
+        Self { not_before: now, not_after: now + duration, max_uses: None }
     }
 
     /// Create a constraint valid for a time window
     pub fn valid_between(start: SystemTime, end: SystemTime) -> Self {
-        Self {
-            not_before: start,
-            not_after: end,
-            max_uses: None,
-        }
+        Self { not_before: start, not_after: end, max_uses: None }
     }
 
     /// With maximum uses
@@ -420,11 +397,7 @@ pub struct DelegationChain {
 impl DelegationChain {
     /// Create a new chain with direct execution (no delegation)
     pub fn direct(principal: Principal) -> Self {
-        Self {
-            origin: principal.clone(),
-            tokens: vec![],
-            executor: principal,
-        }
+        Self { origin: principal.clone(), tokens: vec![], executor: principal }
     }
 
     /// Create a chain with one delegation
@@ -432,11 +405,7 @@ impl DelegationChain {
         let origin = token.delegator.clone();
         let executor = token.delegate.clone();
 
-        Self {
-            origin,
-            tokens: vec![token],
-            executor,
-        }
+        Self { origin, tokens: vec![token], executor }
     }
 
     /// Add a delegation to the chain
@@ -483,11 +452,9 @@ impl DelegationChain {
 
     /// Get effective constraints (intersection of all tokens)
     pub fn effective_constraints(&self) -> CapabilityConstraint {
-        self.tokens
-            .iter()
-            .fold(CapabilityConstraint::unrestricted(), |acc, token| {
-                acc.intersect(&token.constraints)
-            })
+        self.tokens.iter().fold(CapabilityConstraint::unrestricted(), |acc, token| {
+            acc.intersect(&token.constraints)
+        })
     }
 
     /// Check if chain allows a capability
@@ -534,9 +501,7 @@ pub struct DelegationRegistry {
 impl DelegationRegistry {
     /// Create a new delegation registry
     pub fn new() -> Self {
-        Self {
-            tokens: std::sync::RwLock::new(std::collections::HashMap::new()),
-        }
+        Self { tokens: std::sync::RwLock::new(std::collections::HashMap::new()) }
     }
 
     /// Register a delegation token
@@ -582,8 +547,10 @@ mod tests {
 
     #[test]
     fn test_delegation_token_creation() {
-        let delegator = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
-        let delegate = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
+        let delegator =
+            Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
+        let delegate =
+            Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
         let token = DelegationToken::new(
             delegator,
@@ -598,7 +565,8 @@ mod tests {
     #[test]
     fn test_delegation_chain() {
         let origin = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
-        let delegate1 = Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
+        let delegate1 =
+            Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
         let token = DelegationToken::new(
             origin.clone(),

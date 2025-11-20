@@ -2,8 +2,8 @@
 //! See PLUGIN_IMPLEMENTATION_GUIDE.md for full specification
 
 use crate::plugin::{Plugin, PluginCapability, PluginMetadata};
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// Metric statistics
 #[derive(Clone, Debug)]
@@ -23,10 +23,7 @@ pub struct MetricsAggregatorPlugin {
 
 impl MetricsAggregatorPlugin {
     pub fn new() -> Self {
-        Self {
-            metrics: Arc::new(Mutex::new(HashMap::new())),
-            loaded: false,
-        }
+        Self { metrics: Arc::new(Mutex::new(HashMap::new())), loaded: false }
     }
 
     pub fn record(&self, name: &str, value: f64) -> crate::Result<()> {

@@ -36,7 +36,7 @@ pub mod registry;
 
 use std::fmt;
 
-pub use builtin::{AliasPlugin, HistoryPlugin, HelpPlugin};
+pub use builtin::{AliasPlugin, HelpPlugin, HistoryPlugin};
 pub use loader::PluginLoader;
 pub use registry::PluginRegistry;
 
@@ -349,9 +349,7 @@ mod tests {
 
     #[test]
     fn test_plugin_config_with_options() {
-        let config = PluginConfig::new()
-            .with_auto_discover(false)
-            .with_manifest_dir("/custom");
+        let config = PluginConfig::new().with_auto_discover(false).with_manifest_dir("/custom");
         assert!(!config.is_auto_discover_enabled());
         assert_eq!(config.manifest_dir(), "/custom");
     }

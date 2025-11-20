@@ -2,7 +2,6 @@
 ///
 /// Strategies for maintaining swarm function despite agent failures
 /// and dynamic environmental changes.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -23,7 +22,7 @@ pub struct ResilienceMetrics {
     pub degraded_agents: usize,
     pub failed_agents: usize,
     pub functional_capacity: f64, // Percentage of full capacity
-    pub redundancy_factor: f64,    // How many agents can fail before collapse
+    pub redundancy_factor: f64,   // How many agents can fail before collapse
 }
 
 impl ResilienceMetrics {
@@ -66,10 +65,7 @@ impl SwarmResilience {
     /// Register agent for role redundancy
     pub fn register_for_role(&mut self, agent_id: String, role: String) {
         self.agent_states.insert(agent_id.clone(), HealthStatus::Healthy);
-        self.role_redundancy
-            .entry(role)
-            .or_insert_with(Vec::new)
-            .push(agent_id);
+        self.role_redundancy.entry(role).or_insert_with(Vec::new).push(agent_id);
     }
 
     /// Report agent health status
@@ -97,8 +93,7 @@ impl SwarmResilience {
         self.get_role_agents(role)
             .iter()
             .find(|a| {
-                self.agent_states.get(*a) != Some(&HealthStatus::Failed)
-                    && *a != failed_agent
+                self.agent_states.get(*a) != Some(&HealthStatus::Failed) && *a != failed_agent
             })
             .cloned()
     }
@@ -144,7 +139,9 @@ impl SwarmResilience {
         for agent in self.agent_states.keys().cloned().collect::<Vec<_>>() {
             if let Some(HealthStatus::Critical) = self.agent_states.get(&agent) {
                 // Try to find less loaded role
-                if let Some((role, agents)) = self.role_redundancy.iter_mut().min_by_key(|(_, a)| a.len()) {
+                if let Some((role, agents)) =
+                    self.role_redundancy.iter_mut().min_by_key(|(_, a)| a.len())
+                {
                     if !agents.contains(&agent) {
                         agents.push(agent.clone());
                     }

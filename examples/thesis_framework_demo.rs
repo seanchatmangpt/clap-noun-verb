@@ -4,9 +4,8 @@
 /// 1. Λ-Scheduling: Plan chapters with dependency ordering
 /// 2. Π-Profiling: Map how shards support central claim
 /// 3. Γ-Checking: Validate thesis coherence and completeness
-
 use clap_noun_verb::agent2028::{
-    Shard, ShardFamily, ShardStatus, LambdaSchedule, PiProfile, GammaChecker,
+    GammaChecker, LambdaSchedule, PiProfile, Shard, ShardFamily, ShardStatus,
 };
 
 fn main() {
@@ -182,10 +181,7 @@ fn demo_pi_profile() {
 
     profile.add_shard_contribution(
         "false-positives-01".to_string(),
-        vec![
-            "Detects 99.9999% of errors".to_string(),
-            "Enables 3-layer recovery".to_string(),
-        ],
+        vec!["Detects 99.9999% of errors".to_string(), "Enables 3-layer recovery".to_string()],
     );
 
     profile.add_shard_contribution(
@@ -255,10 +251,8 @@ fn demo_gamma_checker() {
                 ShardFamily::Monograph,
                 "Distributed systems design".to_string(),
             );
-            s.evidence_sources = vec![
-                "Literature review".to_string(),
-                "Design justification".to_string(),
-            ];
+            s.evidence_sources =
+                vec!["Literature review".to_string(), "Design justification".to_string()];
             s.priority = 2;
             s.word_count = 4200;
             s.word_count_target = 5000;
@@ -271,10 +265,8 @@ fn demo_gamma_checker() {
                 ShardFamily::IMRaD,
                 "Empirical validation".to_string(),
             );
-            s.evidence_sources = vec![
-                "Performance benchmarks".to_string(),
-                "Test coverage (88%)".to_string(),
-            ];
+            s.evidence_sources =
+                vec!["Performance benchmarks".to_string(), "Test coverage (88%)".to_string()];
             s.priority = 2;
             s.word_count = 3800;
             s.word_count_target = 4000;
@@ -308,7 +300,10 @@ fn demo_gamma_checker() {
     println!("  ┌─────────────────────────────────────────────────┐");
     println!("  │ Overall Health: {}", report.health);
     println!("  │ Total Checks: {} │ Passed: {}", report.total_checks, report.passed);
-    println!("  │ Critical: {} │ Errors: {} │ Warnings: {}", report.critical, report.errors, report.warnings);
+    println!(
+        "  │ Critical: {} │ Errors: {} │ Warnings: {}",
+        report.critical, report.errors, report.warnings
+    );
     println!("  └─────────────────────────────────────────────────┘");
 
     if report.warnings > 0 {

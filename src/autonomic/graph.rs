@@ -279,9 +279,7 @@ impl CapabilityGraph {
 
     /// Get a node by capability ID
     pub fn get_node_by_capability(&self, capability_id: &CapabilityId) -> Option<&CapabilityNode> {
-        self.capability_index
-            .get(capability_id)
-            .and_then(|id| self.nodes.get(id))
+        self.capability_index.get(capability_id).and_then(|id| self.nodes.get(id))
     }
 
     /// Get an edge by ID
@@ -464,7 +462,9 @@ impl CapabilityGraph {
         }
 
         // Compute dominance based on capabilities
-        if let (Some(dom_node), Some(ded_node)) = (self.get_node(dominant), self.get_node(dominated)) {
+        if let (Some(dom_node), Some(ded_node)) =
+            (self.get_node(dominant), self.get_node(dominated))
+        {
             // Dominant must have all effects of dominated, and possibly more
             let dom_effects: HashSet<_> = dom_node.effects.iter().map(|e| &e.effect_type).collect();
             let ded_effects: HashSet<_> = ded_node.effects.iter().map(|e| &e.effect_type).collect();
@@ -581,11 +581,7 @@ impl CapabilityGraph {
 
         // Add nodes
         for node in self.nodes.values() {
-            dot.push_str(&format!(
-                "  n{} [label=\"{}\"];\n",
-                node.id.raw(),
-                node.name
-            ));
+            dot.push_str(&format!("  n{} [label=\"{}\"];\n", node.id.raw(), node.name));
         }
 
         // Add edges

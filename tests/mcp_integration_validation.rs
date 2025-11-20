@@ -86,10 +86,7 @@ fn test_swarm_agent_patterns_end_to_end() {
     // Worker Pattern: Validate then record receipt
     let valid = handler.validate_invocation("worker-exec", &None);
     let receipt = handler.record_receipt("worker-exec", 0);
-    assert!(
-        valid.is_ok() && receipt.is_ok(),
-        "Worker should validate then record"
-    );
+    assert!(valid.is_ok() && receipt.is_ok(), "Worker should validate then record");
 
     // Queen Pattern: Get server info + SPARQL queries for orchestration
     let server_info = handler.get_server_info();
@@ -140,10 +137,7 @@ fn test_concurrent_swarm_operations_under_stress() {
     }
 
     // Assert: All 10 concurrent operations succeed
-    let results: Vec<_> = handles
-        .into_iter()
-        .filter_map(|h| h.join().ok())
-        .collect();
+    let results: Vec<_> = handles.into_iter().filter_map(|h| h.join().ok()).collect();
 
     assert_eq!(results.len(), 10, "All 10 concurrent agents should complete");
     for (v1, v2, v3, v4) in results {

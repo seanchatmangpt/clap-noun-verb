@@ -5,8 +5,8 @@
 //!
 //! Focus: 80/20 principle - test the critical 20% that catches 80% of bugs.
 
-use clap_noun_verb::kernel::*;
 use clap_noun_verb::kernel::grammar::{GrammarModel, GrammarNoun, GrammarVerb};
+use clap_noun_verb::kernel::*;
 
 // ============================================================================
 // PILLAR 1: CAPABILITY CONTRACT TESTS
@@ -135,9 +135,7 @@ fn test_capability_dangerous_never_agent_safe() {
 #[test]
 fn test_session_lifecycle() {
     // CRITICAL: Session must follow correct lifecycle
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Initially active
     assert!(session.is_active());
@@ -160,9 +158,7 @@ fn test_session_lifecycle() {
 #[test]
 fn test_session_frame_sequencing() {
     // CRITICAL: Frame sequences must be monotonic per stream
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Yield multiple frames to same stream
     let frame1 = session.yield_data(StreamId::Stdout, serde_json::json!({"n": 1})).ok().unwrap();
@@ -182,15 +178,16 @@ fn test_session_frame_sequencing() {
 #[test]
 fn test_session_stream_independence() {
     // CRITICAL: Each stream must have independent sequencing
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Yield to different streams
-    let stdout1 = session.yield_data(StreamId::Stdout, serde_json::json!({"s": "out"})).ok().unwrap();
-    let stderr1 = session.yield_data(StreamId::Stderr, serde_json::json!({"s": "err"})).ok().unwrap();
+    let stdout1 =
+        session.yield_data(StreamId::Stdout, serde_json::json!({"s": "out"})).ok().unwrap();
+    let stderr1 =
+        session.yield_data(StreamId::Stderr, serde_json::json!({"s": "err"})).ok().unwrap();
     let log1 = session.yield_log("info", "test", None).ok().unwrap();
-    let stdout2 = session.yield_data(StreamId::Stdout, serde_json::json!({"s": "out2"})).ok().unwrap();
+    let stdout2 =
+        session.yield_data(StreamId::Stdout, serde_json::json!({"s": "out2"})).ok().unwrap();
 
     // Each stream starts at sequence 0
     assert_eq!(stdout1.sequence, 0);
@@ -209,9 +206,7 @@ fn test_session_stream_independence() {
 #[test]
 fn test_session_metrics_tracking() {
     // CRITICAL: Metrics must accurately track session activity
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     let initial_metrics = session.metrics();
     assert_eq!(initial_metrics.frames_sent, 0);
@@ -230,14 +225,12 @@ fn test_session_metrics_tracking() {
 #[test]
 fn test_session_frame_serialization() {
     // CRITICAL: Frames must be serializable and deserializable
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
-    let original = session.yield_data(
-        StreamId::Stdout,
-        serde_json::json!({"key": "value", "num": 42})
-    ).ok().unwrap();
+    let original = session
+        .yield_data(StreamId::Stdout, serde_json::json!({"key": "value", "num": 42}))
+        .ok()
+        .unwrap();
 
     // Serialize to JSON
     let json = original.to_json().ok().unwrap();
@@ -255,9 +248,7 @@ fn test_session_frame_serialization() {
 #[test]
 fn test_session_control_messages() {
     // CRITICAL: Control messages must be properly created
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Send control messages
     let pause = session.send_control(ControlCommand::Pause).ok().unwrap();
@@ -278,9 +269,7 @@ fn test_session_control_messages() {
 #[test]
 fn test_session_multiple_data_types() {
     // CRITICAL: Sessions must handle various data types
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // String
     let f1 = session.yield_data(StreamId::Stdout, "test string");
@@ -459,16 +448,13 @@ fn test_version_negotiation_breaking_change_detection() {
 #[test]
 fn test_session_respects_capability_contract() {
     // CRITICAL: Sessions must enforce their capability contract
-    let pure_session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let pure_session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     assert_eq!(pure_session.capability().capability_class, CapabilityClass::Pure);
     assert!(pure_session.capability().is_agent_safe());
 
-    let dangerous_session = SessionBuilder::new()
-        .capability(CapabilityContract::dangerous())
-        .build();
+    let dangerous_session =
+        SessionBuilder::new().capability(CapabilityContract::dangerous()).build();
 
     assert_eq!(dangerous_session.capability().capability_class, CapabilityClass::Dangerous);
     assert!(!dangerous_session.capability().is_agent_safe());
@@ -521,13 +507,23 @@ fn test_capability_report_accuracy() {
     grammar.add_noun(noun);
 
     // Manually count
-    let pure_count = grammar.all_verbs().iter().filter(|v| {
-        v.capability.as_ref().map_or(false, |c| c.capability_class == CapabilityClass::Pure)
-    }).count();
+    let pure_count = grammar
+        .all_verbs()
+        .iter()
+        .filter(|v| {
+            v.capability.as_ref().map_or(false, |c| c.capability_class == CapabilityClass::Pure)
+        })
+        .count();
 
-    let readonly_count = grammar.all_verbs().iter().filter(|v| {
-        v.capability.as_ref().map_or(false, |c| c.capability_class == CapabilityClass::ReadOnlyFS)
-    }).count();
+    let readonly_count = grammar
+        .all_verbs()
+        .iter()
+        .filter(|v| {
+            v.capability
+                .as_ref()
+                .map_or(false, |c| c.capability_class == CapabilityClass::ReadOnlyFS)
+        })
+        .count();
 
     assert_eq!(pure_count, 2);
     assert_eq!(readonly_count, 1);
@@ -562,8 +558,7 @@ fn test_session_id_serialization() {
 #[test]
 fn test_capability_contract_serialization() {
     // CRITICAL: Capability contracts must serialize/deserialize
-    let contract = CapabilityContract::read_write()
-        .with_metadata("custom", "value");
+    let contract = CapabilityContract::read_write().with_metadata("custom", "value");
 
     let json = serde_json::to_string(&contract).ok().unwrap();
     let deserialized: CapabilityContract = serde_json::from_str(&json).ok().unwrap();
@@ -701,16 +696,11 @@ fn test_capability_compatibility_reflexivity() {
 #[test]
 fn test_session_high_frame_count() {
     // STRESS: Session must handle hundreds of frames
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     let frame_count = 1000;
     for i in 0..frame_count {
-        let frame = session.yield_data(
-            StreamId::Stdout,
-            serde_json::json!({"index": i})
-        );
+        let frame = session.yield_data(StreamId::Stdout, serde_json::json!({"index": i}));
         assert!(frame.is_ok(), "Frame {} failed", i);
     }
 
@@ -721,9 +711,7 @@ fn test_session_high_frame_count() {
 #[test]
 fn test_session_multiple_streams_interleaved() {
     // STRESS: Interleaving frames across streams
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     let iterations = 100;
     for i in 0..iterations {
@@ -757,9 +745,7 @@ fn test_grammar_delta_idempotent() {
 #[test]
 fn test_session_cancellation_propagates() {
     // PROPERTY: Cancellation must prevent data operations but allow control messages
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Work before cancellation
     assert!(session.yield_data(StreamId::Stdout, "before").is_ok());
@@ -793,21 +779,14 @@ fn test_capability_class_ordering_consistency() {
     ];
 
     for (class, expected_risk) in classes {
-        assert_eq!(
-            class.risk_level(),
-            expected_risk,
-            "{:?} has unexpected risk level",
-            class
-        );
+        assert_eq!(class.risk_level(), expected_risk, "{:?} has unexpected risk level", class);
     }
 }
 
 #[test]
 fn test_session_frame_timestamps_monotonic() {
     // PROPERTY: Frame timestamps should be monotonic (or at least non-decreasing)
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     let frame1 = session.yield_data(StreamId::Stdout, 1).ok().unwrap();
     let frame2 = session.yield_data(StreamId::Stdout, 2).ok().unwrap();
@@ -872,9 +851,7 @@ fn test_capability_metadata_preservation() {
 #[test]
 fn test_session_metrics_monotonic_increase() {
     // PROPERTY: Session metrics should only increase, never decrease
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     let mut prev_frames = 0u64;
     let mut prev_bytes = 0u64;

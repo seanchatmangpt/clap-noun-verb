@@ -18,12 +18,7 @@ pub struct GuardConfig {
 
 impl Default for GuardConfig {
     fn default() -> Self {
-        Self {
-            max_latency_ms: None,
-            max_latency_ns: None,
-            max_memory_kb: None,
-            max_cpu_ms: None,
-        }
+        Self { max_latency_ms: None, max_latency_ns: None, max_memory_kb: None, max_cpu_ms: None }
     }
 }
 

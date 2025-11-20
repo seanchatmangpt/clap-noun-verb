@@ -14,8 +14,8 @@
 //! This allows the macro to inject appropriate ValueParser and clap configuration.
 
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 use std::fmt;
+use std::sync::{Arc, RwLock};
 
 /// Information about a detected I/O type
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,10 +27,7 @@ pub enum IoType {
     /// Optional Output file/stdout
     OutputOptional,
     /// Custom I/O type with properties
-    Custom {
-        name: String,
-        properties: HashMap<String, String>,
-    },
+    Custom { name: String, properties: HashMap<String, String> },
 }
 
 impl fmt::Display for IoType {
@@ -74,9 +71,7 @@ impl IoType {
         match self {
             Self::Input => "Input file or path (use '-' for stdin)".to_string(),
             Self::Output => "Output file or path (use '-' for stdout)".to_string(),
-            Self::OutputOptional => {
-                "Optional output file or path (use '-' for stdout)".to_string()
-            }
+            Self::OutputOptional => "Optional output file or path (use '-' for stdout)".to_string(),
             Self::Custom { name, .. } => format!("{} (custom I/O type)", name),
         }
     }
@@ -94,17 +89,13 @@ impl IoTypeRegistry {
         types.insert("Input".to_string(), IoType::Input);
         types.insert("Output".to_string(), IoType::Output);
 
-        Self {
-            types: Arc::new(RwLock::new(types)),
-        }
+        Self { types: Arc::new(RwLock::new(types)) }
     }
 
     /// Register a custom I/O type
     pub fn register(&self, name: String, io_type: IoType) -> Result<(), String> {
-        let mut types = self
-            .types
-            .write()
-            .map_err(|_| "failed to acquire write lock".to_string())?;
+        let mut types =
+            self.types.write().map_err(|_| "failed to acquire write lock".to_string())?;
         types.insert(name, io_type);
         Ok(())
     }
@@ -117,10 +108,7 @@ impl IoTypeRegistry {
 
     /// Check if a name is a registered I/O type
     pub fn is_io_type(&self, type_name: &str) -> bool {
-        self.types
-            .read()
-            .map(|types| types.contains_key(type_name))
-            .unwrap_or(false)
+        self.types.read().map(|types| types.contains_key(type_name)).unwrap_or(false)
     }
 
     /// List all registered I/O types
@@ -157,9 +145,7 @@ pub struct TypeInspector {
 impl TypeInspector {
     /// Create new inspector with custom registry
     pub fn new() -> Self {
-        Self {
-            registry: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { registry: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     /// Inspect a type name
@@ -198,14 +184,8 @@ mod tests {
 
     #[test]
     fn test_io_type_value_parser() {
-        assert_eq!(
-            IoType::Input.value_parser_expr(),
-            "clio::Input::value_parser()"
-        );
-        assert_eq!(
-            IoType::Output.value_parser_expr(),
-            "clio::Output::value_parser()"
-        );
+        assert_eq!(IoType::Input.value_parser_expr(), "clio::Input::value_parser()");
+        assert_eq!(IoType::Output.value_parser_expr(), "clio::Output::value_parser()");
     }
 
     #[test]

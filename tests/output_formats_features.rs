@@ -32,7 +32,8 @@ fn test_json_output_formatting() {
     let result = OutputFormat::Json.format(&data).expect("Failed to format as JSON");
 
     // Verify it's valid JSON by parsing it back
-    let parsed: serde_json::Value = serde_json::from_str(&result).expect("Output should be valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&result).expect("Output should be valid JSON");
 
     assert_eq!(parsed["name"], "test", "JSON should contain correct name");
     assert_eq!(parsed["count"], 42, "JSON should contain correct count");
@@ -70,19 +71,22 @@ fn test_yaml_output_formatting() {
 
     let config = Config {
         server: ServerConfig { host: "localhost".to_string(), port: 8080 },
-        database: DatabaseConfig { url: "postgresql://localhost/db".to_string(), max_connections: 10 },
+        database: DatabaseConfig {
+            url: "postgresql://localhost/db".to_string(),
+            max_connections: 10,
+        },
     };
 
     let result = OutputFormat::Yaml.format(&config).expect("Failed to format as YAML");
 
     // Verify it's valid YAML by parsing it back
-    let parsed: serde_yaml::Value = serde_yaml::from_str(&result).expect("Output should be valid YAML");
+    let parsed: serde_yaml::Value =
+        serde_yaml::from_str(&result).expect("Output should be valid YAML");
 
     assert_eq!(parsed["server"]["host"], "localhost", "YAML should contain correct server host");
     assert_eq!(parsed["server"]["port"], 8080, "YAML should contain correct server port");
     assert_eq!(
-        parsed["database"]["max_connections"],
-        10,
+        parsed["database"]["max_connections"], 10,
         "YAML should contain correct max_connections"
     );
 }
@@ -121,8 +125,16 @@ fn test_toml_output_formatting() {
 
     assert_eq!(parsed["title"].as_str(), Some("My App"), "TOML should contain correct title");
     assert_eq!(parsed["version"].as_str(), Some("1.0.0"), "TOML should contain correct version");
-    assert_eq!(parsed["settings"]["debug"].as_bool(), Some(true), "TOML should contain correct debug flag");
-    assert_eq!(parsed["settings"]["timeout"].as_integer(), Some(30), "TOML should contain correct timeout");
+    assert_eq!(
+        parsed["settings"]["debug"].as_bool(),
+        Some(true),
+        "TOML should contain correct debug flag"
+    );
+    assert_eq!(
+        parsed["settings"]["timeout"].as_integer(),
+        Some(30),
+        "TOML should contain correct timeout"
+    );
 }
 
 /// Validates table output formatting for arrays of objects
@@ -299,7 +311,8 @@ fn test_yaml_round_trip_validation() {
     let yaml_output = OutputFormat::Yaml.format(&original).expect("Failed to format as YAML");
 
     // Deserialize back
-    let deserialized: YamlData = serde_yaml::from_str(&yaml_output).expect("Failed to deserialize YAML");
+    let deserialized: YamlData =
+        serde_yaml::from_str(&yaml_output).expect("Failed to deserialize YAML");
 
     assert_eq!(original, deserialized, "YAML round-trip should preserve all data");
 }

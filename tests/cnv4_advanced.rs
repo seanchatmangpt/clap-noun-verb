@@ -7,9 +7,9 @@
 //! - Async testing with tokio
 //! - Performance testing with tick budgets
 
-use clap_noun_verb::kernel::*;
+use chicago_tdd_tools::{assert_err, assert_in_range, assert_ok};
 use clap_noun_verb::kernel::grammar::{GrammarModel, GrammarNoun, GrammarVerb};
-use chicago_tdd_tools::{assert_ok, assert_err, assert_in_range};
+use clap_noun_verb::kernel::*;
 use proptest::prelude::*;
 
 // ============================================================================
@@ -235,19 +235,17 @@ fn test_grammar_delta_snapshot_validation() {
         name: "file".to_string(),
         help: Some("File operations".to_string()),
         long_help: None,
-        verbs: vec![
-            GrammarVerb {
-                name: "read".to_string(),
-                noun: "file".to_string(),
-                help: Some("Read a file".to_string()),
-                long_help: None,
-                arguments: Vec::new(),
-                deprecated: false,
-                deprecation_message: None,
-                capability: Some(CapabilityContract::read_only()),
-                metadata: Default::default(),
-            }
-        ],
+        verbs: vec![GrammarVerb {
+            name: "read".to_string(),
+            noun: "file".to_string(),
+            help: Some("Read a file".to_string()),
+            long_help: None,
+            arguments: Vec::new(),
+            deprecated: false,
+            deprecation_message: None,
+            capability: Some(CapabilityContract::read_only()),
+            metadata: Default::default(),
+        }],
         sub_nouns: Vec::new(),
         metadata: Default::default(),
     };
@@ -258,19 +256,17 @@ fn test_grammar_delta_snapshot_validation() {
         name: "file".to_string(),
         help: Some("File operations".to_string()),
         long_help: None,
-        verbs: vec![
-            GrammarVerb {
-                name: "read".to_string(),
-                noun: "file".to_string(),
-                help: Some("Read a file".to_string()),
-                long_help: None,
-                arguments: Vec::new(),
-                deprecated: false,
-                deprecation_message: None,
-                capability: Some(CapabilityContract::read_write()), // CHANGED
-                metadata: Default::default(),
-            }
-        ],
+        verbs: vec![GrammarVerb {
+            name: "read".to_string(),
+            noun: "file".to_string(),
+            help: Some("Read a file".to_string()),
+            long_help: None,
+            arguments: Vec::new(),
+            deprecated: false,
+            deprecation_message: None,
+            capability: Some(CapabilityContract::read_write()), // CHANGED
+            metadata: Default::default(),
+        }],
         sub_nouns: Vec::new(),
         metadata: Default::default(),
     };
@@ -283,13 +279,11 @@ fn test_grammar_delta_snapshot_validation() {
     assert_json_snapshot!("grammar_delta_capability_upgrade", delta);
 
     // Verify breaking change detected
-    assert_ok!(
-        if !delta.verb_changes.is_empty() {
-            Ok(())
-        } else {
-            Err("Expected capability change not detected")
-        }
-    );
+    assert_ok!(if !delta.verb_changes.is_empty() {
+        Ok(())
+    } else {
+        Err("Expected capability change not detected")
+    });
 }
 
 #[test]
@@ -314,18 +308,13 @@ fn test_capability_contract_snapshot_formats() {
 #[tokio::test]
 async fn test_session_async_operations() {
     // Arrange
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Act: Simulate async operations with delays
     for i in 0..10 {
         tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
 
-        let frame = session.yield_data(
-            StreamId::Stdout,
-            serde_json::json!({"async_op": i})
-        );
+        let frame = session.yield_data(StreamId::Stdout, serde_json::json!({"async_op": i}));
 
         // Assert: Each frame succeeds
         assert_ok!(frame);
@@ -339,9 +328,7 @@ async fn test_session_async_operations() {
 #[tokio::test]
 async fn test_session_cancellation_async() {
     // Arrange
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Act: Start async work
     let work_started = session.yield_data(StreamId::Stdout, "starting").is_ok();
@@ -351,7 +338,9 @@ async fn test_session_cancellation_async() {
     tokio::spawn(async move {
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
         // Session would be cancelled here
-    }).await.ok();
+    })
+    .await
+    .ok();
 
     // Assert: Can still query state
     assert!(!session.is_cancelled()); // Not cancelled in this scope
@@ -420,9 +409,7 @@ fn test_capability_risk_calculation_performance() {
 
     // Act: Calculate risk scores (should be instant)
     let start = std::time::Instant::now();
-    let scores: Vec<u8> = contracts.iter()
-        .map(|c| c.risk_score())
-        .collect();
+    let scores: Vec<u8> = contracts.iter().map(|c| c.risk_score()).collect();
     let elapsed = start.elapsed();
 
     // Assert: All calculated within performance budget (< 1ms)
@@ -434,17 +421,12 @@ fn test_capability_risk_calculation_performance() {
 #[test]
 fn test_session_frame_generation_performance() {
     // Arrange
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::pure())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::pure()).build();
 
     // Act: Generate 100 frames (should complete in microseconds)
     let start = std::time::Instant::now();
     for i in 0..100 {
-        let _frame = session.yield_data(
-            StreamId::Stdout,
-            serde_json::json!({"i": i})
-        );
+        let _frame = session.yield_data(StreamId::Stdout, serde_json::json!({"i": i}));
     }
     let elapsed = start.elapsed();
 
@@ -467,34 +449,27 @@ fn test_complete_cnv4_workflow() {
         name: "data".to_string(),
         help: Some("Data operations".to_string()),
         long_help: None,
-        verbs: vec![
-            GrammarVerb {
-                name: "fetch".to_string(),
-                noun: "data".to_string(),
-                help: Some("Fetch data".to_string()),
-                long_help: None,
-                arguments: Vec::new(),
-                deprecated: false,
-                deprecation_message: None,
-                capability: Some(CapabilityContract::network()),
-                metadata: Default::default(),
-            }
-        ],
+        verbs: vec![GrammarVerb {
+            name: "fetch".to_string(),
+            noun: "data".to_string(),
+            help: Some("Fetch data".to_string()),
+            long_help: None,
+            arguments: Vec::new(),
+            deprecated: false,
+            deprecation_message: None,
+            capability: Some(CapabilityContract::network()),
+            metadata: Default::default(),
+        }],
         sub_nouns: Vec::new(),
         metadata: Default::default(),
     };
     grammar.add_noun(noun);
 
     // PILLAR 2: Create session with matching capability
-    let mut session = SessionBuilder::new()
-        .capability(CapabilityContract::network())
-        .build();
+    let mut session = SessionBuilder::new().capability(CapabilityContract::network()).build();
 
     // Simulate command execution
-    let frame = session.yield_data(
-        StreamId::Stdout,
-        serde_json::json!({"status": "fetching"})
-    );
+    let frame = session.yield_data(StreamId::Stdout, serde_json::json!({"status": "fetching"}));
     assert_ok!(frame);
 
     // PILLAR 3: Create new version with enhanced capability
@@ -525,7 +500,7 @@ fn test_complete_cnv4_workflow() {
                 deprecation_message: None,
                 capability: Some(CapabilityContract::read_write()), // NEW
                 metadata: Default::default(),
-            }
+            },
         ],
         sub_nouns: Vec::new(),
         metadata: Default::default(),

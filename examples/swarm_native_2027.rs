@@ -105,14 +105,15 @@ impl AutonomicVerbCommand for StatusVerb {
         // Input/output schemas for composition
         let input_schema = InputSchema::new(); // No required inputs
 
-        let output_schema = OutputSchema::new(
-            TypeSchema::object({
-                let mut props = std::collections::HashMap::new();
-                props.insert("services".to_string(), TypeSchema::array(TypeSchema::reference("ServiceStatus")));
-                props.insert("total_count".to_string(), TypeSchema::number());
-                props
-            })
-        );
+        let output_schema = OutputSchema::new(TypeSchema::object({
+            let mut props = std::collections::HashMap::new();
+            props.insert(
+                "services".to_string(),
+                TypeSchema::array(TypeSchema::reference("ServiceStatus")),
+            );
+            props.insert("total_count".to_string(), TypeSchema::number());
+            props
+        }));
 
         let composition = CompositionMetadata::new(input_schema, output_schema)
             .produces(Resource::new("observations", "service-status"));
@@ -123,11 +124,7 @@ impl AutonomicVerbCommand for StatusVerb {
                     .with_sensitivity(Sensitivity::Low)
                     .with_isolation(IsolationRequirement::Shared),
             )
-            .with_planes(
-                PlaneInteraction::new()
-                    .observe_read()
-                    .ontology_read()
-            )
+            .with_planes(PlaneInteraction::new().observe_read().ontology_read())
             .with_guards(GuardConfig::new().with_max_latency_ms(100))
             .with_output_type("ServiceList")
             .with_composition(composition)
@@ -158,12 +155,7 @@ impl VerbCommand for DeployVerb {
     fn build_command(&self) -> clap::Command {
         clap::Command::new(self.name())
             .about(self.about())
-            .arg(
-                clap::Arg::new("service")
-                    .help("Service name to deploy")
-                    .required(true)
-                    .index(1),
-            )
+            .arg(clap::Arg::new("service").help("Service name to deploy").required(true).index(1))
             .arg(
                 clap::Arg::new("version")
                     .help("Version to deploy (semver)")
@@ -184,10 +176,14 @@ impl AutonomicVerbCommand for DeployVerb {
         let output_schema = OutputSchema::new(TypeSchema::reference("DeploymentResult"));
 
         let composition = CompositionMetadata::new(input_schema, output_schema)
-            .consumes(Resource::new("configuration", "service-manifest")
-                .with_schema(TypeSchema::object(std::collections::HashMap::new())))
-            .produces(Resource::new("deployment", "deployment-record")
-                .with_schema(TypeSchema::reference("DeploymentResult")));
+            .consumes(
+                Resource::new("configuration", "service-manifest")
+                    .with_schema(TypeSchema::object(std::collections::HashMap::new())),
+            )
+            .produces(
+                Resource::new("deployment", "deployment-record")
+                    .with_schema(TypeSchema::reference("DeploymentResult")),
+            );
 
         CommandMetadata::new()
             .with_effects(
@@ -198,12 +194,7 @@ impl AutonomicVerbCommand for DeployVerb {
                     .with_isolation(IsolationRequirement::Isolated)
                     .supports_dry_run(), // Supports plan-only mode
             )
-            .with_planes(
-                PlaneInteraction::new()
-                    .observe_write()
-                    .ontology_read()
-                    .invariants_check()
-            )
+            .with_planes(PlaneInteraction::new().observe_write().ontology_read().invariants_check())
             .with_guards(GuardConfig::new().with_max_latency_ms(5000))
             .with_output_type("DeploymentResult")
             .with_composition(composition)
@@ -269,10 +260,7 @@ struct ServicesCommand {
 #[derive(Parser)]
 enum ServicesAction {
     Status,
-    Deploy {
-        service: String,
-        version: String,
-    },
+    Deploy { service: String, version: String },
 }
 
 fn main() -> Result<()> {
@@ -281,10 +269,11 @@ fn main() -> Result<()> {
         .name("swarm-cli")
         .about("Swarm-Native CLI demonstration for 2027")
         .version("2.0.0")
-        .register_noun(noun!("services", "Manage services with swarm-native features", [
-            StatusVerb,
-            DeployVerb,
-        ]));
+        .register_noun(noun!(
+            "services",
+            "Manage services with swarm-native features",
+            [StatusVerb, DeployVerb,]
+        ));
 
     // Create autonomic CLI wrapper
     let app_metadata = AppMetadata::new("swarm-cli")
@@ -320,22 +309,18 @@ fn main() -> Result<()> {
         println!("=== CAPABILITY CHANGELOG ===\n");
 
         let changelog = CapabilityChangelog::new("2.0.0")
-            .add_change(
-                CapabilityChange::new(
-                    CapabilityId::from_path("services.status"),
-                    ChangeType::Extension,
-                    "2.0.0",
-                    "Added composition metadata for swarm workflows",
-                )
-            )
-            .add_change(
-                CapabilityChange::new(
-                    CapabilityId::from_path("services.deploy"),
-                    ChangeType::Addition,
-                    "2.0.0",
-                    "New deploy verb with multi-agent tenancy support",
-                )
-            );
+            .add_change(CapabilityChange::new(
+                CapabilityId::from_path("services.status"),
+                ChangeType::Extension,
+                "2.0.0",
+                "Added composition metadata for swarm workflows",
+            ))
+            .add_change(CapabilityChange::new(
+                CapabilityId::from_path("services.deploy"),
+                ChangeType::Addition,
+                "2.0.0",
+                "New deploy verb with multi-agent tenancy support",
+            ));
 
         println!("{}", serde_json::to_string_pretty(&changelog).unwrap_or_default());
         return Ok(());
@@ -343,11 +328,9 @@ fn main() -> Result<()> {
 
     // Demonstrate multi-agent context
     if let (Some(agent_id), Some(tenant_id)) = (cli.agent_id.clone(), cli.tenant_id.clone()) {
-        let agent = AgentIdentity::new(agent_id, "code-assistant")
-            .with_version("1.0.0");
+        let agent = AgentIdentity::new(agent_id, "code-assistant").with_version("1.0.0");
 
-        let tenant = TenantIdentity::new(tenant_id)
-            .with_environment("production");
+        let tenant = TenantIdentity::new(tenant_id).with_environment("production");
 
         let context = InvocationContext::new(agent, tenant)
             .with_qos(QoSHints::new().with_priority(PriorityClass::High));
@@ -372,11 +355,15 @@ fn main() -> Result<()> {
             "status",
             std::collections::HashMap::new(),
             EffectMetadata::new(EffectType::ReadOnly),
-        ).dry_run();
+        )
+        .dry_run();
 
         match policy_engine.evaluate(&request) {
             Ok(result) => {
-                println!("Policy decision: {}", if result.is_allowed() { "✓ ALLOW" } else { "✗ DENY" });
+                println!(
+                    "Policy decision: {}",
+                    if result.is_allowed() { "✓ ALLOW" } else { "✗ DENY" }
+                );
                 println!("{}", serde_json::to_string_pretty(&result).unwrap_or_default());
             }
             Err(e) => eprintln!("Policy evaluation error: {}", e),
@@ -394,9 +381,7 @@ fn main() -> Result<()> {
                 let receipt = ExecutionReceipt::new("services.status")
                     .with_duration_ms(15)
                     .with_guard(GuardResult::within_budget(15, 100))
-                    .with_result_hash(
-                        ExecutionReceipt::compute_hash(&status).unwrap_or_default()
-                    );
+                    .with_result_hash(ExecutionReceipt::compute_hash(&status).unwrap_or_default());
 
                 println!("=== EXECUTION RESULT ===");
                 println!("{}\n", serde_json::to_string_pretty(&status).unwrap_or_default());

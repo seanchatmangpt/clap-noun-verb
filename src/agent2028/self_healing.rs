@@ -1,14 +1,13 @@
+use chrono::{DateTime, Duration, Utc};
 /// Self-Healing Autonomic Systems
 ///
 /// MAPE-K loop enhancements for autonomous system recovery from failures
 /// without human intervention. Features health monitoring, anomaly detection,
 /// and automatic remediation.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Health status of a system component
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -117,7 +116,7 @@ pub struct AnomalyEvent {
     pub anomaly_id: String,
     pub component_id: String,
     pub anomaly_type: String,
-    pub severity: f64,           // 0.0 to 1.0
+    pub severity: f64, // 0.0 to 1.0
     pub detected_at: DateTime<Utc>,
     pub description: String,
 }
@@ -142,7 +141,7 @@ pub struct RootCauseAnalysis {
     pub anomaly_id: String,
     pub primary_cause: String,
     pub contributing_factors: Vec<String>,
-    pub confidence: f64,        // 0.0 to 1.0
+    pub confidence: f64, // 0.0 to 1.0
     pub analysis_timestamp: DateTime<Utc>,
 }
 
@@ -151,9 +150,9 @@ pub struct RootCauseAnalysis {
 pub struct HealingAction {
     pub action_id: String,
     pub component_id: String,
-    pub action_type: String,    // "restart", "scale", "isolate", "rollback", etc.
+    pub action_type: String, // "restart", "scale", "isolate", "rollback", etc.
     pub parameters: HashMap<String, String>,
-    pub priority: u8,           // 1-10, higher = more urgent
+    pub priority: u8, // 1-10, higher = more urgent
     pub status: HealingStatus,
 }
 
@@ -202,10 +201,7 @@ impl HealthMonitor {
     /// Register a component for monitoring
     pub async fn register(&self, component_id: String) {
         let mut components = self.components.write().await;
-        components.insert(
-            component_id.clone(),
-            ComponentHealth::new(component_id),
-        );
+        components.insert(component_id.clone(), ComponentHealth::new(component_id));
     }
 
     /// Update metrics for a component
@@ -229,22 +225,14 @@ impl HealthMonitor {
     /// Get all unhealthy components
     pub async fn unhealthy_components(&self) -> Vec<ComponentHealth> {
         let components = self.components.read().await;
-        components
-            .values()
-            .filter(|c| c.status != HealthStatus::Healthy)
-            .cloned()
-            .collect()
+        components.values().filter(|c| c.status != HealthStatus::Healthy).cloned().collect()
     }
 
     /// Get metrics from last N hours
     pub async fn recent_metrics(&self, hours: i64) -> Vec<SystemMetric> {
         let history = self.metrics_history.read().await;
         let cutoff = Utc::now() - Duration::hours(hours);
-        history
-            .iter()
-            .filter(|m| m.timestamp > cutoff)
-            .cloned()
-            .collect()
+        history.iter().filter(|m| m.timestamp > cutoff).cloned().collect()
     }
 }
 
@@ -303,11 +291,7 @@ impl AnomalyDetector {
     pub async fn recent_anomalies(&self, hours: i64) -> Vec<AnomalyEvent> {
         let anomalies = self.anomalies.read().await;
         let cutoff = Utc::now() - Duration::hours(hours);
-        anomalies
-            .iter()
-            .filter(|a| a.detected_at > cutoff)
-            .cloned()
-            .collect()
+        anomalies.iter().filter(|a| a.detected_at > cutoff).cloned().collect()
     }
 }
 
@@ -324,9 +308,7 @@ pub struct RootCauseAnalyzer {
 
 impl RootCauseAnalyzer {
     pub fn new() -> Self {
-        Self {
-            analyses: Arc::new(RwLock::new(Vec::new())),
-        }
+        Self { analyses: Arc::new(RwLock::new(Vec::new())) }
     }
 
     /// Analyze root cause of an anomaly
@@ -342,15 +324,9 @@ impl RootCauseAnalyzer {
             ),
             "Timeout" => (
                 "Component overload or network latency".to_string(),
-                vec![
-                    "High CPU usage".to_string(),
-                    "Network congestion".to_string(),
-                ],
+                vec!["High CPU usage".to_string(), "Network congestion".to_string()],
             ),
-            _ => (
-                "Unknown cause".to_string(),
-                vec!["Requires manual investigation".to_string()],
-            ),
+            _ => ("Unknown cause".to_string(), vec!["Requires manual investigation".to_string()]),
         };
 
         let analysis = RootCauseAnalysis {
@@ -371,10 +347,7 @@ impl RootCauseAnalyzer {
     /// Get analysis for an anomaly
     pub async fn get_analysis(&self, anomaly_id: &str) -> Option<RootCauseAnalysis> {
         let analyses = self.analyses.read().await;
-        analyses
-            .iter()
-            .find(|a| a.anomaly_id == anomaly_id)
-            .cloned()
+        analyses.iter().find(|a| a.anomaly_id == anomaly_id).cloned()
     }
 }
 
@@ -441,11 +414,7 @@ impl AutoRecovery {
     /// Get pending recovery actions
     pub async fn pending_actions(&self) -> Vec<HealingAction> {
         let actions = self.actions.read().await;
-        actions
-            .iter()
-            .filter(|a| a.status == HealingStatus::Planned)
-            .cloned()
-            .collect()
+        actions.iter().filter(|a| a.status == HealingStatus::Planned).cloned().collect()
     }
 }
 
@@ -481,15 +450,15 @@ impl Autonomic {
         for component in unhealthy {
             if component.status != HealthStatus::Healthy {
                 // Analyze: Detect anomalies
-                if let Some(anomaly) = self.anomaly_detector
-                    .detect(&component.component_id, 75.0)
-                    .await
+                if let Some(anomaly) =
+                    self.anomaly_detector.detect(&component.component_id, 75.0).await
                 {
                     // Plan: Analyze root cause
                     let analysis = self.root_cause_analyzer.analyze(&anomaly).await;
 
                     // Execute: Create and execute recovery action
-                    let action = self.auto_recovery
+                    let action = self
+                        .auto_recovery
                         .plan_recovery(&component.component_id, &analysis.primary_cause)
                         .await;
 

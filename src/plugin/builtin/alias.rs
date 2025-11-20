@@ -13,10 +13,7 @@ pub struct AliasPlugin {
 impl AliasPlugin {
     /// Create a new alias plugin.
     pub fn new() -> Self {
-        Self {
-            loaded: false,
-            aliases: HashMap::new(),
-        }
+        Self { loaded: false, aliases: HashMap::new() }
     }
 
     /// Add a command alias.
@@ -36,10 +33,7 @@ impl AliasPlugin {
 
     /// Get all aliases.
     pub fn list_aliases(&self) -> Vec<(&str, &str)> {
-        self.aliases
-            .iter()
-            .map(|(k, v)| (k.as_str(), v.as_str()))
-            .collect()
+        self.aliases.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect()
     }
 
     /// Get the number of aliases.

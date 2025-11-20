@@ -28,12 +28,12 @@
 //! 📚 Learn more: https://docs.ggen.io/templates
 //! ```
 
-pub mod errors;
-pub mod validators;
 pub mod ai_commands;
+pub mod errors;
 pub mod marketplace_commands;
 pub mod template_commands;
+pub mod validators;
 
 // Re-export commonly used items
-pub use errors::{UserError, ErrorCategory};
+pub use errors::{ErrorCategory, UserError};
 pub use validators::*;

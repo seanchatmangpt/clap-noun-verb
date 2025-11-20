@@ -120,11 +120,9 @@ fn demo_option_macro_test_none() {
 #[test]
 fn demo_chained_operations() {
     // Simulating chained Result operations
-    let step1 = parse_config()
-        .test_expect("Step 1: Parse config failed");
+    let step1 = parse_config().test_expect("Step 1: Parse config failed");
 
-    let step2 = Ok(step1.len())
-        .test_expect("Step 2: Get length failed");
+    let step2 = Ok(step1.len()).test_expect("Step 2: Get length failed");
 
     assert!(step2 > 0);
 }
@@ -134,9 +132,7 @@ fn demo_mixed_result_option() {
     // Result that returns Option
     let result: Result<Option<String>, &str> = Ok(Some("value".to_string()));
 
-    let value = result
-        .test_expect("Failed to get result")
-        .test_some("Expected Some value");
+    let value = result.test_expect("Failed to get result").test_some("Expected Some value");
 
     assert_eq!(value, "value");
 }
@@ -148,8 +144,7 @@ fn demo_with_context() {
 
     for i in 0..iterations {
         let result = Ok(i);
-        let _value = result
-            .test_expect(&format!("Iteration {} failed", i));
+        let _value = result.test_expect(&format!("Iteration {} failed", i));
     }
 }
 
@@ -211,16 +206,16 @@ mod before_migration {
     // It's behind a feature flag because it violates lints
 
     #[test]
-    #[allow(clippy::unwrap_used)]  // Had to add this annotation!
+    #[allow(clippy::unwrap_used)] // Had to add this annotation!
     fn old_way_with_unwrap() {
-        let config = parse_config().unwrap();  // Lint violation
+        let config = parse_config().unwrap(); // Lint violation
         assert_eq!(config, "config");
     }
 
     #[test]
-    #[allow(clippy::expect_used)]  // Had to add this annotation!
+    #[allow(clippy::expect_used)] // Had to add this annotation!
     fn old_way_with_expect() {
-        let user = find_user("alice").expect("Not found");  // Lint violation
+        let user = find_user("alice").expect("Not found"); // Lint violation
         assert_eq!(user, "Alice User");
     }
 }

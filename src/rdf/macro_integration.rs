@@ -6,7 +6,7 @@
 
 use crate::error::Result;
 use crate::rdf::ontology::Ontology;
-use crate::rdf::validation::{ShapeValidator, ShaclShape, Constraint};
+use crate::rdf::validation::{Constraint, ShaclShape, ShapeValidator};
 use std::sync::{Arc, OnceLock};
 
 /// Distributed slice for macro-generated RDF metadata
@@ -48,17 +48,12 @@ impl RdfRegistry {
             }
         }
 
-        Self {
-            rdf_triples: triples,
-            shacl_shapes: shapes,
-        }
+        Self { rdf_triples: triples, shacl_shapes: shapes }
     }
 
     /// Get or initialize the global registry
     pub fn global() -> Arc<Self> {
-        GLOBAL_REGISTRY
-            .get_or_init(|| Arc::new(Self::load_from_macros()))
-            .clone()
+        GLOBAL_REGISTRY.get_or_init(|| Arc::new(Self::load_from_macros())).clone()
     }
 
     /// Build an ontology from collected RDF triples
@@ -104,7 +99,8 @@ impl RdfRegistry {
             }
 
             let shapes = self.parse_shacl_shapes(shacl_str)?;
-            validator.add_shapes(shapes)
+            validator
+                .add_shapes(shapes)
                 .map_err(|e| crate::error::NounVerbError::ValidationFailed(e.to_string()))?;
         }
 
@@ -167,9 +163,10 @@ impl RdfRegistry {
         let subject = if parts[0].contains(':') || parts[0].starts_with('<') {
             parts[0].trim_matches(['<', '>'].as_ref()).to_string()
         } else {
-            current_subject.as_ref()
+            current_subject
+                .as_ref()
                 .ok_or_else(|| crate::error::NounVerbError::InvalidStructure {
-                    message: "Missing subject in triple".to_string()
+                    message: "Missing subject in triple".to_string(),
                 })?
                 .clone()
         };
@@ -351,21 +348,19 @@ impl Default for RdfRegistry {
 /// Extract number from SHACL constraint line
 fn extract_number(line: &str) -> Option<usize> {
     // Find a number in the line (before any ; or .)
-    line.split_whitespace()
-        .find_map(|token| {
-            let cleaned = token.trim_matches([';', '.'].as_ref());
-            cleaned.parse().ok()
-        })
+    line.split_whitespace().find_map(|token| {
+        let cleaned = token.trim_matches([';', '.'].as_ref());
+        cleaned.parse().ok()
+    })
 }
 
 /// Extract i64 from SHACL constraint line
 fn extract_i64(line: &str) -> Option<i64> {
     // Find a number in the line (before any ; or .)
-    line.split_whitespace()
-        .find_map(|token| {
-            let cleaned = token.trim_matches([';', '.'].as_ref());
-            cleaned.parse().ok()
-        })
+    line.split_whitespace().find_map(|token| {
+        let cleaned = token.trim_matches([';', '.'].as_ref());
+        cleaned.parse().ok()
+    })
 }
 
 /// Extract string from quoted value
@@ -380,11 +375,7 @@ fn extract_string(line: &str) -> Option<String> {
 
 /// Extract datatype from constraint line
 fn extract_datatype(line: &str) -> Option<String> {
-    line.split_whitespace()
-        .last()?
-        .trim_matches([';', '.'].as_ref())
-        .to_string()
-        .into()
+    line.split_whitespace().last()?.trim_matches([';', '.'].as_ref()).to_string().into()
 }
 
 #[cfg(test)]

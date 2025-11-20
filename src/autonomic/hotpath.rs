@@ -18,8 +18,8 @@ use super::{
 };
 use crossbeam::queue::ArrayQueue;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::Arc;
 
 /// Compact handle for agent identity (avoiding clones)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -82,13 +82,7 @@ impl HotPathContext {
         capability_index: u32,
         effect_flags: EffectFlags,
     ) -> Self {
-        Self {
-            agent,
-            tenant,
-            capability_index,
-            effect_flags,
-            correlation_hash: 0,
-        }
+        Self { agent, tenant, capability_index, effect_flags, correlation_hash: 0 }
     }
 
     /// With correlation ID
@@ -227,11 +221,7 @@ pub struct InvocationArena {
 impl InvocationArena {
     /// Create a new arena with specified capacity
     pub fn new(capacity: usize) -> Self {
-        Self {
-            buffer: vec![0u8; capacity],
-            offset: AtomicUsize::new(0),
-            capacity,
-        }
+        Self { buffer: vec![0u8; capacity], offset: AtomicUsize::new(0), capacity }
     }
 
     /// Allocate space for a value
@@ -595,9 +585,7 @@ mod tests {
 
     #[test]
     fn test_effect_flags() {
-        let flags = EffectFlags::empty()
-            .with(EffectFlags::READ_ONLY)
-            .with(EffectFlags::NETWORK);
+        let flags = EffectFlags::empty().with(EffectFlags::READ_ONLY).with(EffectFlags::NETWORK);
 
         assert!(flags.is_read_only());
         assert!(flags.has(EffectFlags::NETWORK));
@@ -653,7 +641,8 @@ mod tests {
         let mut args_buffer = [("", ""); 10];
         let mut positional_buffer = [""; 10];
 
-        let parsed = ZeroCopyParser::parse(input, &mut args_buffer, &mut positional_buffer).unwrap();
+        let parsed =
+            ZeroCopyParser::parse(input, &mut args_buffer, &mut positional_buffer).unwrap();
 
         assert_eq!(parsed.capability_path, "user.create");
         assert_eq!(parsed.args.len(), 2);

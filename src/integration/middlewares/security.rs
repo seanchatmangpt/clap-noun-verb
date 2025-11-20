@@ -21,11 +21,7 @@ pub struct SecurityMiddleware {
 impl SecurityMiddleware {
     /// Create a new security middleware.
     pub fn new() -> Self {
-        Self {
-            api_keys: HashMap::new(),
-            permissions: HashMap::new(),
-            enabled: true,
-        }
+        Self { api_keys: HashMap::new(), permissions: HashMap::new(), enabled: true }
     }
 
     /// Add an API key with associated roles.
@@ -35,9 +31,12 @@ impl SecurityMiddleware {
     }
 
     /// Add a command permission requirement.
-    pub fn with_permission(mut self, command: impl Into<String>, required_role: impl Into<String>) -> Self {
-        self.permissions
-            .insert(command.into(), required_role.into());
+    pub fn with_permission(
+        mut self,
+        command: impl Into<String>,
+        required_role: impl Into<String>,
+    ) -> Self {
+        self.permissions.insert(command.into(), required_role.into());
         self
     }
 
@@ -88,13 +87,11 @@ impl Middleware for SecurityMiddleware {
             // In production, extract API key from request context
             // and validate it has the required role
             if !self.validate_key("default_key", &required_role) {
-                return Err(crate::NounVerbError::MiddlewareError(
-                    format!(
-                        "Command '{}' requires role '{}'",
-                        request.command(),
-                        required_role
-                    ),
-                ));
+                return Err(crate::NounVerbError::MiddlewareError(format!(
+                    "Command '{}' requires role '{}'",
+                    request.command(),
+                    required_role
+                )));
             }
         }
 

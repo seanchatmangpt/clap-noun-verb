@@ -24,35 +24,35 @@
 //! - Multi-plugin workflow tests
 //! - Error recovery scenarios
 
-pub mod cache;
-pub mod rate_limiter;
-pub mod config_manager;
-pub mod metrics_aggregator;
-pub mod logger;
 pub mod auth_manager;
-pub mod database_pool;
-pub mod message_queue;
-pub mod event_bus;
+pub mod cache;
 pub mod circuit_breaker;
+pub mod config_manager;
+pub mod database_pool;
+pub mod event_bus;
+pub mod logger;
+pub mod message_queue;
+pub mod metrics_aggregator;
+pub mod rate_limiter;
 
 // Re-exports
-pub use cache::CacheManagerPlugin;
-pub use rate_limiter::RateLimiterPlugin;
-pub use config_manager::ConfigManagerPlugin;
-pub use metrics_aggregator::MetricsAggregatorPlugin;
-pub use logger::LoggerPlugin;
 pub use auth_manager::AuthManagerPlugin;
-pub use database_pool::DatabasePoolPlugin;
-pub use message_queue::MessageQueuePlugin;
-pub use event_bus::EventBusPlugin;
+pub use cache::CacheManagerPlugin;
 pub use circuit_breaker::CircuitBreakerPlugin;
+pub use config_manager::ConfigManagerPlugin;
+pub use database_pool::DatabasePoolPlugin;
+pub use event_bus::EventBusPlugin;
+pub use logger::LoggerPlugin;
+pub use message_queue::MessageQueuePlugin;
+pub use metrics_aggregator::MetricsAggregatorPlugin;
+pub use rate_limiter::RateLimiterPlugin;
 
 /// Test utilities for Chicago-TDD style testing
 #[cfg(test)]
 pub mod test_utils {
     use crate::plugin::{Plugin, PluginRegistry};
-    use std::sync::Arc;
     use parking_lot::Mutex;
+    use std::sync::Arc;
 
     /// Test fixture for plugin integration testing
     pub struct PluginTestFixture {
@@ -62,16 +62,11 @@ pub mod test_utils {
     impl PluginTestFixture {
         /// Create a new test fixture
         pub fn new() -> Self {
-            Self {
-                registry: Arc::new(Mutex::new(PluginRegistry::new())),
-            }
+            Self { registry: Arc::new(Mutex::new(PluginRegistry::new())) }
         }
 
         /// Register a plugin
-        pub fn register_plugin(
-            &self,
-            plugin: Box<dyn Plugin>,
-        ) -> crate::Result<()> {
+        pub fn register_plugin(&self, plugin: Box<dyn Plugin>) -> crate::Result<()> {
             self.registry.lock().register(plugin)
         }
 
@@ -82,12 +77,7 @@ pub mod test_utils {
 
         /// Get plugin list
         pub fn plugin_list(&self) -> Vec<String> {
-            self.registry
-                .lock()
-                .list_all()
-                .iter()
-                .map(|s| s.to_string())
-                .collect()
+            self.registry.lock().list_all().iter().map(|s| s.to_string()).collect()
         }
     }
 

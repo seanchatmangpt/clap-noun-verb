@@ -8,8 +8,8 @@
 //! - Validation middleware
 //! - Transformation middleware
 
-use clap_noun_verb::middleware::{Middleware, MiddlewareChain, MiddlewareExecutor};
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
+use clap_noun_verb::middleware::{Middleware, MiddlewareChain, MiddlewareExecutor};
 use std::sync::{Arc, Mutex};
 
 /// Test middleware that logs execution
@@ -20,9 +20,7 @@ struct LoggingMiddleware {
 
 impl LoggingMiddleware {
     fn new() -> Self {
-        Self {
-            log: Arc::new(Mutex::new(Vec::new())),
-        }
+        Self { log: Arc::new(Mutex::new(Vec::new())) }
     }
 
     fn get_log(&self) -> Vec<String> {
@@ -49,9 +47,7 @@ struct ValidationMiddleware {
 
 impl ValidationMiddleware {
     fn new(fields: Vec<String>) -> Self {
-        Self {
-            required_fields: fields,
-        }
+        Self { required_fields: fields }
     }
 }
 
@@ -63,9 +59,10 @@ impl Middleware for ValidationMiddleware {
     fn execute(&self, input: &mut HandlerInput) -> clap_noun_verb::Result<()> {
         for field in &self.required_fields {
             if !input.has_arg(field) {
-                return Err(clap_noun_verb::error::NounVerbError::ValidationError(
-                    format!("Missing required field: {}", field)
-                ));
+                return Err(clap_noun_verb::error::NounVerbError::ValidationError(format!(
+                    "Missing required field: {}",
+                    field
+                )));
             }
         }
         Ok(())
@@ -354,9 +351,7 @@ struct CounterMiddleware {
 
 impl CounterMiddleware {
     fn new() -> Self {
-        Self {
-            count: Arc::new(Mutex::new(0)),
-        }
+        Self { count: Arc::new(Mutex::new(0)) }
     }
 
     fn get_count(&self) -> usize {
@@ -432,9 +427,7 @@ struct PermissionMiddleware {
 
 impl PermissionMiddleware {
     fn new(users: Vec<String>) -> Self {
-        Self {
-            allowed_users: users,
-        }
+        Self { allowed_users: users }
     }
 }
 

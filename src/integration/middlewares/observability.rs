@@ -21,11 +21,7 @@ pub struct ObservabilityMiddleware {
 impl ObservabilityMiddleware {
     /// Create a new observability middleware.
     pub fn new(metrics: Arc<MetricsCollector>, tracing: Arc<Mutex<TracingCollector>>) -> Self {
-        Self {
-            metrics,
-            tracing,
-            enabled: true,
-        }
+        Self { metrics, tracing, enabled: true }
     }
 
     /// Enable observability.
@@ -43,9 +39,7 @@ impl ObservabilityMiddleware {
 
 impl std::fmt::Debug for ObservabilityMiddleware {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ObservabilityMiddleware")
-            .field("enabled", &self.enabled)
-            .finish()
+        f.debug_struct("ObservabilityMiddleware").field("enabled", &self.enabled).finish()
     }
 }
 
@@ -84,15 +78,9 @@ impl Middleware for ObservabilityMiddleware {
         #[cfg(feature = "tracing")]
         {
             if response.is_success() {
-                tracing::info!(
-                    message = response.message(),
-                    "Command execution succeeded"
-                );
+                tracing::info!(message = response.message(), "Command execution succeeded");
             } else {
-                tracing::warn!(
-                    message = response.message(),
-                    "Command execution failed"
-                );
+                tracing::warn!(message = response.message(), "Command execution failed");
             }
         }
 

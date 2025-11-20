@@ -43,8 +43,14 @@ pub mod tenancy;
 pub mod verification;
 
 // Re-export key types
-pub use capability_id::{CapabilityChange, CapabilityChangelog, CapabilityId, CapabilityVersion, ChangeType, DeprecationInfo};
-pub use certificates::{Certificate, CertificateBuilder, CertificateError, CertificateId, CertifiedInvocation, PolicyTrace, SchemaHash};
+pub use capability_id::{
+    CapabilityChange, CapabilityChangelog, CapabilityId, CapabilityVersion, ChangeType,
+    DeprecationInfo,
+};
+pub use certificates::{
+    Certificate, CertificateBuilder, CertificateError, CertificateId, CertifiedInvocation,
+    PolicyTrace, SchemaHash,
+};
 pub use cli::{AutonomicCli, AutonomicNounCommand, AutonomicVerbCommand};
 pub use contracts::{
     ConcurrencyContract, ConcurrencyModel, DeadlineSpec, DurationClass, ExecutionContract,
@@ -54,34 +60,44 @@ pub use delegation::{
     CapabilityConstraint, DelegationChain, DelegationError, DelegationRegistry, DelegationToken,
     EffectLevel, Principal, PrincipalType, TemporalConstraint, TokenId,
 };
-pub use effects::{DataSensitivityTag, EffectMetadata, EffectType, IsolationRequirement, Sensitivity};
+pub use effects::{
+    DataSensitivityTag, EffectMetadata, EffectType, IsolationRequirement, Sensitivity,
+};
 pub use errors::{ErrorKind, ErrorResponse, StructuredError};
 pub use governance::{
     EventId, EventType, GovernanceEvent, GovernanceLedger, OperatingMode, PolicyChangeType,
     ReplayEngine, ReplayResult, ViolationSeverity,
 };
 pub use graph::{
-    CapabilityEdge, CapabilityGraph, CapabilityNode, EdgeId, EdgeType, GraphError, GraphStats, NodeId,
-    SchemaCompatibility,
+    CapabilityEdge, CapabilityGraph, CapabilityNode, EdgeId, EdgeType, GraphError, GraphStats,
+    NodeId, SchemaCompatibility,
 };
 pub use guards::{GuardConfig, GuardResult, GuardStatus};
 pub use hotpath::{
-    AgentHandle, ContextPool, EffectFlags, FlagSet, HotPathContext, HotPathInvocation, HotPathMetrics,
-    InvocationArena, InvocationQueue, TenantHandle, ZeroCopyParser,
+    AgentHandle, ContextPool, EffectFlags, FlagSet, HotPathContext, HotPathInvocation,
+    HotPathMetrics, InvocationArena, InvocationQueue, TenantHandle, ZeroCopyParser,
 };
 pub use introspection::{
-    AppMetadata, ArgumentMetadata, CommandCapabilities, CommandGraph, CommandMetadata,
-    GraphEdge, GraphNode, IntrospectionResponse, NounMetadata, VerbMetadata,
+    AppMetadata, ArgumentMetadata, CommandCapabilities, CommandGraph, CommandMetadata, GraphEdge,
+    GraphNode, IntrospectionResponse, NounMetadata, VerbMetadata,
 };
 pub use planes::{InteractionType, Plane, PlaneInteraction};
-pub use policy::{PolicyDecision, PolicyEngine, PolicyRequest, PolicyResult, RuleBasedPolicyEngine};
+pub use policy::{
+    PolicyDecision, PolicyEngine, PolicyRequest, PolicyResult, RuleBasedPolicyEngine,
+};
 pub use receipts::{ExecutionReceipt, ReceiptConfig, ReceiptWithOutput};
 pub use schema::{
-    CommandReference, CompositionMetadata, EquivalenceClass, EquivalenceRelationship,
-    InputSchema, OutputSchema, PrimitiveType, Resource, TypeSchema,
+    CommandReference, CompositionMetadata, EquivalenceClass, EquivalenceRelationship, InputSchema,
+    OutputSchema, PrimitiveType, Resource, TypeSchema,
 };
-pub use streaming::{IncrementalReceipt, SessionContext, SessionId, SessionManager, SessionState, StreamEvent, StreamEventType};
-pub use tenancy::{AgentIdentity, EnforcementMode, InvocationContext, PolicyContext as TenantPolicyContext, PriorityClass, QoSHints, TenantIdentity};
+pub use streaming::{
+    IncrementalReceipt, SessionContext, SessionId, SessionManager, SessionState, StreamEvent,
+    StreamEventType,
+};
+pub use tenancy::{
+    AgentIdentity, EnforcementMode, InvocationContext, PolicyContext as TenantPolicyContext,
+    PriorityClass, QoSHints, TenantIdentity,
+};
 
 /// Version of the autonomic CLI schema
 pub const SCHEMA_VERSION: &str = "2.0.0";

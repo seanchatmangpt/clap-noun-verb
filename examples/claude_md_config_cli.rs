@@ -4,8 +4,8 @@
 //! innovation selection and consensus-driven command routing.
 
 use clap_noun_verb::rdf::{OntologyBuilder, RdfMcpHandler};
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 // ============================================================================
 // CONFIGURATION TYPES
@@ -128,13 +128,15 @@ impl ConfigLoader {
                 name: "AlwaysCargoMake".to_string(),
                 category: "Build".to_string(),
                 mandatory: true,
-                description: "NEVER USE DIRECT CARGO COMMANDS - ALWAYS USE `cargo make`".to_string(),
+                description: "NEVER USE DIRECT CARGO COMMANDS - ALWAYS USE `cargo make`"
+                    .to_string(),
             },
             Rule {
                 name: "ConcurrentExecution".to_string(),
                 category: "Execution".to_string(),
                 mandatory: true,
-                description: "ALL operations MUST be concurrent/parallel in a single message".to_string(),
+                description: "ALL operations MUST be concurrent/parallel in a single message"
+                    .to_string(),
             },
             Rule {
                 name: "NoRootFiles".to_string(),
@@ -250,10 +252,8 @@ impl InnovationScorer {
         score += tier_score * self.weights.get("tier").unwrap_or(&0.4);
 
         // Capability score (more capabilities = higher score, max 3 for perfect)
-        let capability_score =
-            ((agent.capabilities.len() as f64) / 3.0).min(1.0);
-        score +=
-            capability_score * self.weights.get("capabilities").unwrap_or(&0.35);
+        let capability_score = ((agent.capabilities.len() as f64) / 3.0).min(1.0);
+        score += capability_score * self.weights.get("capabilities").unwrap_or(&0.35);
 
         // Use case score (more use cases = higher score, max 3 for perfect)
         let use_case_score = ((agent.use_cases.len() as f64) / 3.0).min(1.0);
@@ -264,11 +264,8 @@ impl InnovationScorer {
     }
 
     fn rank_agents(&self) -> Vec<(Agent, f64)> {
-        let mut ranked: Vec<_> = self
-            .agents
-            .iter()
-            .map(|a| (a.clone(), self.score_agent(a)))
-            .collect();
+        let mut ranked: Vec<_> =
+            self.agents.iter().map(|a| (a.clone(), self.score_agent(a))).collect();
 
         ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         ranked
@@ -301,30 +298,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = OntologyBuilder::new();
 
     // Add agents as commands
-    builder
-        .add_command("agent-list", "agent", "list", "List all agents")
-        .ok();
-    builder
-        .add_command("agent-describe", "agent", "describe", "Describe agent")
-        .ok();
-    builder
-        .add_command("rule-list", "rule", "list", "List all rules")
-        .ok();
-    builder
-        .add_command("command-list", "command", "list", "List all commands")
-        .ok();
-    builder
-        .add_command("slo-list", "slo", "list", "List all SLOs")
-        .ok();
-    builder
-        .add_command("innovation-select", "innovation", "select", "Select top innovations")
-        .ok();
+    builder.add_command("agent-list", "agent", "list", "List all agents").ok();
+    builder.add_command("agent-describe", "agent", "describe", "Describe agent").ok();
+    builder.add_command("rule-list", "rule", "list", "List all rules").ok();
+    builder.add_command("command-list", "command", "list", "List all commands").ok();
+    builder.add_command("slo-list", "slo", "list", "List all SLOs").ok();
+    builder.add_command("innovation-select", "innovation", "select", "Select top innovations").ok();
 
     let ontology = Arc::new(builder.build()?);
     let handler = RdfMcpHandler::new(ontology);
 
     println!("✅ RDF Ontology built with 6 command categories");
-    println!("✅ Server Info: {} v{}", handler.get_server_info().server_info.name, handler.get_server_info().server_info.version);
+    println!(
+        "✅ Server Info: {} v{}",
+        handler.get_server_info().server_info.name,
+        handler.get_server_info().server_info.version
+    );
     println!();
 
     // ========================================================================
@@ -382,20 +371,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("─────────────────────────────────────────────────────────────");
     for cmd in &commands {
         let andon = if cmd.triggers_andon { "⚠️" } else { "✅" };
-        println!(
-            "\n  {} {} ({}ms timeout)",
-            andon, cmd.name, cmd.timeout_ms
-        );
+        println!("\n  {} {} ({}ms timeout)", andon, cmd.name, cmd.timeout_ms);
         println!("     $ {}", cmd.command);
     }
 
     println!("\n\n📊 PERFORMANCE SLOs");
     println!("─────────────────────────────────────────────────────────────");
     for slo in &slos {
-        println!(
-            "\n  • {}: {} {}",
-            slo.metric, slo.target_value, slo.unit
-        );
+        println!("\n  • {}: {} {}", slo.metric, slo.target_value, slo.unit);
     }
 
     println!("\n");
@@ -504,7 +487,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  • SLOs: {} (performance targets)", slos.len());
     println!();
 
-    println!("🚀 Top Innovation: {}", innovations.first().map(|a| &a.name).unwrap_or(&"N/A".to_string()));
+    println!(
+        "🚀 Top Innovation: {}",
+        innovations.first().map(|a| &a.name).unwrap_or(&"N/A".to_string())
+    );
     println!("✅ Status: OPERATIONAL - Ready for command execution\n");
 
     println!("Next Steps:");

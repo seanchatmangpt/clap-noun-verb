@@ -83,10 +83,7 @@ pub struct PluginLoader {
 impl PluginLoader {
     /// Create a new plugin loader.
     pub fn new(manifest_dir: impl AsRef<Path>) -> Self {
-        Self {
-            manifest_dir: manifest_dir.as_ref().to_path_buf(),
-            manifests: Vec::new(),
-        }
+        Self { manifest_dir: manifest_dir.as_ref().to_path_buf(), manifests: Vec::new() }
     }
 
     /// Discover plugins in the manifest directory.
@@ -104,10 +101,7 @@ impl PluginLoader {
 
         // Try to read directory
         let entries = std::fs::read_dir(&self.manifest_dir).map_err(|e| {
-            crate::NounVerbError::PluginError(format!(
-                "Failed to scan plugin directory: {}",
-                e
-            ))
+            crate::NounVerbError::PluginError(format!("Failed to scan plugin directory: {}", e))
         })?;
 
         for entry in entries {
@@ -156,9 +150,7 @@ impl PluginLoader {
         }
 
         if name.is_empty() || version.is_empty() || entry_point.is_empty() {
-            return Err(crate::NounVerbError::PluginError(
-                "Invalid manifest format".to_string(),
-            ));
+            return Err(crate::NounVerbError::PluginError("Invalid manifest format".to_string()));
         }
 
         let manifest = PluginManifest::new(&name, &version, &entry_point);
@@ -260,8 +252,7 @@ mod tests {
 
     #[test]
     fn test_plugin_manifest_with_description() {
-        let manifest = PluginManifest::new("test", "1.0.0", "lib")
-            .with_description("Test plugin");
+        let manifest = PluginManifest::new("test", "1.0.0", "lib").with_description("Test plugin");
         assert_eq!(manifest.description(), "Test plugin");
     }
 

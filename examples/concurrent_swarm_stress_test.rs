@@ -4,8 +4,8 @@
 //! and concurrent validation/execution with lockchain proof-of-execution.
 
 use clap_noun_verb::rdf::{OntologyBuilder, RdfMcpHandler};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 use tokio::task::JoinSet;
 use uuid::Uuid;
@@ -39,13 +39,7 @@ impl MetricsCollector {
         }
     }
 
-    fn record(
-        &self,
-        operation_type: &str,
-        agent_name: &str,
-        success: bool,
-        duration_ms: u128,
-    ) {
+    fn record(&self, operation_type: &str, agent_name: &str, success: bool, duration_ms: u128) {
         let metric = OperationMetrics {
             operation_id: Uuid::new_v4().to_string()[..8].to_uppercase().to_string(),
             operation_type: operation_type.to_string(),
@@ -183,9 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (cmd_name, noun, verb) in &commands {
-        builder
-            .add_command(cmd_name, noun, verb, &format!("Execute {} {}", noun, verb))
-            .ok();
+        builder.add_command(cmd_name, noun, verb, &format!("Execute {} {}", noun, verb)).ok();
     }
 
     let ontology = Arc::new(builder.build()?);
@@ -211,13 +203,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  ├─ 5 Workers (concurrent command execution)");
     println!("  └─ 3 Query Operations (SPARQL + server info)\n");
 
-    let test_commands = vec![
-        "services-status",
-        "services-restart",
-        "config-show",
-        "config-edit",
-        "logs-tail",
-    ];
+    let test_commands =
+        vec!["services-status", "services-restart", "config-show", "config-edit", "logs-tail"];
 
     let mut join_set = JoinSet::new();
 
@@ -287,11 +274,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (success, failed, avg_duration) = metrics.get_report();
     let total_ops = success + failed;
-    let success_rate = if total_ops > 0 {
-        (success as f64 / total_ops as f64) * 100.0
-    } else {
-        0.0
-    };
+    let success_rate =
+        if total_ops > 0 { (success as f64 / total_ops as f64) * 100.0 } else { 0.0 };
 
     println!("📊 OPERATION STATISTICS");
     println!("─────────────────────────");

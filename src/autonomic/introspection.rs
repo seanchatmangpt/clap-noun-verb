@@ -187,7 +187,11 @@ impl VerbMetadata {
     }
 
     /// Create with noun context for full path-based ID
-    pub fn with_noun_context(name: impl Into<String>, noun: impl AsRef<str>, about: impl Into<String>) -> Self {
+    pub fn with_noun_context(
+        name: impl Into<String>,
+        noun: impl AsRef<str>,
+        about: impl Into<String>,
+    ) -> Self {
         let name_str = name.into();
         let path = format!("{}.{}", noun.as_ref(), &name_str);
         let capability_id = Some(CapabilityId::from_path(&path));
@@ -488,7 +492,11 @@ pub struct GraphEdge {
 
 impl GraphEdge {
     /// Create a new graph edge
-    pub fn new(from: impl Into<String>, to: impl Into<String>, relation: impl Into<String>) -> Self {
+    pub fn new(
+        from: impl Into<String>,
+        to: impl Into<String>,
+        relation: impl Into<String>,
+    ) -> Self {
         Self { from: from.into(), to: to.into(), relation: relation.into() }
     }
 }

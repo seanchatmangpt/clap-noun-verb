@@ -41,10 +41,7 @@ fn property_certificate_state_transitions_are_monotonic() {
             decision: if seed % 3 == 0 {
                 PolicyDecision::Allow
             } else {
-                PolicyDecision::Deny {
-                    reason: "Random denial".to_string(),
-                    suggestion: None,
-                }
+                PolicyDecision::Deny { reason: "Random denial".to_string(), suggestion: None }
             },
             evaluated_rules: vec![],
             metadata: std::collections::HashMap::new(),
@@ -141,14 +138,12 @@ fn property_constraint_intersection_commutative() {
 
         // Property: Intersection is commutative
         assert_eq!(
-            a_intersect_b.allowed_capabilities,
-            b_intersect_a.allowed_capabilities,
+            a_intersect_b.allowed_capabilities, b_intersect_a.allowed_capabilities,
             "Constraint intersection must be commutative"
         );
 
         assert_eq!(
-            a_intersect_b.max_effect_level,
-            b_intersect_a.max_effect_level,
+            a_intersect_b.max_effect_level, b_intersect_a.max_effect_level,
             "Effect level intersection must be commutative"
         );
     }
@@ -215,10 +210,7 @@ fn property_graph_reachability_transitive() {
         for j in i..5 {
             if i == j {
                 // Reflexive: node reachable from itself
-                assert!(
-                    graph.is_reachable(nodes[i], nodes[j]),
-                    "Reachability must be reflexive"
-                );
+                assert!(graph.is_reachable(nodes[i], nodes[j]), "Reachability must be reflexive");
             } else {
                 // Transitive: if path exists, reachable
                 assert!(
@@ -253,10 +245,7 @@ fn property_replay_is_deterministic() {
             if i % 2 == 0 {
                 PolicyDecision::Allow
             } else {
-                PolicyDecision::Deny {
-                    reason: format!("Denied {}", i),
-                    suggestion: None,
-                }
+                PolicyDecision::Deny { reason: format!("Denied {}", i), suggestion: None }
             },
             CapabilityId::from_path(&format!("cmd{}", i)),
             &format!("command {}", i),
@@ -276,10 +265,7 @@ fn property_replay_is_deterministic() {
     let result3 = engine.replay_timeslice(start, end);
 
     // Property: All replays produce identical results
-    assert_eq!(
-        result1.total_events, result2.total_events,
-        "Replay must be deterministic"
-    );
+    assert_eq!(result1.total_events, result2.total_events, "Replay must be deterministic");
     assert_eq!(result1.total_events, result3.total_events);
     assert_eq!(result1.policy_decisions, result2.policy_decisions);
     assert_eq!(result1.policy_decisions, result3.policy_decisions);
@@ -379,10 +365,7 @@ fn property_effect_flags_semi_lattice() {
 #[test]
 fn property_delegation_chain_depth() {
     // Property: Chain depth = number of delegation tokens
-    let origin = Principal::new(
-        AgentIdentity::human("alice"),
-        TenantIdentity::default_tenant(),
-    );
+    let origin = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
 
     // Create chain with varying depths
     for depth in 0..5 {
@@ -415,11 +398,7 @@ fn property_delegation_chain_depth() {
         }
 
         // Property: Depth equals token count
-        assert_eq!(
-            chain.depth(),
-            depth,
-            "Chain depth must equal number of delegation tokens"
-        );
+        assert_eq!(chain.depth(), depth, "Chain depth must equal number of delegation tokens");
 
         // Property: Direct execution has depth 0
         if depth == 0 {
@@ -503,11 +482,7 @@ fn property_zero_copy_parser_borrows_from_input() {
         // Property: All positional args are substrings of input
         for arg in parsed.positional {
             if !arg.is_empty() {
-                assert!(
-                    input.contains(arg),
-                    "Positional arg '{}' must be substring of input",
-                    arg
-                );
+                assert!(input.contains(arg), "Positional arg '{}' must be substring of input", arg);
             }
         }
     }

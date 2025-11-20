@@ -7,7 +7,7 @@ use clap_noun_verb::Result as CnvResult;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
-use super::errors::{UserError, ErrorCategory};
+use super::errors::{ErrorCategory, UserError};
 use super::validators::validate_package_id;
 
 // ============================================================================
@@ -178,14 +178,14 @@ fn install_package(
                     ggen marketplace install {} --version {}",
                     package.version, package_id, package_id, package.version
                 ),
-            ).with_docs("https://marketplace.ggen.io"));
+            )
+            .with_docs("https://marketplace.ggen.io"));
         }
     }
 
     // Determine install path
-    let install_path = path
-        .map(String::from)
-        .unwrap_or_else(|| format!(".ggen/packages/{}", package.name));
+    let install_path =
+        path.map(String::from).unwrap_or_else(|| format!(".ggen/packages/{}", package.name));
 
     // Check if already installed
     if std::path::Path::new(&install_path).exists() {
@@ -211,10 +211,7 @@ fn install_package(
 }
 
 /// List installed or available packages
-fn list_packages(
-    source: &str,
-    installed_only: bool,
-) -> Result<ListOutput, UserError> {
+fn list_packages(source: &str, installed_only: bool) -> Result<ListOutput, UserError> {
     if installed_only {
         // In production, would read from .ggen/packages
         let packages = vec![];
@@ -229,25 +226,19 @@ fn list_packages(
                 Popular packages:\n  \
                 - io.ggen.rust.axum (Web framework)\n  \
                 - io.ggen.rust.cli (CLI template)\n  \
-                - io.ggen.python.fastapi (Python API)".to_string(),
-            ).with_docs("https://marketplace.ggen.io"));
+                - io.ggen.python.fastapi (Python API)"
+                    .to_string(),
+            )
+            .with_docs("https://marketplace.ggen.io"));
         }
 
-        Ok(ListOutput {
-            packages,
-            total_count: 0,
-            source: "local".to_string(),
-        })
+        Ok(ListOutput { packages, total_count: 0, source: "local".to_string() })
     } else {
         // List all available packages
         let packages = get_mock_packages();
         let count = packages.len();
 
-        Ok(ListOutput {
-            packages,
-            total_count: count,
-            source: source.to_string(),
-        })
+        Ok(ListOutput { packages, total_count: count, source: source.to_string() })
     }
 }
 
@@ -276,7 +267,8 @@ fn publish_package(
                 - author",
                 package_path, package_path
             ),
-        ).with_docs("https://docs.ggen.io/publishing"));
+        )
+        .with_docs("https://docs.ggen.io/publishing"));
     }
 
     // Validate package ID from manifest
@@ -284,16 +276,16 @@ fn publish_package(
     let package_id = "io.ggen.rust.example";
     validate_package_id(package_id)
         .map_err(|e| clap_noun_verb::NounVerbError::ValidationFailed(e.to_string()))
-        .map_err(|e| UserError::new(
-            ErrorCategory::Validation,
-            "Invalid package ID in pack.toml",
-            e.to_string(),
-        ))?;
+        .map_err(|e| {
+            UserError::new(
+                ErrorCategory::Validation,
+                "Invalid package ID in pack.toml",
+                e.to_string(),
+            )
+        })?;
 
     // Check if package already exists
-    let existing = get_mock_packages()
-        .iter()
-        .any(|p| p.id == package_id);
+    let existing = get_mock_packages().iter().any(|p| p.id == package_id);
 
     if existing && !force {
         return Err(UserError::new(
@@ -306,7 +298,8 @@ fn publish_package(
                 3. Use different package ID in pack.toml",
                 package_path, package_path
             ),
-        ).with_docs("https://docs.ggen.io/publishing"));
+        )
+        .with_docs("https://docs.ggen.io/publishing"));
     }
 
     let publish_version = version.unwrap_or("1.0.0");
@@ -351,13 +344,13 @@ pub fn marketplace_search(
     // Validate query
     if query.trim().is_empty() {
         return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            "Search query cannot be empty. Try: ggen marketplace search rust".to_string()
+            "Search query cannot be empty. Try: ggen marketplace search rust".to_string(),
         ));
     }
 
     if limit == 0 || limit > 100 {
         return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            "Limit must be between 1 and 100".to_string()
+            "Limit must be between 1 and 100".to_string(),
         ));
     }
 
@@ -449,9 +442,10 @@ pub fn marketplace_publish(
 ) -> CnvResult<PublishOutput> {
     // Validate path exists
     if !std::path::Path::new(&path).exists() {
-        return Err(clap_noun_verb::NounVerbError::ValidationFailed(
-            format!("Path '{}' does not exist", path)
-        ));
+        return Err(clap_noun_verb::NounVerbError::ValidationFailed(format!(
+            "Path '{}' does not exist",
+            path
+        )));
     }
 
     // Delegate to business logic

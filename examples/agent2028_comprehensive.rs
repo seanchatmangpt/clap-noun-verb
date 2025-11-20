@@ -1,3 +1,4 @@
+use chrono::Utc;
 /// Comprehensive example demonstrating all 2028 features & innovations
 ///
 /// This example showcases:
@@ -9,14 +10,12 @@
 /// 6. Self-Healing Autonomic Systems
 /// 7. Distributed Audit Ledger
 /// 8. Predictive Capability Planning
-
 use clap_noun_verb::agent2028::{
-    coordination::*, learning::*, quantum_crypto::*, trust_network::*,
-    marketplace::*, self_healing::*, audit_ledger::*, prediction::*,
+    audit_ledger::*, coordination::*, learning::*, marketplace::*, prediction::*,
+    quantum_crypto::*, self_healing::*, trust_network::*,
 };
-use tokio;
-use chrono::Utc;
 use std::sync::Arc;
+use tokio;
 
 #[tokio::main]
 async fn main() {
@@ -76,8 +75,10 @@ async fn demo_distributed_coordination() {
 
     // Route commands
     if let Some(selected_agent) = broker.route("database.query").await {
-        println!("  ✓ Routed 'database.query' to: {} (latency: {}ms)",
-                 selected_agent.id, selected_agent.latency_ms);
+        println!(
+            "  ✓ Routed 'database.query' to: {} (latency: {}ms)",
+            selected_agent.id, selected_agent.latency_ms
+        );
     }
 
     // Consensus for critical operations
@@ -114,8 +115,10 @@ async fn demo_learning_adaptation() {
 
     let profile = profiler.profile("database.query").await;
     if let Some(p) = profile {
-        println!("  ✓ Command profile: {} executions, avg time: {:.1}ms",
-                 p.total_executions, p.avg_execution_time_ms);
+        println!(
+            "  ✓ Command profile: {} executions, avg time: {:.1}ms",
+            p.total_executions, p.avg_execution_time_ms
+        );
     }
 
     // ML model for predictions
@@ -138,8 +141,7 @@ async fn demo_learning_adaptation() {
     // Adaptation engine
     let adaptation = AdaptationEngine::new(profiler, inference);
     let (retries, base_delay) = adaptation.recommend_retry("database.query").await;
-    println!("  ✓ Adaptive retry strategy: {} max retries, {} ms base delay",
-             retries, base_delay);
+    println!("  ✓ Adaptive retry strategy: {} max retries, {} ms base delay", retries, base_delay);
 }
 
 async fn demo_quantum_crypto() {
@@ -192,16 +194,14 @@ async fn demo_trust_networks() {
         .await;
 
     let score = calculator.score("agent-trusted").await;
-    println!("  ✓ Trust score calculated: {:.3} (confidence: {:.2})",
-             score.score, score.confidence);
+    println!(
+        "  ✓ Trust score calculated: {:.3} (confidence: {:.2})",
+        score.score, score.confidence
+    );
 
     // Build transitive trust
-    chain
-        .add_link("agent-a".to_string(), "agent-b".to_string(), 0.95)
-        .await;
-    chain
-        .add_link("agent-b".to_string(), "agent-c".to_string(), 0.90)
-        .await;
+    chain.add_link("agent-a".to_string(), "agent-b".to_string(), 0.95).await;
+    chain.add_link("agent-b".to_string(), "agent-c".to_string(), 0.90).await;
 
     let transitive = chain.transitive_trust("agent-a", "agent-c").await;
     println!("  ✓ Transitive trust: A→B→C = {:.3}", transitive);
@@ -240,27 +240,21 @@ async fn demo_marketplace() {
     );
 
     market.list_capability(listing.clone()).await;
-    println!("  ✓ Listed capability: {} @ ${:.3}/unit",
-             listing.capability_name, 0.05);
+    println!("  ✓ Listed capability: {} @ ${:.3}/unit", listing.capability_name, 0.05);
 
     // Find best value capability
     if let Some(best) = market.find_best_value("database.query").await {
-        println!("  ✓ Found best-value provider: {} (rating: {:.1}★)",
-                 best.provider_id, best.rating);
+        println!(
+            "  ✓ Found best-value provider: {} (rating: {:.1}★)",
+            best.provider_id, best.rating
+        );
     }
 
     // Create trading contract
-    if let Some(contract) = market
-        .create_contract(
-            "buyer-agent-1".to_string(),
-            &listing.listing_id,
-            10000,
-            30,
-        )
-        .await
+    if let Some(contract) =
+        market.create_contract("buyer-agent-1".to_string(), &listing.listing_id, 10000, 30).await
     {
-        println!("  ✓ Contract created: ${:.2} for 10,000 units over 30 days",
-                 contract.total_cost);
+        println!("  ✓ Contract created: ${:.2} for 10,000 units over 30 days", contract.total_cost);
 
         let volume = market.total_volume().await;
         println!("  ✓ Marketplace volume: ${:.2}", volume);
@@ -280,25 +274,32 @@ async fn demo_self_healing() {
     let metric = SystemMetric::new("connections".to_string(), 75.0);
     autonomic.monitor.update_metric("database-pool", metric).await;
 
-    println!("  ✓ Health monitor: database-pool = {}",
-             match autonomic.monitor.status("database-pool").await {
-                 Some(HealthStatus::Degraded) => "DEGRADED",
-                 Some(HealthStatus::Healthy) => "HEALTHY",
-                 _ => "UNKNOWN",
-             });
+    println!(
+        "  ✓ Health monitor: database-pool = {}",
+        match autonomic.monitor.status("database-pool").await {
+            Some(HealthStatus::Degraded) => "DEGRADED",
+            Some(HealthStatus::Healthy) => "HEALTHY",
+            _ => "UNKNOWN",
+        }
+    );
 
     // Detect anomalies
     if let Some(anomaly) = autonomic.anomaly_detector.detect("database-pool", 150.0).await {
-        println!("  ✓ Anomaly detected: {} (severity: {:.2})",
-                 anomaly.anomaly_type, anomaly.severity);
+        println!(
+            "  ✓ Anomaly detected: {} (severity: {:.2})",
+            anomaly.anomaly_type, anomaly.severity
+        );
 
         let analysis = autonomic.root_cause_analyzer.analyze(&anomaly).await;
-        println!("  ✓ Root cause: {} (confidence: {:.2})",
-                 analysis.primary_cause, analysis.confidence);
+        println!(
+            "  ✓ Root cause: {} (confidence: {:.2})",
+            analysis.primary_cause, analysis.confidence
+        );
     }
 
     // Auto-recovery
-    let action = autonomic.auto_recovery.plan_recovery("database-pool", "resource contention").await;
+    let action =
+        autonomic.auto_recovery.plan_recovery("database-pool", "resource contention").await;
     autonomic.auto_recovery.execute(&action.action_id).await;
     println!("  ✓ Self-healing action executed: {}", action.action_type);
 }
@@ -313,11 +314,7 @@ async fn demo_audit_ledger() {
         let event = AuditEvent::new(
             "agent-1".to_string(),
             format!("command.{}", i),
-            ExecutionResult {
-                success: i % 2 == 0,
-                duration_ms: 100 + i as u64 * 10,
-                error: None,
-            },
+            ExecutionResult { success: i % 2 == 0, duration_ms: 100 + i as u64 * 10, error: None },
         );
 
         ledger.append(event).await;
@@ -331,8 +328,10 @@ async fn demo_audit_ledger() {
     }
 
     let summary = ledger.summary().await;
-    println!("  ✓ Ledger summary: {} total events, {} successful",
-             summary.total_events, summary.successful_events);
+    println!(
+        "  ✓ Ledger summary: {} total events, {} successful",
+        summary.total_events, summary.successful_events
+    );
 }
 
 async fn demo_predictive_planning() {
@@ -354,28 +353,33 @@ async fn demo_predictive_planning() {
 
     // Plan future capacity
     if let Some(recommendation) = planner.plan_capacity("compute.intensive", 24).await {
-        println!("  ✓ Capacity recommendation: {} → {} units (scale: {:.1}x)",
-                 recommendation.current_capacity,
-                 recommendation.recommended_capacity,
-                 recommendation.scale_factor());
-        println!("    Confidence: {:.1}%, Est. Cost: ${:.2}",
-                 recommendation.confidence * 100.0,
-                 recommendation.estimated_cost);
+        println!(
+            "  ✓ Capacity recommendation: {} → {} units (scale: {:.1}x)",
+            recommendation.current_capacity,
+            recommendation.recommended_capacity,
+            recommendation.scale_factor()
+        );
+        println!(
+            "    Confidence: {:.1}%, Est. Cost: ${:.2}",
+            recommendation.confidence * 100.0,
+            recommendation.estimated_cost
+        );
     }
 
     // Cost optimization
     let optimizations = planner.optimize_costs().await;
     if !optimizations.is_empty() {
         for opt in optimizations {
-            println!("  ✓ Cost optimization: {} – save ${:.2}/month",
-                     opt.capability, opt.estimated_savings);
+            println!(
+                "  ✓ Cost optimization: {} – save ${:.2}/month",
+                opt.capability, opt.estimated_savings
+            );
         }
     }
 
     // Get forecast
     let forecast = forecaster.forecast("compute.intensive", 24).await;
-    println!("  ✓ Generated 24-hour forecast (accuracy: {:.1}%)",
-             forecast.model_accuracy * 100.0);
+    println!("  ✓ Generated 24-hour forecast (accuracy: {:.1}%)", forecast.model_accuracy * 100.0);
     if let Some(peak) = forecast.peak_load() {
         println!("    Predicted peak load: {:.1} units", peak);
     }

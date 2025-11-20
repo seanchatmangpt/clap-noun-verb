@@ -39,11 +39,7 @@ declare_span!(TEST_SPAN_INNER, "test.span.inner");
 
 #[test]
 fn test_nested_spans() {
-    let result = span!(TEST_SPAN_OUTER, {
-        span!(TEST_SPAN_INNER, {
-            100
-        })
-    });
+    let result = span!(TEST_SPAN_OUTER, { span!(TEST_SPAN_INNER, { 100 }) });
 
     assert_eq!(result, 100);
 }
@@ -67,9 +63,7 @@ declare_span!(TEST_SPAN_RESULT, "test.span.result");
 
 #[test]
 fn test_span_with_result() -> Result<(), Box<dyn std::error::Error>> {
-    let result = span!(TEST_SPAN_RESULT, {
-        Ok(42)
-    });
+    let result = span!(TEST_SPAN_RESULT, { Ok(42) });
 
     assert_eq!(result?, 42);
     Ok(())
@@ -141,7 +135,8 @@ async fn test_span_with_async() {
         async {
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
             42
-        }.await
+        }
+        .await
     });
 
     assert_eq!(result, 42);

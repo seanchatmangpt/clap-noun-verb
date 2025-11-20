@@ -8,9 +8,9 @@
 
 mod common;
 
-use common::command_assertions::*;
 use clap_noun_verb::cli::registry::CommandRegistry;
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
+use common::command_assertions::*;
 
 #[test]
 fn test_build_command_includes_version() {

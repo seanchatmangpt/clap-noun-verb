@@ -74,10 +74,7 @@ pub struct EnumDispatcher {
 impl EnumDispatcher {
     /// Create a new enum dispatcher with a name.
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            description: String::new(),
-        }
+        Self { name: name.into(), description: String::new() }
     }
 
     /// Set the description for this dispatcher.
@@ -125,11 +122,7 @@ pub struct FlattenConfig {
 impl FlattenConfig {
     /// Create a new flatten configuration.
     pub fn new() -> Self {
-        Self {
-            flatten: false,
-            prefix: None,
-            max_depth: 3,
-        }
+        Self { flatten: false, prefix: None, max_depth: 3 }
     }
 
     /// Enable flattening.
@@ -282,9 +275,7 @@ mod tests {
 
     #[test]
     fn test_flatten_config_with_prefix() {
-        let config = FlattenConfig::new()
-            .enable_flatten()
-            .with_prefix("cmd_");
+        let config = FlattenConfig::new().enable_flatten().with_prefix("cmd_");
         assert!(config.is_flatten_enabled());
         assert_eq!(config.prefix(), Some("cmd_"));
     }
@@ -299,9 +290,7 @@ mod tests {
 
     #[test]
     fn test_command_context_with_args() {
-        let ctx = CommandContext::new("test")
-            .with_arg("arg1")
-            .with_arg("arg2");
+        let ctx = CommandContext::new("test").with_arg("arg1").with_arg("arg2");
         assert_eq!(ctx.args().len(), 2);
     }
 

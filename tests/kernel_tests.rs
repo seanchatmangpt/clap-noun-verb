@@ -33,34 +33,19 @@ mod telemetry_tests {
     #[test]
     fn test_verbosity_from_counts() {
         // Normal (no flags)
-        assert_eq!(
-            VerbosityLevel::from_counts(0, false),
-            VerbosityLevel::Normal
-        );
+        assert_eq!(VerbosityLevel::from_counts(0, false), VerbosityLevel::Normal);
 
         // Verbose (-v)
-        assert_eq!(
-            VerbosityLevel::from_counts(1, false),
-            VerbosityLevel::Verbose
-        );
+        assert_eq!(VerbosityLevel::from_counts(1, false), VerbosityLevel::Verbose);
 
         // Debug (-vv)
-        assert_eq!(
-            VerbosityLevel::from_counts(2, false),
-            VerbosityLevel::Debug
-        );
+        assert_eq!(VerbosityLevel::from_counts(2, false), VerbosityLevel::Debug);
 
         // Trace (-vvv)
-        assert_eq!(
-            VerbosityLevel::from_counts(3, false),
-            VerbosityLevel::Trace
-        );
+        assert_eq!(VerbosityLevel::from_counts(3, false), VerbosityLevel::Trace);
 
         // Quiet wins over verbose
-        assert_eq!(
-            VerbosityLevel::from_counts(5, true),
-            VerbosityLevel::Silent
-        );
+        assert_eq!(VerbosityLevel::from_counts(5, true), VerbosityLevel::Silent);
     }
 
     #[test]
@@ -88,18 +73,9 @@ mod telemetry_tests {
     #[test]
     fn test_color_policy() {
         // Parse from string
-        assert_eq!(
-            "auto".parse::<ColorPolicy>().ok(),
-            Some(ColorPolicy::Auto)
-        );
-        assert_eq!(
-            "always".parse::<ColorPolicy>().ok(),
-            Some(ColorPolicy::Always)
-        );
-        assert_eq!(
-            "never".parse::<ColorPolicy>().ok(),
-            Some(ColorPolicy::Never)
-        );
+        assert_eq!("auto".parse::<ColorPolicy>().ok(), Some(ColorPolicy::Auto));
+        assert_eq!("always".parse::<ColorPolicy>().ok(), Some(ColorPolicy::Always));
+        assert_eq!("never".parse::<ColorPolicy>().ok(), Some(ColorPolicy::Never));
 
         // Invalid parse
         assert!("invalid".parse::<ColorPolicy>().is_err());
@@ -120,12 +96,8 @@ mod telemetry_tests {
 
     #[test]
     fn test_telemetry_profile_from_args() {
-        let profile = TelemetryProfile::from_args(
-            2,
-            false,
-            ColorPolicy::Always,
-            OutputFormat::Yaml,
-        );
+        let profile =
+            TelemetryProfile::from_args(2, false, ColorPolicy::Always, OutputFormat::Yaml);
 
         assert_eq!(profile.verbosity(), VerbosityLevel::Debug);
         assert!(profile.is_debug());
@@ -158,10 +130,7 @@ mod telemetry_tests {
     #[test]
     fn test_format_output() {
         let profile = TelemetryProfile::default();
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
 
         let output = profile.format_output(&data);
         assert!(output.is_ok());
@@ -198,10 +167,7 @@ mod output_pipeline_tests {
 
     #[test]
     fn test_output_envelope_success() {
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
         let envelope = OutputEnvelope::success(data.clone());
 
         assert!(envelope.is_success());
@@ -233,10 +199,7 @@ mod output_pipeline_tests {
 
     #[test]
     fn test_output_envelope_from_result() {
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
 
         // Success case
         let result: StructuredResult<TestData> = Ok(data.clone());
@@ -251,10 +214,7 @@ mod output_pipeline_tests {
 
     #[test]
     fn test_output_envelope_with_metadata() {
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
         let envelope = OutputEnvelope::success(data)
             .with_metadata("execution_time_ms", 100)
             .with_metadata("version", "1.0.0");
@@ -271,10 +231,7 @@ mod output_pipeline_tests {
 
     #[test]
     fn test_output_pipeline_format() {
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
 
         // Format success
         let result: StructuredResult<TestData> = Ok(data.clone());
@@ -291,10 +248,7 @@ mod output_pipeline_tests {
 
     #[test]
     fn test_output_pipeline_format_with_envelope() {
-        let data = TestData {
-            value: 42,
-            name: "test".to_string(),
-        };
+        let data = TestData { value: 42, name: "test".to_string() };
         let result: StructuredResult<TestData> = Ok(data);
 
         let json = OutputPipeline::format_with_envelope(result, OutputFormat::Json);
@@ -362,10 +316,7 @@ mod file_io_tests {
 
     #[test]
     fn test_file_io_builder() {
-        let io = FileIOBuilder::new()
-            .input(Some("input.txt"))
-            .output(Some("output.txt"))
-            .build();
+        let io = FileIOBuilder::new().input(Some("input.txt")).output(Some("output.txt")).build();
 
         assert!(!io.input().is_stdin());
         assert!(!io.output().is_stdout());
@@ -481,18 +432,13 @@ mod integration_tests {
     #[test]
     fn test_full_pipeline() {
         // Create telemetry profile
-        let profile = TelemetryProfile::builder()
-            .verbose_count(1)
-            .format(OutputFormat::Json)
-            .build();
+        let profile =
+            TelemetryProfile::builder().verbose_count(1).format(OutputFormat::Json).build();
 
         assert!(profile.is_verbose());
 
         // Create test data
-        let data = TestData {
-            value: 42,
-            name: "integration_test".to_string(),
-        };
+        let data = TestData { value: 42, name: "integration_test".to_string() };
 
         // Format with profile
         let output = profile.format_output(&data);

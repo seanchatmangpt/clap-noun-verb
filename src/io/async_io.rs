@@ -23,10 +23,10 @@
 //! }
 //! ```
 
-use tokio::io::{AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt};
+use bytes::BytesMut;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use bytes::BytesMut;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 /// Configuration for backpressure handling
 #[derive(Debug, Clone)]
@@ -42,11 +42,7 @@ pub struct BackpressureConfig {
 impl BackpressureConfig {
     /// Create with default settings (64KB buffer, 8KB chunks)
     pub fn new() -> Self {
-        Self {
-            max_buffer_size: 64 * 1024,
-            chunk_size: 8 * 1024,
-            adaptive: true,
-        }
+        Self { max_buffer_size: 64 * 1024, chunk_size: 8 * 1024, adaptive: true }
     }
 
     /// Set maximum buffer size
@@ -165,9 +161,8 @@ pub trait AsyncOutputExt: AsyncWrite + Unpin {
     async fn write_fmt_async(&mut self, args: std::fmt::Arguments<'_>) -> std::io::Result<()> {
         use std::fmt::Write;
         let mut buffer = String::new();
-        write!(&mut buffer, "{}", args).map_err(|_| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, "format error")
-        })?;
+        write!(&mut buffer, "{}", args)
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "format error"))?;
         self.write_all_async(buffer.as_bytes()).await
     }
 }
@@ -252,9 +247,7 @@ pub struct LengthDelimitedFrameBuilder {
 impl LengthDelimitedFrameBuilder {
     /// Create new builder with default max size (1MB)
     pub fn new() -> Self {
-        Self {
-            max_frame_size: 1024 * 1024,
-        }
+        Self { max_frame_size: 1024 * 1024 }
     }
 
     /// Set maximum frame size
@@ -321,9 +314,7 @@ pub struct LinesFrameBuilder {
 impl LinesFrameBuilder {
     /// Create new builder with default max size (64KB per line)
     pub fn new() -> Self {
-        Self {
-            max_line_size: 64 * 1024,
-        }
+        Self { max_line_size: 64 * 1024 }
     }
 
     /// Set maximum line size
@@ -354,9 +345,7 @@ impl LinesFrameBuilder {
 
     /// Parse line frame (expects data ending with \n or EOF)
     pub fn parse(&self, data: &[u8]) -> Option<usize> {
-        data.windows(1)
-            .position(|w| w[0] == b'\n')
-            .map(|pos| pos + 1)
+        data.windows(1).position(|w| w[0] == b'\n').map(|pos| pos + 1)
     }
 }
 

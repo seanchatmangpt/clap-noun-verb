@@ -58,11 +58,11 @@ impl AutonomicVerbCommand for MutatingVerb {
 
 #[test]
 fn test_capabilities() {
-    let registry =
-        CommandRegistry::new().name("test-app").about("Test").register_noun(noun!("services", "Services", [
-            ReadOnlyVerb,
-            MutatingVerb,
-        ]));
+    let registry = CommandRegistry::new().name("test-app").about("Test").register_noun(noun!(
+        "services",
+        "Services",
+        [ReadOnlyVerb, MutatingVerb,]
+    ));
 
     let app_metadata = AppMetadata::new("test-app").with_version("1.0.0").with_about("Test");
     let autonomic = AutonomicCli::new(registry, "3.8.0", app_metadata);
@@ -76,11 +76,11 @@ fn test_capabilities() {
 
 #[test]
 fn test_introspection() {
-    let registry =
-        CommandRegistry::new().name("test-app").about("Test").register_noun(noun!("services", "Services", [
-            ReadOnlyVerb,
-            MutatingVerb,
-        ]));
+    let registry = CommandRegistry::new().name("test-app").about("Test").register_noun(noun!(
+        "services",
+        "Services",
+        [ReadOnlyVerb, MutatingVerb,]
+    ));
 
     let app_metadata = AppMetadata::new("test-app").with_version("1.0.0").with_about("Test");
     let autonomic = AutonomicCli::new(registry, "3.8.0", app_metadata);
@@ -99,7 +99,8 @@ fn test_effect_metadata() {
     let effect = EffectMetadata::new(EffectType::ReadOnly);
     assert!(!effect.is_high_risk());
 
-    let effect = EffectMetadata::new(EffectType::MutateSecurity).with_sensitivity(Sensitivity::Critical);
+    let effect =
+        EffectMetadata::new(EffectType::MutateSecurity).with_sensitivity(Sensitivity::Critical);
     assert!(effect.is_high_risk());
 }
 
@@ -177,10 +178,11 @@ fn test_command_graph() {
 
 #[test]
 fn test_introspection_json_serialization() {
-    let registry =
-        CommandRegistry::new().name("test-app").about("Test").register_noun(noun!("services", "Services", [
-            ReadOnlyVerb,
-        ]));
+    let registry = CommandRegistry::new().name("test-app").about("Test").register_noun(noun!(
+        "services",
+        "Services",
+        [ReadOnlyVerb,]
+    ));
 
     let app_metadata = AppMetadata::new("test-app").with_version("1.0.0");
     let autonomic = AutonomicCli::new(registry, "3.8.0", app_metadata);

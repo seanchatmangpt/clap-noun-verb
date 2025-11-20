@@ -36,8 +36,7 @@ mod cli_integration_tests {
             str::from_utf8(&output.stderr)
         );
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify hyper-advanced agents present
         let expected_agents = vec![
@@ -50,23 +49,16 @@ mod cli_integration_tests {
         ];
 
         for agent in expected_agents {
-            assert!(
-                stdout.contains(agent),
-                "Output should contain agent: {}",
-                agent
-            );
+            assert!(stdout.contains(agent), "Output should contain agent: {}", agent);
         }
 
         // Verify agent count
-        let agent_count = stdout.lines()
+        let agent_count = stdout
+            .lines()
             .filter(|line| !line.trim().is_empty() && !line.starts_with("Total:"))
             .count();
 
-        assert!(
-            agent_count >= 54,
-            "Should list at least 54 agents, found {}",
-            agent_count
-        );
+        assert!(agent_count >= 54, "Should list at least 54 agents, found {}", agent_count);
     }
 
     /// Test: `claude-config agent describe production-validator` shows correct details
@@ -103,8 +95,7 @@ mod cli_integration_tests {
             str::from_utf8(&output.stderr)
         );
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify agent details present
         assert!(stdout.contains("Name: production-validator"), "Should show agent name");
@@ -154,8 +145,7 @@ mod cli_integration_tests {
             str::from_utf8(&output.stderr)
         );
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify absolute rules present
         assert!(
@@ -163,15 +153,12 @@ mod cli_integration_tests {
             "Should show cargo make rule"
         );
 
-        let rule_count = stdout.lines()
+        let rule_count = stdout
+            .lines()
             .filter(|line| line.contains("mandatory: true") || line.contains("[MANDATORY]"))
             .count();
 
-        assert_eq!(
-            rule_count,
-            9,
-            "Should show exactly 9 absolute rules"
-        );
+        assert_eq!(rule_count, 9, "Should show exactly 9 absolute rules");
     }
 
     /// Test: `claude-config slo list` shows 5 SLOs
@@ -200,24 +187,14 @@ mod cli_integration_tests {
             str::from_utf8(&output.stderr)
         );
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify SLOs present
-        let expected_slos = vec![
-            "Compilation",
-            "Unit tests",
-            "Integration tests",
-            "CLI execution",
-            "Memory usage",
-        ];
+        let expected_slos =
+            vec!["Compilation", "Unit tests", "Integration tests", "CLI execution", "Memory usage"];
 
         for slo in expected_slos {
-            assert!(
-                stdout.contains(slo),
-                "Output should contain SLO: {}",
-                slo
-            );
+            assert!(stdout.contains(slo), "Output should contain SLO: {}", slo);
         }
 
         // Verify performance targets
@@ -265,25 +242,17 @@ mod cli_integration_tests {
             str::from_utf8(&output.stderr)
         );
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify JSON output
-        let json: serde_json::Value = serde_json::from_str(stdout)
-            .expect("Output should be valid JSON");
+        let json: serde_json::Value =
+            serde_json::from_str(stdout).expect("Output should be valid JSON");
 
-        assert!(
-            json.get("results").is_some(),
-            "JSON should have 'results' field"
-        );
+        assert!(json.get("results").is_some(), "JSON should have 'results' field");
 
-        let results = json["results"]["bindings"].as_array()
-            .expect("Results should be an array");
+        let results = json["results"]["bindings"].as_array().expect("Results should be an array");
 
-        assert!(
-            results.len() > 0,
-            "Query should return results"
-        );
+        assert!(results.len() > 0, "Query should return results");
     }
 
     /// Test: CLI error handling for invalid commands
@@ -301,13 +270,9 @@ mod cli_integration_tests {
             .expect("Failed to execute claude-config command");
 
         // Assert
-        assert!(
-            !output.status.success(),
-            "Invalid command should fail"
-        );
+        assert!(!output.status.success(), "Invalid command should fail");
 
-        let stderr = str::from_utf8(&output.stderr)
-            .expect("Error output should be valid UTF-8");
+        let stderr = str::from_utf8(&output.stderr).expect("Error output should be valid UTF-8");
 
         assert!(
             stderr.contains("error:") || stderr.contains("Error:"),
@@ -330,23 +295,15 @@ mod cli_integration_tests {
             .expect("Failed to execute claude-config command");
 
         // Assert
-        assert!(
-            output.status.success(),
-            "Help command should succeed"
-        );
+        assert!(output.status.success(), "Help command should succeed");
 
-        let stdout = str::from_utf8(&output.stdout)
-            .expect("Output should be valid UTF-8");
+        let stdout = str::from_utf8(&output.stdout).expect("Output should be valid UTF-8");
 
         // Verify subcommands present
         let expected_commands = vec!["agent", "rules", "slo", "query"];
 
         for command in expected_commands {
-            assert!(
-                stdout.contains(command),
-                "Help should mention command: {}",
-                command
-            );
+            assert!(stdout.contains(command), "Help should mention command: {}", command);
         }
     }
 

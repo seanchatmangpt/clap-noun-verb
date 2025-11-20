@@ -25,10 +25,7 @@ impl DynamicCachingMiddleware {
 
     /// Create a caching middleware with custom TTL in seconds.
     pub fn with_ttl(ttl_seconds: u64) -> Self {
-        Self {
-            cache: Arc::new(Mutex::new(HashMap::new())),
-            ttl_seconds,
-        }
+        Self { cache: Arc::new(Mutex::new(HashMap::new())), ttl_seconds }
     }
 
     /// Get cached value if exists and not expired.
@@ -36,10 +33,7 @@ impl DynamicCachingMiddleware {
         let cache = self.cache.lock().ok()?;
         let (value, expiry) = cache.get(key)?;
 
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
 
         if now < *expiry {
             Some(value.clone())
@@ -51,10 +45,7 @@ impl DynamicCachingMiddleware {
     /// Cache a value with expiry time.
     fn set_cached(&self, key: String, value: String) {
         if let Ok(mut cache) = self.cache.lock() {
-            let expiry = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
+            let expiry = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs()
                 + self.ttl_seconds;
             cache.insert(key, (value, expiry));
         }
@@ -64,9 +55,7 @@ impl DynamicCachingMiddleware {
     pub fn clear(&self) -> crate::Result<()> {
         self.cache
             .lock()
-            .map_err(|_| {
-                crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-            })?
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?
             .clear();
         Ok(())
     }
@@ -80,9 +69,7 @@ impl Default for DynamicCachingMiddleware {
 
 impl std::fmt::Debug for DynamicCachingMiddleware {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DynamicCachingMiddleware")
-            .field("ttl_seconds", &self.ttl_seconds)
-            .finish()
+        f.debug_struct("DynamicCachingMiddleware").field("ttl_seconds", &self.ttl_seconds).finish()
     }
 }
 

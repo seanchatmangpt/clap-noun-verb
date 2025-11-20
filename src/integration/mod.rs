@@ -16,15 +16,15 @@
 //! - Generic associated types for flexible result handling
 //! - Phantom types for zero-cost abstractions
 
+pub mod config;
 pub mod executor;
 pub mod exporters;
 pub mod middlewares;
-pub mod config;
 
+pub use config::{PluginDependencyGraph, PluginManifestLoader};
 pub use executor::{CommandExecutor, ExecutionContext, ExecutionPhase};
-pub use middlewares::{
-    ObservabilityMiddleware, DynamicCachingMiddleware, SmartRetryMiddleware,
-    DistributedTracingMiddleware, SecurityMiddleware,
-};
 pub use exporters::{DatadogExporter, ElasticsearchExporter};
-pub use config::{PluginManifestLoader, PluginDependencyGraph};
+pub use middlewares::{
+    DistributedTracingMiddleware, DynamicCachingMiddleware, ObservabilityMiddleware,
+    SecurityMiddleware, SmartRetryMiddleware,
+};

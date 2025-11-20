@@ -101,9 +101,8 @@ impl TelemetryCollector {
         }
 
         let mut counters = self.counters.lock().unwrap();
-        let counter = counters
-            .entry(name.to_string())
-            .or_insert_with(|| Arc::new(AtomicU64::new(0)));
+        let counter =
+            counters.entry(name.to_string()).or_insert_with(|| Arc::new(AtomicU64::new(0)));
 
         counter.fetch_add(value, Ordering::Relaxed);
     }
@@ -115,9 +114,7 @@ impl TelemetryCollector {
         }
 
         let mut histograms = self.histograms.lock().unwrap();
-        let histogram = histograms
-            .entry(name.to_string())
-            .or_insert_with(Histogram::new);
+        let histogram = histograms.entry(name.to_string()).or_insert_with(Histogram::new);
 
         histogram.observe(value);
     }
@@ -125,9 +122,7 @@ impl TelemetryCollector {
     /// Set gauge value
     pub fn gauge_set(&self, name: &str, value: u64) {
         let mut gauges = self.gauges.lock().unwrap();
-        let gauge = gauges
-            .entry(name.to_string())
-            .or_insert_with(|| Arc::new(AtomicU64::new(0)));
+        let gauge = gauges.entry(name.to_string()).or_insert_with(|| Arc::new(AtomicU64::new(0)));
 
         gauge.store(value, Ordering::Relaxed);
     }
@@ -140,10 +135,7 @@ impl TelemetryCollector {
         }
 
         // Simple deterministic sampling based on timestamp
-        let now = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
 
         (now % rate as u128) == 0
     }
@@ -207,19 +199,10 @@ impl TelemetryCollector {
             .map(|(k, v)| (k.clone(), v.load(Ordering::Relaxed)))
             .collect();
 
-        let histograms = self
-            .histograms
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
+        let histograms =
+            self.histograms.lock().unwrap().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
-        MetricsSnapshot {
-            counters,
-            gauges,
-            histograms,
-        }
+        MetricsSnapshot { counters, gauges, histograms }
     }
 }
 
@@ -255,20 +238,14 @@ pub struct Histogram {
 impl Histogram {
     /// Create a new histogram
     pub fn new() -> Self {
-        Self {
-            samples: Vec::new(),
-            max_samples: 10000,
-        }
+        Self { samples: Vec::new(), max_samples: 10000 }
     }
 
     /// Observe a value
     pub fn observe(&mut self, value: Duration) {
         if self.samples.len() >= self.max_samples {
             // Reservoir sampling to prevent unbounded growth
-            let idx = (SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
+            let idx = (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos()
                 % self.samples.len() as u128) as usize;
 
             self.samples[idx] = value;
@@ -365,10 +342,7 @@ impl TraceSpan {
         let duration = self.start.elapsed();
 
         // Record span duration
-        telemetry().histogram_observe(
-            &format!("span_duration_{}", self.operation),
-            duration,
-        );
+        telemetry().histogram_observe(&format!("span_duration_{}", self.operation), duration);
 
         duration
     }
@@ -386,10 +360,7 @@ pub struct PerformanceProfiler {
 impl PerformanceProfiler {
     /// Start profiling an operation
     pub fn start(operation: impl Into<String>) -> Self {
-        Self {
-            operation: operation.into(),
-            start: Instant::now(),
-        }
+        Self { operation: operation.into(), start: Instant::now() }
     }
 
     /// Stop profiling and record metrics

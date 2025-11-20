@@ -1,7 +1,6 @@
 /// Emergent Behavior & Self-Organization
 ///
 /// Simple rules that lead to complex emergent behaviors without central control.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -11,17 +10,12 @@ pub struct Rule {
     pub name: String,
     pub condition: String,
     pub action: String,
-    pub success_rate: f64,  // Empirical success rate
+    pub success_rate: f64, // Empirical success rate
 }
 
 impl Rule {
     pub fn new(name: String, condition: String, action: String) -> Self {
-        Self {
-            name,
-            condition,
-            action,
-            success_rate: 0.5,
-        }
+        Self { name, condition, action, success_rate: 0.5 }
     }
 }
 
@@ -34,11 +28,7 @@ pub struct RuleEngine {
 
 impl RuleEngine {
     pub fn new() -> Self {
-        Self {
-            rules: Vec::new(),
-            match_count: HashMap::new(),
-            success_count: HashMap::new(),
-        }
+        Self { rules: Vec::new(), match_count: HashMap::new(), success_count: HashMap::new() }
     }
 
     /// Add a rule
@@ -100,11 +90,7 @@ pub struct CriticalityDetector {
 
 impl CriticalityDetector {
     pub fn new(threshold: f64) -> Self {
-        Self {
-            history: Vec::new(),
-            threshold,
-            window_size: 50,
-        }
+        Self { history: Vec::new(), threshold, window_size: 50 }
     }
 
     /// Record a measurement
@@ -123,7 +109,8 @@ impl CriticalityDetector {
 
         let recent = &self.history[self.history.len() - self.window_size..];
         let mean = recent.iter().sum::<f64>() / recent.len() as f64;
-        let variance: f64 = recent.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / recent.len() as f64;
+        let variance: f64 =
+            recent.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / recent.len() as f64;
 
         variance > self.threshold
     }
@@ -134,7 +121,8 @@ impl CriticalityDetector {
             return false;
         }
 
-        let window1 = &self.history[self.history.len() - 2 * self.window_size..self.history.len() - self.window_size];
+        let window1 = &self.history
+            [self.history.len() - 2 * self.window_size..self.history.len() - self.window_size];
         let window2 = &self.history[self.history.len() - self.window_size..];
 
         let var1: f64 = window1.iter().map(|x| x * x).sum::<f64>() / window1.len() as f64;
@@ -147,15 +135,12 @@ impl CriticalityDetector {
 /// Self-organizing system
 pub struct SelfOrganizer {
     agent_roles: HashMap<String, String>,
-    role_stability: HashMap<String, f64>,  // How stable is each role assignment
+    role_stability: HashMap<String, f64>, // How stable is each role assignment
 }
 
 impl SelfOrganizer {
     pub fn new() -> Self {
-        Self {
-            agent_roles: HashMap::new(),
-            role_stability: HashMap::new(),
-        }
+        Self { agent_roles: HashMap::new(), role_stability: HashMap::new() }
     }
 
     /// Assign role to agent (can change dynamically)
@@ -182,10 +167,7 @@ impl SelfOrganizer {
 
     /// Get current roles
     pub fn get_roles(&self) -> Vec<(String, String)> {
-        self.agent_roles
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+        self.agent_roles.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 }
 

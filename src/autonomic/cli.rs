@@ -81,19 +81,12 @@ impl AutonomicCli {
     }
 
     /// Handle introspection request for a specific verb
-    pub fn introspect_verb(
-        &self,
-        noun_name: &str,
-        verb_name: &str,
-    ) -> Option<VerbMetadata> {
+    pub fn introspect_verb(&self, noun_name: &str, verb_name: &str) -> Option<VerbMetadata> {
         self.registry.get_noun(noun_name).and_then(|noun| {
-            noun.verbs()
-                .into_iter()
-                .find(|v| v.name() == verb_name)
-                .map(|verb| {
-                    VerbMetadata::new(verb.name(), verb.about())
-                        .with_command(self.introspect_verb_command(verb.as_ref()))
-                })
+            noun.verbs().into_iter().find(|v| v.name() == verb_name).map(|verb| {
+                VerbMetadata::new(verb.name(), verb.about())
+                    .with_command(self.introspect_verb_command(verb.as_ref()))
+            })
         })
     }
 

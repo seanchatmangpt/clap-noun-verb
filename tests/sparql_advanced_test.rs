@@ -1,4 +1,4 @@
-use clap_noun_verb::rdf::{Ontology, SparqlParser, QueryExecutor};
+use clap_noun_verb::rdf::{Ontology, QueryExecutor, SparqlParser};
 use std::sync::Arc;
 
 fn create_test_ontology() -> Arc<Ontology> {
@@ -63,8 +63,9 @@ fn test_simple_triple_pattern_query() {
     let results = executor.execute(parsed).expect("execution failed");
 
     assert_eq!(results.len(), 3);
-    assert!(results.iter().any(|b| b.variables.get("?verb")
-        .map_or(false, |v| v.as_str() == "cmd:build")));
+    assert!(results
+        .iter()
+        .any(|b| b.variables.get("?verb").map_or(false, |v| v.as_str() == "cmd:build")));
 }
 
 #[test]
@@ -77,8 +78,9 @@ fn test_filter_contains() {
     let results = executor.execute(parsed).expect("execution failed");
 
     assert_eq!(results.len(), 1);
-    assert!(results.iter().any(|b| b.variables.get("?verb")
-        .map_or(false, |v| v.as_str() == "cmd:deploy")));
+    assert!(results
+        .iter()
+        .any(|b| b.variables.get("?verb").map_or(false, |v| v.as_str() == "cmd:deploy")));
 }
 
 #[test]
@@ -130,8 +132,7 @@ fn test_filter_with_aggregation() {
     let results = executor.execute(parsed).expect("execution failed");
 
     assert_eq!(results.len(), 1);
-    assert!(results[0].variables.get("?count")
-        .map_or(false, |v| v.as_str() == "3"));
+    assert!(results[0].variables.get("?count").map_or(false, |v| v.as_str() == "3"));
 }
 
 #[test]
@@ -139,13 +140,15 @@ fn test_filter_string_functions() {
     let ont = create_test_ontology();
     let executor = QueryExecutor::new(ont);
 
-    let query = r#"SELECT ?cmd WHERE { ?cmd rdfs:comment ?desc . FILTER(CONTAINS(?desc, "Build")) }"#;
+    let query =
+        r#"SELECT ?cmd WHERE { ?cmd rdfs:comment ?desc . FILTER(CONTAINS(?desc, "Build")) }"#;
     let parsed = SparqlParser::parse(query).expect("parse failed");
     let results = executor.execute(parsed).expect("execution failed");
 
     assert_eq!(results.len(), 1);
-    assert!(results.iter().any(|b| b.variables.get("?cmd")
-        .map_or(false, |v| v.as_str() == "cmd:build")));
+    assert!(results
+        .iter()
+        .any(|b| b.variables.get("?cmd").map_or(false, |v| v.as_str() == "cmd:build")));
 }
 
 #[test]
@@ -222,6 +225,7 @@ fn test_complex_filter_expression() {
     let parsed = SparqlParser::parse(query).expect("parse failed");
     let results = executor.execute(parsed).expect("execution failed");
 
-    assert!(results.iter().any(|b| b.variables.get("?cmd")
-        .map_or(false, |v| v.as_str() == "cmd:test")));
+    assert!(results
+        .iter()
+        .any(|b| b.variables.get("?cmd").map_or(false, |v| v.as_str() == "cmd:test")));
 }

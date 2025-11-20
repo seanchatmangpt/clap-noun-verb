@@ -34,47 +34,28 @@ pub enum IoError {
     Io(io::Error),
 
     /// Path validation error
-    Path {
-        path: PathBuf,
-        reason: String,
-    },
+    Path { path: PathBuf, reason: String },
 
     /// File format error
-    Format {
-        path: PathBuf,
-        reason: String,
-    },
+    Format { path: PathBuf, reason: String },
 
     /// Encoding error (UTF-8, etc.)
-    Encoding {
-        path: PathBuf,
-        expected: String,
-        found: String,
-    },
+    Encoding { path: PathBuf, expected: String, found: String },
 
     /// Permission denied
-    PermissionDenied {
-        path: PathBuf,
-        operation: String,
-    },
+    PermissionDenied { path: PathBuf, operation: String },
 
     /// File not found
     NotFound(PathBuf),
 
     /// Custom error with context
-    Custom {
-        message: String,
-        context: Option<String>,
-    },
+    Custom { message: String, context: Option<String> },
 }
 
 impl IoError {
     /// Create a new custom error
     pub fn custom<S: Into<String>>(message: S) -> Self {
-        Self::Custom {
-            message: message.into(),
-            context: None,
-        }
+        Self::Custom { message: message.into(), context: None }
     }
 
     /// Add context to error
@@ -138,12 +119,7 @@ impl fmt::Display for IoError {
                 )
             }
             Self::PermissionDenied { path, operation } => {
-                write!(
-                    f,
-                    "permission denied for {} on '{}'",
-                    operation,
-                    path.display()
-                )
+                write!(f, "permission denied for {} on '{}'", operation, path.display())
             }
             Self::NotFound(path) => write!(f, "file not found: '{}'", path.display()),
             Self::Custom { message, context } => {
@@ -187,10 +163,7 @@ mod tests {
     #[test]
     fn test_error_path_extraction() {
         let path = PathBuf::from("/tmp/test.txt");
-        let err = IoError::Path {
-            path: path.clone(),
-            reason: "test reason".to_string(),
-        };
+        let err = IoError::Path { path: path.clone(), reason: "test reason".to_string() };
         assert_eq!(err.path(), Some(&path));
     }
 

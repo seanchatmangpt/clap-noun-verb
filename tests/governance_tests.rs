@@ -231,10 +231,7 @@ fn test_ledger_query_by_correlation_id() {
     );
 
     // WHEN: We query by correlation ID
-    let batch1_events = ledger
-        .query()
-        .correlation_id("batch-1".to_string())
-        .execute();
+    let batch1_events = ledger.query().correlation_id("batch-1".to_string()).execute();
 
     // THEN: Correct events are returned
     assert_eq!(batch1_events.len(), 2);
@@ -280,9 +277,7 @@ fn test_replay_engine_timeslice() {
     );
 
     ledger.record_policy_decision(
-        PolicyDecision::Deny { suggestion: None,
-            reason: "Insufficient permissions".to_string(),
-        },
+        PolicyDecision::Deny { suggestion: None, reason: "Insufficient permissions".to_string() },
         CapabilityId::from_path("user.delete"),
         "delete user",
         AgentIdentity::human("alice"),
@@ -338,9 +333,7 @@ fn test_replay_engine_what_if_analysis() {
     let result = engine.replay_with_policy(start, end, |cap_id, _cmd| {
         // New policy: deny sensitive operations
         if cap_id == &CapabilityId::from_path("sensitive.operation") {
-            PolicyDecision::Deny { suggestion: None,
-                reason: "Now forbidden by policy".to_string(),
-            }
+            PolicyDecision::Deny { suggestion: None, reason: "Now forbidden by policy".to_string() }
         } else {
             PolicyDecision::Allow
         }
@@ -350,9 +343,10 @@ fn test_replay_engine_what_if_analysis() {
     assert!(result.differences.len() > 0);
 
     // AND: The sensitive operation is identified as different
-    let has_sensitive_diff = result.differences.iter().any(|diff| {
-        diff.capability_id == CapabilityId::from_path("sensitive.operation")
-    });
+    let has_sensitive_diff = result
+        .differences
+        .iter()
+        .any(|diff| diff.capability_id == CapabilityId::from_path("sensitive.operation"));
     assert!(has_sensitive_diff);
 }
 
@@ -376,9 +370,7 @@ fn test_replay_stats_calculation() {
 
     for i in 0..2 {
         ledger.record_policy_decision(
-            PolicyDecision::Deny { suggestion: None,
-                reason: "Test denial".to_string(),
-            },
+            PolicyDecision::Deny { suggestion: None, reason: "Test denial".to_string() },
             CapabilityId::from_path(&format!("deny-cmd-{}", i)),
             "denied command",
             AgentIdentity::anonymous(),
@@ -485,10 +477,7 @@ fn test_ledger_metadata_preservation() {
     );
 
     // THEN: We can query and verify metadata
-    let events = ledger
-        .query()
-        .correlation_id(correlation.to_string())
-        .execute();
+    let events = ledger.query().correlation_id(correlation.to_string()).execute();
 
     assert_eq!(events.len(), 1);
     let event = &events[0];
@@ -543,7 +532,8 @@ fn test_replay_differences_detection() {
 
     // WHEN: We replay with Deny policy
     let engine = ReplayEngine::new(Arc::clone(&ledger));
-    let result = engine.replay_with_policy(start, end, |_, _| PolicyDecision::Deny { suggestion: None,
+    let result = engine.replay_with_policy(start, end, |_, _| PolicyDecision::Deny {
+        suggestion: None,
         reason: "New policy denies".to_string(),
     });
 

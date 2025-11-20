@@ -9,7 +9,7 @@ mod async_io_tests {
         LinesFrameBuilder,
     };
     use std::io::Cursor;
-    use tokio::io::{AsyncWriteExt, AsyncReadExt};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[test]
     fn test_backpressure_config_builder() {
@@ -183,10 +183,7 @@ mod async_io_tests {
         let data = b"test data for backpressure";
         let config = BackpressureConfig::new().with_chunk_size(8);
 
-        buffer
-            .write_with_backpressure(data, &config)
-            .await
-            .unwrap();
+        buffer.write_with_backpressure(data, &config).await.unwrap();
 
         assert_eq!(buffer, data);
     }
@@ -206,10 +203,7 @@ mod async_io_tests {
     #[tokio::test]
     async fn test_async_write_fmt() {
         let mut buffer = Vec::new();
-        buffer
-            .write_fmt_async(format_args!("{} {}", "hello", "world"))
-            .await
-            .unwrap();
+        buffer.write_fmt_async(format_args!("{} {}", "hello", "world")).await.unwrap();
 
         assert_eq!(buffer, b"hello world");
     }
@@ -249,9 +243,7 @@ mod async_io_tests {
 
     #[test]
     fn test_lines_frame_builder_builder_pattern() {
-        let builder = LinesFrameBuilder::new()
-            .with_max_size(128 * 1024)
-            .with_max_size(256 * 1024);
+        let builder = LinesFrameBuilder::new().with_max_size(128 * 1024).with_max_size(256 * 1024);
 
         assert_eq!(builder.max_line_size(), 256 * 1024);
     }
@@ -268,7 +260,7 @@ mod async_io_tests {
 
 #[cfg(test)]
 mod async_stress_tests {
-    use clap_noun_verb::io::async_io::{BackpressureConfig, AsyncOutputExt};
+    use clap_noun_verb::io::async_io::{AsyncOutputExt, BackpressureConfig};
 
     #[tokio::test]
     async fn test_high_throughput_writes() {
@@ -278,10 +270,7 @@ mod async_stress_tests {
         // Write 10MB of data in chunks
         for _ in 0..1000 {
             let data = vec![42u8; 10_000];
-            buffer
-                .write_with_backpressure(&data, &config)
-                .await
-                .unwrap();
+            buffer.write_with_backpressure(&data, &config).await.unwrap();
         }
 
         assert_eq!(buffer.len(), 10_000_000);

@@ -30,49 +30,42 @@
 /// This macro generates both runtime assertions and formal verification checks
 #[macro_export]
 macro_rules! verify_contract {
-    ($cond:expr, $msg:expr) => {
-        {
-            #[cfg(kani)]
-            kani::assert($cond, $msg);
+    ($cond:expr, $msg:expr) => {{
+        #[cfg(kani)]
+        kani::assert($cond, $msg);
 
-            #[cfg(not(kani))]
-            assert!($cond, $msg);
-        }
-    };
+        #[cfg(not(kani))]
+        assert!($cond, $msg);
+    }};
 }
 
 /// Verification contract: Ensures a value is within bounds
 #[macro_export]
 macro_rules! verify_bounds {
-    ($val:expr, $min:expr, $max:expr) => {
+    ($val:expr, $min:expr, $max:expr) => {{
+        let v = $val;
+        let min = $min;
+        let max = $max;
+
+        #[cfg(kani)]
         {
-            let v = $val;
-            let min = $min;
-            let max = $max;
-
-            #[cfg(kani)]
-            {
-                kani::assume(v >= min);
-                kani::assume(v <= max);
-            }
-
-            #[cfg(not(kani))]
-            {
-                assert!(v >= min, "Value {} below minimum {}", v, min);
-                assert!(v <= max, "Value {} exceeds maximum {}", v, max);
-            }
+            kani::assume(v >= min);
+            kani::assume(v <= max);
         }
-    };
+
+        #[cfg(not(kani))]
+        {
+            assert!(v >= min, "Value {} below minimum {}", v, min);
+            assert!(v <= max, "Value {} exceeds maximum {}", v, max);
+        }
+    }};
 }
 
 /// Verification invariant for state machine transitions
 ///
 /// Ensures that state transitions are monotonic (never regress)
 pub fn verify_state_monotonic<T: Ord>(old_state: &T, new_state: &T) {
-    verify_contract!(
-        old_state <= new_state,
-        "State machine transitions must be monotonic"
-    );
+    verify_contract!(old_state <= new_state, "State machine transitions must be monotonic");
 }
 
 /// Verification invariant for capability constraints
@@ -91,14 +84,8 @@ pub fn verify_capability_narrowing(parent: &[String], child: &[String]) {
 /// Verification invariant for temporal constraints
 ///
 /// Ensures deadlines are in the future and durations are positive
-pub fn verify_temporal_ordering(
-    start: std::time::SystemTime,
-    deadline: std::time::SystemTime,
-) {
-    verify_contract!(
-        start <= deadline,
-        "Deadline must be after start time"
-    );
+pub fn verify_temporal_ordering(start: std::time::SystemTime, deadline: std::time::SystemTime) {
+    verify_contract!(start <= deadline, "Deadline must be after start time");
 }
 
 /// Verification harness for certificate state machine
@@ -108,8 +95,8 @@ pub fn verify_temporal_ordering(
 #[kani::proof]
 fn verify_certificate_state_machine() {
     use crate::autonomic::{
-        Certificate, CapabilityId, InputSchema, OutputSchema, AgentIdentity,
-        TenantIdentity, PolicyResult, PolicyDecision, TypeSchema, PrimitiveType,
+        AgentIdentity, CapabilityId, Certificate, InputSchema, OutputSchema, PolicyDecision,
+        PolicyResult, PrimitiveType, TenantIdentity, TypeSchema,
     };
 
     // Create arbitrary certificate in Unchecked state
@@ -160,20 +147,14 @@ fn verify_certificate_state_machine() {
 #[kani::proof]
 fn verify_delegation_narrowing() {
     use crate::autonomic::{
-        AgentIdentity, TenantIdentity, Principal, CapabilityConstraint, DelegationToken,
+        AgentIdentity, CapabilityConstraint, DelegationToken, Principal, TenantIdentity,
     };
     use std::time::Duration;
 
     // Create arbitrary principal
-    let delegator = Principal::new(
-        AgentIdentity::anonymous(),
-        TenantIdentity::default_tenant(),
-    );
+    let delegator = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
-    let delegate = Principal::new(
-        AgentIdentity::anonymous(),
-        TenantIdentity::default_tenant(),
-    );
+    let delegate = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
     // Create constraint with arbitrary capabilities
     let parent_caps = vec!["cap1".to_string(), "cap2".to_string(), "cap3".to_string()];
@@ -187,12 +168,8 @@ fn verify_delegation_narrowing() {
     verify_capability_narrowing(&parent_caps, &child_caps);
 
     // Create token with constraints
-    let _token = DelegationToken::new(
-        delegator,
-        delegate,
-        child_constraint,
-        Duration::from_secs(3600),
-    );
+    let _token =
+        DelegationToken::new(delegator, delegate, child_constraint, Duration::from_secs(3600));
 }
 
 /// Verification harness for queue FIFO ordering
@@ -230,8 +207,8 @@ fn verify_queue_fifo_ordering() {
 #[kani::proof]
 fn verify_graph_transitivity() {
     use crate::autonomic::{
-        CapabilityGraph, CapabilityId, InputSchema, OutputSchema,
-        EdgeType, TypeSchema, PrimitiveType,
+        CapabilityGraph, CapabilityId, EdgeType, InputSchema, OutputSchema, PrimitiveType,
+        TypeSchema,
     };
 
     let mut graph = CapabilityGraph::new();
@@ -266,10 +243,7 @@ fn verify_graph_transitivity() {
     let _ = graph.add_edge(b, c, EdgeType::Produces);
 
     // Verify transitivity: A→C
-    verify_contract!(
-        graph.is_reachable(a, c),
-        "Graph reachability must be transitive"
-    );
+    verify_contract!(graph.is_reachable(a, c), "Graph reachability must be transitive");
 }
 
 /// MIRI-compatible test for arena allocation safety

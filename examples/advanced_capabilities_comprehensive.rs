@@ -76,17 +76,25 @@ fn demo_type_level_enforcement() {
         .with_description("Update database".to_string());
 
     // Execute verbs in compatible contexts
-    println!("✓ Pure verb in pure context: {}",
-        pure_context.execute(&pure_verb, || Ok("executed")).unwrap());
+    println!(
+        "✓ Pure verb in pure context: {}",
+        pure_context.execute(&pure_verb, || Ok("executed")).unwrap()
+    );
 
-    println!("✓ Pure verb in readonly context: {}",
-        readonly_context.execute(&pure_verb, || Ok("executed")).unwrap());
+    println!(
+        "✓ Pure verb in readonly context: {}",
+        readonly_context.execute(&pure_verb, || Ok("executed")).unwrap()
+    );
 
-    println!("✓ Readonly verb in readonly context: {}",
-        readonly_context.execute(&readonly_verb, || Ok("executed")).unwrap());
+    println!(
+        "✓ Readonly verb in readonly context: {}",
+        readonly_context.execute(&readonly_verb, || Ok("executed")).unwrap()
+    );
 
-    println!("✓ Write verb in write context: {}",
-        write_context.execute(&write_verb, || Ok("executed")).unwrap());
+    println!(
+        "✓ Write verb in write context: {}",
+        write_context.execute(&write_verb, || Ok("executed")).unwrap()
+    );
 
     // Note: The following would be COMPILE ERRORS (shown in comments):
     // ✗ readonly_context.execute(&write_verb, || Ok("..."))?;  // Compile error!
@@ -94,15 +102,11 @@ fn demo_type_level_enforcement() {
 
     // Demonstrate unsafe verb with approval
     let unsafe_verb = TypedVerb::<ReadWriteFS, UnsafeMeta>::new("delete_all".to_string());
-    let approval = ApprovalToken::new(
-        vec!["admin".to_string()],
-        3600,
-        "DBA approved bulk delete".to_string(),
-    );
+    let approval =
+        ApprovalToken::new(vec!["admin".to_string()], 3600, "DBA approved bulk delete".to_string());
 
-    let result = write_context.execute_unsafe(&unsafe_verb, approval, || {
-        Ok("deleted 1000 records")
-    });
+    let result =
+        write_context.execute_unsafe(&unsafe_verb, approval, || Ok("deleted 1000 records"));
 
     println!("✓ Unsafe verb with approval: {}", result.unwrap());
 }
@@ -233,10 +237,7 @@ async fn demo_streaming() -> Result<(), Box<dyn std::error::Error>> {
     sink.send(metrics_frame).await?;
 
     // Send completion frame
-    let done_frame = StreamFrame::Done {
-        session_id: session.id.clone(),
-        exit_code: 0,
-    };
+    let done_frame = StreamFrame::Done { session_id: session.id.clone(), exit_code: 0 };
     sink.send(done_frame).await?;
     println!("Session completed with exit code 0");
 
@@ -321,7 +322,10 @@ fn demo_schema_registry() -> Result<(), Box<dyn std::error::Error>> {
 
     // List versions
     let versions = registry.list_versions();
-    println!("Registered versions: {}", versions.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", "));
+    println!(
+        "Registered versions: {}",
+        versions.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ")
+    );
 
     // Check compatibility
     let v1_0 = SchemaVersion::new(1, 0, 0);

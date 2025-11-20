@@ -70,17 +70,17 @@
 //! - kernel FileIO (for advanced control)
 //! - Mix both (via extension traits)
 
-pub mod error;
-pub mod types;
 pub mod async_io;
+pub mod error;
 pub mod typed_io;
+pub mod types;
 
 // Re-export core clio types with clap-parse support
 pub use clio::{Input, InputPath, Output, OutputPath};
 
 // Re-export async I/O types
 pub use async_io::{
-    AsyncInputExt, AsyncOutputExt, BidirectionalStream, BackpressureConfig,
+    AsyncInputExt, AsyncOutputExt, BackpressureConfig, BidirectionalStream,
     LengthDelimitedFrameBuilder, LinesFrameBuilder,
 };
 
@@ -92,9 +92,8 @@ pub use types::{IoType, IoTypeRegistry, TypeInspector};
 
 // Re-export type-level validation types (Phase 6)
 pub use typed_io::{
-    Unvalidated, Validated, Processed, ValidatedPath, FormatParser,
-    JsonFormat, YamlFormat, PlainFormat, ValidatedBuffer, ValidatedString,
-    Effect, PureOp, ImpureOp,
+    Effect, FormatParser, ImpureOp, JsonFormat, PlainFormat, Processed, PureOp, Unvalidated,
+    Validated, ValidatedBuffer, ValidatedPath, ValidatedString, YamlFormat,
 };
 
 /// Version of I/O module
@@ -143,11 +142,7 @@ pub struct IoPipeline {
 impl IoPipeline {
     /// Create new I/O pipeline
     pub fn new() -> Self {
-        Self {
-            inputs: Vec::new(),
-            output: None,
-            buffer_size: 8192,
-        }
+        Self { inputs: Vec::new(), output: None, buffer_size: 8192 }
     }
 
     /// Add input to pipeline
@@ -228,11 +223,7 @@ pub struct IoPipelineBuilder {
 impl IoPipelineBuilder {
     /// Create new builder
     pub fn new() -> Self {
-        Self {
-            inputs: Vec::new(),
-            output: None,
-            buffer_size: 8192,
-        }
+        Self { inputs: Vec::new(), output: None, buffer_size: 8192 }
     }
 
     /// Add input
@@ -255,11 +246,7 @@ impl IoPipelineBuilder {
 
     /// Build the pipeline
     pub fn build(self) -> IoPipeline {
-        IoPipeline {
-            inputs: self.inputs,
-            output: self.output,
-            buffer_size: self.buffer_size,
-        }
+        IoPipeline { inputs: self.inputs, output: self.output, buffer_size: self.buffer_size }
     }
 }
 

@@ -30,10 +30,7 @@ pub struct DatadogExporter {
 impl DatadogExporter {
     /// Create a new Datadog exporter.
     pub fn new(api_key: impl Into<String>) -> Self {
-        Self {
-            api_key: api_key.into(),
-            site: "us1".to_string(),
-        }
+        Self { api_key: api_key.into(), site: "us1".to_string() }
     }
 
     /// Set the Datadog site.
@@ -116,10 +113,7 @@ pub struct ElasticsearchExporter {
 impl ElasticsearchExporter {
     /// Create a new Elasticsearch exporter.
     pub fn new(hosts: Vec<String>) -> Self {
-        Self {
-            hosts,
-            index_prefix: "clap-logs".to_string(),
-        }
+        Self { hosts, index_prefix: "clap-logs".to_string() }
     }
 
     /// Set the index prefix.
@@ -147,19 +141,12 @@ impl Default for ElasticsearchExporter {
 impl PlatformExporter for ElasticsearchExporter {
     fn export(&self, metrics: &MetricsCollector) -> crate::Result<String> {
         let timestamp = chrono::Utc::now().to_rfc3339();
-        let index = format!(
-            "{}-{}",
-            self.index_prefix,
-            chrono::Local::now().format("%Y.%m.%d")
-        );
+        let index = format!("{}-{}", self.index_prefix, chrono::Local::now().format("%Y.%m.%d"));
 
         let mut bulk_payload = String::new();
 
         // Create bulk index commands
-        bulk_payload.push_str(&format!(
-            r#"{{"index":{{"_index":"{}","_type":"_doc"}}}}"#,
-            index
-        ));
+        bulk_payload.push_str(&format!(r#"{{"index":{{"_index":"{}","_type":"_doc"}}}}"#, index));
         bulk_payload.push('\n');
 
         let doc = serde_json::json!({
@@ -175,11 +162,7 @@ impl PlatformExporter for ElasticsearchExporter {
         bulk_payload.push_str(&doc_str);
         bulk_payload.push('\n');
 
-        Ok(format!(
-            "Elasticsearch export to {}: {} documents",
-            self.bulk_endpoint(),
-            1
-        ))
+        Ok(format!("Elasticsearch export to {}: {} documents", self.bulk_endpoint(), 1))
     }
 
     fn name(&self) -> &str {
@@ -214,15 +197,13 @@ mod tests {
 
     #[test]
     fn test_elasticsearch_exporter_creation() {
-        let exporter =
-            ElasticsearchExporter::new(vec!["http://localhost:9200".to_string()]);
+        let exporter = ElasticsearchExporter::new(vec!["http://localhost:9200".to_string()]);
         assert_eq!(exporter.name(), "elasticsearch");
     }
 
     #[test]
     fn test_elasticsearch_exporter_bulk_endpoint() {
-        let exporter =
-            ElasticsearchExporter::new(vec!["http://es.example.com".to_string()]);
+        let exporter = ElasticsearchExporter::new(vec!["http://es.example.com".to_string()]);
         assert!(exporter.bulk_endpoint().contains("_bulk"));
     }
 

@@ -20,7 +20,7 @@
 //! ```
 
 use clap::Parser;
-use clap_noun_verb::io::{pipeline, Input, Output, IoType, IoTypeRegistry};
+use clap_noun_verb::io::{pipeline, Input, IoType, IoTypeRegistry, Output};
 use std::io::{Read, Write};
 
 #[derive(Parser)]
@@ -89,11 +89,7 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Transform {
-            kind,
-            mut input,
-            output,
-        } => {
+        Commands::Transform { kind, mut input, output } => {
             let mut content = String::new();
             input.read_to_string(&mut content)?;
 
@@ -117,6 +113,7 @@ fn main() -> anyhow::Result<()> {
         }
 
         Commands::Merge { inputs, mut output } => {
+            let input_count = inputs.len();
             for (idx, mut input) in inputs.into_iter().enumerate() {
                 let mut content = String::new();
                 input.read_to_string(&mut content)?;
@@ -125,7 +122,7 @@ fn main() -> anyhow::Result<()> {
                     output.write_all(b"\n")?;
                 }
             }
-            eprintln!("Successfully merged {} files", inputs.len());
+            eprintln!("Successfully merged {} files", input_count);
             Ok(())
         }
 
@@ -167,9 +164,7 @@ fn main() -> anyhow::Result<()> {
 #[allow(dead_code)]
 fn example_pipeline() -> anyhow::Result<()> {
     // This demonstrates the IoPipeline API for advanced scenarios
-    let mut pipe = pipeline()
-        .buffer_size(65536)
-        .build();
+    let mut pipe = pipeline().buffer_size(65536).build();
 
     // Example processor function
     let processor = |data: &[u8]| -> std::io::Result<Vec<u8>> {

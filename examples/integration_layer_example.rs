@@ -8,14 +8,15 @@
 //!
 //! Run with: cargo run --example integration_layer_example
 
+use clap_noun_verb::integration::exporters::PlatformExporter;
 use clap_noun_verb::integration::{
     CommandExecutor, DatadogExporter, DynamicCachingMiddleware, ElasticsearchExporter,
-    ExecutionContext, ObservabilityMiddleware, PluginDependencyGraph,
-    SmartRetryMiddleware,
+    ExecutionContext, ObservabilityMiddleware, PluginDependencyGraph, SmartRetryMiddleware,
 };
-use clap_noun_verb::integration::exporters::PlatformExporter;
 use clap_noun_verb::middleware::MiddlewarePipeline;
-use clap_noun_verb::telemetry::{MetricsCollector, ConsoleExporter, MetricsExporter, TracingCollector};
+use clap_noun_verb::telemetry::{
+    ConsoleExporter, MetricsCollector, MetricsExporter, TracingCollector,
+};
 use std::sync::{Arc, Mutex};
 
 fn main() -> clap_noun_verb::Result<()> {
@@ -29,8 +30,7 @@ fn main() -> clap_noun_verb::Result<()> {
     println!("📋 Part 1: Middleware Executor with Type-State Pattern\n");
 
     // Create middleware pipeline
-    let pipeline = MiddlewarePipeline::new()
-        .add(Box::new(LoggingMiddleware::new().verbose()));
+    let pipeline = MiddlewarePipeline::new().add(Box::new(LoggingMiddleware::new().verbose()));
 
     // Create execution context
     let context = ExecutionContext::new("database-query")
@@ -90,9 +90,7 @@ fn main() -> clap_noun_verb::Result<()> {
     println!("      ✓ Created with 600-second TTL\n");
 
     println!("   2. Smart Retry Middleware");
-    let retry_mw = SmartRetryMiddleware::new()
-        .with_max_retries(5)
-        .with_base_backoff(100);
+    let retry_mw = SmartRetryMiddleware::new().with_max_retries(5).with_base_backoff(100);
     println!("      ✓ Configured: {} retries, {} base backoff", 5, 100);
     println!("      Backoff times (exponential):");
     for attempt in 0..4 {
@@ -160,9 +158,8 @@ fn main() -> clap_noun_verb::Result<()> {
     println!();
 
     println!("   3. Elasticsearch Exporter");
-    let es_exporter =
-        ElasticsearchExporter::new(vec!["http://localhost:9200".to_string()])
-            .with_index_prefix("app-logs");
+    let es_exporter = ElasticsearchExporter::new(vec!["http://localhost:9200".to_string()])
+        .with_index_prefix("app-logs");
     match es_exporter.export(&metrics_for_export) {
         Ok(output) => {
             let lines: Vec<&str> = output.lines().collect();
@@ -181,11 +178,8 @@ fn main() -> clap_noun_verb::Result<()> {
     let mut graph = PluginDependencyGraph::new();
 
     // Simulate parsing manifests
-    let mut plugin_core = clap_noun_verb::integration::config::PluginConfig::new(
-        "core",
-        "1.0.0",
-        "lib/core.so",
-    );
+    let mut plugin_core =
+        clap_noun_verb::integration::config::PluginConfig::new("core", "1.0.0", "lib/core.so");
 
     let mut plugin_logging = clap_noun_verb::integration::config::PluginConfig::new(
         "logging",

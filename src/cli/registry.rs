@@ -320,7 +320,8 @@ impl CommandRegistry {
         self.verbs
             .get(noun_name)
             .map(|verbs| {
-                verbs.iter()
+                verbs
+                    .iter()
                     .map(|(name, meta)| (name.as_str(), meta.about.as_str(), &meta.args))
                     .collect()
             })

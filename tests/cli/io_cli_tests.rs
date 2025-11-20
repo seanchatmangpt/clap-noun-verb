@@ -8,10 +8,10 @@
 //! - Error handling and recovery
 
 use clap_noun_verb::io::{AsyncReader, AsyncWriter, BufferedIO, StreamProcessor};
-use tokio::runtime::Runtime;
-use std::path::PathBuf;
 use std::io::Write;
+use std::path::PathBuf;
 use tempfile::NamedTempFile;
+use tokio::runtime::Runtime;
 
 // ============================================================================
 // Async I/O Tests (25+ tests)
@@ -304,9 +304,7 @@ fn test_stream_processor_filter() {
         let input = vec!["keep", "drop", "keep", "drop"];
         let mut processor = StreamProcessor::new().ok().unwrap();
 
-        let filtered = processor
-            .filter(input.into_iter(), |s| s == "keep")
-            .await;
+        let filtered = processor.filter(input.into_iter(), |s| s == "keep").await;
 
         assert_eq!(filtered.len(), 2);
         assert!(filtered.iter().all(|s| *s == "keep"));
@@ -323,9 +321,7 @@ fn test_stream_processor_map() {
         let input = vec!["a", "b", "c"];
         let mut processor = StreamProcessor::new().ok().unwrap();
 
-        let mapped = processor
-            .map(input.into_iter(), |s| s.to_uppercase())
-            .await;
+        let mapped = processor.map(input.into_iter(), |s| s.to_uppercase()).await;
 
         assert_eq!(mapped, vec!["A", "B", "C"]);
     });
@@ -499,7 +495,10 @@ fn test_buffered_io_overflow_handling() {
     let result = buffered.write(&large_data);
 
     // Assert - Should handle gracefully (auto-flush or error)
-    assert!(result.is_ok() || buffered.needs_flush(), "Large write should succeed or indicate flush needed");
+    assert!(
+        result.is_ok() || buffered.needs_flush(),
+        "Large write should succeed or indicate flush needed"
+    );
 }
 
 #[test]

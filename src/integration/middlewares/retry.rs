@@ -129,9 +129,7 @@ mod tests {
 
     #[test]
     fn test_retry_middleware_with_options() {
-        let mw = SmartRetryMiddleware::new()
-            .with_max_retries(5)
-            .with_base_backoff(50);
+        let mw = SmartRetryMiddleware::new().with_max_retries(5).with_base_backoff(50);
         assert_eq!(mw.max_retries(), 5);
         assert_eq!(mw.base_backoff_ms(), 50);
     }
@@ -150,9 +148,7 @@ mod tests {
 
     #[test]
     fn test_backoff_max_limit() {
-        let mw = SmartRetryMiddleware::new()
-            .with_max_backoff(1000)
-            .with_jitter(false);
+        let mw = SmartRetryMiddleware::new().with_max_backoff(1000).with_jitter(false);
 
         let backoff_10 = mw.calculate_backoff(10);
         assert!(backoff_10 <= 1000);

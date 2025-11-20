@@ -9,12 +9,12 @@
 //! - Grammar DSL
 //! - Distributed tracing
 
-use clap_noun_verb::kernel::session::{Session, SessionManager};
 use clap_noun_verb::kernel::attestation::{Attestation, AttestationManager};
-use clap_noun_verb::kernel::quotas::{QuotaManager, ResourceQuota};
 use clap_noun_verb::kernel::capability::{Capability, CapabilityManager};
-use std::sync::Arc;
+use clap_noun_verb::kernel::quotas::{QuotaManager, ResourceQuota};
+use clap_noun_verb::kernel::session::{Session, SessionManager};
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 // ============================================================================
 // Session Management Tests (30+ tests)
@@ -136,9 +136,7 @@ fn test_session_concurrent_access() {
     for _ in 0..10 {
         let manager_clone = session_manager.clone();
         let id_clone = session_id.clone();
-        let handle = std::thread::spawn(move || {
-            manager_clone.get_session(&id_clone)
-        });
+        let handle = std::thread::spawn(move || manager_clone.get_session(&id_clone));
         handles.push(handle);
     }
 
@@ -175,7 +173,10 @@ fn test_session_terminate() {
 
     // Assert
     assert!(terminate_result.is_ok(), "Termination should succeed");
-    assert!(session_manager.get_session(&session_id).is_err(), "Terminated session should not exist");
+    assert!(
+        session_manager.get_session(&session_id).is_err(),
+        "Terminated session should not exist"
+    );
 }
 
 // ============================================================================
@@ -221,7 +222,10 @@ fn test_attestation_verification_tampered() {
     let verification = manager.verify_attestation(&attestation);
 
     // Assert
-    assert!(verification.is_err() || !verification.ok().unwrap(), "Tampered attestation should fail verification");
+    assert!(
+        verification.is_err() || !verification.ok().unwrap(),
+        "Tampered attestation should fail verification"
+    );
 }
 
 #[test]
@@ -452,7 +456,10 @@ fn test_capability_check_before_grant() {
     let _ = cap_manager.register_capability("write", "Write access");
 
     // Act & Assert
-    assert!(!cap_manager.user_has_capability("user1", "write"), "User should not have capability initially");
+    assert!(
+        !cap_manager.user_has_capability("user1", "write"),
+        "User should not have capability initially"
+    );
 }
 
 #[test]

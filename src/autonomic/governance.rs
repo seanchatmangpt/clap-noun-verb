@@ -64,62 +64,31 @@ impl EventId {
 #[serde(tag = "type", content = "data")]
 pub enum EventType {
     /// Capability was granted
-    CapabilityGranted {
-        capability_id: CapabilityId,
-        granted_by: AgentIdentity,
-    },
+    CapabilityGranted { capability_id: CapabilityId, granted_by: AgentIdentity },
 
     /// Capability was revoked
-    CapabilityRevoked {
-        capability_id: CapabilityId,
-        revoked_by: AgentIdentity,
-    },
+    CapabilityRevoked { capability_id: CapabilityId, revoked_by: AgentIdentity },
 
     /// Policy was changed
-    PolicyChanged {
-        policy_id: String,
-        change_type: PolicyChangeType,
-        changed_by: AgentIdentity,
-    },
+    PolicyChanged { policy_id: String, change_type: PolicyChangeType, changed_by: AgentIdentity },
 
     /// Delegation was created
-    DelegationCreated {
-        token_id: String,
-        delegator: AgentIdentity,
-        delegate: AgentIdentity,
-    },
+    DelegationCreated { token_id: String, delegator: AgentIdentity, delegate: AgentIdentity },
 
     /// Delegation expired
-    DelegationExpired {
-        token_id: String,
-    },
+    DelegationExpired { token_id: String },
 
     /// Operating mode changed
-    ModeChanged {
-        from_mode: OperatingMode,
-        to_mode: OperatingMode,
-        changed_by: AgentIdentity,
-    },
+    ModeChanged { from_mode: OperatingMode, to_mode: OperatingMode, changed_by: AgentIdentity },
 
     /// Policy decision was made
-    PolicyDecision {
-        decision: PolicyDecision,
-        capability_id: CapabilityId,
-        command: String,
-    },
+    PolicyDecision { decision: PolicyDecision, capability_id: CapabilityId, command: String },
 
     /// Security violation detected
-    SecurityViolation {
-        violation_type: String,
-        severity: ViolationSeverity,
-        description: String,
-    },
+    SecurityViolation { violation_type: String, severity: ViolationSeverity, description: String },
 
     /// Audit checkpoint
-    AuditCheckpoint {
-        checkpoint_id: String,
-        events_since_last: u64,
-    },
+    AuditCheckpoint { checkpoint_id: String, events_since_last: u64 },
 }
 
 /// Type of policy change
@@ -215,10 +184,7 @@ impl GovernanceLedger {
         let event = GovernanceEvent {
             event_id: EventId::new(0), // Will be set by append
             timestamp: SystemTime::now(),
-            event_type: EventType::CapabilityGranted {
-                capability_id,
-                granted_by,
-            },
+            event_type: EventType::CapabilityGranted { capability_id, granted_by },
             agent,
             tenant,
             correlation_id: correlation_id.into(),
@@ -321,7 +287,12 @@ impl GovernanceLedger {
     }
 
     /// Create a checkpoint
-    pub fn checkpoint(&self, checkpoint_id: impl Into<String>, agent: AgentIdentity, tenant: TenantIdentity) -> EventId {
+    pub fn checkpoint(
+        &self,
+        checkpoint_id: impl Into<String>,
+        agent: AgentIdentity,
+        tenant: TenantIdentity,
+    ) -> EventId {
         let events_since_last = self.event_count() as u64;
 
         let event = GovernanceEvent {
@@ -355,41 +326,31 @@ pub struct LedgerQuery {
 
 impl LedgerQuery {
     fn new(events: Arc<RwLock<Vec<GovernanceEvent>>>) -> Self {
-        Self {
-            events,
-            filters: Vec::new(),
-        }
+        Self { events, filters: Vec::new() }
     }
 
     /// Filter by time range
     pub fn time_range(mut self, start: SystemTime, end: SystemTime) -> Self {
-        self.filters.push(Box::new(move |event| {
-            event.timestamp >= start && event.timestamp <= end
-        }));
+        self.filters
+            .push(Box::new(move |event| event.timestamp >= start && event.timestamp <= end));
         self
     }
 
     /// Filter by agent
     pub fn agent(mut self, agent_id: String) -> Self {
-        self.filters.push(Box::new(move |event| {
-            event.agent.agent_id == agent_id
-        }));
+        self.filters.push(Box::new(move |event| event.agent.agent_id == agent_id));
         self
     }
 
     /// Filter by tenant
     pub fn tenant(mut self, tenant_id: String) -> Self {
-        self.filters.push(Box::new(move |event| {
-            event.tenant.tenant_id == tenant_id
-        }));
+        self.filters.push(Box::new(move |event| event.tenant.tenant_id == tenant_id));
         self
     }
 
     /// Filter by correlation ID
     pub fn correlation_id(mut self, correlation_id: String) -> Self {
-        self.filters.push(Box::new(move |event| {
-            event.correlation_id == correlation_id
-        }));
+        self.filters.push(Box::new(move |event| event.correlation_id == correlation_id));
         self
     }
 
@@ -397,21 +358,14 @@ impl LedgerQuery {
     pub fn execute(self) -> Vec<GovernanceEvent> {
         let events = self.events.read().unwrap();
 
-        events
-            .iter()
-            .filter(|event| self.filters.iter().all(|f| f(event)))
-            .cloned()
-            .collect()
+        events.iter().filter(|event| self.filters.iter().all(|f| f(event))).cloned().collect()
     }
 
     /// Count matching events
     pub fn count(self) -> usize {
         let events = self.events.read().unwrap();
 
-        events
-            .iter()
-            .filter(|event| self.filters.iter().all(|f| f(event)))
-            .count()
+        events.iter().filter(|event| self.filters.iter().all(|f| f(event))).count()
     }
 }
 
@@ -429,15 +383,9 @@ impl LedgerStorage {
     fn new(path: impl AsRef<Path>) -> std::io::Result<Self> {
         use std::fs::OpenOptions;
 
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
 
-        Ok(Self {
-            path: path.as_ref().to_path_buf(),
-            file: Arc::new(RwLock::new(file)),
-        })
+        Ok(Self { path: path.as_ref().to_path_buf(), file: Arc::new(RwLock::new(file)) })
     }
 
     /// Append an event
@@ -482,18 +430,16 @@ impl ReplayEngine {
     }
 
     /// Replay a time slice with original policies
-    pub fn replay_timeslice(
-        &self,
-        start: SystemTime,
-        end: SystemTime,
-    ) -> ReplayResult {
+    pub fn replay_timeslice(&self, start: SystemTime, end: SystemTime) -> ReplayResult {
         let events = self.ledger.query().time_range(start, end).execute();
 
         // Extract policy decisions
         let decisions: Vec<_> = events
             .iter()
             .filter_map(|event| {
-                if let EventType::PolicyDecision { decision, capability_id, command } = &event.event_type {
+                if let EventType::PolicyDecision { decision, capability_id, command } =
+                    &event.event_type
+                {
                     Some((decision.clone(), capability_id.clone(), command.clone()))
                 } else {
                     None
@@ -526,7 +472,9 @@ impl ReplayEngine {
         let mut differences = Vec::new();
 
         for event in &events {
-            if let EventType::PolicyDecision { decision, capability_id, command } = &event.event_type {
+            if let EventType::PolicyDecision { decision, capability_id, command } =
+                &event.event_type
+            {
                 original_decisions.push((decision.clone(), capability_id.clone(), command.clone()));
 
                 // Re-evaluate with new policy
@@ -583,8 +531,13 @@ pub struct ReplayResult {
 impl ReplayResult {
     /// Get statistics
     pub fn stats(&self) -> ReplayStats {
-        let allow_count = self.decisions.iter().filter(|(d, _, _)| matches!(d, PolicyDecision::Allow)).count();
-        let deny_count = self.decisions.iter().filter(|(d, _, _)| matches!(d, PolicyDecision::Deny { .. })).count();
+        let allow_count =
+            self.decisions.iter().filter(|(d, _, _)| matches!(d, PolicyDecision::Allow)).count();
+        let deny_count = self
+            .decisions
+            .iter()
+            .filter(|(d, _, _)| matches!(d, PolicyDecision::Deny { .. }))
+            .count();
 
         ReplayStats {
             total_events: self.total_events,
@@ -677,10 +630,7 @@ mod tests {
 
         let engine = ReplayEngine::new(Arc::clone(&ledger));
 
-        let result = engine.replay_timeslice(
-            SystemTime::UNIX_EPOCH,
-            SystemTime::now(),
-        );
+        let result = engine.replay_timeslice(SystemTime::UNIX_EPOCH, SystemTime::now());
 
         assert_eq!(result.policy_decisions, 1);
     }

@@ -81,9 +81,10 @@ impl CacheManagerPlugin {
         let key = key.into();
         let value = value.into();
 
-        let mut state = self.cache.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-        })?;
+        let mut state = self
+            .cache
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?;
 
         // Evict oldest entry if at capacity
         if state.data.len() >= self.max_size && !state.data.contains_key(&key) {
@@ -102,22 +103,17 @@ impl CacheManagerPlugin {
         state.access_order.push(key.clone());
 
         let expires_at = SystemTime::now() + ttl;
-        state.data.insert(
-            key,
-            CacheEntry {
-                value,
-                expires_at,
-            },
-        );
+        state.data.insert(key, CacheEntry { value, expires_at });
 
         Ok(())
     }
 
     /// Get a cached value if not expired
     pub fn get(&self, key: &str) -> crate::Result<Option<String>> {
-        let mut state = self.cache.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-        })?;
+        let mut state = self
+            .cache
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?;
 
         if let Some(entry) = state.data.get(key) {
             if entry.is_expired() {
@@ -135,9 +131,10 @@ impl CacheManagerPlugin {
 
     /// Clear all cached entries
     pub fn clear(&self) -> crate::Result<()> {
-        let mut state = self.cache.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-        })?;
+        let mut state = self
+            .cache
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?;
         state.data.clear();
         state.access_order.clear();
         Ok(())
@@ -145,9 +142,10 @@ impl CacheManagerPlugin {
 
     /// Get cache statistics
     pub fn stats(&self) -> crate::Result<(usize, usize)> {
-        let state = self.cache.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-        })?;
+        let state = self
+            .cache
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?;
 
         let total = state.data.len();
         let expired = state.data.values().filter(|e| e.is_expired()).count();
@@ -195,7 +193,11 @@ impl Plugin for CacheManagerPlugin {
     }
 
     fn status(&self) -> String {
-        format!("CacheManager v{} ({})", self.version(), if self.loaded { "loaded" } else { "unloaded" })
+        format!(
+            "CacheManager v{} ({})",
+            self.version(),
+            if self.loaded { "loaded" } else { "unloaded" }
+        )
     }
 }
 
@@ -223,9 +225,7 @@ mod tests {
         plugin.load().unwrap();
 
         // Set value with very short TTL
-        plugin
-            .set_with_ttl("session:456", "token", Duration::from_millis(10))
-            .unwrap();
+        plugin.set_with_ttl("session:456", "token", Duration::from_millis(10)).unwrap();
 
         // Should exist immediately
         assert!(plugin.get("session:456").unwrap().is_some());
@@ -291,9 +291,7 @@ mod tests {
 
         // Simulate caching user sessions
         for i in 0..10 {
-            cache
-                .set(format!("session:{}", i), format!("user_{}", i))
-                .unwrap();
+            cache.set(format!("session:{}", i), format!("user_{}", i)).unwrap();
         }
 
         // Verify all cached

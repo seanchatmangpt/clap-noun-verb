@@ -35,10 +35,7 @@ impl AsyncDelegationRegistry {
     pub fn new() -> (Self, mpsc::UnboundedReceiver<DelegationSyncMessage>) {
         let (sync_tx, sync_rx) = mpsc::unbounded_channel();
 
-        let registry = Self {
-            local: Arc::new(RwLock::new(DelegationRegistry::new())),
-            sync_tx,
-        };
+        let registry = Self { local: Arc::new(RwLock::new(DelegationRegistry::new())), sync_tx };
 
         (registry, sync_rx)
     }
@@ -93,9 +90,7 @@ pub struct AsyncGraphQueryExecutor {
 impl AsyncGraphQueryExecutor {
     /// Create a new async graph executor
     pub fn new(graph: CapabilityGraph) -> Self {
-        Self {
-            graph: Arc::new(RwLock::new(graph)),
-        }
+        Self { graph: Arc::new(RwLock::new(graph)) }
     }
 
     /// Compute reachability asynchronously
@@ -117,16 +112,10 @@ impl AsyncGraphQueryExecutor {
     }
 
     /// Batch reachability queries in parallel
-    pub async fn batch_reachability_async(
-        &self,
-        queries: Vec<(NodeId, NodeId)>,
-    ) -> Vec<bool> {
+    pub async fn batch_reachability_async(&self, queries: Vec<(NodeId, NodeId)>) -> Vec<bool> {
         let graph = self.graph.read().await;
 
-        queries
-            .into_iter()
-            .map(|(from, to)| graph.is_reachable(from, to))
-            .collect()
+        queries.into_iter().map(|(from, to)| graph.is_reachable(from, to)).collect()
     }
 }
 
@@ -138,15 +127,10 @@ mod tests {
     async fn test_async_delegation_registry() {
         let (registry, mut _sync_rx) = AsyncDelegationRegistry::new();
 
-        let delegator = Principal::new(
-            AgentIdentity::anonymous(),
-            TenantIdentity::default_tenant(),
-        );
+        let delegator =
+            Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
-        let delegate = Principal::new(
-            AgentIdentity::anonymous(),
-            TenantIdentity::default_tenant(),
-        );
+        let delegate = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
         let constraint = CapabilityConstraint::unrestricted();
 

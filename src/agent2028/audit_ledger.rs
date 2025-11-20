@@ -1,13 +1,12 @@
+use chrono::{DateTime, Utc};
 /// Distributed Audit Ledger (Immutable Audit Trail)
 ///
 /// Append-only cryptographically-linked audit logs for tracking all command executions
 /// across agent systems with tamper-proof verification and Merkle tree compression.
-
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Keccak256};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc};
-use sha3::{Digest, Keccak256};
 
 /// Single audit event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,11 +29,7 @@ pub struct ExecutionResult {
 }
 
 impl AuditEvent {
-    pub fn new(
-        agent_id: String,
-        command: String,
-        result: ExecutionResult,
-    ) -> Self {
+    pub fn new(agent_id: String, command: String, result: ExecutionResult) -> Self {
         let mut input_hasher = Keccak256::new();
         input_hasher.update(command.as_bytes());
 
@@ -105,10 +100,7 @@ pub struct MerkleTree {
 
 impl MerkleTree {
     pub fn new() -> Self {
-        Self {
-            leaves: Arc::new(RwLock::new(Vec::new())),
-            root: Arc::new(RwLock::new(None)),
-        }
+        Self { leaves: Arc::new(RwLock::new(Vec::new())), root: Arc::new(RwLock::new(None)) }
     }
 
     /// Add an event as a leaf to the tree
@@ -204,14 +196,7 @@ impl TimestampProof {
         hasher.update(event_id.as_bytes());
         let hash = hasher.finalize();
         let nonce = u64::from_le_bytes([
-            hash[0],
-            hash[1],
-            hash[2],
-            hash[3],
-            hash[4],
-            hash[5],
-            hash[6],
-            hash[7],
+            hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
         ]);
 
         Self {
@@ -257,21 +242,13 @@ impl DistributedAuditLedger {
     /// Query events for an agent
     pub async fn query(&self, agent_id: &str) -> Vec<AuditEvent> {
         let events = self.events.read().await;
-        events
-            .iter()
-            .filter(|e| e.agent_id == agent_id)
-            .cloned()
-            .collect()
+        events.iter().filter(|e| e.agent_id == agent_id).cloned().collect()
     }
 
     /// Query events by command
     pub async fn query_by_command(&self, command: &str) -> Vec<AuditEvent> {
         let events = self.events.read().await;
-        events
-            .iter()
-            .filter(|e| e.command == command)
-            .cloned()
-            .collect()
+        events.iter().filter(|e| e.command == command).cloned().collect()
     }
 
     /// Get total event count
@@ -341,17 +318,9 @@ mod tests {
 
     #[test]
     fn test_audit_event() {
-        let result = ExecutionResult {
-            success: true,
-            duration_ms: 100,
-            error: None,
-        };
+        let result = ExecutionResult { success: true, duration_ms: 100, error: None };
 
-        let event = AuditEvent::new(
-            "agent-1".to_string(),
-            "database.query".to_string(),
-            result,
-        );
+        let event = AuditEvent::new("agent-1".to_string(), "database.query".to_string(), result);
 
         assert!(!event.hash().is_empty());
     }
@@ -360,17 +329,9 @@ mod tests {
     async fn test_merkle_tree() {
         let tree = MerkleTree::new();
 
-        let result = ExecutionResult {
-            success: true,
-            duration_ms: 100,
-            error: None,
-        };
+        let result = ExecutionResult { success: true, duration_ms: 100, error: None };
 
-        let event1 = AuditEvent::new(
-            "agent-1".to_string(),
-            "command-1".to_string(),
-            result,
-        );
+        let event1 = AuditEvent::new("agent-1".to_string(), "command-1".to_string(), result);
 
         tree.add_event(&event1).await;
         assert_eq!(tree.leaf_count().await, 1);
@@ -383,17 +344,9 @@ mod tests {
     async fn test_distributed_ledger() {
         let ledger = DistributedAuditLedger::new();
 
-        let result = ExecutionResult {
-            success: true,
-            duration_ms: 100,
-            error: None,
-        };
+        let result = ExecutionResult { success: true, duration_ms: 100, error: None };
 
-        let event = AuditEvent::new(
-            "agent-1".to_string(),
-            "database.query".to_string(),
-            result,
-        );
+        let event = AuditEvent::new("agent-1".to_string(), "database.query".to_string(), result);
 
         ledger.append(event).await;
 

@@ -12,9 +12,7 @@ struct Output {
 /// Simple test command
 #[verb("test")]
 fn test_command() -> Result<Output> {
-    Ok(Output {
-        message: "Hello".to_string(),
-    })
+    Ok(Output { message: "Hello".to_string() })
 }
 
 fn main() -> Result<()> {

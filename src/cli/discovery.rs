@@ -83,9 +83,9 @@ impl CommandDiscovery {
                     if a.score.is_nan() && b.score.is_nan() {
                         std::cmp::Ordering::Equal
                     } else if b.score.is_nan() {
-                        std::cmp::Ordering::Less  // a is "greater" if b is NaN
+                        std::cmp::Ordering::Less // a is "greater" if b is NaN
                     } else {
-                        std::cmp::Ordering::Greater  // b is "greater" if a is NaN
+                        std::cmp::Ordering::Greater // b is "greater" if a is NaN
                     }
                 }
             }
@@ -307,10 +307,7 @@ pub fn generate_commands_output(discovery: &CommandDiscovery) -> Result<Commands
 }
 
 /// Generate search output for "ggen find <keyword>"
-pub fn generate_search_output(
-    discovery: &CommandDiscovery,
-    keyword: &str,
-) -> Result<SearchOutput> {
+pub fn generate_search_output(discovery: &CommandDiscovery, keyword: &str) -> Result<SearchOutput> {
     let results = discovery.search(keyword);
 
     if results.is_empty() {

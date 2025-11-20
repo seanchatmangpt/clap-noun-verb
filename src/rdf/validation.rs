@@ -2,8 +2,8 @@
 //!
 //! FUTURE v5: This module is a placeholder for later implementation
 
-use crate::rdf::invocation::ParsedInvocation;
 use crate::error::Result;
+use crate::rdf::invocation::ParsedInvocation;
 use std::collections::BTreeMap;
 use thiserror::Error;
 
@@ -46,19 +46,11 @@ pub enum Constraint {
 #[derive(Debug, Error)]
 pub enum ShapeError {
     #[error("Constraint violation in shape '{shape}' for property '{property}': {message}")]
-    ConstraintViolation {
-        shape: String,
-        property: String,
-        message: String,
-    },
+    ConstraintViolation { shape: String, property: String, message: String },
     #[error("Missing required property: {property}")]
     MissingRequired { property: String },
     #[error("Invalid type for property '{property}': expected {expected}, got {got}")]
-    InvalidType {
-        property: String,
-        expected: String,
-        got: String,
-    },
+    InvalidType { property: String, expected: String, got: String },
 }
 
 impl ShapeValidator {
@@ -112,9 +104,7 @@ impl ShapeValidator {
             Constraint::Required(true) => {
                 // Check that command is present (always true for ParsedInvocation)
                 if invocation.command.is_empty() {
-                    return Err(ShapeError::MissingRequired {
-                        property: "command".to_string(),
-                    });
+                    return Err(ShapeError::MissingRequired { property: "command".to_string() });
                 }
             }
             Constraint::DataType(expected_type) => {
@@ -140,7 +130,11 @@ impl ShapeValidator {
                     return Err(ShapeError::ConstraintViolation {
                         shape: shape.name.clone(),
                         property: "args".to_string(),
-                        message: format!("Expected at least {} arguments, got {}", min, invocation.args.len()),
+                        message: format!(
+                            "Expected at least {} arguments, got {}",
+                            min,
+                            invocation.args.len()
+                        ),
                     });
                 }
             }
@@ -149,7 +143,11 @@ impl ShapeValidator {
                     return Err(ShapeError::ConstraintViolation {
                         shape: shape.name.clone(),
                         property: "args".to_string(),
-                        message: format!("Expected at most {} arguments, got {}", max, invocation.args.len()),
+                        message: format!(
+                            "Expected at most {} arguments, got {}",
+                            max,
+                            invocation.args.len()
+                        ),
                     });
                 }
             }
@@ -203,7 +201,11 @@ impl ShapeValidator {
             return Err(ShapeError::ConstraintViolation {
                 shape: shape.name.clone(),
                 property: "command".to_string(),
-                message: format!("Command length {} is less than minimum {}", invocation.command.len(), min),
+                message: format!(
+                    "Command length {} is less than minimum {}",
+                    invocation.command.len(),
+                    min
+                ),
             });
         }
         Ok(())
@@ -219,7 +221,11 @@ impl ShapeValidator {
             return Err(ShapeError::ConstraintViolation {
                 shape: shape.name.clone(),
                 property: "command".to_string(),
-                message: format!("Command length {} exceeds maximum {}", invocation.command.len(), max),
+                message: format!(
+                    "Command length {} exceeds maximum {}",
+                    invocation.command.len(),
+                    max
+                ),
             });
         }
         Ok(())
@@ -240,10 +246,7 @@ impl Default for ShapeValidator {
 impl ShaclShape {
     /// Create a new SHACL shape
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            constraints: Vec::new(),
-        }
+        Self { name: name.into(), constraints: Vec::new() }
     }
 
     /// Add a constraint
@@ -283,8 +286,7 @@ mod tests {
     #[test]
     fn test_add_shape() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::Required(true));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::Required(true));
 
         validator.add_shape(shape).expect("Failed to add shape");
         assert_eq!(validator.shape_count(), 1);
@@ -293,8 +295,7 @@ mod tests {
     #[test]
     fn test_validate_required() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::Required(true));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::Required(true));
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -305,8 +306,7 @@ mod tests {
     #[test]
     fn test_validate_min_length() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::MinLength(5));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::MinLength(5));
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -317,8 +317,7 @@ mod tests {
     #[test]
     fn test_validate_max_length_violation() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::MaxLength(5));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::MaxLength(5));
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -329,8 +328,7 @@ mod tests {
     #[test]
     fn test_validate_min_count() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::MinCount(2));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::MinCount(2));
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -341,8 +339,7 @@ mod tests {
     #[test]
     fn test_validate_max_count_violation() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::MaxCount(1));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::MaxCount(1));
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -353,12 +350,11 @@ mod tests {
     #[test]
     fn test_multiple_constraints() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("ComplexShape")
-            .with_constraints(vec![
-                Constraint::Required(true),
-                Constraint::MinLength(3),
-                Constraint::MaxLength(100),
-            ]);
+        let shape = ShaclShape::new("ComplexShape").with_constraints(vec![
+            Constraint::Required(true),
+            Constraint::MinLength(3),
+            Constraint::MaxLength(100),
+        ]);
         validator.add_shape(shape).expect("add shape");
 
         let invocation = create_test_invocation();
@@ -369,8 +365,7 @@ mod tests {
     #[test]
     fn test_empty_command_violation() {
         let mut validator = ShapeValidator::new();
-        let shape = ShaclShape::new("TestShape")
-            .with_constraint(Constraint::Required(true));
+        let shape = ShaclShape::new("TestShape").with_constraint(Constraint::Required(true));
         validator.add_shape(shape).expect("add shape");
 
         let mut invocation = create_test_invocation();

@@ -65,10 +65,7 @@ fn list_all_services() -> Result<Vec<String>> {
 
 /// Example 7: With parameters (arg attributes parsed by #[verb] macro) ✅
 #[verb("config")]
-fn set_config(
-    port: u16,
-    host: Option<String>,
-) -> Result<String> {
+fn set_config(port: u16, host: Option<String>) -> Result<String> {
     Ok(format!("Config: {}:{}", host.unwrap_or_else(|| "localhost".to_string()), port))
 }
 

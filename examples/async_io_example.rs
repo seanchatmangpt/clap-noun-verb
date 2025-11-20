@@ -21,9 +21,9 @@ use clap_noun_verb::io::async_io::{
     AsyncInputExt, AsyncOutputExt, BackpressureConfig, LengthDelimitedFrameBuilder,
     LinesFrameBuilder,
 };
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
-use std::sync::Arc;
 
 #[derive(Parser)]
 #[command(name = "async-io-demo")]
@@ -85,10 +85,7 @@ async fn main() -> anyhow::Result<()> {
             framed_echo_server(&addr).await?;
         }
 
-        Commands::Benchmark {
-            iterations,
-            buffer_kb,
-        } => {
+        Commands::Benchmark { iterations, buffer_kb } => {
             benchmark_throughput(iterations, buffer_kb * 1024).await?;
         }
     }
@@ -120,15 +117,11 @@ async fn handle_echo_client(mut socket: TcpStream) -> anyhow::Result<()> {
     let mut reader = BufReader::new(reader);
     let mut line = String::new();
 
-    let config = BackpressureConfig::new()
-        .with_max_buffer(32 * 1024)
-        .with_chunk_size(4 * 1024);
+    let config = BackpressureConfig::new().with_max_buffer(32 * 1024).with_chunk_size(4 * 1024);
 
     while reader.read_line(&mut line).await? > 0 {
         // Echo with backpressure awareness
-        writer
-            .write_with_backpressure(line.as_bytes(), &config)
-            .await?;
+        writer.write_with_backpressure(line.as_bytes(), &config).await?;
         line.clear();
     }
 
@@ -142,9 +135,7 @@ async fn transform_stdin(kind: &str) -> anyhow::Result<()> {
     let mut reader = BufReader::new(stdin);
     let mut line = String::new();
 
-    let config = BackpressureConfig::new()
-        .with_max_buffer(128 * 1024)
-        .with_chunk_size(8 * 1024);
+    let config = BackpressureConfig::new().with_max_buffer(128 * 1024).with_chunk_size(8 * 1024);
 
     while reader.read_line(&mut line).await? > 0 {
         let transformed = match kind {
@@ -154,9 +145,7 @@ async fn transform_stdin(kind: &str) -> anyhow::Result<()> {
             _ => line.clone(),
         };
 
-        stdout
-            .write_with_backpressure(transformed.as_bytes(), &config)
-            .await?;
+        stdout.write_with_backpressure(transformed.as_bytes(), &config).await?;
         line.clear();
     }
 

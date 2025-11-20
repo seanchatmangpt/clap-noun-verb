@@ -1,8 +1,8 @@
 //! Metrics collection and recording.
 
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 /// Counter metric for tracking occurrences.
 #[derive(Debug, Clone)]
@@ -15,11 +15,7 @@ pub struct Counter {
 impl Counter {
     /// Create a new counter.
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            value: Arc::new(RwLock::new(0)),
-            labels: HashMap::new(),
-        }
+        Self { name: name.into(), value: Arc::new(RwLock::new(0)), labels: HashMap::new() }
     }
 
     /// Increment the counter.

@@ -9,7 +9,8 @@
 //! - Certificate caching
 
 use clap_noun_verb::autonomic::*;
-use std::time::{Duration, SystemTime};
+use clap_noun_verb::autonomic::certificates::Verified;
+use std::time::Duration;
 
 #[test]
 fn test_certificate_type_state_transitions() {
@@ -31,25 +32,19 @@ fn test_certificate_type_state_transitions() {
         metadata: std::collections::HashMap::new(),
     };
 
-    let cert = cert
-        .with_policy_check("test-engine", &policy_result)
-        .expect("Policy check should succeed");
+    let cert =
+        cert.with_policy_check("test-engine", &policy_result).expect("Policy check should succeed");
 
     // THEN: Certificate is now PolicyChecked
     // AND: Can transition to CapabilityChecked
     let available = vec![CapabilityId::from_path("user.create")];
-    let cert = cert
-        .with_capability_check(&available)
-        .expect("Capability check should succeed");
+    let cert = cert.with_capability_check(&available).expect("Capability check should succeed");
 
     // AND: Can transition to Verified
     let cert = cert.verify().expect("Verification should succeed");
 
     // AND: Can access verified methods
-    assert_eq!(
-        cert.capability_id(),
-        &CapabilityId::from_path("user.create")
-    );
+    assert_eq!(cert.capability_id(), &CapabilityId::from_path("user.create"));
     assert!(cert.is_valid());
 }
 
@@ -66,7 +61,8 @@ fn test_certificate_policy_denial_blocks_transition() {
 
     // WHEN: Policy check denies
     let policy_result = PolicyResult {
-        decision: PolicyDecision::Deny { suggestion: None,
+        decision: PolicyDecision::Deny {
+            suggestion: None,
             reason: "Insufficient permissions".to_string(),
         },
         evaluated_rules: vec!["deny-admin".to_string()],
@@ -106,16 +102,13 @@ fn test_certificate_missing_capability_blocks_transition() {
 
     // THEN: Transition fails
     assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        CertificateError::CapabilityNotAvailable(_)
-    ));
+    assert!(matches!(result.unwrap_err(), CertificateError::CapabilityNotAvailable(_)));
 }
 
 #[test]
 fn test_certificate_expiration() {
     // GIVEN: A certificate that expires soon
-    let mut cert = CertificateBuilder::new(
+    let cert = CertificateBuilder::new(
         CapabilityId::from_path("temp.action"),
         "1.0.0",
         InputSchema::default(),
@@ -155,8 +148,7 @@ fn test_certificate_serialization_roundtrip() {
     let exported = cert.export().expect("Export should succeed");
 
     // THEN: We can import it back
-    let imported =
-        Certificate::<Verified>::import(&exported).expect("Import should succeed");
+    let imported = Certificate::<Verified>::import(&exported).expect("Import should succeed");
 
     // AND: Properties are preserved
     assert_eq!(cert.certificate_id, imported.certificate_id);
@@ -173,16 +165,16 @@ fn test_certificate_with_effects() {
             sensitivity: Sensitivity::High,
             idempotent: true,
             required_role: Some("admin".to_string()),
-            data_sensitivity_tags: vec![DataSensitivityTag::PII],
-            isolation_requirement: IsolationRequirement::Isolated,
+            data_sensitivity: vec![DataSensitivityTag::Pii],
+            isolation: IsolationRequirement::Isolated,
         },
         EffectMetadata {
             effect_type: EffectType::NetworkAccess,
             sensitivity: Sensitivity::Medium,
             idempotent: false,
             required_role: None,
-            data_sensitivity_tags: vec![],
-            isolation_requirement: IsolationRequirement::Shared,
+            data_sensitivity: vec![],
+            isolation: IsolationRequirement::Shared,
         },
     ];
 
@@ -277,15 +269,18 @@ fn test_certificate_policy_trace() {
 #[test]
 fn test_certificate_schema_hashes() {
     // GIVEN: Specific input and output schemas
+    let mut required = std::collections::HashMap::new();
+    required.insert("name".to_string(), TypeSchema::primitive(PrimitiveType::String));
     let input_schema = InputSchema {
-        required_inputs: vec![("name".to_string(), TypeSchema::Primitive(PrimitiveType::String))],
-        optional_inputs: vec![],
-        supports_stdin: false,
+        required,
+        optional: std::collections::HashMap::new(),
+        accepts_stdin: false,
+        stdin_schema: None,
     };
 
     let output_schema = OutputSchema {
-        success_schema: TypeSchema::Primitive(PrimitiveType::String),
-        error_schema: TypeSchema::Primitive(PrimitiveType::String),
+        success: TypeSchema::primitive(PrimitiveType::String),
+        error: Some(TypeSchema::primitive(PrimitiveType::String)),
         outputs_stdout: true,
         named_outputs: std::collections::HashMap::new(),
     };

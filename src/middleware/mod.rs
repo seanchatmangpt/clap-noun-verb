@@ -24,8 +24,8 @@ pub mod builtin;
 use std::fmt;
 
 pub use builtin::{
-    AuthMiddleware, CachingMiddleware, LoggingMiddleware, ProfilingMiddleware,
-    RateLimitingMiddleware, ErrorRecoveryMiddleware,
+    AuthMiddleware, CachingMiddleware, ErrorRecoveryMiddleware, LoggingMiddleware,
+    ProfilingMiddleware, RateLimitingMiddleware,
 };
 
 /// Middleware request context.
@@ -42,11 +42,7 @@ pub struct MiddlewareRequest {
 impl MiddlewareRequest {
     /// Create a new middleware request.
     pub fn new(command: impl Into<String>) -> Self {
-        Self {
-            command: command.into(),
-            args: Vec::new(),
-            requester: None,
-        }
+        Self { command: command.into(), args: Vec::new(), requester: None }
     }
 
     /// Add an argument.
@@ -91,20 +87,12 @@ pub struct MiddlewareResponse {
 impl MiddlewareResponse {
     /// Create a successful response.
     pub fn success(message: impl Into<String>) -> Self {
-        Self {
-            success: true,
-            message: message.into(),
-            metadata: std::collections::HashMap::new(),
-        }
+        Self { success: true, message: message.into(), metadata: std::collections::HashMap::new() }
     }
 
     /// Create a failed response.
     pub fn failure(message: impl Into<String>) -> Self {
-        Self {
-            success: false,
-            message: message.into(),
-            metadata: std::collections::HashMap::new(),
-        }
+        Self { success: false, message: message.into(), metadata: std::collections::HashMap::new() }
     }
 
     /// Add metadata to the response.
@@ -168,9 +156,7 @@ impl fmt::Debug for MiddlewarePipeline {
 impl MiddlewarePipeline {
     /// Create a new empty middleware pipeline.
     pub fn new() -> Self {
-        Self {
-            middlewares: Vec::new(),
-        }
+        Self { middlewares: Vec::new() }
     }
 
     /// Add a middleware to the pipeline.
@@ -187,9 +173,10 @@ impl MiddlewarePipeline {
     pub fn execute_before(&self, request: &MiddlewareRequest) -> crate::Result<()> {
         for middleware in &self.middlewares {
             if !middleware.before(request)? {
-                return Err(crate::NounVerbError::MiddlewareError(
-                    format!("Middleware '{}' rejected request", middleware.name()),
-                ));
+                return Err(crate::NounVerbError::MiddlewareError(format!(
+                    "Middleware '{}' rejected request",
+                    middleware.name()
+                )));
             }
         }
         Ok(())
@@ -243,11 +230,7 @@ impl Default for MiddlewarePipeline {
 
 impl fmt::Display for MiddlewarePipeline {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "MiddlewarePipeline({})",
-            self.middleware_names().join(" -> ")
-        )
+        write!(f, "MiddlewarePipeline({})", self.middleware_names().join(" -> "))
     }
 }
 
@@ -264,9 +247,7 @@ mod tests {
 
     #[test]
     fn test_middleware_request_with_args() {
-        let req = MiddlewareRequest::new("test")
-            .with_arg("arg1")
-            .with_arg("arg2");
+        let req = MiddlewareRequest::new("test").with_arg("arg1").with_arg("arg2");
         assert_eq!(req.args().len(), 2);
     }
 

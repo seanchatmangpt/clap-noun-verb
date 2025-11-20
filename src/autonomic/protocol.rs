@@ -36,11 +36,7 @@ pub struct ProtocolVersion {
 impl ProtocolVersion {
     /// Create a new protocol version
     pub const fn new(major: u16, minor: u16, patch: u16) -> Self {
-        Self {
-            major,
-            minor,
-            patch,
-        }
+        Self { major, minor, patch }
     }
 
     /// Protocol v1.0.0 (legacy)
@@ -189,11 +185,7 @@ impl ProtocolCapabilities {
     /// Create capabilities for 2027 swarm-native agent
     pub fn swarm_native_2027() -> Self {
         Self {
-            versions: vec![
-                ProtocolVersion::V4_0,
-                ProtocolVersion::V3_0,
-                ProtocolVersion::V2_0,
-            ],
+            versions: vec![ProtocolVersion::V4_0, ProtocolVersion::V3_0, ProtocolVersion::V2_0],
             features: ProtocolFeatures::ALL_2027,
             max_message_size: 16 * 1024 * 1024, // 16MB
             max_concurrent_invocations: 10_000,
@@ -291,10 +283,8 @@ impl ProtocolNegotiator {
         let max_message_size = self.local.max_message_size.min(remote.max_message_size);
 
         // Use minimum concurrency
-        let max_concurrent_invocations = self
-            .local
-            .max_concurrent_invocations
-            .min(remote.max_concurrent_invocations);
+        let max_concurrent_invocations =
+            self.local.max_concurrent_invocations.min(remote.max_concurrent_invocations);
 
         Ok(NegotiationResult {
             version,
@@ -311,27 +301,16 @@ impl ProtocolNegotiator {
         let remote_versions: HashSet<_> = remote.versions.iter().copied().collect();
 
         // Find highest version in local preference order that remote also supports
-        self.local
-            .versions
-            .iter()
-            .find(|v| remote_versions.contains(v))
-            .copied()
+        self.local.versions.iter().find(|v| remote_versions.contains(v)).copied()
     }
 
     /// Negotiate compression algorithm
-    fn negotiate_compression(
-        &self,
-        remote: &ProtocolCapabilities,
-    ) -> Option<CompressionAlgorithm> {
+    fn negotiate_compression(&self, remote: &ProtocolCapabilities) -> Option<CompressionAlgorithm> {
         // Build set of remote algorithms
         let remote_algos: HashSet<_> = remote.compression.iter().copied().collect();
 
         // Find first match in local preference order
-        self.local
-            .compression
-            .iter()
-            .find(|a| remote_algos.contains(a))
-            .copied()
+        self.local.compression.iter().find(|a| remote_algos.contains(a)).copied()
     }
 }
 
@@ -352,11 +331,7 @@ pub struct ProtocolMessage<'a> {
 impl<'a> ProtocolMessage<'a> {
     /// Create a new protocol message
     pub fn new(msg_type: MessageType, payload: &'a [u8], correlation_id: u64) -> Self {
-        Self {
-            msg_type,
-            payload,
-            correlation_id,
-        }
+        Self { msg_type, payload, correlation_id }
     }
 
     /// Get message size

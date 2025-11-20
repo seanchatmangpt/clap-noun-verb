@@ -6,8 +6,8 @@
 //! - Redirect to alternative noun/verb
 //! - Enforce global governance rules
 
-use crate::autonomic::EffectMetadata;
 use super::tenancy::InvocationContext;
+use crate::autonomic::EffectMetadata;
 use crate::error::{NounVerbError, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -54,10 +54,7 @@ impl PolicyDecision {
 
     /// Create a deny decision with suggestion
     pub fn deny_with_suggestion(reason: impl Into<String>, suggestion: impl Into<String>) -> Self {
-        PolicyDecision::Deny {
-            reason: reason.into(),
-            suggestion: Some(suggestion.into()),
-        }
+        PolicyDecision::Deny { reason: reason.into(), suggestion: Some(suggestion.into()) }
     }
 
     /// Create a rewrite decision
@@ -71,11 +68,7 @@ impl PolicyDecision {
         verb: impl Into<String>,
         args: HashMap<String, serde_json::Value>,
     ) -> Self {
-        PolicyDecision::Redirect {
-            noun: noun.into(),
-            verb: verb.into(),
-            args,
-        }
+        PolicyDecision::Redirect { noun: noun.into(), verb: verb.into(), args }
     }
 
     /// Check if this decision allows execution
@@ -115,14 +108,7 @@ impl PolicyRequest {
         args: HashMap<String, serde_json::Value>,
         effects: EffectMetadata,
     ) -> Self {
-        Self {
-            context,
-            noun: noun.into(),
-            verb: verb.into(),
-            args,
-            effects,
-            dry_run: false,
-        }
+        Self { context, noun: noun.into(), verb: verb.into(), args, effects, dry_run: false }
     }
 
     /// Mark as dry-run
@@ -147,11 +133,7 @@ pub struct PolicyResult {
 impl PolicyResult {
     /// Create a new policy result
     pub fn new(decision: PolicyDecision) -> Self {
-        Self {
-            decision,
-            evaluated_rules: Vec::new(),
-            metadata: HashMap::new(),
-        }
+        Self { decision, evaluated_rules: Vec::new(), metadata: HashMap::new() }
     }
 
     /// Add an evaluated rule
@@ -345,10 +327,7 @@ pub struct RuleBasedPolicyEngine {
 impl RuleBasedPolicyEngine {
     /// Create a new rule-based policy engine
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            rules: Vec::new(),
-        }
+        Self { name: name.into(), rules: Vec::new() }
     }
 
     /// Add a rule
@@ -377,8 +356,9 @@ impl PolicyEngine for RuleBasedPolicyEngine {
                         // Continue evaluating other rules
                     }
                     PolicyAction::Deny { reason } => {
-                        return Ok(PolicyResult::new(PolicyDecision::deny(reason))
-                            .with_rule(&rule.name));
+                        return Ok(
+                            PolicyResult::new(PolicyDecision::deny(reason)).with_rule(&rule.name)
+                        );
                     }
                     PolicyAction::RequireApproval { approver } => {
                         result = result.with_metadata(
@@ -424,16 +404,13 @@ mod tests {
 
     #[test]
     fn test_rule_based_policy_engine() {
-        let engine = RuleBasedPolicyEngine::new("test-policy")
-            .add_rule(
-                PolicyRule::new("deny-privileged", "Deny privileged operations")
-                    .with_condition(PolicyCondition::EffectType {
-                        effect: "privileged".to_string(),
-                    })
-                    .with_action(PolicyAction::Deny {
-                        reason: "Privileged operations not allowed".to_string(),
-                    }),
-            );
+        let engine = RuleBasedPolicyEngine::new("test-policy").add_rule(
+            PolicyRule::new("deny-privileged", "Deny privileged operations")
+                .with_condition(PolicyCondition::EffectType { effect: "privileged".to_string() })
+                .with_action(PolicyAction::Deny {
+                    reason: "Privileged operations not allowed".to_string(),
+                }),
+        );
 
         let ctx = InvocationContext::anonymous();
         let request = PolicyRequest::new(

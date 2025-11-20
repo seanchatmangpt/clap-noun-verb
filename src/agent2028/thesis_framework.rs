@@ -2,10 +2,9 @@
 ///
 /// Formal ontology-based thesis planning and validation using RDF
 /// Supports Λ-scheduling, Π-profiling, and Γ-checking
-
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
 use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
 
 /// Seven canonical shard families
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -44,7 +43,7 @@ pub struct Shard {
     pub status: ShardStatus,
     pub word_count: usize,
     pub word_count_target: usize,
-    pub priority: u32,           // 1-5, 1 is critical
+    pub priority: u32, // 1-5, 1 is critical
     pub evidence_sources: Vec<String>,
     pub depends_on: Vec<String>, // Shard IDs this depends on
 }
@@ -98,8 +97,8 @@ pub struct Invariant {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum InvariantScope {
-    Local,   // Within a shard
-    Global,  // Across entire thesis
+    Local,  // Within a shard
+    Global, // Across entire thesis
 }
 
 /// Λ-Total Order: Schedule for chapter/section writing
@@ -110,10 +109,7 @@ pub struct LambdaSchedule {
 
 impl LambdaSchedule {
     pub fn new() -> Self {
-        Self {
-            shards: Vec::new(),
-            ordering: Vec::new(),
-        }
+        Self { shards: Vec::new(), ordering: Vec::new() }
     }
 
     pub fn add_shard(&mut self, shard: Shard) {
@@ -183,7 +179,8 @@ impl LambdaSchedule {
         let mut milestones = Vec::new();
         for (week, shard_id) in self.ordering.iter().enumerate() {
             let progress = ((week as f64) / total_shards) * 100.0;
-            milestones.push((shard_id.clone(), format!("Week {}: {:.0}% done", week + 1, progress)));
+            milestones
+                .push((shard_id.clone(), format!("Week {}: {:.0}% done", week + 1, progress)));
         }
 
         milestones
@@ -199,11 +196,7 @@ pub struct PiProfile {
 
 impl PiProfile {
     pub fn new(central_claim: String) -> Self {
-        Self {
-            central_claim,
-            shard_contributions: HashMap::new(),
-            claim_support: HashMap::new(),
-        }
+        Self { central_claim, shard_contributions: HashMap::new(), claim_support: HashMap::new() }
     }
 
     pub fn add_shard_contribution(&mut self, shard_id: String, claims: Vec<String>) {
@@ -347,11 +340,8 @@ impl GammaChecker {
     }
 
     fn check_completeness(&mut self) {
-        let required_families = vec![
-            ShardFamily::Contribution,
-            ShardFamily::Monograph,
-            ShardFamily::IMRaD,
-        ];
+        let required_families =
+            vec![ShardFamily::Contribution, ShardFamily::Monograph, ShardFamily::IMRaD];
 
         for family in required_families {
             if !self.shards.iter().any(|s| s.family == family) {
@@ -373,7 +363,11 @@ impl GammaChecker {
                     check_name: "Evidence".to_string(),
                     shard_id: Some(shard.id.clone()),
                     passed: false,
-                    message: format!("Shard {} needs more evidence (has {}, need 3+)", shard.name, shard.evidence_sources.len()),
+                    message: format!(
+                        "Shard {} needs more evidence (has {}, need 3+)",
+                        shard.name,
+                        shard.evidence_sources.len()
+                    ),
                     severity: Severity::Warning,
                 });
             }
@@ -400,7 +394,12 @@ impl GammaChecker {
         }
     }
 
-    fn has_cycle(&self, node: &str, visited: &mut HashSet<String>, rec: &mut HashSet<String>) -> bool {
+    fn has_cycle(
+        &self,
+        node: &str,
+        visited: &mut HashSet<String>,
+        rec: &mut HashSet<String>,
+    ) -> bool {
         visited.insert(node.to_string());
         rec.insert(node.to_string());
 
@@ -453,9 +452,11 @@ impl GammaChecker {
     pub fn generate_report(&self) -> CheckReport {
         let total_checks = self.check_results.len();
         let passed = self.check_results.iter().filter(|r| r.passed).count();
-        let critical = self.check_results.iter().filter(|r| r.severity == Severity::Critical).count();
+        let critical =
+            self.check_results.iter().filter(|r| r.severity == Severity::Critical).count();
         let errors = self.check_results.iter().filter(|r| r.severity == Severity::Error).count();
-        let warnings = self.check_results.iter().filter(|r| r.severity == Severity::Warning).count();
+        let warnings =
+            self.check_results.iter().filter(|r| r.severity == Severity::Warning).count();
 
         let health = if critical > 0 {
             "Critical"

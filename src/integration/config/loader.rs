@@ -42,9 +42,7 @@ impl PluginManifestLoader {
         let name = table
             .get("name")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| {
-                crate::NounVerbError::PluginError("Missing 'name' field".to_string())
-            })?
+            .ok_or_else(|| crate::NounVerbError::PluginError("Missing 'name' field".to_string()))?
             .to_string();
 
         let version = table
@@ -63,20 +61,13 @@ impl PluginManifestLoader {
             })?
             .to_string();
 
-        let description = table
-            .get("description")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+        let description =
+            table.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
         let dependencies: Vec<String> = table
             .get("dependencies")
             .and_then(|v| v.as_array())
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect()
-            })
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
             .unwrap_or_default();
 
         let mut config = PluginConfig::new(&name, &version, &entry_point);
@@ -95,9 +86,7 @@ impl PluginManifestLoader {
 
         let name = json["name"]
             .as_str()
-            .ok_or_else(|| {
-                crate::NounVerbError::PluginError("Missing 'name' field".to_string())
-            })?
+            .ok_or_else(|| crate::NounVerbError::PluginError("Missing 'name' field".to_string()))?
             .to_string();
 
         let version = json["version"]
@@ -114,18 +103,11 @@ impl PluginManifestLoader {
             })?
             .to_string();
 
-        let description = json["description"]
-            .as_str()
-            .unwrap_or("")
-            .to_string();
+        let description = json["description"].as_str().unwrap_or("").to_string();
 
         let dependencies: Vec<String> = json["dependencies"]
             .as_array()
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect()
-            })
+            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
             .unwrap_or_default();
 
         let mut config = PluginConfig::new(&name, &version, &entry_point);

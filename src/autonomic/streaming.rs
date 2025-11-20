@@ -250,7 +250,11 @@ pub struct IncrementalReceipt {
 
 impl IncrementalReceipt {
     /// Create a new incremental receipt
-    pub fn new(receipt_id: impl Into<String>, milestone: u64, description: impl Into<String>) -> Self {
+    pub fn new(
+        receipt_id: impl Into<String>,
+        milestone: u64,
+        description: impl Into<String>,
+    ) -> Self {
         Self {
             receipt_id: receipt_id.into(),
             milestone,
@@ -287,28 +291,40 @@ pub trait StreamProducer {
     fn emit(&mut self, event: StreamEvent) -> Result<(), std::io::Error>;
 
     /// Emit progress
-    fn emit_progress(&mut self, sequence: u64, percent: u8, message: impl Into<String>) -> Result<(), std::io::Error> {
-        self.emit(
-            StreamEvent::new(sequence, StreamEventType::Progress).with_data(serde_json::json!({
+    fn emit_progress(
+        &mut self,
+        sequence: u64,
+        percent: u8,
+        message: impl Into<String>,
+    ) -> Result<(), std::io::Error> {
+        self.emit(StreamEvent::new(sequence, StreamEventType::Progress).with_data(
+            serde_json::json!({
                 "percent": percent,
                 "message": message.into(),
-            })),
-        )
+            }),
+        ))
     }
 
     /// Emit partial result
-    fn emit_partial_result(&mut self, sequence: u64, data: serde_json::Value) -> Result<(), std::io::Error> {
+    fn emit_partial_result(
+        &mut self,
+        sequence: u64,
+        data: serde_json::Value,
+    ) -> Result<(), std::io::Error> {
         self.emit(StreamEvent::new(sequence, StreamEventType::PartialResult).with_data(data))
     }
 
     /// Emit log message
-    fn emit_log(&mut self, sequence: u64, level: impl Into<String>, message: impl Into<String>) -> Result<(), std::io::Error> {
-        self.emit(
-            StreamEvent::new(sequence, StreamEventType::Log).with_data(serde_json::json!({
-                "level": level.into(),
-                "message": message.into(),
-            })),
-        )
+    fn emit_log(
+        &mut self,
+        sequence: u64,
+        level: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Result<(), std::io::Error> {
+        self.emit(StreamEvent::new(sequence, StreamEventType::Log).with_data(serde_json::json!({
+            "level": level.into(),
+            "message": message.into(),
+        })))
     }
 }
 
@@ -320,9 +336,7 @@ pub struct SessionManager {
 impl SessionManager {
     /// Create a new session manager
     pub fn new() -> Self {
-        Self {
-            sessions: HashMap::new(),
-        }
+        Self { sessions: HashMap::new() }
     }
 
     /// Create a new session
@@ -360,7 +374,9 @@ impl SessionManager {
 
         for (id, session) in &self.sessions {
             if let Some(timeout) = session.timeout_seconds {
-                if let Ok(last_active) = chrono::DateTime::parse_from_rfc3339(&session.last_active_at) {
+                if let Ok(last_active) =
+                    chrono::DateTime::parse_from_rfc3339(&session.last_active_at)
+                {
                     let elapsed = now.signed_duration_since(last_active).num_seconds() as u64;
                     if elapsed > timeout {
                         expired.push(id.clone());
@@ -392,9 +408,7 @@ mod tests {
 
     #[test]
     fn test_session_context() {
-        let mut session = SessionContext::generate()
-            .with_noun_scope("services")
-            .with_timeout(3600);
+        let mut session = SessionContext::generate().with_noun_scope("services").with_timeout(3600);
 
         assert!(session.is_active());
         assert_eq!(session.noun_scope, Some("services".to_string()));

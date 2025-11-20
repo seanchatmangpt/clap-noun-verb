@@ -1,13 +1,12 @@
+use chrono::{DateTime, Utc};
 /// Distributed Task Allocation
 ///
 /// Self-organizing task markets where agents bid on tasks based on
 /// capability, load, and availability.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc};
 
 /// Task in the market
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +14,7 @@ pub struct SwarmTask {
     pub task_id: String,
     pub description: String,
     pub required_skills: Vec<String>,
-    pub priority: u8,                // 1-10
+    pub priority: u8, // 1-10
     pub reward: f64,
     pub deadline: Option<DateTime<Utc>>,
     pub assigned_agent: Option<String>,
@@ -33,7 +32,12 @@ pub enum TaskStatus {
 }
 
 impl SwarmTask {
-    pub fn new(description: String, required_skills: Vec<String>, priority: u8, reward: f64) -> Self {
+    pub fn new(
+        description: String,
+        required_skills: Vec<String>,
+        priority: u8,
+        reward: f64,
+    ) -> Self {
         Self {
             task_id: uuid::Uuid::new_v4().to_string(),
             description,
@@ -59,10 +63,10 @@ pub struct TaskBid {
     pub bid_id: String,
     pub task_id: String,
     pub agent_id: String,
-    pub bid_price: f64,                // Lower is better for agent
+    pub bid_price: f64,                 // Lower is better for agent
     pub estimated_completion_time: u64, // Seconds
-    pub confidence: f64,               // 0.0 to 1.0
-    pub current_load: usize,           // Tasks agent already has
+    pub confidence: f64,                // 0.0 to 1.0
+    pub current_load: usize,            // Tasks agent already has
     pub timestamp: DateTime<Utc>,
 }
 
@@ -122,11 +126,7 @@ impl TaskMarket {
     /// Get open tasks
     pub async fn get_open_tasks(&self) -> Vec<SwarmTask> {
         let tasks = self.open_tasks.read().await;
-        tasks
-            .values()
-            .filter(|t| t.status == TaskStatus::Open)
-            .cloned()
-            .collect()
+        tasks.values().filter(|t| t.status == TaskStatus::Open).cloned().collect()
     }
 
     /// Agent bids on a task
@@ -232,12 +232,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_task_creation() {
-        let task = SwarmTask::new(
-            "Process data".to_string(),
-            vec!["ml.inference".to_string()],
-            5,
-            100.0,
-        );
+        let task =
+            SwarmTask::new("Process data".to_string(), vec!["ml.inference".to_string()], 5, 100.0);
 
         assert_eq!(task.status, TaskStatus::Open);
     }
@@ -245,12 +241,8 @@ mod tests {
     #[tokio::test]
     async fn test_task_market() {
         let market = TaskMarket::new();
-        let task = SwarmTask::new(
-            "Process data".to_string(),
-            vec!["ml.inference".to_string()],
-            5,
-            100.0,
-        );
+        let task =
+            SwarmTask::new("Process data".to_string(), vec!["ml.inference".to_string()], 5, 100.0);
 
         let task_id = task.task_id.clone();
         market.list_task(task).await;
@@ -262,12 +254,7 @@ mod tests {
     #[tokio::test]
     async fn test_bidding() {
         let market = TaskMarket::new();
-        let task = SwarmTask::new(
-            "Compute".to_string(),
-            vec!["compute".to_string()],
-            5,
-            100.0,
-        );
+        let task = SwarmTask::new("Compute".to_string(), vec!["compute".to_string()], 5, 100.0);
         let task_id = task.task_id.clone();
         market.list_task(task).await;
 

@@ -27,10 +27,7 @@ impl MetricsExporter for ConsoleExporter {
     fn export(&self, metrics: &MetricsCollector) -> crate::Result<String> {
         let mut output = String::new();
         output.push_str("=== Metrics Report ===\n");
-        output.push_str(&format!(
-            "Total Commands Executed: {}\n",
-            metrics.command_count()
-        ));
+        output.push_str(&format!("Total Commands Executed: {}\n", metrics.command_count()));
         output.push_str(&format!("Total Errors: {}\n", metrics.error_count()));
 
         if let Some(mean) = metrics.execution_times().mean() {
@@ -103,10 +100,7 @@ impl MetricsExporter for PrometheusExporter {
         // Counter metrics
         output.push_str("# HELP command_executions_total Total number of command executions\n");
         output.push_str("# TYPE command_executions_total counter\n");
-        output.push_str(&format!(
-            "command_executions_total {}\n",
-            metrics.command_count()
-        ));
+        output.push_str(&format!("command_executions_total {}\n", metrics.command_count()));
 
         output.push_str("# HELP command_errors_total Total number of command errors\n");
         output.push_str("# TYPE command_errors_total counter\n");

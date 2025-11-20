@@ -1,23 +1,22 @@
+use chrono::{DateTime, Duration, Utc};
 /// Stigmergic Communication System
 ///
 /// Indirect coordination via virtual pheromones. Agents leave chemical markers
 /// in the environment which other agents read, enabling coordination without
 /// explicit messaging.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Single pheromone cell in the field
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PheromoneCell {
     pub x: i32,
     pub y: i32,
-    pub intensity: f64,           // 0.0 to 1.0
-    pub pheromone_type: String,  // "food", "danger", "home", etc.
-    pub deposited_by: String,    // Agent ID
+    pub intensity: f64,         // 0.0 to 1.0
+    pub pheromone_type: String, // "food", "danger", "home", etc.
+    pub deposited_by: String,   // Agent ID
     pub created_at: DateTime<Utc>,
     pub last_reinforced: DateTime<Utc>,
 }
@@ -63,11 +62,7 @@ pub struct PheromoneField {
 
 impl PheromoneField {
     pub fn new(decay_rate: f64, diffusion_rate: f64) -> Self {
-        Self {
-            cells: Arc::new(RwLock::new(HashMap::new())),
-            decay_rate,
-            diffusion_rate,
-        }
+        Self { cells: Arc::new(RwLock::new(HashMap::new())), decay_rate, diffusion_rate }
     }
 
     /// Deposit pheromone at a location
@@ -131,7 +126,9 @@ impl PheromoneField {
         for ((x, y), amount) in updates {
             cells
                 .entry((x, y))
-                .or_insert_with(|| PheromoneCell::new(x, y, "diffused".to_string(), "environment".to_string()))
+                .or_insert_with(|| {
+                    PheromoneCell::new(x, y, "diffused".to_string(), "environment".to_string())
+                })
                 .intensity += amount;
         }
     }
@@ -150,11 +147,7 @@ impl PheromoneField {
     /// Get all active pheromones
     pub async fn active_pheromones(&self) -> Vec<PheromoneCell> {
         let cells = self.cells.read().await;
-        cells
-            .values()
-            .filter(|c| c.is_active())
-            .cloned()
-            .collect()
+        cells.values().filter(|c| c.is_active()).cloned().collect()
     }
 
     /// Clear all pheromones
@@ -176,23 +169,17 @@ impl StigmergicProtocol {
 
     /// Agent deposits pheromone to signal success
     pub async fn signal_success(&self, x: i32, y: i32, agent_id: String) {
-        self.field
-            .deposit(x, y, "success".to_string(), agent_id)
-            .await;
+        self.field.deposit(x, y, "success".to_string(), agent_id).await;
     }
 
     /// Agent deposits pheromone to signal danger
     pub async fn signal_danger(&self, x: i32, y: i32, agent_id: String) {
-        self.field
-            .deposit(x, y, "danger".to_string(), agent_id)
-            .await;
+        self.field.deposit(x, y, "danger".to_string(), agent_id).await;
     }
 
     /// Agent deposits pheromone to signal food/resource
     pub async fn signal_resource(&self, x: i32, y: i32, resource_type: String, agent_id: String) {
-        self.field
-            .deposit(x, y, format!("resource:{}", resource_type), agent_id)
-            .await;
+        self.field.deposit(x, y, format!("resource:{}", resource_type), agent_id).await;
     }
 
     /// Agent reads pheromone gradient to navigate
@@ -201,7 +188,13 @@ impl StigmergicProtocol {
     }
 
     /// Agent finds nearest pheromone of type
-    pub async fn find_nearest(&self, x: i32, y: i32, pheromone_type: &str, search_radius: i32) -> Option<(i32, i32)> {
+    pub async fn find_nearest(
+        &self,
+        x: i32,
+        y: i32,
+        pheromone_type: &str,
+        search_radius: i32,
+    ) -> Option<(i32, i32)> {
         let mut best_pos = None;
         let mut best_dist = f64::MAX;
 

@@ -23,14 +23,8 @@ mod io_tests {
 
     #[test]
     fn test_io_type_value_parser() {
-        assert_eq!(
-            IoType::Input.value_parser_expr(),
-            "clio::Input::value_parser()"
-        );
-        assert_eq!(
-            IoType::Output.value_parser_expr(),
-            "clio::Output::value_parser()"
-        );
+        assert_eq!(IoType::Input.value_parser_expr(), "clio::Input::value_parser()");
+        assert_eq!(IoType::Output.value_parser_expr(), "clio::Output::value_parser()");
     }
 
     #[test]
@@ -95,10 +89,7 @@ mod io_tests {
         let mut props = std::collections::HashMap::new();
         props.insert("format".to_string(), "json".to_string());
 
-        let custom = IoType::Custom {
-            name: "JsonInput".to_string(),
-            properties: props,
-        };
+        let custom = IoType::Custom { name: "JsonInput".to_string(), properties: props };
 
         assert!(!custom.is_input());
         assert!(!custom.is_output());
@@ -156,9 +147,7 @@ mod io_pipeline_tests {
 
     #[test]
     fn test_pipeline_builder() {
-        let pipe = pipeline()
-            .buffer_size(16384)
-            .build();
+        let pipe = pipeline().buffer_size(16384).build();
 
         assert_eq!(pipe.buffer_size(), 16384);
         assert!(pipe.inputs().is_empty());
@@ -191,18 +180,9 @@ mod io_error_tests {
         let path = PathBuf::from("/tmp/test.txt");
 
         let errors = vec![
-            IoError::Path {
-                path: path.clone(),
-                reason: "test".to_string(),
-            },
-            IoError::Format {
-                path: path.clone(),
-                reason: "invalid format".to_string(),
-            },
-            IoError::PermissionDenied {
-                path: path.clone(),
-                operation: "read".to_string(),
-            },
+            IoError::Path { path: path.clone(), reason: "test".to_string() },
+            IoError::Format { path: path.clone(), reason: "invalid format".to_string() },
+            IoError::PermissionDenied { path: path.clone(), operation: "read".to_string() },
             IoError::NotFound(path.clone()),
         ];
 

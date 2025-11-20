@@ -66,11 +66,7 @@ impl StructuredError {
     }
 
     /// Add a detail field
-    pub fn with_detail(
-        mut self,
-        key: impl Into<String>,
-        value: impl Serialize,
-    ) -> Self {
+    pub fn with_detail(mut self, key: impl Into<String>, value: impl Serialize) -> Self {
         if let Ok(json_value) = serde_json::to_value(value) {
             self.details.insert(key.into(), json_value);
         }
@@ -109,22 +105,16 @@ impl StructuredError {
 
     /// Create a command not found error
     pub fn command_not_found(command: impl Into<String>) -> Self {
-        Self::new(
-            ErrorKind::CommandNotFound,
-            format!("Command '{}' not found", command.into()),
-        )
+        Self::new(ErrorKind::CommandNotFound, format!("Command '{}' not found", command.into()))
     }
 
     /// Create a verb not found error
     pub fn verb_not_found(noun: impl Into<String>, verb: impl Into<String>) -> Self {
         let noun = noun.into();
         let verb = verb.into();
-        Self::new(
-            ErrorKind::VerbNotFound,
-            format!("Verb '{}' not found for noun '{}'", verb, noun),
-        )
-        .with_detail("noun", noun)
-        .with_detail("verb", verb)
+        Self::new(ErrorKind::VerbNotFound, format!("Verb '{}' not found for noun '{}'", verb, noun))
+            .with_detail("noun", noun)
+            .with_detail("verb", verb)
     }
 
     /// Create an execution error
@@ -135,9 +125,7 @@ impl StructuredError {
     /// Convert from NounVerbError
     pub fn from_noun_verb_error(error: &crate::error::NounVerbError) -> Self {
         match error {
-            crate::error::NounVerbError::CommandNotFound { noun } => {
-                Self::command_not_found(noun)
-            }
+            crate::error::NounVerbError::CommandNotFound { noun } => Self::command_not_found(noun),
             crate::error::NounVerbError::VerbNotFound { noun, verb } => {
                 Self::verb_not_found(noun, verb)
             }
@@ -147,15 +135,11 @@ impl StructuredError {
             crate::error::NounVerbError::ExecutionError { message } => {
                 Self::execution_error(message)
             }
-            crate::error::NounVerbError::ArgumentError { message } => {
-                Self::invalid_input(message)
-            }
+            crate::error::NounVerbError::ArgumentError { message } => Self::invalid_input(message),
             crate::error::NounVerbError::PluginError(message) => {
                 Self::new(ErrorKind::InternalError, message)
             }
-            crate::error::NounVerbError::ValidationFailed(message) => {
-                Self::invalid_input(message)
-            }
+            crate::error::NounVerbError::ValidationFailed(message) => Self::invalid_input(message),
             crate::error::NounVerbError::MiddlewareError(message) => {
                 Self::new(ErrorKind::InternalError, message)
             }

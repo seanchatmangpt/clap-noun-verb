@@ -6,11 +6,11 @@
 //! - Topological sorting for load order
 //! - Manifest validation
 
-mod loader;
 mod graph;
+mod loader;
 
-pub use loader::PluginManifestLoader;
 pub use graph::PluginDependencyGraph;
+pub use loader::PluginManifestLoader;
 
 /// Plugin configuration from manifest file.
 #[derive(Debug, Clone)]

@@ -20,25 +20,25 @@ pub mod lockchain;
 pub mod lockchain_receipt;
 pub mod macro_integration;
 pub mod mcp_server;
-pub mod rmcp_handler;
 pub mod ontology;
 pub mod receipt;
+pub mod rmcp_handler;
 pub mod sparql;
 pub mod types;
 pub mod validation;
 
 pub use blake3_hash::Blake3Hash;
 pub use builder::OntologyBuilder;
-pub use guard_validation::{GuardValidationMiddleware, recover_from_error};
+pub use guard_validation::{recover_from_error, GuardValidationMiddleware};
 pub use invocation::{InvocationError, InvocationParser, ParsedInvocation};
 pub use kgc_integration::{AuditEntry, KgcMetadata, KgcPackage, KgcShard};
 pub use lockchain::{Lockchain, LockchainEntry};
 pub use lockchain_receipt::{LockchainReceipt, ReceiptMetadata};
 pub use macro_integration::RdfRegistry;
 pub use mcp_server::RdfMcpServer;
-pub use rmcp_handler::RdfMcpHandler;
 pub use ontology::{ClnvOntology, Ontology};
 pub use receipt::{Receipt, ReceiptGenerator};
+pub use rmcp_handler::RdfMcpHandler;
 pub use sparql::SparqlPlanner;
 pub use types::{Invocation, RdfTriple, RdfValue};
 pub use validation::ShapeValidator;
@@ -60,7 +60,7 @@ pub mod prelude {
     pub use crate::rdf::{
         AuditEntry, Blake3Hash, GuardValidationMiddleware, Invocation, InvocationError,
         KgcMetadata, KgcPackage, KgcShard, Lockchain, LockchainEntry, Ontology, OntologyBuilder,
-        ParsedInvocation, RdfMcpServer, RdfRegistry, RdfTriple, RdfValue, Receipt,
-        ReceiptMetadata, ShapeValidator,
+        ParsedInvocation, RdfMcpServer, RdfRegistry, RdfTriple, RdfValue, Receipt, ReceiptMetadata,
+        ShapeValidator,
     };
 }

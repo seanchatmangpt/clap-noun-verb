@@ -164,10 +164,7 @@ impl PhaseObserver {
 
             if prev.swarm_id == curr.swarm_id {
                 let duration = curr.timestamp.duration_since(prev.timestamp);
-                durations
-                    .entry(prev.transition.to)
-                    .or_insert_with(Vec::new)
-                    .push(duration);
+                durations.entry(prev.transition.to).or_insert_with(Vec::new).push(duration);
             }
         }
 
@@ -235,10 +232,7 @@ impl PhaseObserver {
         output.push_str(&format!("phase_observer_alerts {}\n", stats.total_alerts_fired));
 
         output.push_str("# TYPE phase_observer_buffer_size gauge\n");
-        output.push_str(&format!(
-            "phase_observer_buffer_size {}\n",
-            stats.events_buffered
-        ));
+        output.push_str(&format!("phase_observer_buffer_size {}\n", stats.events_buffered));
 
         output.push_str("# TYPE phase_transition_count counter\n");
         for ((from, to), count) in matrix.counts.iter() {
@@ -271,10 +265,7 @@ struct ObserverStats {
 
 impl ObserverStats {
     fn new() -> Self {
-        Self {
-            total_events: AtomicU64::new(0),
-            alerts_fired: AtomicU64::new(0),
-        }
+        Self { total_events: AtomicU64::new(0), alerts_fired: AtomicU64::new(0) }
     }
 }
 
@@ -313,11 +304,7 @@ impl AlertRule {
         F: Fn(&PhaseEvent) -> bool + Send + Sync + 'static,
         A: Fn(&PhaseEvent) + Send + Sync + 'static,
     {
-        Self {
-            name: name.into(),
-            condition: Box::new(condition),
-            action: Box::new(action),
-        }
+        Self { name: name.into(), condition: Box::new(condition), action: Box::new(action) }
     }
 
     /// Check if event matches this rule
@@ -376,9 +363,7 @@ pub struct TransitionMatrix {
 impl TransitionMatrix {
     /// Create a new transition matrix
     pub fn new() -> Self {
-        Self {
-            counts: std::collections::HashMap::new(),
-        }
+        Self { counts: std::collections::HashMap::new() }
     }
 
     /// Record a transition

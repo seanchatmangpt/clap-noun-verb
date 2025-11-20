@@ -15,10 +15,7 @@ struct TokenBucket {
 
 impl TokenBucket {
     fn new(capacity: f64) -> Self {
-        Self {
-            tokens: capacity,
-            last_refill: Instant::now(),
-        }
+        Self { tokens: capacity, last_refill: Instant::now() }
     }
 
     /// Refill tokens based on elapsed time and rate
@@ -75,34 +72,33 @@ impl RateLimiterPlugin {
 
     /// Check if request is allowed for user
     pub fn allow_request(&self, user_id: &str) -> crate::Result<bool> {
-        let mut buckets = self.buckets.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string())
-        })?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string()))?;
 
-        let bucket = buckets
-            .entry(user_id.to_string())
-            .or_insert_with(|| TokenBucket::new(self.capacity));
+        let bucket =
+            buckets.entry(user_id.to_string()).or_insert_with(|| TokenBucket::new(self.capacity));
 
         Ok(bucket.try_consume(self.rate_per_sec))
     }
 
     /// Get current token count for user (for testing)
     pub fn get_tokens(&self, user_id: &str) -> crate::Result<f64> {
-        let buckets = self.buckets.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string())
-        })?;
+        let buckets = self
+            .buckets
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string()))?;
 
-        Ok(buckets
-            .get(user_id)
-            .map(|b| b.tokens)
-            .unwrap_or(self.capacity))
+        Ok(buckets.get(user_id).map(|b| b.tokens).unwrap_or(self.capacity))
     }
 
     /// Reset all buckets
     pub fn reset(&self) -> crate::Result<()> {
-        let mut buckets = self.buckets.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string())
-        })?;
+        let mut buckets = self
+            .buckets
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Bucket lock failed".to_string()))?;
         buckets.clear();
         Ok(())
     }

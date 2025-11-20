@@ -3,7 +3,7 @@
 //! Provides validation functions that return user-friendly errors
 //! with actionable recovery suggestions.
 
-use super::errors::{UserError, ErrorCategory};
+use super::errors::{ErrorCategory, UserError};
 
 /// Supported AI model identifiers
 const SUPPORTED_MODELS: &[&str] = &[
@@ -48,7 +48,8 @@ pub fn validate_model_name(name: &str) -> Result<String, UserError> {
                 suggested,
                 format_model_list()
             ),
-        ).with_docs("https://docs.ggen.io/models");
+        )
+        .with_docs("https://docs.ggen.io/models");
 
         return Err(error);
     }
@@ -63,17 +64,11 @@ pub fn validate_pack_path(path: &str) -> Result<String, UserError> {
     let path_obj = Path::new(path);
 
     if !path_obj.exists() {
-        return Err(super::errors::invalid_pack_path(
-            path,
-            "path does not exist"
-        ));
+        return Err(super::errors::invalid_pack_path(path, "path does not exist"));
     }
 
     if !path_obj.is_dir() {
-        return Err(super::errors::invalid_pack_path(
-            path,
-            "path is not a directory"
-        ));
+        return Err(super::errors::invalid_pack_path(path, "path is not a directory"));
     }
 
     // Check for pack manifest
@@ -90,7 +85,8 @@ pub fn validate_pack_path(path: &str) -> Result<String, UserError> {
                 ggen pack list --source <path>",
                 path
             ),
-        ).with_docs("https://docs.ggen.io/packs");
+        )
+        .with_docs("https://docs.ggen.io/packs");
 
         return Err(error);
     }
@@ -110,7 +106,8 @@ pub fn validate_template_vars(vars: &[String]) -> Result<Vec<(String, String)>, 
                     format!("Variable '{}' has empty key", var),
                     "Variable keys must not be empty:\n  \
                     ✓ Correct: name=value\n  \
-                    ✗ Wrong: =value".to_string(),
+                    ✗ Wrong: =value"
+                        .to_string(),
                 ));
             }
 
@@ -132,9 +129,7 @@ pub fn validate_prompt(prompt: &str) -> Result<String, UserError> {
     }
 
     if trimmed.len() < 10 {
-        return Err(super::errors::invalid_prompt(
-            "prompt is too short (minimum 10 characters)"
-        ));
+        return Err(super::errors::invalid_prompt("prompt is too short (minimum 10 characters)"));
     }
 
     // Check for placeholder text
@@ -145,7 +140,8 @@ pub fn validate_prompt(prompt: &str) -> Result<String, UserError> {
             "Prompt appears to contain placeholder text",
             "Replace placeholder text with a clear description:\n  \
             ✗ Wrong: 'TODO: add description'\n  \
-            ✓ Correct: 'Create a REST API handler for user authentication'".to_string(),
+            ✓ Correct: 'Create a REST API handler for user authentication'"
+                .to_string(),
         );
 
         return Err(error);
@@ -168,8 +164,10 @@ pub fn validate_package_id(package_id: &str) -> Result<String, UserError> {
               io.ggen.rust.axum\n  \
               com.myorg.templates.api\n\n  \
             Search for packages:\n  \
-            ggen marketplace search <keyword>".to_string(),
-        ).with_docs("https://docs.ggen.io/packages");
+            ggen marketplace search <keyword>"
+                .to_string(),
+        )
+        .with_docs("https://docs.ggen.io/packages");
 
         return Err(error);
     }
@@ -182,7 +180,8 @@ pub fn validate_package_id(package_id: &str) -> Result<String, UserError> {
                 format!("Package identifier '{}' has empty component", package_id),
                 "All parts of the package identifier must be non-empty:\n  \
                 ✗ Wrong: io..rust\n  \
-                ✓ Correct: io.ggen.rust".to_string(),
+                ✓ Correct: io.ggen.rust"
+                    .to_string(),
             ));
         }
 
@@ -192,7 +191,8 @@ pub fn validate_package_id(package_id: &str) -> Result<String, UserError> {
                 format!("Package identifier '{}' contains invalid characters", package_id),
                 "Package parts can only contain letters, numbers, hyphens, and underscores:\n  \
                 ✗ Wrong: io.ggen.my@package\n  \
-                ✓ Correct: io.ggen.my-package".to_string(),
+                ✓ Correct: io.ggen.my-package"
+                    .to_string(),
             ));
         }
     }

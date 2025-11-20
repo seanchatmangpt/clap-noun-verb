@@ -11,8 +11,8 @@
 //! 5. Delegation - Identity and authorization chains
 //! 6. Governance - Observability and replay
 
-use clap_noun_verb::autonomic::*;
 use clap_noun_verb::autonomic::contracts::AvailableResources;
+use clap_noun_verb::autonomic::*;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -30,10 +30,7 @@ fn test_complete_swarm_native_execution_flow() {
     println!("Track 5 (Delegation): Creating delegation chain...");
 
     // Alice (human) delegates to automated agent Bob
-    let alice = Principal::new(
-        AgentIdentity::human("alice"),
-        TenantIdentity::default_tenant(),
-    );
+    let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
 
     let bob = Principal::delegated(
         AgentIdentity {
@@ -89,10 +86,7 @@ fn test_complete_swarm_native_execution_flow() {
         InputSchema {
             required: {
                 let mut map = std::collections::HashMap::new();
-                map.insert(
-                    "user_id".to_string(),
-                    TypeSchema::primitive(PrimitiveType::String),
-                );
+                map.insert("user_id".to_string(), TypeSchema::primitive(PrimitiveType::String));
                 map
             },
             optional: std::collections::HashMap::new(),
@@ -133,9 +127,7 @@ fn test_complete_swarm_native_execution_flow() {
     );
 
     // user.list can be used with user.read
-    graph
-        .add_edge(list_node, read_node, EdgeType::Produces)
-        .expect("Edge creation failed");
+    graph.add_edge(list_node, read_node, EdgeType::Produces).expect("Edge creation failed");
 
     println!("  ✓ Capability graph built with {} nodes", graph.stats().node_count);
 
@@ -148,9 +140,7 @@ fn test_complete_swarm_native_execution_flow() {
 
     let contract = ExecutionContract::builder()
         .duration_class(DurationClass::Interactive)
-        .deadline(DeadlineSpec::Soft {
-            duration: Duration::from_millis(100),
-        })
+        .deadline(DeadlineSpec::Soft { duration: Duration::from_millis(100) })
         .idempotent()
         .concurrency_model(ConcurrencyModel::TenantWideShared { max_concurrent: 10 })
         .isolation(IsolationLevel::Shared)
@@ -162,7 +152,8 @@ fn test_complete_swarm_native_execution_flow() {
         })
         .build();
 
-    println!("  ✓ Contract: {:?} with {} max concurrent",
+    println!(
+        "  ✓ Contract: {:?} with {} max concurrent",
         contract.temporal.duration_class,
         match contract.concurrency.model {
             ConcurrencyModel::TenantWideShared { max_concurrent } => max_concurrent,
@@ -195,10 +186,7 @@ fn test_complete_swarm_native_execution_flow() {
         InputSchema {
             required: {
                 let mut map = std::collections::HashMap::new();
-                map.insert(
-                    "user_id".to_string(),
-                    TypeSchema::primitive(PrimitiveType::String),
-                );
+                map.insert("user_id".to_string(), TypeSchema::primitive(PrimitiveType::String));
                 map
             },
             optional: std::collections::HashMap::new(),
@@ -233,9 +221,8 @@ fn test_complete_swarm_native_execution_flow() {
         metadata: std::collections::HashMap::new(),
     };
 
-    let cert = cert
-        .with_policy_check("swarm-policy-engine", &policy_result)
-        .expect("Policy check failed");
+    let cert =
+        cert.with_policy_check("swarm-policy-engine", &policy_result).expect("Policy check failed");
 
     println!("  ✓ Policy check passed: Allow");
 
@@ -271,9 +258,8 @@ fn test_complete_swarm_native_execution_flow() {
     let agent_handle = context_pool.alloc_agent_handle();
     let tenant_handle = context_pool.alloc_tenant_handle();
 
-    let effect_flags = EffectFlags::empty()
-        .with(EffectFlags::READ_ONLY)
-        .with(EffectFlags::IDEMPOTENT);
+    let effect_flags =
+        EffectFlags::empty().with(EffectFlags::READ_ONLY).with(EffectFlags::IDEMPOTENT);
 
     let hot_ctx = HotPathContext::new(agent_handle, tenant_handle, 0, effect_flags)
         .with_correlation("swarm-request-42");
@@ -329,7 +315,8 @@ fn test_complete_swarm_native_execution_flow() {
     let what_if_result = replay_engine.replay_with_policy(start, end, |cap, _| {
         // Hypothetical stricter policy
         if cap == &CapabilityId::from_path("user.read") {
-            PolicyDecision::Deny { suggestion: None,
+            PolicyDecision::Deny {
+                suggestion: None,
                 reason: "Hypothetically forbidden".to_string(),
             }
         } else {
@@ -341,8 +328,10 @@ fn test_complete_swarm_native_execution_flow() {
     println!("    Differences detected: {}", what_if_result.differences.len());
 
     if !what_if_result.differences.is_empty() {
-        println!("    Impact: {} previously allowed operations would be denied",
-            what_if_result.differences.len());
+        println!(
+            "    Impact: {} previously allowed operations would be denied",
+            what_if_result.differences.len()
+        );
     }
 
     // ========== Final Summary ==========
@@ -361,15 +350,10 @@ fn test_complete_swarm_native_execution_flow() {
 #[test]
 fn test_delegation_chain_with_certificates() {
     // GIVEN: A delegation chain with restricted capabilities
-    let origin = Principal::new(
-        AgentIdentity::human("admin"),
-        TenantIdentity::default_tenant(),
-    );
+    let origin = Principal::new(AgentIdentity::human("admin"), TenantIdentity::default_tenant());
 
-    let delegate = Principal::delegated(
-        AgentIdentity::human("agent"),
-        TenantIdentity::default_tenant(),
-    );
+    let delegate =
+        Principal::delegated(AgentIdentity::human("agent"), TenantIdentity::default_tenant());
 
     let mut allowed = HashSet::new();
     allowed.insert(CapabilityId::from_path("safe.operation"));
@@ -490,13 +474,10 @@ fn test_graph_composition_with_contracts() {
     graph.add_edge(fast_cap, slow_cap, EdgeType::Produces).ok();
 
     // WHEN: We define contracts for each
-    let fast_contract = ExecutionContract::builder()
-        .duration_class(DurationClass::FastPath)
-        .build();
+    let fast_contract =
+        ExecutionContract::builder().duration_class(DurationClass::FastPath).build();
 
-    let slow_contract = ExecutionContract::builder()
-        .duration_class(DurationClass::Batch)
-        .build();
+    let slow_contract = ExecutionContract::builder().duration_class(DurationClass::Batch).build();
 
     // THEN: Contracts reflect their purpose
     assert!(fast_contract.temporal.duration_class < slow_contract.temporal.duration_class);

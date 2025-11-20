@@ -9,7 +9,7 @@ use crate::rdf::macro_integration::RdfRegistry;
 use crate::rdf::ontology::Ontology;
 use crate::rdf::sparql::SparqlPlanner;
 use crate::rdf::types::Invocation;
-use crate::rdf::validation::{ShapeValidator, ShapeError};
+use crate::rdf::validation::{ShapeError, ShapeValidator};
 use std::sync::{Arc, OnceLock};
 
 /// Global guard validation middleware singleton
@@ -81,9 +81,7 @@ impl GuardValidationMiddleware {
         let parsed = self.parse_invocation(invocation)?;
 
         // Validate against SHACL shapes
-        self.validator
-            .validate(&parsed)
-            .map_err(|e| self.map_shape_error(e))?;
+        self.validator.validate(&parsed).map_err(|e| self.map_shape_error(e))?;
 
         Ok(())
     }
@@ -106,16 +104,12 @@ impl GuardValidationMiddleware {
                     shape, property, message
                 ))
             }
-            ShapeError::MissingRequired { property } => {
-                NounVerbError::missing_argument(property)
-            }
-            ShapeError::InvalidType { property, expected, got } => {
-                NounVerbError::validation_error(
-                    property,
-                    got,
-                    Some(&format!("Expected type: {}", expected)),
-                )
-            }
+            ShapeError::MissingRequired { property } => NounVerbError::missing_argument(property),
+            ShapeError::InvalidType { property, expected, got } => NounVerbError::validation_error(
+                property,
+                got,
+                Some(&format!("Expected type: {}", expected)),
+            ),
         }
     }
 
@@ -124,11 +118,7 @@ impl GuardValidationMiddleware {
     /// Queries the ontology for commands with similar names using string matching.
     pub fn suggest_similar_commands(&self, unknown: &str) -> Result<Vec<String>> {
         // Extract prefix for fuzzy matching (first 3 chars or less)
-        let prefix = if unknown.len() >= 3 {
-            &unknown[..3]
-        } else {
-            unknown
-        };
+        let prefix = if unknown.len() >= 3 { &unknown[..3] } else { unknown };
 
         // Query ontology for commands starting with prefix
         let query = format!(
@@ -145,9 +135,7 @@ impl GuardValidationMiddleware {
         );
 
         // Execute query (placeholder - full SPARQL execution in SparqlPlanner)
-        let _bindings = self.semantic_engine
-            .execute_raw(&query)
-            .unwrap_or_default();
+        let _bindings = self.semantic_engine.execute_raw(&query).unwrap_or_default();
 
         // FUTURE: Extract string values from bindings when SPARQL is fully implemented
         Ok(Vec::new())
@@ -167,9 +155,7 @@ impl GuardValidationMiddleware {
             noun
         );
 
-        let _bindings = self.semantic_engine
-            .execute_raw(&query)
-            .unwrap_or_default();
+        let _bindings = self.semantic_engine.execute_raw(&query).unwrap_or_default();
 
         // FUTURE: Extract string values from bindings when SPARQL is fully implemented
         Ok(Vec::new())
@@ -191,9 +177,7 @@ impl GuardValidationMiddleware {
             command
         );
 
-        let _bindings = self.semantic_engine
-            .execute_raw(&query)
-            .unwrap_or_default();
+        let _bindings = self.semantic_engine.execute_raw(&query).unwrap_or_default();
 
         // FUTURE: Extract string values from bindings when SPARQL is fully implemented
         Ok(Vec::new())
@@ -211,10 +195,7 @@ impl GuardValidationMiddleware {
             command
         );
 
-        self.semantic_engine
-            .execute_raw(&query)
-            .map(|results| !results.is_empty())
-            .unwrap_or(false)
+        self.semantic_engine.execute_raw(&query).map(|results| !results.is_empty()).unwrap_or(false)
     }
 
     /// Get help text for a command
@@ -229,9 +210,7 @@ impl GuardValidationMiddleware {
             command
         );
 
-        let _bindings = self.semantic_engine
-            .execute_raw(&query)
-            .unwrap_or_default();
+        let _bindings = self.semantic_engine.execute_raw(&query).unwrap_or_default();
 
         // FUTURE: Extract string from bindings when SPARQL is fully implemented
         Ok(None)
@@ -285,17 +264,12 @@ pub fn recover_from_error(
         NounVerbError::ArgumentError { message } => {
             // Extract argument name from error message
             if let Some(arg_name) = extract_arg_name_from_error(message) {
-                Ok(Some(format!(
-                    "Invalid argument '{}'. {}",
-                    arg_name, message
-                )))
+                Ok(Some(format!("Invalid argument '{}'. {}", arg_name, message)))
             } else {
                 Ok(None)
             }
         }
-        NounVerbError::ValidationFailed(msg) => {
-            Ok(Some(format!("Validation failed: {}", msg)))
-        }
+        NounVerbError::ValidationFailed(msg) => Ok(Some(format!("Validation failed: {}", msg))),
         _ => Ok(None),
     }
 }
@@ -339,7 +313,7 @@ mod tests {
 
         // Both should be Arc<GuardValidationMiddleware>, and global() handles errors internally
         assert!(!Arc::ptr_eq(&middleware1, &middleware2) || true); // Just verify Arc is valid
-        // Note: ptr_eq checks if they're the same allocation - may or may not be true
+                                                                   // Note: ptr_eq checks if they're the same allocation - may or may not be true
     }
 
     #[test]
@@ -412,9 +386,7 @@ mod tests {
     fn test_map_shape_error() {
         let middleware = GuardValidationMiddleware::default();
 
-        let shape_error = ShapeError::MissingRequired {
-            property: "port".to_string(),
-        };
+        let shape_error = ShapeError::MissingRequired { property: "port".to_string() };
 
         let error = middleware.map_shape_error(shape_error);
         assert!(matches!(error, NounVerbError::ArgumentError { .. }));

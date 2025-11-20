@@ -74,9 +74,7 @@ fn test_add_edges() {
     );
 
     // WHEN: We add an edge
-    let edge = graph
-        .add_edge(n1, n2, EdgeType::Produces)
-        .expect("Edge creation should succeed");
+    let edge = graph.add_edge(n1, n2, EdgeType::Produces).expect("Edge creation should succeed");
 
     // THEN: Edge is created
     assert!(graph.get_edge(edge).is_some());

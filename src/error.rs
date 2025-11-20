@@ -56,7 +56,7 @@ impl NounVerbError {
         // Try to load middleware and get suggestions
         #[cfg(feature = "rdf-control")]
         {
-            use crate::rdf::{GuardValidationMiddleware, recover_from_error};
+            use crate::rdf::{recover_from_error, GuardValidationMiddleware};
             let middleware = GuardValidationMiddleware::global();
             if let Ok(Some(suggestion)) = recover_from_error(&self, &middleware) {
                 return format!("{}\n\n{}", msg, suggestion);

@@ -39,18 +39,12 @@ impl RdfValue {
 
     /// Create a typed literal
     pub fn typed_literal(value: impl Into<String>, datatype: impl Into<String>) -> Self {
-        Self::TypedLiteral {
-            value: value.into(),
-            datatype: datatype.into(),
-        }
+        Self::TypedLiteral { value: value.into(), datatype: datatype.into() }
     }
 
     /// Create a language-tagged literal
     pub fn lang_literal(value: impl Into<String>, lang: impl Into<String>) -> Self {
-        Self::LangLiteral {
-            value: value.into(),
-            lang: lang.into(),
-        }
+        Self::LangLiteral { value: value.into(), lang: lang.into() }
     }
 
     /// Create a blank node
@@ -73,10 +67,7 @@ impl RdfValue {
 
     /// Check if this is a literal
     pub fn is_literal(&self) -> bool {
-        matches!(
-            self,
-            Self::Literal(_) | Self::TypedLiteral { .. } | Self::LangLiteral { .. }
-        )
+        matches!(self, Self::Literal(_) | Self::TypedLiteral { .. } | Self::LangLiteral { .. })
     }
 }
 
@@ -135,16 +126,8 @@ impl Invocation {
 
 impl RdfTriple {
     /// Create a new RDF triple
-    pub fn new(
-        subject: impl Into<String>,
-        predicate: impl Into<String>,
-        object: RdfValue,
-    ) -> Self {
-        Self {
-            subject: subject.into(),
-            predicate: predicate.into(),
-            object,
-        }
+    pub fn new(subject: impl Into<String>, predicate: impl Into<String>, object: RdfValue) -> Self {
+        Self { subject: subject.into(), predicate: predicate.into(), object }
     }
 
     /// Convert to Turtle syntax

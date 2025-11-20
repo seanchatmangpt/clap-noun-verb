@@ -5,7 +5,6 @@
 /// - Swarm intelligence (2029-2030+)
 /// - Resource management and scheduling
 /// - Cross-tier communication and failure recovery
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -61,10 +60,10 @@ impl OperationResult {
 pub struct OperationRequest {
     pub operation_id: String,
     pub agent_id: String,
-    pub operation_type: String,        // e.g., "compute", "coordinate", "swarm"
+    pub operation_type: String, // e.g., "compute", "coordinate", "swarm"
     pub tier_preference: Option<AgentTier>, // Which tier should handle this
     pub payload: String,
-    pub priority: u32,                 // 1-10, 10 is highest
+    pub priority: u32, // 1-10, 10 is highest
     pub timeout_ms: u64,
 }
 
@@ -236,10 +235,7 @@ impl Orchestrator {
             queued_operations: queue_len,
             completed_operations: completed_len,
             total_agents: registry_len,
-            tiers_healthy: tier_status
-                .iter()
-                .filter(|(_, &healthy)| healthy)
-                .count(),
+            tiers_healthy: tier_status.iter().filter(|(_, &healthy)| healthy).count(),
             tiers_total: tier_status.len(),
         }
     }
@@ -264,7 +260,7 @@ pub struct OrchestrationStats {
 /// Integration Bridge - translates between 2028 and swarm systems
 pub struct IntegrationBridge {
     individual_to_swarm_mapping: Arc<RwLock<HashMap<String, Vec<String>>>>, // individual -> swarm agents
-    swarm_to_individual_mapping: Arc<RwLock<HashMap<String, String>>>,      // swarm -> individual coordinator
+    swarm_to_individual_mapping: Arc<RwLock<HashMap<String, String>>>, // swarm -> individual coordinator
 }
 
 impl IntegrationBridge {
@@ -276,22 +272,14 @@ impl IntegrationBridge {
     }
 
     /// Map individual agent to swarm agents
-    pub async fn add_agent_to_swarm(
-        &self,
-        individual_agent: String,
-        swarm_agents: Vec<String>,
-    ) {
+    pub async fn add_agent_to_swarm(&self, individual_agent: String, swarm_agents: Vec<String>) {
         let mut mapping = self.individual_to_swarm_mapping.write().await;
         mapping.insert(individual_agent, swarm_agents);
     }
 
     /// Get swarm agents for individual agent
     pub async fn get_swarm_agents(&self, individual_agent: &str) -> Option<Vec<String>> {
-        self.individual_to_swarm_mapping
-            .read()
-            .await
-            .get(individual_agent)
-            .cloned()
+        self.individual_to_swarm_mapping.read().await.get(individual_agent).cloned()
     }
 
     /// Map swarm agents back to coordinating individual
@@ -340,9 +328,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_registration() {
         let orchestrator = Orchestrator::new();
-        orchestrator
-            .register_agent("agent-1".to_string(), AgentTier::Individual)
-            .await;
+        orchestrator.register_agent("agent-1".to_string(), AgentTier::Individual).await;
 
         let stats = orchestrator.stats().await;
         assert_eq!(stats.total_agents, 1);
@@ -351,9 +337,7 @@ mod tests {
     #[tokio::test]
     async fn test_operation_routing() {
         let orchestrator = Orchestrator::new();
-        orchestrator
-            .allocate_resources(AgentTier::Individual, 50.0, 1024, 100)
-            .await;
+        orchestrator.allocate_resources(AgentTier::Individual, 50.0, 1024, 100).await;
 
         let request = OperationRequest::new(
             "agent-1".to_string(),
@@ -390,11 +374,8 @@ mod tests {
 
         orchestrator.mark_tier_unhealthy(AgentTier::Individual).await;
 
-        let request = OperationRequest::new(
-            "agent-1".to_string(),
-            "compute".to_string(),
-            "test".to_string(),
-        );
+        let request =
+            OperationRequest::new("agent-1".to_string(), "compute".to_string(), "test".to_string());
 
         let result = orchestrator.route_operation(request).await;
         assert!(!result.success);

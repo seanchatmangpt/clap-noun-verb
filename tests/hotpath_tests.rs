@@ -9,8 +9,8 @@
 //! - Performance metrics tracking
 
 use clap_noun_verb::autonomic::*;
-use std::thread;
 use std::sync::Arc;
+use std::thread;
 
 #[test]
 fn test_agent_handle_creation() {
@@ -55,9 +55,7 @@ fn test_effect_flags_bitfield_operations() {
     assert!(!flags.has(EffectFlags::NETWORK));
 
     // WHEN: We add flags
-    flags = flags
-        .with(EffectFlags::READ_ONLY)
-        .with(EffectFlags::NETWORK);
+    flags = flags.with(EffectFlags::READ_ONLY).with(EffectFlags::NETWORK);
 
     // THEN: Those flags are set
     assert!(flags.is_read_only());
@@ -68,13 +66,9 @@ fn test_effect_flags_bitfield_operations() {
 #[test]
 fn test_effect_flags_merge() {
     // GIVEN: Two flag sets
-    let flags1 = EffectFlags::empty()
-        .with(EffectFlags::READ_ONLY)
-        .with(EffectFlags::NETWORK);
+    let flags1 = EffectFlags::empty().with(EffectFlags::READ_ONLY).with(EffectFlags::NETWORK);
 
-    let flags2 = EffectFlags::empty()
-        .with(EffectFlags::PRIVILEGED)
-        .with(EffectFlags::STORAGE);
+    let flags2 = EffectFlags::empty().with(EffectFlags::PRIVILEGED).with(EffectFlags::STORAGE);
 
     // WHEN: We merge them
     let merged = flags1.merge(flags2);
@@ -133,12 +127,8 @@ fn test_hot_path_context_creation() {
 #[test]
 fn test_hot_path_context_with_correlation() {
     // GIVEN: A context
-    let ctx = HotPathContext::new(
-        AgentHandle::new(1),
-        TenantHandle::new(1),
-        0,
-        EffectFlags::empty(),
-    );
+    let ctx =
+        HotPathContext::new(AgentHandle::new(1), TenantHandle::new(1), 0, EffectFlags::empty());
 
     // WHEN: We add a correlation ID
     let ctx = ctx.with_correlation("request-123");
@@ -147,13 +137,9 @@ fn test_hot_path_context_with_correlation() {
     assert_ne!(ctx.correlation_hash, 0);
 
     // AND: Same correlation ID produces same hash
-    let ctx2 = HotPathContext::new(
-        AgentHandle::new(2),
-        TenantHandle::new(2),
-        0,
-        EffectFlags::empty(),
-    )
-    .with_correlation("request-123");
+    let ctx2 =
+        HotPathContext::new(AgentHandle::new(2), TenantHandle::new(2), 0, EffectFlags::empty())
+            .with_correlation("request-123");
 
     assert_eq!(ctx.correlation_hash, ctx2.correlation_hash);
 }
@@ -334,12 +320,8 @@ fn test_context_pool_acquire_release() {
     // GIVEN: A context pool
     let pool = ContextPool::new(5);
 
-    let ctx = HotPathContext::new(
-        AgentHandle::new(1),
-        TenantHandle::new(1),
-        0,
-        EffectFlags::empty(),
-    );
+    let ctx =
+        HotPathContext::new(AgentHandle::new(1), TenantHandle::new(1), 0, EffectFlags::empty());
 
     // WHEN: We release a context
     pool.release(ctx);

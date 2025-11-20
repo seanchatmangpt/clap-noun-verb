@@ -154,10 +154,7 @@ mod tests {
 
     #[test]
     fn test_plane_interaction_builder() {
-        let interaction = PlaneInteraction::new()
-            .observe_read()
-            .ontology_read()
-            .invariants_check();
+        let interaction = PlaneInteraction::new().observe_read().ontology_read().invariants_check();
 
         assert!(interaction.interacts_with(Plane::Observations));
         assert!(interaction.interacts_with(Plane::Ontology));

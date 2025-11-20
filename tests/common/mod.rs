@@ -147,4 +147,3 @@ where
     let expected_json = serde_json::to_string(expected).unwrap();
     assert_eq!(actual_json, expected_json, "JSON output mismatch");
 }
-

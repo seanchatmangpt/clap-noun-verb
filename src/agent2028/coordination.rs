@@ -1,14 +1,13 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 /// Distributed Agent Coordination System
 ///
 /// Enables safe coordination of millions of agents across distributed systems
 /// with service discovery, intelligent routing, and consensus mechanisms.
-
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-use chrono::{DateTime, Utc};
 
 /// Represents a single agent in the network
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,9 +15,9 @@ pub struct Agent {
     pub id: String,
     pub address: SocketAddr,
     pub capabilities: Vec<String>,
-    pub health_score: f64,       // 0.0 to 1.0
+    pub health_score: f64, // 0.0 to 1.0
     pub latency_ms: f64,
-    pub reliability: f64,        // Success rate
+    pub reliability: f64, // Success rate
     pub last_seen: DateTime<Utc>,
     pub max_concurrency: usize,
     pub current_load: usize,
@@ -26,7 +25,12 @@ pub struct Agent {
 
 impl Agent {
     /// Calculate fitness score for this agent for a given capability
-    pub fn fitness_score(&self, capability: &str, latency_weight: f64, reliability_weight: f64) -> f64 {
+    pub fn fitness_score(
+        &self,
+        capability: &str,
+        latency_weight: f64,
+        reliability_weight: f64,
+    ) -> f64 {
         if !self.capabilities.contains(&capability.to_string()) {
             return 0.0;
         }
@@ -51,9 +55,7 @@ pub struct AgentRegistry {
 
 impl AgentRegistry {
     pub fn new() -> Self {
-        Self {
-            agents: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { agents: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     /// Register an agent
@@ -94,12 +96,7 @@ impl AgentRegistry {
     }
 
     /// Update agent metrics
-    pub async fn update_metrics(
-        &self,
-        agent_id: &str,
-        latency_ms: f64,
-        success: bool,
-    ) {
+    pub async fn update_metrics(&self, agent_id: &str, latency_ms: f64, success: bool) {
         let mut agents = self.agents.write().await;
         if let Some(agent) = agents.get_mut(agent_id) {
             agent.latency_ms = latency_ms;
@@ -148,11 +145,7 @@ pub struct CommandBroker {
 
 impl CommandBroker {
     pub fn new(registry: AgentRegistry, strategy: RoutingStrategy) -> Self {
-        Self {
-            registry,
-            strategy,
-            routing_history: Arc::new(RwLock::new(Vec::new())),
-        }
+        Self { registry, strategy, routing_history: Arc::new(RwLock::new(Vec::new())) }
     }
 
     /// Route a command to the best agent for the given capability
@@ -164,25 +157,23 @@ impl CommandBroker {
         }
 
         let selected = match self.strategy {
-            RoutingStrategy::MinLatency => {
-                agents.iter().min_by(|a, b| a.latency_ms.partial_cmp(&b.latency_ms).unwrap()).cloned()
-            }
-            RoutingStrategy::MaxReliability => {
-                agents.iter().max_by(|a, b| a.reliability.partial_cmp(&b.reliability).unwrap()).cloned()
-            }
-            RoutingStrategy::BestFit => {
-                agents
-                    .iter()
-                    .max_by(|a, b| {
-                        a.fitness_score(capability, 0.5, 0.5)
-                            .partial_cmp(&b.fitness_score(capability, 0.5, 0.5))
-                            .unwrap()
-                    })
-                    .cloned()
-            }
-            RoutingStrategy::LeastLoaded => {
-                agents.iter().min_by_key(|a| a.current_load).cloned()
-            }
+            RoutingStrategy::MinLatency => agents
+                .iter()
+                .min_by(|a, b| a.latency_ms.partial_cmp(&b.latency_ms).unwrap())
+                .cloned(),
+            RoutingStrategy::MaxReliability => agents
+                .iter()
+                .max_by(|a, b| a.reliability.partial_cmp(&b.reliability).unwrap())
+                .cloned(),
+            RoutingStrategy::BestFit => agents
+                .iter()
+                .max_by(|a, b| {
+                    a.fitness_score(capability, 0.5, 0.5)
+                        .partial_cmp(&b.fitness_score(capability, 0.5, 0.5))
+                        .unwrap()
+                })
+                .cloned(),
+            RoutingStrategy::LeastLoaded => agents.iter().min_by_key(|a| a.current_load).cloned(),
             RoutingStrategy::RoundRobin => {
                 // Simple round-robin: use history length to determine next
                 let history = self.routing_history.read().await;
@@ -238,18 +229,13 @@ pub struct ConsensusEngine {
 
 impl ConsensusEngine {
     pub fn new(consensus_type: ConsensusType) -> Self {
-        Self {
-            votes: Arc::new(RwLock::new(HashMap::new())),
-            consensus_type,
-        }
+        Self { votes: Arc::new(RwLock::new(HashMap::new())), consensus_type }
     }
 
     /// Submit a vote for a proposal
     pub async fn vote(&self, proposal_id: &str, agent_id: String) {
         let mut votes = self.votes.write().await;
-        votes.entry(proposal_id.to_string())
-            .or_insert_with(Vec::new)
-            .push(agent_id);
+        votes.entry(proposal_id.to_string()).or_insert_with(Vec::new).push(agent_id);
     }
 
     /// Check if consensus has been reached

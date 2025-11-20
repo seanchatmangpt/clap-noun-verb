@@ -1,9 +1,11 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
 use clap_noun_verb::autonomic::CapabilityGraph;
-use clap_noun_verb::autonomic::{CapabilityId, InputSchema, OutputSchema, TypeSchema, PrimitiveType, EdgeType};
-use clap_noun_verb::plugin::{Plugin, PluginRegistry, PluginCapability};
+use clap_noun_verb::autonomic::{
+    CapabilityId, EdgeType, InputSchema, OutputSchema, PrimitiveType, TypeSchema,
+};
 use clap_noun_verb::middleware::{Middleware, MiddlewarePipeline};
+use clap_noun_verb::plugin::{Plugin, PluginCapability, PluginRegistry};
 use clap_noun_verb::telemetry::TelemetryCollector;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::time::Duration;
 
 /// Benchmark configuration graph construction
@@ -11,25 +13,21 @@ fn bench_config_graph_construction(c: &mut Criterion) {
     let mut group = c.benchmark_group("config_graph_construction");
 
     for size in [10, 25, 50, 100].iter() {
-        group.bench_with_input(
-            BenchmarkId::new("graph_nodes", size),
-            size,
-            |b, &size| {
-                b.iter(|| {
-                    let mut graph = CapabilityGraph::new();
-                    for i in 0..size {
-                        graph.add_node(
-                            black_box(CapabilityId::from_path(&format!("config.item.{}", i))),
-                            black_box(&format!("Config item {}", i)),
-                            black_box(InputSchema::default()),
-                            black_box(OutputSchema::new(TypeSchema::primitive(PrimitiveType::String))),
-                            black_box(vec![]),
-                        );
-                    }
-                    black_box(graph);
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("graph_nodes", size), size, |b, &size| {
+            b.iter(|| {
+                let mut graph = CapabilityGraph::new();
+                for i in 0..size {
+                    graph.add_node(
+                        black_box(CapabilityId::from_path(&format!("config.item.{}", i))),
+                        black_box(&format!("Config item {}", i)),
+                        black_box(InputSchema::default()),
+                        black_box(OutputSchema::new(TypeSchema::primitive(PrimitiveType::String))),
+                        black_box(vec![]),
+                    );
+                }
+                black_box(graph);
+            });
+        });
     }
 
     // Graph with dependencies
@@ -182,9 +180,7 @@ fn bench_startup_sequence(c: &mut Criterion) {
         b.iter(|| {
             let mut registry = PluginRegistry::new();
             for i in 0..5 {
-                registry.register(Box::new(MinimalPlugin {
-                    name: format!("plugin-{}", i),
-                })).ok();
+                registry.register(Box::new(MinimalPlugin { name: format!("plugin-{}", i) })).ok();
             }
             black_box(registry);
         });
@@ -195,9 +191,8 @@ fn bench_startup_sequence(c: &mut Criterion) {
         b.iter(|| {
             let mut pipeline = MiddlewarePipeline::new();
             for i in 0..5 {
-                pipeline = pipeline.add(Box::new(MinimalMiddleware {
-                    name: format!("middleware-{}", i),
-                }));
+                pipeline =
+                    pipeline.add(Box::new(MinimalMiddleware { name: format!("middleware-{}", i) }));
             }
             black_box(pipeline);
         });
@@ -234,17 +229,14 @@ fn bench_startup_sequence(c: &mut Criterion) {
             // 1. Plugin loading
             let mut registry = PluginRegistry::new();
             for i in 0..5 {
-                registry.register(Box::new(MinimalPlugin {
-                    name: format!("plugin-{}", i),
-                })).ok();
+                registry.register(Box::new(MinimalPlugin { name: format!("plugin-{}", i) })).ok();
             }
 
             // 2. Middleware setup
             let mut pipeline = MiddlewarePipeline::new();
             for i in 0..5 {
-                pipeline = pipeline.add(Box::new(MinimalMiddleware {
-                    name: format!("middleware-{}", i),
-                }));
+                pipeline =
+                    pipeline.add(Box::new(MinimalMiddleware { name: format!("middleware-{}", i) }));
             }
 
             // 3. Config graph
@@ -275,9 +267,8 @@ fn bench_config_memory_footprint(c: &mut Criterion) {
 
     group.bench_function("capability_id_creation", |b| {
         b.iter(|| {
-            let ids: Vec<_> = (0..100)
-                .map(|i| CapabilityId::from_path(&format!("app.module.{}", i)))
-                .collect();
+            let ids: Vec<_> =
+                (0..100).map(|i| CapabilityId::from_path(&format!("app.module.{}", i))).collect();
             black_box(ids);
         });
     });

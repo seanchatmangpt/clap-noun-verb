@@ -2,7 +2,6 @@
 ///
 /// Particle Swarm Optimization (PSO), Ant Colony Optimization (ACO),
 /// and other swarm-based metaheuristics for solving optimization problems.
-
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
@@ -16,11 +15,7 @@ pub struct Solution {
 
 impl Solution {
     pub fn new(position: Vec<f64>, fitness: f64, agent_id: String) -> Self {
-        Self {
-            position,
-            fitness,
-            agent_id,
-        }
+        Self { position, fitness, agent_id }
     }
 }
 
@@ -58,9 +53,9 @@ pub struct ParticleSwarmOptimizer {
     particles: Vec<Particle>,
     global_best_position: Vec<f64>,
     global_best_fitness: f64,
-    w: f64,      // Inertia weight
-    c1: f64,     // Cognitive parameter
-    c2: f64,     // Social parameter
+    w: f64,  // Inertia weight
+    c1: f64, // Cognitive parameter
+    c2: f64, // Social parameter
 }
 
 impl ParticleSwarmOptimizer {
@@ -78,9 +73,9 @@ impl ParticleSwarmOptimizer {
             particles,
             global_best_position,
             global_best_fitness: f64::NEG_INFINITY,
-            w: 0.7,   // Inertia
-            c1: 1.5,  // Cognitive
-            c2: 1.5,  // Social
+            w: 0.7,  // Inertia
+            c1: 1.5, // Cognitive
+            c2: 1.5, // Social
         }
     }
 
@@ -146,17 +141,14 @@ pub struct Ant {
 
 impl Ant {
     pub fn new() -> Self {
-        Self {
-            path: Vec::new(),
-            fitness: 0.0,
-        }
+        Self { path: Vec::new(), fitness: 0.0 }
     }
 }
 
 /// Ant Colony Optimizer
 pub struct AntColonyOptimizer {
     ants: Vec<Ant>,
-    pheromone: Vec<Vec<f64>>,  // Pheromone matrix
+    pheromone: Vec<Vec<f64>>, // Pheromone matrix
     cities: usize,
 }
 
@@ -165,11 +157,7 @@ impl AntColonyOptimizer {
         let ants = (0..num_ants).map(|_| Ant::new()).collect();
         let pheromone = vec![vec![1.0; num_cities]; num_cities];
 
-        Self {
-            ants,
-            pheromone,
-            cities: num_cities,
-        }
+        Self { ants, pheromone, cities: num_cities }
     }
 
     /// Calculate distance (simplified Euclidean)
@@ -248,7 +236,8 @@ impl AntColonyOptimizer {
 
     /// Get best solution
     pub fn best_solution(&self) -> Solution {
-        let best_ant = self.ants.iter().max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap()).unwrap();
+        let best_ant =
+            self.ants.iter().max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap()).unwrap();
 
         Solution::new(
             best_ant.path.iter().map(|&i| i as f64).collect(),
@@ -279,10 +268,7 @@ impl FireflyAlgorithm {
             })
             .collect();
 
-        Self {
-            fireflies,
-            iteration: 0,
-        }
+        Self { fireflies, iteration: 0 }
     }
 
     /// Attraction-based movement
@@ -297,7 +283,12 @@ impl FireflyAlgorithm {
             for j in 0..self.fireflies.len() {
                 if i != j && self.fireflies[j].fitness > self.fireflies[i].fitness {
                     // Move towards brighter firefly
-                    let beta = 1.0 / (1.0 + self.distance(&self.fireflies[i].position, &self.fireflies[j].position));
+                    let beta = 1.0
+                        / (1.0
+                            + self.distance(
+                                &self.fireflies[i].position,
+                                &self.fireflies[j].position,
+                            ));
 
                     for d in 0..self.fireflies[i].position.len() {
                         self.fireflies[i].position[d] += beta
@@ -312,11 +303,7 @@ impl FireflyAlgorithm {
     }
 
     fn distance(&self, a: &[f64], b: &[f64]) -> f64 {
-        a.iter()
-            .zip(b.iter())
-            .map(|(x, y)| (x - y).powi(2))
-            .sum::<f64>()
-            .sqrt()
+        a.iter().zip(b.iter()).map(|(x, y)| (x - y).powi(2)).sum::<f64>().sqrt()
     }
 
     /// Get best solution

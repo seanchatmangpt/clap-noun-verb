@@ -8,7 +8,9 @@ use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 use super::errors::UserError;
-use super::validators::{validate_model_name, validate_prompt, validate_output_path, validate_api_key};
+use super::validators::{
+    validate_api_key, validate_model_name, validate_output_path, validate_prompt,
+};
 
 // ============================================================================
 // Data Types
@@ -96,7 +98,8 @@ fn generate_ai_project(
             super::errors::ErrorCategory::Validation,
             "Project name cannot be empty",
             "Provide a valid project name:\n  \
-            ggen ai project MyProject --description 'A web service'".to_string(),
+            ggen ai project MyProject --description 'A web service'"
+                .to_string(),
         ));
     }
 
@@ -109,10 +112,7 @@ fn generate_ai_project(
             format!("{}/.gitignore", name),
         ]
     } else {
-        vec![
-            format!("{}/src/lib.rs", name),
-            format!("{}/Cargo.toml", name),
-        ]
+        vec![format!("{}/src/lib.rs", name), format!("{}/Cargo.toml", name)]
     };
 
     Ok(ProjectOutput {
@@ -139,13 +139,10 @@ fn generate_rdf_graph(
             format!(
                 "Use one of the supported formats:\n{}\n\n  \
                 Example: ggen ai graph -d 'ontology description' --format turtle",
-                valid_formats
-                    .iter()
-                    .map(|f| format!("  - {}", f))
-                    .collect::<Vec<_>>()
-                    .join("\n")
+                valid_formats.iter().map(|f| format!("  - {}", f)).collect::<Vec<_>>().join("\n")
             ),
-        ).with_docs("https://docs.ggen.io/rdf"));
+        )
+        .with_docs("https://docs.ggen.io/rdf"));
     }
 
     Ok(GraphOutput {
@@ -165,11 +162,7 @@ fn generate_sparql_query(
     // Validate graph file if provided
     if let Some(graph_path) = graph {
         if !std::path::Path::new(graph_path).exists() {
-            return Err(super::errors::file_error(
-                graph_path,
-                "read",
-                "file does not exist"
-            ));
+            return Err(super::errors::file_error(graph_path, "read", "file does not exist"));
         }
     }
 
@@ -283,23 +276,14 @@ pub fn ai_project(
     }
 
     // Check API key
-    let provider = if validated_model.starts_with("gpt") {
-        "openai"
-    } else {
-        "anthropic"
-    };
+    let provider = if validated_model.starts_with("gpt") { "openai" } else { "anthropic" };
 
     validate_api_key(provider)
         .map_err(|e| clap_noun_verb::NounVerbError::ValidationFailed(e.to_string()))?;
 
     // Delegate to business logic
-    generate_ai_project(
-        &name,
-        description.as_deref(),
-        &validated_model,
-        template.as_deref(),
-    )
-    .map_err(|e| clap_noun_verb::NounVerbError::ExecutionError { message: e.to_string() })
+    generate_ai_project(&name, description.as_deref(), &validated_model, template.as_deref())
+        .map_err(|e| clap_noun_verb::NounVerbError::ExecutionError { message: e.to_string() })
 }
 
 /// Generate an RDF ontology graph using AI
@@ -369,11 +353,7 @@ mod tests {
 
     #[test]
     fn test_generate_ai_content_success() {
-        let result = generate_ai_content(
-            "Create a function",
-            "gpt-4-turbo",
-            "output.rs"
-        );
+        let result = generate_ai_content("Create a function", "gpt-4-turbo", "output.rs");
         assert!(result.is_ok());
 
         let output = result.unwrap();
@@ -383,12 +363,8 @@ mod tests {
 
     #[test]
     fn test_generate_ai_project_success() {
-        let result = generate_ai_project(
-            "TestProject",
-            Some("A test project"),
-            "gpt-4-turbo",
-            None
-        );
+        let result =
+            generate_ai_project("TestProject", Some("A test project"), "gpt-4-turbo", None);
         assert!(result.is_ok());
 
         let output = result.unwrap();
@@ -398,32 +374,19 @@ mod tests {
 
     #[test]
     fn test_generate_ai_project_empty_name() {
-        let result = generate_ai_project(
-            "",
-            None,
-            "gpt-4-turbo",
-            None
-        );
+        let result = generate_ai_project("", None, "gpt-4-turbo", None);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_generate_rdf_graph_success() {
-        let result = generate_rdf_graph(
-            "Test ontology",
-            "test.ttl",
-            "turtle"
-        );
+        let result = generate_rdf_graph("Test ontology", "test.ttl", "turtle");
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_generate_rdf_graph_invalid_format() {
-        let result = generate_rdf_graph(
-            "Test ontology",
-            "test.ttl",
-            "invalid"
-        );
+        let result = generate_rdf_graph("Test ontology", "test.ttl", "invalid");
         assert!(result.is_err());
 
         let err = result.unwrap_err();
@@ -432,10 +395,7 @@ mod tests {
 
     #[test]
     fn test_generate_sparql_query_success() {
-        let result = generate_sparql_query(
-            "Find all data",
-            None
-        );
+        let result = generate_sparql_query("Find all data", None);
         assert!(result.is_ok());
 
         let output = result.unwrap();

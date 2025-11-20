@@ -6,9 +6,8 @@
 /// - Orchestration Layer: Central dispatcher and coordinator
 /// - Event Bus: Cross-tier communication
 /// - Integration Bridge: System interconnection
-
 use clap_noun_verb::agent2028::{
-    Orchestrator, OperationRequest, EventBus, EventType, Event, IntegrationBridge, AgentTier,
+    AgentTier, Event, EventBus, EventType, IntegrationBridge, OperationRequest, Orchestrator,
 };
 use std::time::Instant;
 
@@ -37,24 +36,16 @@ async fn demo_orchestration_layer() {
 
     // Allocate resources to both tiers
     println!("  ✓ Allocating resources to agent tiers");
-    orchestrator
-        .allocate_resources(AgentTier::Individual, 50.0, 2048, 1000)
-        .await;
-    orchestrator
-        .allocate_resources(AgentTier::Swarm, 50.0, 2048, 10000)
-        .await;
+    orchestrator.allocate_resources(AgentTier::Individual, 50.0, 2048, 1000).await;
+    orchestrator.allocate_resources(AgentTier::Swarm, 50.0, 2048, 10000).await;
 
     // Register agents in both tiers
     println!("  ✓ Registering agents");
     for i in 1..=5 {
-        orchestrator
-            .register_agent(format!("individual-agent-{}", i), AgentTier::Individual)
-            .await;
+        orchestrator.register_agent(format!("individual-agent-{}", i), AgentTier::Individual).await;
     }
     for i in 1..=10 {
-        orchestrator
-            .register_agent(format!("swarm-agent-{}", i), AgentTier::Swarm)
-            .await;
+        orchestrator.register_agent(format!("swarm-agent-{}", i), AgentTier::Swarm).await;
     }
 
     let mut stats = orchestrator.stats().await;
@@ -105,10 +96,7 @@ async fn demo_event_bus_communication() {
 
     // Subscribe agents to events
     let (_sub1, mut rx1) = event_bus
-        .subscribe(
-            "agent-1".to_string(),
-            vec![EventType::AgentStarted, EventType::AgentFailed],
-        )
+        .subscribe("agent-1".to_string(), vec![EventType::AgentStarted, EventType::AgentFailed])
         .await;
 
     let (_sub2, mut rx2) = event_bus
@@ -196,10 +184,7 @@ async fn demo_integration_bridge() {
     bridge
         .add_agent_to_swarm(
             "individual-agent-2".to_string(),
-            vec![
-                "swarm-agent-4".to_string(),
-                "swarm-agent-5".to_string(),
-            ],
+            vec!["swarm-agent-4".to_string(), "swarm-agent-5".to_string()],
         )
         .await;
 
@@ -239,18 +224,12 @@ async fn demo_end_to_end_workflow() {
 
     // PHASE 1: Setup
     println!("\n  ┌─ Phase 1: Setup & Registration");
-    orchestrator
-        .allocate_resources(AgentTier::Individual, 60.0, 3000, 500)
-        .await;
-    orchestrator
-        .allocate_resources(AgentTier::Swarm, 40.0, 3000, 5000)
-        .await;
+    orchestrator.allocate_resources(AgentTier::Individual, 60.0, 3000, 500).await;
+    orchestrator.allocate_resources(AgentTier::Swarm, 40.0, 3000, 5000).await;
 
     // Register agents
     for i in 1..=5 {
-        orchestrator
-            .register_agent(format!("agent-{}", i), AgentTier::Individual)
-            .await;
+        orchestrator.register_agent(format!("agent-{}", i), AgentTier::Individual).await;
     }
     println!("    • Registered 5 individual agents");
     println!("    • Tier allocation: Individual 60%, Swarm 40%");
@@ -288,9 +267,7 @@ async fn demo_end_to_end_workflow() {
     for i in 1..=50 {
         swarm_agents.push(format!("swarm-{}", i));
     }
-    bridge
-        .add_agent_to_swarm("agent-1".to_string(), swarm_agents.clone())
-        .await;
+    bridge.add_agent_to_swarm("agent-1".to_string(), swarm_agents.clone()).await;
 
     println!("    • Formed swarm with 50 agents");
     println!("    • Assigned to individual-agent-1 for coordination");
@@ -360,10 +337,7 @@ async fn demo_end_to_end_workflow() {
     println!("    • System health: {}/{} tiers", orch_stats.tiers_healthy, orch_stats.tiers_total);
     println!("    • Total events: {}", bus_stats.total_events);
     println!("    • Active subscriptions: {}", bus_stats.active_subscribers);
-    println!(
-        "    • Total execution time: ~{:.0}ms",
-        (individual_time + swarm_time) as f64
-    );
+    println!("    • Total execution time: ~{:.0}ms", (individual_time + swarm_time) as f64);
     println!("    • System throughput: {:.0} ops/sec", {
         let total_ops = (orch_stats.queued_operations + orch_stats.completed_operations) as f64;
         let total_time = (individual_time + swarm_time) as f64 / 1000.0;

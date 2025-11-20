@@ -122,10 +122,7 @@ fn complex_example() -> ProcessResult {
 
         let duration = start.elapsed();
 
-        ProcessResult {
-            items_processed: processed,
-            duration_ms: duration.as_millis() as u64,
-        }
+        ProcessResult { items_processed: processed, duration_ms: duration.as_millis() as u64 }
     })
 }
 

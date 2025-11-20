@@ -7,7 +7,6 @@
 /// 4. Bid Validation - tracking auction reliability
 /// 5. Pheromone Trail Validation - verifying indirect communication
 /// 6. Role Verification - identifying unsuitable assignments
-
 use clap_noun_verb::agent2028::swarm::false_positives::*;
 
 #[tokio::main]
@@ -51,14 +50,14 @@ async fn demo_false_alert_detection() {
 
     let is_false1 = detector.detect_false_alert(&mut alert1, 25.5);
     detector.record_alert(alert1.clone());
-    println!("  ✓ Alert from agent-1: false={}, confidence={:.2}", is_false1, alert1.falseness_confidence);
+    println!(
+        "  ✓ Alert from agent-1: false={}, confidence={:.2}",
+        is_false1, alert1.falseness_confidence
+    );
 
     // Scenario: Agent-2 sends a true alert
-    let mut alert2 = FalseAlert::new(
-        "agent-2".to_string(),
-        "temperature_anomaly".to_string(),
-        22.0,
-    );
+    let mut alert2 =
+        FalseAlert::new("agent-2".to_string(), "temperature_anomaly".to_string(), 22.0);
     let is_false2 = detector.detect_false_alert(&mut alert2, 21.8);
     detector.record_alert(alert2);
     println!("  ✓ Alert from agent-2: false={}, confidence={:.2}", is_false2, 0.0);
@@ -67,11 +66,8 @@ async fn demo_false_alert_detection() {
     for i in 0..5 {
         let claimed = 0.2 + (i as f64 * 0.15);
         let actual = 0.95; // Actually normal
-        let mut alert = FalseAlert::new(
-            "agent-3".to_string(),
-            "memory_pressure".to_string(),
-            claimed,
-        );
+        let mut alert =
+            FalseAlert::new("agent-3".to_string(), "memory_pressure".to_string(), claimed);
         detector.detect_false_alert(&mut alert, actual);
         detector.record_alert(alert);
     }
@@ -121,17 +117,9 @@ async fn demo_consensus_recovery() {
     // Scenario: Multiple decisions about resource allocation (mostly wrong)
     for i in 3..8 {
         let decision = "reallocate_resources";
-        let outcome = if i % 3 == 0 {
-            "resources_reallocated"
-        } else {
-            "reallocation_failed"
-        };
+        let outcome = if i % 3 == 0 { "resources_reallocated" } else { "reallocation_failed" };
 
-        recovery.verify_decision(
-            format!("vote-{}", i),
-            decision.to_string(),
-            outcome.to_string(),
-        );
+        recovery.verify_decision(format!("vote-{}", i), decision.to_string(), outcome.to_string());
     }
 
     println!("  ✓ Recorded 5 resource allocation decisions (60% success rate)");
@@ -169,27 +157,19 @@ async fn demo_trust_score_verification() {
 
     // Scenario 2: Agent-2's trust score is accurate
     println!("  ✓ Auditing agent-2: recorded=0.7, actual=0.72");
-    verifier.verify_trust(
-        "agent-2".to_string(),
-        0.7,
-        0.72,
-    );
+    verifier.verify_trust("agent-2".to_string(), 0.7, 0.72);
 
     // Scenario 3: Agent-3's trust is severely underestimated
     println!("  ✓ Auditing agent-3: recorded=0.5, actual=0.8");
     verifier.verify_trust(
         "agent-3".to_string(),
-        0.5,   // Recorded (deflated)
-        0.8,   // Actual performance
+        0.5, // Recorded (deflated)
+        0.8, // Actual performance
     );
 
     // Scenario 4: Agent-4 has slight variance
     println!("  ✓ Auditing agent-4: recorded=0.85, actual=0.83");
-    verifier.verify_trust(
-        "agent-4".to_string(),
-        0.85,
-        0.83,
-    );
+    verifier.verify_trust("agent-4".to_string(), 0.85, 0.83);
 
     // Get agents needing correction (>20% deviation)
     let corrections = verifier.agents_needing_correction();
@@ -226,20 +206,8 @@ async fn demo_bid_validation() {
     println!("    - agent-1: 3 fulfilled");
 
     // Agent-2: Somewhat reliable (2/3 fulfilled)
-    validator.record_outcome(
-        "bid-4".to_string(),
-        "agent-2".to_string(),
-        150,
-        Some(160),
-        true,
-    );
-    validator.record_outcome(
-        "bid-5".to_string(),
-        "agent-2".to_string(),
-        150,
-        Some(200),
-        true,
-    );
+    validator.record_outcome("bid-4".to_string(), "agent-2".to_string(), 150, Some(160), true);
+    validator.record_outcome("bid-5".to_string(), "agent-2".to_string(), 150, Some(200), true);
     validator.record_outcome(
         "bid-6".to_string(),
         "agent-2".to_string(),
@@ -377,8 +345,12 @@ async fn demo_role_verification() {
     if !unsuitable.is_empty() {
         println!("  ✓ Unsuitable role assignments (< 60% performance):");
         for (agent_id, role, score) in unsuitable {
-            println!("    - {}: unsuitable for '{}' ({:.0}% performance)",
-                     agent_id, role, score * 100.0);
+            println!(
+                "    - {}: unsuitable for '{}' ({:.0}% performance)",
+                agent_id,
+                role,
+                score * 100.0
+            );
         }
     }
 }

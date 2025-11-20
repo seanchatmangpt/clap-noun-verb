@@ -112,13 +112,11 @@ impl ReceiptGenerator {
 
     /// Build the receipt
     pub fn build(self) -> std::result::Result<Receipt, ReceiptError> {
-        let invocation = self
-            .invocation
-            .ok_or_else(|| ReceiptError::MissingField("invocation".to_string()))?;
+        let invocation =
+            self.invocation.ok_or_else(|| ReceiptError::MissingField("invocation".to_string()))?;
 
-        let timestamp = self
-            .timestamp
-            .ok_or_else(|| ReceiptError::MissingField("timestamp".to_string()))?;
+        let timestamp =
+            self.timestamp.ok_or_else(|| ReceiptError::MissingField("timestamp".to_string()))?;
 
         // Compute blake3 hashes
         let invocation_hash = Self::compute_hash(invocation.as_bytes());
@@ -133,10 +131,7 @@ impl ReceiptGenerator {
             timestamp,
             duration_ms: self.duration_ms,
             metadata: serde_json::Value::Object(
-                self.metadata
-                    .into_iter()
-                    .map(|(k, v)| (k, v))
-                    .collect(),
+                self.metadata.into_iter().map(|(k, v)| (k, v)).collect(),
             ),
         })
     }
@@ -150,22 +145,14 @@ impl ReceiptGenerator {
 
     /// Convert receipt to RDF triples
     pub fn to_rdf_triples(receipt: &Receipt) -> std::result::Result<Vec<RdfTriple>, ReceiptError> {
-        let receipt_uri = format!(
-            "{}Receipt-{}",
-            crate::rdf::CNV_NAMESPACE,
-            uuid::Uuid::new_v4()
-        );
+        let receipt_uri = format!("{}Receipt-{}", crate::rdf::CNV_NAMESPACE, uuid::Uuid::new_v4());
         let rdf_type = format!("{}type", crate::rdf::RDF_NS);
         let receipt_class = format!("{}Receipt", crate::rdf::CNV_NAMESPACE);
 
         let mut triples = Vec::new();
 
         // Receipt is a cnv:Receipt
-        triples.push(RdfTriple::new(
-            &receipt_uri,
-            &rdf_type,
-            RdfValue::uri(&receipt_class),
-        ));
+        triples.push(RdfTriple::new(&receipt_uri, &rdf_type, RdfValue::uri(&receipt_class)));
 
         // Add invocation hash
         triples.push(RdfTriple::new(
@@ -202,10 +189,7 @@ impl ReceiptGenerator {
         triples.push(RdfTriple::new(
             &receipt_uri,
             format!("{}timestamp", crate::rdf::CNV_NAMESPACE),
-            RdfValue::typed_literal(
-                &receipt.timestamp,
-                format!("{}dateTime", crate::rdf::XSD_NS),
-            ),
+            RdfValue::typed_literal(&receipt.timestamp, format!("{}dateTime", crate::rdf::XSD_NS)),
         ));
 
         // Add duration
@@ -307,9 +291,7 @@ mod tests {
 
     #[test]
     fn test_build_receipt_missing_invocation() {
-        let result = ReceiptGenerator::new()
-            .with_timestamp()
-            .build();
+        let result = ReceiptGenerator::new().with_timestamp().build();
 
         assert!(result.is_err());
     }
@@ -317,9 +299,7 @@ mod tests {
     #[test]
     fn test_build_receipt_missing_timestamp() {
         let inv = create_test_invocation();
-        let result = ReceiptGenerator::new()
-            .with_invocation(&inv)
-            .build();
+        let result = ReceiptGenerator::new().with_invocation(&inv).build();
 
         assert!(result.is_err());
     }
@@ -327,11 +307,8 @@ mod tests {
     #[test]
     fn test_receipt_to_json() {
         let inv = create_test_invocation();
-        let receipt = ReceiptGenerator::new()
-            .with_invocation(&inv)
-            .with_timestamp()
-            .build()
-            .expect("build");
+        let receipt =
+            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
 
         let json = receipt.as_json();
         assert!(json.get("invocation_hash").is_some());
@@ -341,11 +318,8 @@ mod tests {
     #[test]
     fn test_receipt_to_rdf() {
         let inv = create_test_invocation();
-        let receipt = ReceiptGenerator::new()
-            .with_invocation(&inv)
-            .with_timestamp()
-            .build()
-            .expect("build");
+        let receipt =
+            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
 
         let triples = ReceiptGenerator::to_rdf_triples(&receipt).expect("to rdf");
         assert!(!triples.is_empty());
@@ -354,11 +328,8 @@ mod tests {
     #[test]
     fn test_receipt_to_turtle() {
         let inv = create_test_invocation();
-        let receipt = ReceiptGenerator::new()
-            .with_invocation(&inv)
-            .with_timestamp()
-            .build()
-            .expect("build");
+        let receipt =
+            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
 
         let turtle = ReceiptGenerator::to_turtle(&receipt).expect("to turtle");
         assert!(turtle.contains("Receipt"));

@@ -13,7 +13,7 @@ mod errors;
 #[path = "../examples/ggen/validators.rs"]
 mod validators;
 
-use errors::{UserError, ErrorCategory};
+use errors::{ErrorCategory, UserError};
 use validators::*;
 
 // ============================================================================
@@ -209,11 +209,7 @@ fn test_validate_package_id_invalid_characters() {
 
 #[test]
 fn test_user_error_format_pretty() {
-    let error = UserError::new(
-        ErrorCategory::Validation,
-        "Test problem",
-        "Test solution"
-    );
+    let error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution");
 
     let formatted = error.format_pretty();
     assert!(formatted.contains("❌ Problem: Test problem"));
@@ -222,11 +218,8 @@ fn test_user_error_format_pretty() {
 
 #[test]
 fn test_user_error_with_docs_link() {
-    let error = UserError::new(
-        ErrorCategory::Validation,
-        "Test problem",
-        "Test solution"
-    ).with_docs("https://example.com/help");
+    let error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution")
+        .with_docs("https://example.com/help");
 
     let formatted = error.format_pretty();
     assert!(formatted.contains("📚 Learn more: https://example.com/help"));
@@ -318,11 +311,7 @@ fn test_error_creation_performance() {
     let start = Instant::now();
 
     for _ in 0..1000 {
-        let _error = UserError::new(
-            ErrorCategory::Validation,
-            "Test problem",
-            "Test solution"
-        );
+        let _error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution");
     }
 
     let duration = start.elapsed();
@@ -335,11 +324,8 @@ fn test_error_creation_performance() {
 fn test_error_formatting_performance() {
     use std::time::Instant;
 
-    let error = UserError::new(
-        ErrorCategory::Validation,
-        "Test problem",
-        "Test solution"
-    ).with_docs("https://example.com");
+    let error = UserError::new(ErrorCategory::Validation, "Test problem", "Test solution")
+        .with_docs("https://example.com");
 
     let start = Instant::now();
 

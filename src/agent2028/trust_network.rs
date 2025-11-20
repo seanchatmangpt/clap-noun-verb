@@ -1,13 +1,12 @@
+use chrono::{DateTime, Duration, Utc};
 /// Agent Trust Network System
 ///
 /// Decentralized trust and reputation management for agents without requiring
 /// a central authority. Uses Bayesian reputation models and transitive trust.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Decentralized Identifier for an agent
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -29,13 +28,7 @@ impl AgentIdentity {
         let did = format!("did:agent:{}", agent_id);
         let public_key = Self::generate_placeholder_key(&agent_id);
 
-        Self {
-            did,
-            public_key,
-            key_type,
-            created_at: Utc::now(),
-            active: true,
-        }
+        Self { did, public_key, key_type, created_at: Utc::now(), active: true }
     }
 
     fn generate_placeholder_key(agent_id: &str) -> Vec<u8> {
@@ -110,7 +103,8 @@ impl TrustScore {
     /// Get score with confidence interval (lower bound)
     pub fn conservative_score(&self) -> f64 {
         let z_score = 1.96; // 95% confidence interval
-        let margin = z_score * ((self.score * (1.0 - self.score)) / (self.sample_size as f64 + 1.0).sqrt());
+        let margin =
+            z_score * ((self.score * (1.0 - self.score)) / (self.sample_size as f64 + 1.0).sqrt());
         (self.score - margin).max(0.0).min(1.0)
     }
 
@@ -174,9 +168,8 @@ impl TrustScoreCalculator {
         // Update trust score
         let mut scores = self.scores.write().await;
         let subject_id_clone = subject_id.clone();
-        let score = scores
-            .entry(subject_id)
-            .or_insert_with(|| TrustScore::new(subject_id_clone.clone()));
+        let score =
+            scores.entry(subject_id).or_insert_with(|| TrustScore::new(subject_id_clone.clone()));
         score.update(&outcome);
 
         // Record observation
@@ -187,10 +180,7 @@ impl TrustScoreCalculator {
     /// Get trust score for an agent
     pub async fn score(&self, agent_id: &str) -> TrustScore {
         let scores = self.scores.read().await;
-        scores
-            .get(agent_id)
-            .cloned()
-            .unwrap_or_else(|| TrustScore::new(agent_id.to_string()))
+        scores.get(agent_id).cloned().unwrap_or_else(|| TrustScore::new(agent_id.to_string()))
     }
 
     /// Get conservative (lower bound) trust score
@@ -234,9 +224,7 @@ pub struct TrustChain {
 
 impl TrustChain {
     pub fn new() -> Self {
-        Self {
-            links: Arc::new(RwLock::new(Vec::new())),
-        }
+        Self { links: Arc::new(RwLock::new(Vec::new())) }
     }
 
     /// Add a direct trust relationship
@@ -288,11 +276,7 @@ impl TrustChain {
     /// Get all direct trusters of an agent
     pub async fn trustees(&self, agent_id: &str) -> Vec<TrustChainLink> {
         let links = self.links.read().await;
-        links
-            .iter()
-            .filter(|l| l.to_agent == agent_id)
-            .cloned()
-            .collect()
+        links.iter().filter(|l| l.to_agent == agent_id).cloned().collect()
     }
 }
 
@@ -355,19 +339,16 @@ pub struct PeerValidator {
 
 impl PeerValidator {
     pub fn new(trust_chain: Arc<TrustChain>) -> Self {
-        Self {
-            delegations: Arc::new(RwLock::new(Vec::new())),
-            trust_chain,
-        }
+        Self { delegations: Arc::new(RwLock::new(Vec::new())), trust_chain }
     }
 
     /// Validate that agent B's capability is backed by agent A's delegation
     pub async fn validate_capability(&self, agent_id: &str, capability: &str) -> bool {
         let delegations = self.delegations.read().await;
 
-        let valid_delegation = delegations.iter().any(|d| {
-            d.delegate == agent_id && d.capability == capability && d.is_valid()
-        });
+        let valid_delegation = delegations
+            .iter()
+            .any(|d| d.delegate == agent_id && d.capability == capability && d.is_valid());
 
         valid_delegation
     }
@@ -388,11 +369,7 @@ impl PeerValidator {
     /// Get all valid delegations for an agent
     pub async fn agent_delegations(&self, agent_id: &str) -> Vec<CapabilityDelegation> {
         let delegations = self.delegations.read().await;
-        delegations
-            .iter()
-            .filter(|d| d.delegate == agent_id && d.is_valid())
-            .cloned()
-            .collect()
+        delegations.iter().filter(|d| d.delegate == agent_id && d.is_valid()).cloned().collect()
     }
 }
 
@@ -402,10 +379,7 @@ mod tests {
 
     #[test]
     fn test_agent_identity() {
-        let identity = AgentIdentity::new(
-            "agent-1".to_string(),
-            "ed25519".to_string(),
-        );
+        let identity = AgentIdentity::new("agent-1".to_string(), "ed25519".to_string());
 
         assert_eq!(identity.did, "did:agent:agent-1");
         assert!(identity.active);
@@ -414,9 +388,7 @@ mod tests {
     #[test]
     fn test_trust_score_update() {
         let mut score = TrustScore::new("agent-1".to_string());
-        let outcome = ExecutionOutcome::Success {
-            duration_ms: 100,
-        };
+        let outcome = ExecutionOutcome::Success { duration_ms: 100 };
 
         score.update(&outcome);
         assert!(score.score > 0.5);
@@ -426,13 +398,9 @@ mod tests {
     #[tokio::test]
     async fn test_trust_calculator() {
         let calculator = TrustScoreCalculator::new();
-        let outcome = ExecutionOutcome::Success {
-            duration_ms: 100,
-        };
+        let outcome = ExecutionOutcome::Success { duration_ms: 100 };
 
-        calculator
-            .observe("agent-1".to_string(), "agent-2".to_string(), outcome)
-            .await;
+        calculator.observe("agent-1".to_string(), "agent-2".to_string(), outcome).await;
 
         let score = calculator.score("agent-2").await;
         assert!(score.score > 0.5);

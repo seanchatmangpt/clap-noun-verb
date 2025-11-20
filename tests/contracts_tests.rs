@@ -68,9 +68,7 @@ fn test_temporal_contract_effective_timeout() {
     // GIVEN: A contract with deadline and timeout
     let contract = TemporalContract::new(DurationClass::Interactive)
         .with_timeout(Duration::from_secs(10))
-        .with_deadline(DeadlineSpec::Hard {
-            duration: Duration::from_secs(5),
-        });
+        .with_deadline(DeadlineSpec::Hard { duration: Duration::from_secs(5) });
 
     // WHEN: We get effective timeout
     let timeout = contract.effective_timeout();
@@ -109,9 +107,8 @@ fn test_concurrency_model_single_tenant_exclusive() {
 #[test]
 fn test_concurrency_model_tenant_wide_shared() {
     // GIVEN: A tenant-wide shared model with limits
-    let contract = ConcurrencyContract::new(ConcurrencyModel::TenantWideShared {
-        max_concurrent: 5,
-    });
+    let contract =
+        ConcurrencyContract::new(ConcurrencyModel::TenantWideShared { max_concurrent: 5 });
 
     // THEN: Max concurrency is enforced
     if let ConcurrencyModel::TenantWideShared { max_concurrent } = contract.model {
@@ -130,11 +127,7 @@ fn test_concurrency_model_global_shared_with_rate_limit() {
     });
 
     // THEN: Both concurrency and rate limits are set
-    if let ConcurrencyModel::GlobalShared {
-        max_concurrent,
-        rate_limit_rps,
-    } = contract.model
-    {
+    if let ConcurrencyModel::GlobalShared { max_concurrent, rate_limit_rps } = contract.model {
         assert_eq!(max_concurrent, 100);
         assert_eq!(rate_limit_rps, Some(1000));
     } else {
@@ -189,9 +182,7 @@ fn test_execution_contract_builder() {
     // GIVEN: A complex execution contract built via builder
     let contract = ExecutionContract::builder()
         .duration_class(DurationClass::FastPath)
-        .deadline(DeadlineSpec::Hard {
-            duration: Duration::from_millis(10),
-        })
+        .deadline(DeadlineSpec::Hard { duration: Duration::from_millis(10) })
         .timeout(Duration::from_millis(5))
         .idempotent()
         .concurrency_model(ConcurrencyModel::TenantWideShared { max_concurrent: 3 })
@@ -202,23 +193,15 @@ fn test_execution_contract_builder() {
     // THEN: All properties are set correctly
     assert_eq!(contract.temporal.duration_class, DurationClass::FastPath);
     assert!(contract.temporal.idempotent);
-    assert_eq!(
-        contract.temporal.timeout,
-        Some(Duration::from_millis(5))
-    );
+    assert_eq!(contract.temporal.timeout, Some(Duration::from_millis(5)));
 
-    if let ConcurrencyModel::TenantWideShared { max_concurrent } =
-        contract.concurrency.model
-    {
+    if let ConcurrencyModel::TenantWideShared { max_concurrent } = contract.concurrency.model {
         assert_eq!(max_concurrent, 3);
     } else {
         panic!("Wrong concurrency model");
     }
 
-    assert_eq!(
-        contract.concurrency.isolation,
-        IsolationLevel::TenantIsolated
-    );
+    assert_eq!(contract.concurrency.isolation, IsolationLevel::TenantIsolated);
 }
 
 #[test]
@@ -284,12 +267,7 @@ fn test_retry_policy_exponential_backoff() {
     };
 
     // THEN: Parameters are accessible
-    if let RetryPolicy::ExponentialBackoff {
-        max_attempts,
-        initial_delay,
-        max_delay,
-    } = policy
-    {
+    if let RetryPolicy::ExponentialBackoff { max_attempts, initial_delay, max_delay } = policy {
         assert_eq!(max_attempts, 5);
         assert_eq!(initial_delay, Duration::from_millis(100));
         assert_eq!(max_delay, Duration::from_secs(30));
@@ -299,17 +277,10 @@ fn test_retry_policy_exponential_backoff() {
 #[test]
 fn test_retry_policy_linear_backoff() {
     // GIVEN: A linear backoff retry policy
-    let policy = RetryPolicy::LinearBackoff {
-        max_attempts: 3,
-        delay: Duration::from_secs(1),
-    };
+    let policy = RetryPolicy::LinearBackoff { max_attempts: 3, delay: Duration::from_secs(1) };
 
     // THEN: Parameters are accessible
-    if let RetryPolicy::LinearBackoff {
-        max_attempts,
-        delay,
-    } = policy
-    {
+    if let RetryPolicy::LinearBackoff { max_attempts, delay } = policy {
         assert_eq!(max_attempts, 3);
         assert_eq!(delay, Duration::from_secs(1));
     }
@@ -324,11 +295,7 @@ fn test_retry_policy_forever() {
     };
 
     // THEN: No max attempts
-    if let RetryPolicy::Forever {
-        initial_delay,
-        max_delay,
-    } = policy
-    {
+    if let RetryPolicy::Forever { initial_delay, max_delay } = policy {
         assert_eq!(initial_delay, Duration::from_millis(500));
         assert_eq!(max_delay, Duration::from_secs(60));
     }
@@ -337,9 +304,7 @@ fn test_retry_policy_forever() {
 #[test]
 fn test_deadline_spec_hard() {
     // GIVEN: A hard deadline
-    let deadline = DeadlineSpec::Hard {
-        duration: Duration::from_secs(5),
-    };
+    let deadline = DeadlineSpec::Hard { duration: Duration::from_secs(5) };
 
     // THEN: It's a hard constraint
     if let DeadlineSpec::Hard { duration } = deadline {
@@ -350,9 +315,7 @@ fn test_deadline_spec_hard() {
 #[test]
 fn test_deadline_spec_soft() {
     // GIVEN: A soft deadline (best effort)
-    let deadline = DeadlineSpec::Soft {
-        duration: Duration::from_secs(10),
-    };
+    let deadline = DeadlineSpec::Soft { duration: Duration::from_secs(10) };
 
     // THEN: It's a soft constraint
     if let DeadlineSpec::Soft { duration } = deadline {
@@ -363,9 +326,7 @@ fn test_deadline_spec_soft() {
 #[test]
 fn test_deadline_spec_must_start_by() {
     // GIVEN: A "must start by" window
-    let deadline = DeadlineSpec::MustStartBy {
-        window: Duration::from_secs(2),
-    };
+    let deadline = DeadlineSpec::MustStartBy { window: Duration::from_secs(2) };
 
     // THEN: Window is specified
     if let DeadlineSpec::MustStartBy { window } = deadline {
@@ -376,18 +337,14 @@ fn test_deadline_spec_must_start_by() {
 #[test]
 fn test_contract_metadata() {
     // GIVEN: A contract with metadata
-    let mut contract = ExecutionContract::builder()
-        .duration_class(DurationClass::Interactive)
-        .build();
+    let mut contract =
+        ExecutionContract::builder().duration_class(DurationClass::Interactive).build();
 
     contract.metadata.description = Some("Test operation".to_string());
     contract.metadata.experimental = true;
 
     // THEN: Metadata is preserved
-    assert_eq!(
-        contract.metadata.description,
-        Some("Test operation".to_string())
-    );
+    assert_eq!(contract.metadata.description, Some("Test operation".to_string()));
     assert!(contract.metadata.experimental);
 }
 
@@ -421,24 +378,12 @@ fn test_compile_time_contract_attachment() {
     let slow_contract = SlowOperation::contract();
 
     // THEN: Contracts match expectations
-    assert_eq!(
-        fast_contract.temporal.duration_class,
-        DurationClass::FastPath
-    );
-    assert_eq!(
-        slow_contract.temporal.duration_class,
-        DurationClass::Batch
-    );
+    assert_eq!(fast_contract.temporal.duration_class, DurationClass::FastPath);
+    assert_eq!(slow_contract.temporal.duration_class, DurationClass::Batch);
 
     // AND: Concurrency models are correct
-    assert!(matches!(
-        fast_contract.concurrency.model,
-        ConcurrencyModel::Unlimited
-    ));
-    assert!(matches!(
-        slow_contract.concurrency.model,
-        ConcurrencyModel::SingleTenantExclusive
-    ));
+    assert!(matches!(fast_contract.concurrency.model, ConcurrencyModel::Unlimited));
+    assert!(matches!(slow_contract.concurrency.model, ConcurrencyModel::SingleTenantExclusive));
 }
 
 #[test]

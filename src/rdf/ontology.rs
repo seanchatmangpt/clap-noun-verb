@@ -25,11 +25,7 @@ impl Ontology {
         prefixes.insert("xsd".to_string(), crate::rdf::XSD_NS.to_string());
         prefixes.insert("shacl".to_string(), crate::rdf::SHACL_NS.to_string());
 
-        Self {
-            triples: BTreeMap::new(),
-            predicate_index: BTreeMap::new(),
-            prefixes,
-        }
+        Self { triples: BTreeMap::new(), predicate_index: BTreeMap::new(), prefixes }
     }
 
     /// Add a triple to the ontology
@@ -41,10 +37,7 @@ impl Ontology {
             .push(triple.subject.clone());
 
         // Add to subject index
-        self.triples
-            .entry(triple.subject.clone())
-            .or_default()
-            .push(triple);
+        self.triples.entry(triple.subject.clone()).or_default().push(triple);
     }
 
     /// Add multiple triples
@@ -70,15 +63,16 @@ impl Ontology {
     /// Get object value for subject-predicate pair
     pub fn get_object(&self, subject: &str, predicate: &str) -> Option<&RdfValue> {
         self.triples.get(subject).and_then(|triples| {
-            triples
-                .iter()
-                .find(|t| t.predicate == predicate)
-                .map(|t| &t.object)
+            triples.iter().find(|t| t.predicate == predicate).map(|t| &t.object)
         })
     }
 
     /// Get all triples with a specific predicate and object pattern
-    pub fn find_triples(&self, predicate: Option<&str>, object_filter: Option<&str>) -> Vec<&RdfTriple> {
+    pub fn find_triples(
+        &self,
+        predicate: Option<&str>,
+        object_filter: Option<&str>,
+    ) -> Vec<&RdfTriple> {
         let mut results = Vec::new();
 
         for triples in self.triples.values() {
@@ -107,9 +101,7 @@ impl Ontology {
             return None;
         }
 
-        self.prefixes
-            .get(parts[0])
-            .map(|uri| format!("{}{}", uri, parts[1]))
+        self.prefixes.get(parts[0]).map(|uri| format!("{}{}", uri, parts[1]))
     }
 
     /// Compact a full URI to prefixed form
@@ -173,13 +165,7 @@ impl Ontology {
         self.triples
             .values()
             .flatten()
-            .map(|t| {
-                (
-                    t.subject.clone(),
-                    t.predicate.clone(),
-                    t.object.as_str().to_string(),
-                )
-            })
+            .map(|t| (t.subject.clone(), t.predicate.clone(), t.object.as_str().to_string()))
             .collect()
     }
 }
@@ -254,10 +240,7 @@ mod tests {
     fn test_prefix_expansion() {
         let ont = Ontology::new();
         let expanded = ont.expand_prefix("cnv:Command");
-        assert_eq!(
-            expanded.as_deref(),
-            Some("https://cnv.dev/ontology#Command")
-        );
+        assert_eq!(expanded.as_deref(), Some("https://cnv.dev/ontology#Command"));
     }
 
     #[test]

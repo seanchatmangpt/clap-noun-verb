@@ -2,7 +2,6 @@
 ///
 /// Bio-inspired algorithms for flocking, herding, swarming, and formation control.
 /// Based on simple local rules (separation, alignment, cohesion).
-
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
@@ -60,7 +59,10 @@ impl BoidAgent {
         Self {
             id,
             position: Vec2::new(x, y),
-            velocity: Vec2::new((rand::random::<f64>() - 0.5) * 2.0, (rand::random::<f64>() - 0.5) * 2.0),
+            velocity: Vec2::new(
+                (rand::random::<f64>() - 0.5) * 2.0,
+                (rand::random::<f64>() - 0.5) * 2.0,
+            ),
             acceleration: Vec2::new(0.0, 0.0),
             max_speed: 4.0,
             max_force: 0.1,
@@ -223,11 +225,7 @@ pub struct HerdingBehavior {
 
 impl HerdingBehavior {
     pub fn new(leader_id: String) -> Self {
-        Self {
-            leader_id,
-            following_distance: 100.0,
-            following_weight: 2.0,
-        }
+        Self { leader_id, following_distance: 100.0, following_weight: 2.0 }
     }
 
     /// Follow the leader
@@ -252,11 +250,7 @@ pub struct SwarmingBehavior {
 
 impl SwarmingBehavior {
     pub fn new(target: Vec2) -> Self {
-        Self {
-            target,
-            attraction_weight: 3.0,
-            max_cluster_distance: 200.0,
-        }
+        Self { target, attraction_weight: 3.0, max_cluster_distance: 200.0 }
     }
 
     /// Swarm toward target
@@ -274,10 +268,10 @@ impl SwarmingBehavior {
 
 /// Formation control
 pub enum Formation {
-    Line,       // V-formation or line
-    Circle,     // Circular formation
-    Grid,       // Grid pattern
-    Wedge,      // Wedge/arrow formation
+    Line,   // V-formation or line
+    Circle, // Circular formation
+    Grid,   // Grid pattern
+    Wedge,  // Wedge/arrow formation
 }
 
 pub struct FormationController {
@@ -287,10 +281,7 @@ pub struct FormationController {
 
 impl FormationController {
     pub fn new(formation: Formation) -> Self {
-        Self {
-            formation,
-            spacing: 50.0,
-        }
+        Self { formation, spacing: 50.0 }
     }
 
     /// Get desired position for agent index in formation
@@ -304,10 +295,7 @@ impl FormationController {
                 // Circle around anchor
                 let angle = (index as f64) * 2.0 * PI / 8.0; // Assume 8 agents
                 let radius = self.spacing;
-                Vec2::new(
-                    anchor.x + radius * angle.cos(),
-                    anchor.y + radius * angle.sin(),
-                )
+                Vec2::new(anchor.x + radius * angle.cos(), anchor.y + radius * angle.sin())
             }
             Formation::Grid => {
                 // Grid pattern

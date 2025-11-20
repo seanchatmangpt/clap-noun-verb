@@ -9,14 +9,18 @@
 //! Run with: cargo run --example advanced_features_v4_3
 
 use clap_noun_verb::clap::{
-    CompletionGenerator, CommandContext, EnumCommand, EnumDispatcher, Shell, ValidatedPort,
+    CommandContext, CompletionGenerator, EnumCommand, EnumDispatcher, Shell, ValidatedPort,
     ValidatedUrl,
 };
 use clap_noun_verb::middleware::{
     LoggingMiddleware, Middleware, MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse,
 };
-use clap_noun_verb::plugin::{Plugin, PluginCapability, PluginRegistry, HelpPlugin, HistoryPlugin, AliasPlugin};
-use clap_noun_verb::telemetry::{MetricsCollector, TelemetryCollector, ConsoleExporter, MetricsExporter};
+use clap_noun_verb::plugin::{
+    AliasPlugin, HelpPlugin, HistoryPlugin, Plugin, PluginCapability, PluginRegistry,
+};
+use clap_noun_verb::telemetry::{
+    ConsoleExporter, MetricsCollector, MetricsExporter, TelemetryCollector,
+};
 
 /// Example: Advanced Server Command (Phase 7 - Enum Dispatch)
 struct ServerCommand;
@@ -41,9 +45,7 @@ fn main() -> clap_noun_verb::Result<()> {
     let dispatcher = EnumDispatcher::new("server").with_description("Server management commands");
     println!("     {}\n", dispatcher);
 
-    let context = CommandContext::new("server")
-        .with_arg("--port")
-        .with_arg("8080");
+    let context = CommandContext::new("server").with_arg("--port").with_arg("8080");
     println!("   ▸ Command context: {}", context.full_path());
     println!("     Args: {:?}\n", context.args());
 
@@ -121,17 +123,14 @@ fn main() -> clap_noun_verb::Result<()> {
     println!("⚙️  Feature 4: Middleware Pipeline\n");
     println!("   ▸ Building middleware pipeline");
 
-    let pipeline = MiddlewarePipeline::new()
-        .add(Box::new(LoggingMiddleware::new()));
+    let pipeline = MiddlewarePipeline::new().add(Box::new(LoggingMiddleware::new()));
 
     println!("     Pipeline: {}", pipeline);
     println!("     Middleware count: {}", pipeline.len());
     println!("     Middlewares: {:?}\n", pipeline.middleware_names());
 
     println!("   ▸ Executing middleware request");
-    let request = MiddlewareRequest::new("execute")
-        .with_arg("--verbose")
-        .with_requester("admin");
+    let request = MiddlewareRequest::new("execute").with_arg("--verbose").with_requester("admin");
 
     match pipeline.execute_before(&request) {
         Ok(_) => println!("     ✓ Pre-execution phase passed"),

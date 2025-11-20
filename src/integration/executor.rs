@@ -3,7 +3,7 @@
 //! Uses type-state pattern to enforce correct execution flow at compile time.
 //! Supports both sync and async command execution with automatic instrumentation.
 
-use crate::middleware::{Middleware, MiddlewareRequest, MiddlewareResponse, MiddlewarePipeline};
+use crate::middleware::{Middleware, MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse};
 use crate::telemetry::SpanBuilder;
 use std::fmt;
 use std::marker::PhantomData;
@@ -166,11 +166,7 @@ pub struct CommandExecutor<Phase: ExecutionPhase = PreExecution> {
 impl CommandExecutor<PreExecution> {
     /// Create a new command executor with a middleware pipeline.
     pub fn new(pipeline: MiddlewarePipeline) -> Self {
-        Self {
-            pipeline,
-            context: ExecutionContext::new("default"),
-            _phase: PhantomData,
-        }
+        Self { pipeline, context: ExecutionContext::new("default"), _phase: PhantomData }
     }
 
     /// Set the execution context.
@@ -205,11 +201,7 @@ impl CommandExecutor<PreExecution> {
         // Execute pre-execution hooks
         self.pipeline.execute_before(&request)?;
 
-        Ok(CommandExecutor {
-            pipeline: self.pipeline,
-            context: self.context,
-            _phase: PhantomData,
-        })
+        Ok(CommandExecutor { pipeline: self.pipeline, context: self.context, _phase: PhantomData })
     }
 }
 
@@ -219,10 +211,7 @@ impl CommandExecutor<Executing> {
     /// # Errors
     ///
     /// Returns an error if the command closure fails.
-    pub fn execute_command<F>(
-        mut self,
-        command: F,
-    ) -> crate::Result<CommandExecutor<PostExecution>>
+    pub fn execute_command<F>(mut self, command: F) -> crate::Result<CommandExecutor<PostExecution>>
     where
         F: FnOnce() -> crate::Result<String>,
     {
@@ -277,7 +266,8 @@ impl CommandExecutor<Executing> {
                         Err(e)
                     }
                     Err(recovery_err) => {
-                        self.context.set_error(format!("{} (recovery failed: {})", e, recovery_err));
+                        self.context
+                            .set_error(format!("{} (recovery failed: {})", e, recovery_err));
                         Err(recovery_err)
                     }
                 }
@@ -316,11 +306,7 @@ impl CommandExecutor<PostExecution> {
         // Execute post-execution hooks
         self.pipeline.execute_after(&response)?;
 
-        Ok(CommandExecutor {
-            pipeline: self.pipeline,
-            context: self.context,
-            _phase: PhantomData,
-        })
+        Ok(CommandExecutor { pipeline: self.pipeline, context: self.context, _phase: PhantomData })
     }
 
     /// Get the execution context after completion.
@@ -347,9 +333,7 @@ mod tests {
 
     #[test]
     fn test_execution_context_with_args() {
-        let ctx = ExecutionContext::new("test")
-            .with_arg("arg1")
-            .with_arg("arg2");
+        let ctx = ExecutionContext::new("test").with_arg("arg1").with_arg("arg2");
         assert_eq!(ctx.args().len(), 2);
     }
 

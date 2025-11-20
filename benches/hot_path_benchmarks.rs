@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
 use clap_noun_verb::autonomic::*;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::time::Duration;
 
 /// Benchmark InvocationQueue throughput
@@ -148,9 +148,8 @@ fn bench_effect_flags(c: &mut Criterion) {
     group.bench_function("merge_operations", |b| {
         let base = EffectFlags::empty().with(EffectFlags::READ_ONLY);
         b.iter(|| {
-            let flags = base
-                .with(black_box(EffectFlags::NETWORK))
-                .with(black_box(EffectFlags::STORAGE));
+            let flags =
+                base.with(black_box(EffectFlags::NETWORK)).with(black_box(EffectFlags::STORAGE));
             black_box(flags);
         });
     });

@@ -1,7 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
 use clap_noun_verb::io::{IoPipeline, IoPipelineBuilder};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::io::{Read, Write};
 use std::time::Duration;
-use std::io::{Write, Read};
 
 /// Benchmark I/O pipeline construction
 fn bench_io_pipeline_construction(c: &mut Criterion) {
@@ -15,11 +15,7 @@ fn bench_io_pipeline_construction(c: &mut Criterion) {
 
     group.bench_function("pipeline_with_buffer_config", |b| {
         b.iter(|| {
-            black_box(
-                IoPipelineBuilder::new()
-                    .buffer_size(16384)
-                    .build()
-            );
+            black_box(IoPipelineBuilder::new().buffer_size(16384).build());
         });
     });
 
@@ -94,10 +90,8 @@ fn bench_io_processing_patterns(c: &mut Criterion) {
     group.bench_function("transform_pipeline", |b| {
         let data = b"hello world".repeat(100);
         b.iter(|| {
-            let transformed: Vec<u8> = black_box(&data)
-                .iter()
-                .map(|&b| b.to_ascii_uppercase())
-                .collect();
+            let transformed: Vec<u8> =
+                black_box(&data).iter().map(|&b| b.to_ascii_uppercase()).collect();
             black_box(transformed);
         });
     });
@@ -144,10 +138,8 @@ fn bench_io_error_handling(c: &mut Criterion) {
 
     group.bench_function("result_err_path", |b| {
         b.iter(|| {
-            let result: std::io::Result<usize> = Err(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "file not found",
-            ));
+            let result: std::io::Result<usize> =
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "file not found"));
             black_box(result.is_err());
         });
     });
@@ -237,9 +229,7 @@ fn bench_concurrent_io_patterns(c: &mut Criterion) {
 
     group.bench_function("multiple_pipeline_creation", |b| {
         b.iter(|| {
-            let pipelines: Vec<_> = (0..10)
-                .map(|_| IoPipeline::new())
-                .collect();
+            let pipelines: Vec<_> = (0..10).map(|_| IoPipeline::new()).collect();
             black_box(pipelines);
         });
     });
@@ -247,10 +237,8 @@ fn bench_concurrent_io_patterns(c: &mut Criterion) {
     group.bench_function("pipeline_buffer_size_variety", |b| {
         b.iter(|| {
             let sizes = [4096, 8192, 16384, 32768];
-            let pipelines: Vec<_> = sizes
-                .iter()
-                .map(|&size| IoPipeline::new().with_buffer_size(size))
-                .collect();
+            let pipelines: Vec<_> =
+                sizes.iter().map(|&size| IoPipeline::new().with_buffer_size(size)).collect();
             black_box(pipelines);
         });
     });

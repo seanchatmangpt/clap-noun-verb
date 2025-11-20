@@ -12,7 +12,7 @@ impl Default for ResourceQuota {
     fn default() -> Self {
         Self {
             cpu_limit: 100,
-            memory_limit: 1024 * 1024 * 1024, // 1GB
+            memory_limit: 1024 * 1024 * 1024,       // 1GB
             storage_limit: 10 * 1024 * 1024 * 1024, // 10GB
         }
     }

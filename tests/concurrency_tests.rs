@@ -181,9 +181,7 @@ fn test_queue_stats_accuracy_concurrent() {
     }
 
     // Wait for all threads
-    let total_popped: usize = handles.into_iter()
-        .map(|h| h.join().unwrap())
-        .sum();
+    let total_popped: usize = handles.into_iter().map(|h| h.join().unwrap()).sum();
 
     // Verify statistics
     let stats = queue.stats();
@@ -241,15 +239,13 @@ fn test_context_pool_unique_handles_concurrent() {
     let mut agent_ids: Vec<u64> = agents.iter().map(|h| h.id()).collect();
     agent_ids.sort_unstable();
     agent_ids.dedup();
-    assert_eq!(agent_ids.len(), THREADS * HANDLES_PER_THREAD,
-               "All agent handles must be unique");
+    assert_eq!(agent_ids.len(), THREADS * HANDLES_PER_THREAD, "All agent handles must be unique");
 
     let tenants = all_tenant_handles.lock().unwrap();
     let mut tenant_ids: Vec<u64> = tenants.iter().map(|h| h.id()).collect();
     tenant_ids.sort_unstable();
     tenant_ids.dedup();
-    assert_eq!(tenant_ids.len(), THREADS * HANDLES_PER_THREAD,
-               "All tenant handles must be unique");
+    assert_eq!(tenant_ids.len(), THREADS * HANDLES_PER_THREAD, "All tenant handles must be unique");
 }
 
 /// Test InvocationArena under concurrent allocation stress
@@ -289,9 +285,7 @@ fn test_arena_concurrent_allocation() {
     }
 
     // Wait for all threads
-    let total_allocs: usize = handles.into_iter()
-        .map(|h| h.join().unwrap())
-        .sum();
+    let total_allocs: usize = handles.into_iter().map(|h| h.join().unwrap()).sum();
 
     // At least some allocations should succeed
     assert!(total_allocs > 0, "Arena should allow concurrent allocations");
@@ -377,17 +371,16 @@ fn test_queue_overflow_handling_concurrent() {
     }
 
     // Collect results
-    let (total_success, total_failed): (usize, usize) = handles.into_iter()
+    let (total_success, total_failed): (usize, usize) = handles
+        .into_iter()
         .map(|h| h.join().unwrap())
         .fold((0, 0), |(s, f), (ss, sf)| (s + ss, f + sf));
 
     // Total successes should not exceed capacity
-    assert!(total_success <= CAPACITY,
-            "Successful pushes should not exceed queue capacity");
+    assert!(total_success <= CAPACITY, "Successful pushes should not exceed queue capacity");
 
     // Some pushes should fail (total attempts > capacity)
-    assert!(total_failed > 0,
-            "Some pushes should fail when capacity is exceeded");
+    assert!(total_failed > 0, "Some pushes should fail when capacity is exceeded");
 }
 
 /// Test HotPathContext creation and correlation under concurrent access
@@ -514,8 +507,10 @@ fn test_queue_linearizability() {
     all_consumed.sort_unstable();
 
     let expected: Vec<usize> = (0..OPERATIONS * PRODUCERS).collect();
-    assert_eq!(*all_consumed, expected,
-               "Linearizability violated: each value must appear exactly once");
+    assert_eq!(
+        *all_consumed, expected,
+        "Linearizability violated: each value must appear exactly once"
+    );
 }
 
 /// Test EffectFlags bitfield operations are atomic
@@ -559,10 +554,10 @@ fn test_effect_flags_atomic_operations() {
     // At least some flags should be set after concurrent modifications
     let final_flags = flags.lock().unwrap();
     assert!(
-        final_flags.is_read_only() ||
-        final_flags.is_privileged() ||
-        final_flags.has(EffectFlags::NETWORK) ||
-        final_flags.has(EffectFlags::STORAGE),
+        final_flags.is_read_only()
+            || final_flags.is_privileged()
+            || final_flags.has(EffectFlags::NETWORK)
+            || final_flags.has(EffectFlags::STORAGE),
         "Some flags should be set after concurrent operations"
     );
 }

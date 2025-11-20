@@ -5,9 +5,9 @@
 //! Agents coordinate to select top-3 innovations that best serve development.
 
 use clap_noun_verb::rdf::{OntologyBuilder, RdfMcpHandler};
-use std::sync::Arc;
-use std::collections::HashMap;
 use parking_lot::Mutex;
+use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 // ============================================================================
@@ -56,43 +56,32 @@ impl InnovationEvaluator {
     }
 
     fn record_scout_scores(&self, innovation: &str, scores: Vec<f64>) {
-        let avg_scout = if !scores.is_empty() {
-            scores.iter().sum::<f64>() / scores.len() as f64
-        } else {
-            0.0
-        };
+        let avg_scout =
+            if !scores.is_empty() { scores.iter().sum::<f64>() / scores.len() as f64 } else { 0.0 };
 
         let mut votes = self.consensus_votes.lock();
         *votes.entry(format!("scout_{}", innovation)).or_insert(0) += 1;
     }
 
     fn record_validator_scores(&self, innovation: &str, scores: Vec<f64>) {
-        let avg_validator = if !scores.is_empty() {
-            scores.iter().sum::<f64>() / scores.len() as f64
-        } else {
-            0.0
-        };
+        let avg_validator =
+            if !scores.is_empty() { scores.iter().sum::<f64>() / scores.len() as f64 } else { 0.0 };
 
         let mut votes = self.consensus_votes.lock();
         *votes.entry(format!("validator_{}", innovation)).or_insert(0) += 1;
     }
 
     fn record_worker_scores(&self, innovation: &str, scores: Vec<f64>) {
-        let avg_worker = if !scores.is_empty() {
-            scores.iter().sum::<f64>() / scores.len() as f64
-        } else {
-            0.0
-        };
+        let avg_worker =
+            if !scores.is_empty() { scores.iter().sum::<f64>() / scores.len() as f64 } else { 0.0 };
 
         let mut votes = self.consensus_votes.lock();
         *votes.entry(format!("worker_{}", innovation)).or_insert(0) += 1;
     }
 
     fn select_top_innovations(&self) -> Vec<(String, f64)> {
-        let mut scored: Vec<_> = self.innovations
-            .iter()
-            .map(|i| (i.name.clone(), self.score_innovation(i)))
-            .collect();
+        let mut scored: Vec<_> =
+            self.innovations.iter().map(|i| (i.name.clone(), self.score_innovation(i))).collect();
 
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         scored.into_iter().take(3).collect()
@@ -224,15 +213,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SETUP: Initialize Swarm & Innovation Pool\n");
 
     let mut builder = OntologyBuilder::new();
-    builder
-        .add_command("innovation-analyze", "innovation", "analyze", "Analyze innovations")
-        .ok();
+    builder.add_command("innovation-analyze", "innovation", "analyze", "Analyze innovations").ok();
     builder
         .add_command("innovation-select", "innovation", "select", "Select best innovations")
         .ok();
-    builder
-        .add_command("innovation-consensus", "innovation", "consensus", "Build consensus")
-        .ok();
+    builder.add_command("innovation-consensus", "innovation", "consensus", "Build consensus").ok();
 
     let ontology = Arc::new(builder.build()?);
     let handler = RdfMcpHandler::new(ontology);
@@ -353,12 +338,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut validation_scores = HashMap::new();
     for innovation in &innovations {
-        let sentinel_score = validator_innovation_check(
-            &evaluator,
-            &handler,
-            "Sentinel",
-            innovation,
-        );
+        let sentinel_score =
+            validator_innovation_check(&evaluator, &handler, "Sentinel", innovation);
         validation_scores.insert(innovation.name.clone(), sentinel_score);
     }
 
@@ -374,12 +355,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (idx, innovation) in innovations.iter().enumerate() {
         let worker_num = (idx % 3) + 1;
         let worker_name = format!("Worker-{}", worker_num);
-        let _ = worker_implementation_potential(
-            &evaluator,
-            &handler,
-            &worker_name,
-            innovation,
-        );
+        let _ = worker_implementation_potential(&evaluator, &handler, &worker_name, innovation);
     }
 
     println!("\n✅ All workers completed implementation assessment\n");

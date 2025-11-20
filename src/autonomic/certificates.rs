@@ -103,10 +103,8 @@ impl CertificateId {
     /// Generate a new unique certificate ID
     pub fn generate() -> Self {
         use sha2::{Digest, Sha256};
-        let timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let timestamp =
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
         let random = uuid::Uuid::new_v4();
         let input = format!("{}{}", timestamp, random);
         let hash = Sha256::digest(input.as_bytes());
@@ -275,9 +273,7 @@ impl Certificate<PolicyChecked> {
     ) -> Result<Certificate<CapabilityChecked>, CertificateError> {
         // Verify capability is available
         if !available_capabilities.contains(&self.capability_id) {
-            return Err(CertificateError::CapabilityNotAvailable(
-                self.capability_id.clone(),
-            ));
+            return Err(CertificateError::CapabilityNotAvailable(self.capability_id.clone()));
         }
 
         Ok(Certificate {
@@ -349,13 +345,14 @@ impl Certificate<Verified> {
 
     /// Export certificate for caching/replay
     pub fn export(&self) -> Result<String, CertificateError> {
-        serde_json::to_string(self).map_err(|e| CertificateError::SerializationFailed(e.to_string()))
+        serde_json::to_string(self)
+            .map_err(|e| CertificateError::SerializationFailed(e.to_string()))
     }
 
     /// Import and verify a certificate
     pub fn import(data: &str) -> Result<Self, CertificateError> {
-        let cert: Certificate<Verified> =
-            serde_json::from_str(data).map_err(|e| CertificateError::DeserializationFailed(e.to_string()))?;
+        let cert: Certificate<Verified> = serde_json::from_str(data)
+            .map_err(|e| CertificateError::DeserializationFailed(e.to_string()))?;
 
         if !cert.is_valid() {
             return Err(CertificateError::Expired);
@@ -508,7 +505,7 @@ impl CertificateBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::autonomic::{TypeSchema, PrimitiveType};
+    use crate::autonomic::{PrimitiveType, TypeSchema};
 
     #[test]
     fn test_certificate_state_machine() {

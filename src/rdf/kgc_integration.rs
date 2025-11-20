@@ -55,12 +55,7 @@ impl KgcShard {
         ontology: Arc<Ontology>,
         lockchain: Arc<Lockchain>,
     ) -> Self {
-        Self {
-            namespace: namespace.into(),
-            ontology,
-            lockchain,
-            version: 1,
-        }
+        Self { namespace: namespace.into(), ontology, lockchain, version: 1 }
     }
 
     /// Record execution receipt in KGC audit trail

@@ -4,9 +4,9 @@
 //! the RDF MCP server through coordinated queries, validation, and execution.
 
 use clap_noun_verb::rdf::{OntologyBuilder, RdfMcpHandler};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use uuid::Uuid;
 
 // ============================================================================
@@ -85,13 +85,8 @@ fn scout_operation(
     println!("   Status: EXPLORING ONTOLOGY");
 
     // Simulate ontology discovery through validation
-    let commands = vec![
-        "services-status",
-        "config-show",
-        "logs-tail",
-        "metrics-collect",
-        "health-check",
-    ];
+    let commands =
+        vec!["services-status", "config-show", "logs-tail", "metrics-collect", "health-check"];
 
     let mut discovered = Vec::new();
     for cmd in &commands {
@@ -278,10 +273,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _scout_beta_result = scout_operation(&handler, &mut swarm, "Beta")?;
     let _scout_gamma_result = scout_operation(&handler, &mut swarm, "Gamma")?;
 
-    println!(
-        "\n✅ Scouts discovered {} total commands\n",
-        scout_alpha_result.len()
-    );
+    println!("\n✅ Scouts discovered {} total commands\n", scout_alpha_result.len());
 
     // ========================================================================
     // PHASE 4: VALIDATOR PHASE - PRE-EXECUTION CHECKS

@@ -137,7 +137,8 @@ fn generate_command(
     context["venue_name"] = serde_json::json!(&venue.name);
 
     // Add pascal_case venue key for template
-    let pascal_venue_key = venue.venue_key
+    let pascal_venue_key = venue
+        .venue_key
         .split('_')
         .map(|s| {
             let mut chars = s.chars();
@@ -169,17 +170,12 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match args.command {
-        Commands::Generate {
-            venue,
-            format: _,
-            output,
-        } => {
+        Commands::Generate { venue, format: _, output } => {
             // Load ontology
             let ontology = load_ontology("examples/templates/semantic_ontology.yaml")?;
 
             // Load template
-            let template =
-                load_template("examples/templates/semantic_projection_command.rs.hbs")?;
+            let template = load_template("examples/templates/semantic_projection_command.rs.hbs")?;
 
             // Generate code
             let generated = generate_command(&ontology, &venue, &template)?;
@@ -263,26 +259,24 @@ async fn main() -> anyhow::Result<()> {
             }
         }
 
-        Commands::Validate { ontology_file } => {
-            match load_ontology(&ontology_file) {
-                Ok(ontology) => {
-                    println!("✅ Ontology is valid");
-                    println!();
-                    println!("Namespace: {}", ontology.namespace);
-                    println!("Version: {}", ontology.version);
-                    println!("Description: {}", ontology.description);
-                    println!();
-                    println!("Entities: {}", ontology.entities.len());
-                    println!("Venues: {}", ontology.venues.len());
-                    println!("Properties: {}", ontology.properties.len());
-                }
-                Err(e) => {
-                    println!("❌ Ontology validation failed:");
-                    println!("{}", e);
-                    std::process::exit(1);
-                }
+        Commands::Validate { ontology_file } => match load_ontology(&ontology_file) {
+            Ok(ontology) => {
+                println!("✅ Ontology is valid");
+                println!();
+                println!("Namespace: {}", ontology.namespace);
+                println!("Version: {}", ontology.version);
+                println!("Description: {}", ontology.description);
+                println!();
+                println!("Entities: {}", ontology.entities.len());
+                println!("Venues: {}", ontology.venues.len());
+                println!("Properties: {}", ontology.properties.len());
             }
-        }
+            Err(e) => {
+                println!("❌ Ontology validation failed:");
+                println!("{}", e);
+                std::process::exit(1);
+            }
+        },
     }
 
     Ok(())

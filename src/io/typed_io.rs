@@ -46,10 +46,7 @@ pub struct ValidatedPath<State> {
 impl ValidatedPath<Unvalidated> {
     /// Create new unvalidated path
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        Self {
-            path: path.as_ref().to_path_buf(),
-            _state: PhantomData,
-        }
+        Self { path: path.as_ref().to_path_buf(), _state: PhantomData }
     }
 
     /// Validate the path exists and is readable
@@ -68,10 +65,7 @@ impl ValidatedPath<Unvalidated> {
             ));
         }
 
-        Ok(ValidatedPath {
-            path: self.path,
-            _state: PhantomData,
-        })
+        Ok(ValidatedPath { path: self.path, _state: PhantomData })
     }
 
     /// Get reference to unvalidated path
@@ -83,10 +77,7 @@ impl ValidatedPath<Unvalidated> {
 impl ValidatedPath<Validated> {
     /// Mark as processed after reading
     pub fn mark_processed(self) -> ValidatedPath<Processed> {
-        ValidatedPath {
-            path: self.path,
-            _state: PhantomData,
-        }
+        ValidatedPath { path: self.path, _state: PhantomData }
     }
 
     /// Read the file content (only available on validated paths)
@@ -183,19 +174,11 @@ impl<const MIN: usize, const MAX: usize> ValidatedBuffer<MIN, MAX> {
     /// Create new buffer with size validation
     pub fn new(data: Vec<u8>) -> Result<Self, String> {
         if data.len() < MIN {
-            return Err(format!(
-                "buffer too small: {} < {} bytes",
-                data.len(),
-                MIN
-            ));
+            return Err(format!("buffer too small: {} < {} bytes", data.len(), MIN));
         }
 
         if data.len() > MAX {
-            return Err(format!(
-                "buffer too large: {} > {} bytes",
-                data.len(),
-                MAX
-            ));
+            return Err(format!("buffer too large: {} > {} bytes", data.len(), MAX));
         }
 
         Ok(Self { data })
@@ -231,19 +214,11 @@ impl<const MIN_LEN: usize, const MAX_LEN: usize> ValidatedString<MIN_LEN, MAX_LE
     /// Create new validated string
     pub fn new(value: String) -> Result<Self, String> {
         if value.len() < MIN_LEN {
-            return Err(format!(
-                "string too short: {} < {} characters",
-                value.len(),
-                MIN_LEN
-            ));
+            return Err(format!("string too short: {} < {} characters", value.len(), MIN_LEN));
         }
 
         if value.len() > MAX_LEN {
-            return Err(format!(
-                "string too long: {} > {} characters",
-                value.len(),
-                MAX_LEN
-            ));
+            return Err(format!("string too long: {} > {} characters", value.len(), MAX_LEN));
         }
 
         Ok(Self { value })
@@ -260,9 +235,7 @@ impl<const MIN_LEN: usize, const MAX_LEN: usize> ValidatedString<MIN_LEN, MAX_LE
     }
 }
 
-impl<const MIN_LEN: usize, const MAX_LEN: usize> AsRef<str>
-    for ValidatedString<MIN_LEN, MAX_LEN>
-{
+impl<const MIN_LEN: usize, const MAX_LEN: usize> AsRef<str> for ValidatedString<MIN_LEN, MAX_LEN> {
     fn as_ref(&self) -> &str {
         &self.value
     }

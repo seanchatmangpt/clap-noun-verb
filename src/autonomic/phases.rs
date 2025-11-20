@@ -53,8 +53,8 @@ use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use super::*;
 use super::telemetry;
+use super::*;
 
 // ============================================================================
 // Phase States (Zero-Sized Types for Compile-Time Guarantees)
@@ -102,10 +102,7 @@ pub struct PhaseContext<State = Bootstrap> {
 
 impl<S> Clone for PhaseContext<S> {
     fn clone(&self) -> Self {
-        Self {
-            metadata: Arc::clone(&self.metadata),
-            _state: PhantomData,
-        }
+        Self { metadata: Arc::clone(&self.metadata), _state: PhantomData }
     }
 }
 
@@ -235,10 +232,7 @@ impl PhaseContext<Bootstrap> {
     }
 
     /// Transition to Negotiation phase
-    pub fn begin_negotiation(
-        self,
-        reason: impl Into<String>,
-    ) -> PhaseContext<Negotiation> {
+    pub fn begin_negotiation(self, reason: impl Into<String>) -> PhaseContext<Negotiation> {
         self.transition(PhaseId::Negotiation, reason)
     }
 
@@ -262,10 +256,7 @@ impl PhaseContext<Negotiation> {
 
 impl PhaseContext<Activation> {
     /// Transition to Operational phase
-    pub fn become_operational(
-        self,
-        reason: impl Into<String>,
-    ) -> PhaseContext<Operational> {
+    pub fn become_operational(self, reason: impl Into<String>) -> PhaseContext<Operational> {
         self.transition(PhaseId::Operational, reason)
     }
 
@@ -341,10 +332,7 @@ impl PhaseContext<Degraded> {
 
 impl PhaseContext<Recovery> {
     /// Transition back to Operational after recovery
-    pub fn restore_operational(
-        self,
-        reason: impl Into<String>,
-    ) -> PhaseContext<Operational> {
+    pub fn restore_operational(self, reason: impl Into<String>) -> PhaseContext<Operational> {
         self.transition(PhaseId::Operational, reason)
     }
 
@@ -422,9 +410,8 @@ pub struct ShutdownReport {
 impl<S> PhaseContext<S> {
     /// Internal transition helper
     fn transition<T>(self, to_phase: PhaseId, reason: impl Into<String>) -> PhaseContext<T> {
-        let from_phase = PhaseId::from_u8(
-            self.metadata.current_phase.load(Ordering::Relaxed)
-        ).unwrap_or(PhaseId::Bootstrap);
+        let from_phase = PhaseId::from_u8(self.metadata.current_phase.load(Ordering::Relaxed))
+            .unwrap_or(PhaseId::Bootstrap);
 
         // Update phase
         self.metadata.current_phase.store(to_phase as u8, Ordering::Release);
@@ -449,10 +436,7 @@ impl<S> PhaseContext<S> {
 
         drop(metrics);
 
-        PhaseContext {
-            metadata: self.metadata,
-            _state: PhantomData,
-        }
+        PhaseContext { metadata: self.metadata, _state: PhantomData }
     }
 
     /// Get current phase ID (runtime check)
@@ -506,9 +490,7 @@ pub struct PhaseCoordinator {
 impl PhaseCoordinator {
     /// Create a new phase coordinator
     pub fn new() -> Self {
-        Self {
-            swarms: Arc::new(std::sync::RwLock::new(std::collections::HashMap::new())),
-        }
+        Self { swarms: Arc::new(std::sync::RwLock::new(std::collections::HashMap::new())) }
     }
 
     /// Register a new swarm
@@ -630,9 +612,7 @@ mod tests {
 
     #[test]
     fn test_emergency_transition() {
-        let ctx = PhaseContext::new()
-            .begin_negotiation("test")
-            .enter_emergency("Critical failure");
+        let ctx = PhaseContext::new().begin_negotiation("test").enter_emergency("Critical failure");
 
         assert_eq!(ctx.current_phase(), PhaseId::Emergency);
 
@@ -642,16 +622,13 @@ mod tests {
 
     #[test]
     fn test_shutdown_report() {
-        let ctx = PhaseContext::new()
-            .begin_negotiation("test")
-            .begin_activation("test");
+        let ctx = PhaseContext::new().begin_negotiation("test").begin_activation("test");
 
         ctx.register_agent();
         ctx.register_agent();
         ctx.register_agent();
 
-        let ctx = ctx.become_operational("test")
-            .begin_shutdown("Graceful shutdown");
+        let ctx = ctx.become_operational("test").begin_shutdown("Graceful shutdown");
 
         let report = ctx.finalize();
 

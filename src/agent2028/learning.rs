@@ -1,13 +1,12 @@
+use chrono::{DateTime, Duration, Utc};
 /// Agent Learning & Adaptation Framework
 ///
 /// Enables agents to improve command execution over time through ML-driven learning,
 /// pattern recognition, and intelligent strategy adaptation.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Command execution metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,8 +92,8 @@ impl CommandProfile {
         self.min_execution_time_ms = self.min_execution_time_ms.min(metric.execution_time_ms);
         self.max_execution_time_ms = self.max_execution_time_ms.max(metric.execution_time_ms);
 
-        self.avg_memory_bytes =
-            ((self.avg_memory_bytes as f64 * (1.0 - alpha) + metric.memory_used_bytes as f64 * alpha) as u64);
+        self.avg_memory_bytes = ((self.avg_memory_bytes as f64 * (1.0 - alpha)
+            + metric.memory_used_bytes as f64 * alpha) as u64);
 
         self.success_rate = self.successful_executions as f64 / self.total_executions as f64;
     }
@@ -151,7 +150,7 @@ impl ExecutionProfiler {
             if let Some(profile) = profiles.get(&metric.command_name) {
                 let z_score = ((metric.execution_time_ms as f64 - profile.avg_execution_time_ms)
                     / (profile.avg_execution_time_ms * 0.1).max(1.0))
-                    .abs();
+                .abs();
 
                 if z_score > std_dev_threshold {
                     anomalies.push(metric.clone());
@@ -181,12 +180,7 @@ pub struct PredictionModel {
 
 impl PredictionModel {
     pub fn new(name: String, features_dim: usize) -> Self {
-        Self {
-            name,
-            version: "1.0".to_string(),
-            weights: vec![0.1; features_dim],
-            bias: 0.0,
-        }
+        Self { name, version: "1.0".to_string(), weights: vec![0.1; features_dim], bias: 0.0 }
     }
 
     /// Predict execution time (in milliseconds)
@@ -224,9 +218,7 @@ pub struct ModelInference {
 
 impl ModelInference {
     pub fn new(model: PredictionModel) -> Self {
-        Self {
-            model: Arc::new(RwLock::new(model)),
-        }
+        Self { model: Arc::new(RwLock::new(model)) }
     }
 
     /// Predict execution time for given features
@@ -267,11 +259,7 @@ pub struct AdaptationEngine {
 
 impl AdaptationEngine {
     pub fn new(profiler: ExecutionProfiler, inference: ModelInference) -> Self {
-        Self {
-            strategies: Arc::new(RwLock::new(HashMap::new())),
-            profiler,
-            inference,
-        }
+        Self { strategies: Arc::new(RwLock::new(HashMap::new())), profiler, inference }
     }
 
     /// Get adaptation strategy for an agent

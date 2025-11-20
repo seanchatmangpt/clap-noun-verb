@@ -285,11 +285,7 @@ pub struct CompletionContext {
 impl CompletionContext {
     /// Create a new completion context.
     pub fn new(current_word: impl Into<String>) -> Self {
-        Self {
-            current_word: current_word.into(),
-            previous_word: None,
-            all_words: Vec::new(),
-        }
+        Self { current_word: current_word.into(), previous_word: None, all_words: Vec::new() }
     }
 
     /// Set the previous word (for context).
@@ -366,25 +362,19 @@ mod tests {
 
     #[test]
     fn test_completion_generator_with_commands() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_command("start")
-            .with_command("stop");
+        let gen = CompletionGenerator::new("myapp").with_command("start").with_command("stop");
         assert_eq!(gen.commands().len(), 2);
     }
 
     #[test]
     fn test_completion_generator_with_options() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_option("--help")
-            .with_option("--version");
+        let gen = CompletionGenerator::new("myapp").with_option("--help").with_option("--version");
         assert_eq!(gen.options().len(), 2);
     }
 
     #[test]
     fn test_completion_generator_bash() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_command("start")
-            .with_option("--help");
+        let gen = CompletionGenerator::new("myapp").with_command("start").with_option("--help");
         let result = gen.generate(Shell::Bash);
         assert!(result.is_ok());
         let script = result.unwrap();
@@ -394,9 +384,7 @@ mod tests {
 
     #[test]
     fn test_completion_generator_zsh() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_command("start")
-            .with_option("--help");
+        let gen = CompletionGenerator::new("myapp").with_command("start").with_option("--help");
         let result = gen.generate(Shell::Zsh);
         assert!(result.is_ok());
         let script = result.unwrap();
@@ -405,9 +393,7 @@ mod tests {
 
     #[test]
     fn test_completion_generator_fish() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_command("start")
-            .with_option("--help");
+        let gen = CompletionGenerator::new("myapp").with_command("start").with_option("--help");
         let result = gen.generate(Shell::Fish);
         assert!(result.is_ok());
         let script = result.unwrap();
@@ -416,9 +402,7 @@ mod tests {
 
     #[test]
     fn test_completion_generator_powershell() {
-        let gen = CompletionGenerator::new("myapp")
-            .with_command("start")
-            .with_option("--help");
+        let gen = CompletionGenerator::new("myapp").with_command("start").with_option("--help");
         let result = gen.generate(Shell::PowerShell);
         assert!(result.is_ok());
         let script = result.unwrap();

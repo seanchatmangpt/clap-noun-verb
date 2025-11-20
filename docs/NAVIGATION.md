@@ -42,6 +42,24 @@ This documentation follows the [Diataxis](https://diataxis.fr/) systematic appro
 
 ---
 
+## Documentation Status
+
+### Current Documentation (v5.0.0+)
+All documentation in this directory is current and maintained for v5.0.0+ unless marked otherwise.
+
+**Historical Documentation Policy:**
+- Historical release documentation (v4.0.0, v3.x) has been archived/removed
+- Release history is preserved in `CHANGELOG.md` in the project root
+- Session summaries and ephemeral notes are not kept in documentation
+- Roadmaps for completed versions are removed (see CHANGELOG.md for history)
+
+**If you find outdated documentation:**
+1. Check if it's referenced in current docs
+2. If not referenced and clearly outdated, it should be removed
+3. Historical information belongs in CHANGELOG.md, not separate files
+
+---
+
 ## Document Index
 
 ### 🎓 Tutorial (Learning-Oriented)

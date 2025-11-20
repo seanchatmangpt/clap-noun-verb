@@ -39,11 +39,7 @@ impl Middleware for LoggingMiddleware {
 
     fn before(&self, request: &MiddlewareRequest) -> crate::Result<bool> {
         let log_msg = if self.verbose {
-            format!(
-                "Executing command: {} with args: {:?}",
-                request.command(),
-                request.args()
-            )
+            format!("Executing command: {} with args: {:?}", request.command(), request.args())
         } else {
             format!("Executing command: {}", request.command())
         };
@@ -91,10 +87,7 @@ pub struct ErrorRecoveryMiddleware {
 impl ErrorRecoveryMiddleware {
     /// Create a new error recovery middleware.
     pub fn new() -> Self {
-        Self {
-            max_retries: 3,
-            backoff_ms: 100,
-        }
+        Self { max_retries: 3, backoff_ms: 100 }
     }
 
     /// Set maximum retries.
@@ -129,10 +122,7 @@ impl Middleware for ErrorRecoveryMiddleware {
         );
 
         if is_retryable {
-            Ok(Some(format!(
-                "Error recovered: {}. Consider retrying with --retry flag.",
-                error
-            )))
+            Ok(Some(format!("Error recovered: {}. Consider retrying with --retry flag.", error)))
         } else {
             Ok(None)
         }
@@ -151,10 +141,7 @@ pub struct AuthMiddleware {
 impl AuthMiddleware {
     /// Create a new auth middleware.
     pub fn new() -> Self {
-        Self {
-            allowed_users: Vec::new(),
-            require_auth: false,
-        }
+        Self { allowed_users: Vec::new(), require_auth: false }
     }
 
     /// Add an allowed user.
@@ -184,12 +171,15 @@ impl Middleware for AuthMiddleware {
     fn before(&self, request: &MiddlewareRequest) -> crate::Result<bool> {
         if self.require_auth {
             if let Some(requester) = request.requester() {
-                if self.allowed_users.is_empty() || self.allowed_users.contains(&requester.to_string()) {
+                if self.allowed_users.is_empty()
+                    || self.allowed_users.contains(&requester.to_string())
+                {
                     return Ok(true);
                 }
-                return Err(crate::NounVerbError::MiddlewareError(
-                    format!("User '{}' is not authorized", requester),
-                ));
+                return Err(crate::NounVerbError::MiddlewareError(format!(
+                    "User '{}' is not authorized",
+                    requester
+                )));
             } else {
                 return Err(crate::NounVerbError::MiddlewareError(
                     "Authentication required".to_string(),
@@ -210,9 +200,7 @@ pub struct ProfilingMiddleware {
 impl ProfilingMiddleware {
     /// Create a new profiling middleware.
     pub fn new() -> Self {
-        Self {
-            timings: Arc::new(std::sync::Mutex::new(HashMap::new())),
-        }
+        Self { timings: Arc::new(std::sync::Mutex::new(HashMap::new())) }
     }
 
     /// Get average execution time for a command (in milliseconds).
@@ -246,10 +234,8 @@ impl Middleware for ProfilingMiddleware {
         // Record execution time
         if let Ok(mut timings) = self.timings.lock() {
             let command = "command"; // In real implementation, get from context
-            timings
-                .entry(command.to_string())
-                .or_insert_with(Vec::new)
-                .push(0); // Placeholder
+            timings.entry(command.to_string()).or_insert_with(Vec::new).push(0);
+            // Placeholder
         }
         Ok(())
     }
@@ -267,10 +253,7 @@ pub struct RateLimitingMiddleware {
 impl RateLimitingMiddleware {
     /// Create a new rate limiting middleware.
     pub fn new(max_requests: usize, window_seconds: u64) -> Self {
-        Self {
-            max_requests: Arc::new(AtomicUsize::new(max_requests)),
-            window_seconds,
-        }
+        Self { max_requests: Arc::new(AtomicUsize::new(max_requests)), window_seconds }
     }
 
     /// Get the current request count.
@@ -290,9 +273,7 @@ impl Middleware for RateLimitingMiddleware {
             self.max_requests.fetch_sub(1, Ordering::SeqCst);
             Ok(true)
         } else {
-            Err(crate::NounVerbError::MiddlewareError(
-                "Rate limit exceeded".to_string(),
-            ))
+            Err(crate::NounVerbError::MiddlewareError("Rate limit exceeded".to_string()))
         }
     }
 }
@@ -309,27 +290,19 @@ pub struct CachingMiddleware {
 impl CachingMiddleware {
     /// Create a new caching middleware.
     pub fn new(ttl_seconds: u64) -> Self {
-        Self {
-            cache: Arc::new(std::sync::Mutex::new(HashMap::new())),
-            ttl_seconds,
-        }
+        Self { cache: Arc::new(std::sync::Mutex::new(HashMap::new())), ttl_seconds }
     }
 
     /// Get a cached result.
     pub fn get(&self, key: &str) -> Option<String> {
-        self.cache
-            .lock()
-            .ok()
-            .and_then(|cache| cache.get(key).cloned())
+        self.cache.lock().ok().and_then(|cache| cache.get(key).cloned())
     }
 
     /// Set a cached result.
     pub fn set(&self, key: String, value: String) -> crate::Result<()> {
         self.cache
             .lock()
-            .map_err(|_| {
-                crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-            })?
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?
             .insert(key, value);
         Ok(())
     }
@@ -338,9 +311,7 @@ impl CachingMiddleware {
     pub fn clear(&self) -> crate::Result<()> {
         self.cache
             .lock()
-            .map_err(|_| {
-                crate::NounVerbError::MiddlewareError("Cache lock failed".to_string())
-            })?
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Cache lock failed".to_string()))?
             .clear();
         Ok(())
     }

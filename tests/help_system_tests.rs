@@ -275,10 +275,7 @@ fn test_discovery_search_prefix() {
 
     // Top results should start with "pack"
     for result in results.iter().take(3) {
-        assert!(
-            result.name.starts_with("pack"),
-            "Top results should start with search term"
-        );
+        assert!(result.name.starts_with("pack"), "Top results should start with search term");
     }
 }
 
@@ -303,10 +300,7 @@ fn test_discovery_suggest() {
     // Test typo suggestions
     let suggestions = discovery.suggest("pak list");
     assert!(!suggestions.is_empty(), "Should suggest corrections for typos");
-    assert!(
-        suggestions.iter().any(|s| s.command == "pack list"),
-        "Should suggest 'pack list'"
-    );
+    assert!(suggestions.iter().any(|s| s.command == "pack list"), "Should suggest 'pack list'");
 }
 
 #[test]
@@ -371,21 +365,24 @@ fn test_interactive_help_has_required_options() {
     let output = help.display_menu().unwrap();
 
     // Should have exit option
-    let has_exit = output.options.iter().any(|o| {
-        matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::Exit)
-    });
+    let has_exit = output
+        .options
+        .iter()
+        .any(|o| matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::Exit));
     assert!(has_exit, "Should have exit option");
 
     // Should have example options
-    let has_example = output.options.iter().any(|o| {
-        matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::ShowExample(_))
-    });
+    let has_example = output
+        .options
+        .iter()
+        .any(|o| matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::ShowExample(_)));
     assert!(has_example, "Should have example options");
 
     // Should have category options
-    let has_category = output.options.iter().any(|o| {
-        matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::ShowCategory(_))
-    });
+    let has_category = output
+        .options
+        .iter()
+        .any(|o| matches!(o.action, clap_noun_verb::cli::interactive::MenuAction::ShowCategory(_)));
     assert!(has_category, "Should have category options");
 }
 

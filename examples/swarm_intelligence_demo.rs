@@ -9,7 +9,6 @@
 /// 6. Swarm Optimization (PSO, ACO)
 /// 7. Resilience (fault-tolerant swarming)
 /// 8. Communication Protocols (gossip, broadcast)
-
 use clap_noun_verb::agent2028::swarm::*;
 use std::sync::Arc;
 
@@ -67,25 +66,16 @@ async fn demo_collective_intelligence() {
     let hivemind = HiveMind::new(voting.clone());
 
     // Swarm votes on critical decision
-    let voting_id = voting
-        .create_pool("should_migrate".to_string(), "majority".to_string(), 60)
-        .await;
+    let voting_id =
+        voting.create_pool("should_migrate".to_string(), "majority".to_string(), 60).await;
 
     println!("  ✓ Swarm voting on: should we migrate?");
 
     // Agents cast weighted votes
-    voting
-        .vote(&voting_id, "agent-1".to_string(), "yes".to_string(), 0.9, 1.0)
-        .await;
-    voting
-        .vote(&voting_id, "agent-2".to_string(), "yes".to_string(), 0.85, 1.0)
-        .await;
-    voting
-        .vote(&voting_id, "agent-3".to_string(), "no".to_string(), 0.6, 0.8)
-        .await;
-    voting
-        .vote(&voting_id, "agent-4".to_string(), "yes".to_string(), 0.95, 1.0)
-        .await;
+    voting.vote(&voting_id, "agent-1".to_string(), "yes".to_string(), 0.9, 1.0).await;
+    voting.vote(&voting_id, "agent-2".to_string(), "yes".to_string(), 0.85, 1.0).await;
+    voting.vote(&voting_id, "agent-3".to_string(), "no".to_string(), 0.6, 0.8).await;
+    voting.vote(&voting_id, "agent-4".to_string(), "yes".to_string(), 0.95, 1.0).await;
 
     if let Some((decision, score)) = voting.get_consensus(&voting_id).await {
         println!("  ✓ Consensus reached: {} (score: {:.2})", decision, score);
@@ -147,24 +137,9 @@ async fn demo_task_allocation() {
 
     // List tasks
     let tasks = vec![
-        SwarmTask::new(
-            "Process ML batch".to_string(),
-            vec!["ml.inference".to_string()],
-            9,
-            500.0,
-        ),
-        SwarmTask::new(
-            "Query database".to_string(),
-            vec!["database.query".to_string()],
-            7,
-            300.0,
-        ),
-        SwarmTask::new(
-            "Compute hash".to_string(),
-            vec!["compute".to_string()],
-            5,
-            100.0,
-        ),
+        SwarmTask::new("Process ML batch".to_string(), vec!["ml.inference".to_string()], 9, 500.0),
+        SwarmTask::new("Query database".to_string(), vec!["database.query".to_string()], 7, 300.0),
+        SwarmTask::new("Compute hash".to_string(), vec!["compute".to_string()], 5, 100.0),
     ];
 
     for task in tasks {
@@ -178,14 +153,8 @@ async fn demo_task_allocation() {
     println!("  ✓ {} tasks available in market", open.len());
 
     for task in open {
-        let bid = TaskBid::new(
-            task.task_id.clone(),
-            "agent-compute-1".to_string(),
-            250.0,
-            120,
-            0.92,
-            2,
-        );
+        let bid =
+            TaskBid::new(task.task_id.clone(), "agent-compute-1".to_string(), 250.0, 120, 0.92, 2);
         market.place_bid(bid).await;
     }
 
@@ -197,7 +166,10 @@ async fn demo_task_allocation() {
     }
 
     let (open, assigned, completed) = market.auction_metrics().await;
-    println!("  ✓ Auction metrics - Open: {}, Assigned: {}, Completed: {}", open, assigned, completed);
+    println!(
+        "  ✓ Auction metrics - Open: {}, Assigned: {}, Completed: {}",
+        open, assigned, completed
+    );
 }
 
 async fn demo_emergence() {
@@ -211,11 +183,7 @@ async fn demo_emergence() {
         "crowded".to_string(),
         "disperse".to_string(),
     ));
-    engine.add_rule(Rule::new(
-        "seek_food".to_string(),
-        "hungry".to_string(),
-        "forage".to_string(),
-    ));
+    engine.add_rule(Rule::new("seek_food".to_string(), "hungry".to_string(), "forage".to_string()));
     engine.add_rule(Rule::new(
         "cluster".to_string(),
         "isolated".to_string(),
@@ -293,8 +261,10 @@ async fn demo_resilience() {
     }
 
     let initial_metrics = resilience.metrics();
-    println!("  ✓ Initial state: {}/{} agents healthy",
-             initial_metrics.healthy_agents, initial_metrics.total_agents);
+    println!(
+        "  ✓ Initial state: {}/{} agents healthy",
+        initial_metrics.healthy_agents, initial_metrics.total_agents
+    );
 
     // Simulate agent failures
     println!("  ✓ Agent 1 fails...");
@@ -304,12 +274,16 @@ async fn demo_resilience() {
     resilience.set_agent_health("agent-3", HealthStatus::Degraded);
 
     let updated_metrics = resilience.metrics();
-    println!("  ✓ After failures: {}/{} agents healthy",
-             updated_metrics.healthy_agents, updated_metrics.total_agents);
+    println!(
+        "  ✓ After failures: {}/{} agents healthy",
+        updated_metrics.healthy_agents, updated_metrics.total_agents
+    );
 
     if resilience.is_functional() {
-        println!("  ✓ Swarm still functional at {:.0}% capacity",
-                 updated_metrics.functional_capacity * 100.0);
+        println!(
+            "  ✓ Swarm still functional at {:.0}% capacity",
+            updated_metrics.functional_capacity * 100.0
+        );
     }
 
     let tolerance = resilience.failure_tolerance();
@@ -326,10 +300,14 @@ async fn demo_communication_protocols() {
 
     // Register agents and neighbors
     println!("  ✓ Registering 6 agents with local topology");
-    protocol.register_agent("agent-1".to_string(), vec!["agent-2".to_string(), "agent-3".to_string()]);
-    protocol.register_agent("agent-2".to_string(), vec!["agent-1".to_string(), "agent-4".to_string()]);
-    protocol.register_agent("agent-3".to_string(), vec!["agent-1".to_string(), "agent-5".to_string()]);
-    protocol.register_agent("agent-4".to_string(), vec!["agent-2".to_string(), "agent-6".to_string()]);
+    protocol
+        .register_agent("agent-1".to_string(), vec!["agent-2".to_string(), "agent-3".to_string()]);
+    protocol
+        .register_agent("agent-2".to_string(), vec!["agent-1".to_string(), "agent-4".to_string()]);
+    protocol
+        .register_agent("agent-3".to_string(), vec!["agent-1".to_string(), "agent-5".to_string()]);
+    protocol
+        .register_agent("agent-4".to_string(), vec!["agent-2".to_string(), "agent-6".to_string()]);
     protocol.register_agent("agent-5".to_string(), vec!["agent-3".to_string()]);
     protocol.register_agent("agent-6".to_string(), vec!["agent-4".to_string()]);
 

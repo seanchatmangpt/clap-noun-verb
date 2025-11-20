@@ -35,11 +35,7 @@ pub struct ValueParserBuilder {
 impl ValueParserBuilder {
     /// Create a new value parser builder.
     pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            description: String::new(),
-            validators: Vec::new(),
-        }
+        Self { name: name.into(), description: String::new(), validators: Vec::new() }
     }
 
     /// Set the description for this parser.
@@ -192,9 +188,8 @@ impl ValidatedJson {
     /// Returns an error if the JSON is invalid.
     pub fn new(json_str: impl Into<String>) -> crate::Result<Self> {
         let raw = json_str.into();
-        let inner = serde_json::from_str(&raw).map_err(|e| {
-            crate::NounVerbError::ValidationFailed(format!("Invalid JSON: {}", e))
-        })?;
+        let inner = serde_json::from_str(&raw)
+            .map_err(|e| crate::NounVerbError::ValidationFailed(format!("Invalid JSON: {}", e)))?;
         Ok(Self { inner, raw })
     }
 
@@ -232,12 +227,8 @@ pub struct CsvList {
 impl CsvList {
     /// Create a new CSV list from a comma-separated string.
     pub fn new(csv: impl Into<String>) -> Self {
-        let items = csv
-            .into()
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect();
+        let items =
+            csv.into().split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
         Self { items }
     }
 
@@ -262,9 +253,7 @@ impl FromStr for CsvList {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
-            Err(crate::NounVerbError::ValidationFailed(
-                "CSV list cannot be empty".to_string(),
-            ))
+            Err(crate::NounVerbError::ValidationFailed("CSV list cannot be empty".to_string()))
         } else {
             Ok(Self::new(s))
         }
@@ -291,11 +280,7 @@ pub struct ParserConfig {
 impl ParserConfig {
     /// Create a new parser configuration.
     pub fn new() -> Self {
-        Self {
-            allow_empty: false,
-            trim_whitespace: true,
-            case_insensitive: false,
-        }
+        Self { allow_empty: false, trim_whitespace: true, case_insensitive: false }
     }
 
     /// Allow empty values.

@@ -10,11 +10,7 @@ pub struct Capability {
 
 impl Default for Capability {
     fn default() -> Self {
-        Self {
-            id: String::from("default-capability"),
-            permissions: vec![],
-            expires_at: None,
-        }
+        Self { id: String::from("default-capability"), permissions: vec![], expires_at: None }
     }
 }
 

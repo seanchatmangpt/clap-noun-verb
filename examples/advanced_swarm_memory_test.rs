@@ -4,9 +4,9 @@
 //! consensus-based decision making, and complex coordination patterns.
 
 use clap_noun_verb::rdf::{OntologyBuilder, RdfMcpHandler};
-use std::sync::Arc;
-use std::collections::HashMap;
 use parking_lot::Mutex;
+use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 // ============================================================================
@@ -41,9 +41,7 @@ impl SharedMemory {
     }
 
     fn cache_validation(&self, command: &str, is_valid: bool) {
-        self.validation_cache
-            .lock()
-            .insert(command.to_string(), is_valid);
+        self.validation_cache.lock().insert(command.to_string(), is_valid);
     }
 
     fn get_cached_validation(&self, command: &str) -> Option<bool> {
@@ -66,11 +64,7 @@ impl SharedMemory {
     }
 
     fn get_consensus_agreement(&self, decision: &str) -> usize {
-        self.consensus_votes
-            .lock()
-            .get(decision)
-            .copied()
-            .unwrap_or(0)
+        self.consensus_votes.lock().get(decision).copied().unwrap_or(0)
     }
 }
 
@@ -89,14 +83,20 @@ fn elite_validator(
 
     // Check memory cache first
     if let Some(cached) = memory.get_cached_validation(command) {
-        println!("   Result: {} (from memory cache)", if cached { "✅ VALID" } else { "❌ INVALID" });
+        println!(
+            "   Result: {} (from memory cache)",
+            if cached { "✅ VALID" } else { "❌ INVALID" }
+        );
         return (cached, "cached".to_string());
     }
 
     // Validate with handler
     match handler.validate_invocation(command, &None) {
         Ok(result) => {
-            println!("   Result: {} (fresh validation)", if result.valid { "✅ VALID" } else { "❌ INVALID" });
+            println!(
+                "   Result: {} (fresh validation)",
+                if result.valid { "✅ VALID" } else { "❌ INVALID" }
+            );
             memory.cache_validation(command, result.valid);
             memory.vote_consensus(&format!("validate_{}", command));
             (result.valid, "validated".to_string())
@@ -108,11 +108,7 @@ fn elite_validator(
     }
 }
 
-fn intelligence_scout(
-    handler: &RdfMcpHandler,
-    memory: &SharedMemory,
-    agent_name: &str,
-) -> usize {
+fn intelligence_scout(handler: &RdfMcpHandler, memory: &SharedMemory, agent_name: &str) -> usize {
     println!("\n🔍 INTELLIGENCE SCOUT: {}", agent_name);
     println!("   Status: ANALYZING COMMAND SPACE");
 
@@ -145,7 +141,8 @@ fn execution_master(
     println!("   Command: {}", command);
 
     // Verify validation before execution (intelligence-driven)
-    let (is_valid, _) = elite_validator(handler, memory, &format!("{}-verify", agent_name), command);
+    let (is_valid, _) =
+        elite_validator(handler, memory, &format!("{}-verify", agent_name), command);
 
     if !is_valid {
         println!("   Status: ⚠️  VALIDATION FAILED - HALTING");
@@ -209,21 +206,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("─────────────────────────────────────────────────────────\n");
 
     let mut builder = OntologyBuilder::new();
-    builder
-        .add_command("auth-login", "auth", "login", "User authentication")
-        .ok();
-    builder
-        .add_command("auth-logout", "auth", "logout", "User logout")
-        .ok();
-    builder
-        .add_command("vault-unlock", "vault", "unlock", "Unlock secure vault")
-        .ok();
-    builder
-        .add_command("vault-lock", "vault", "lock", "Lock secure vault")
-        .ok();
-    builder
-        .add_command("audit-log", "audit", "log", "View audit trail")
-        .ok();
+    builder.add_command("auth-login", "auth", "login", "User authentication").ok();
+    builder.add_command("auth-logout", "auth", "logout", "User logout").ok();
+    builder.add_command("vault-unlock", "vault", "unlock", "Unlock secure vault").ok();
+    builder.add_command("vault-lock", "vault", "lock", "Lock secure vault").ok();
+    builder.add_command("audit-log", "audit", "log", "View audit trail").ok();
 
     let ontology = Arc::new(builder.build()?);
     let handler = RdfMcpHandler::new(ontology);
@@ -297,12 +284,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let agreements = consensus_builder(
         &memory,
         "Seraphina",
-        &[
-            "validate_auth-login",
-            "validate_vault-unlock",
-            "discover",
-            "execute",
-        ],
+        &["validate_auth-login", "validate_vault-unlock", "discover", "execute"],
     );
 
     println!("\nConsensus Summary:");

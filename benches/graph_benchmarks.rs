@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
 use clap_noun_verb::autonomic::*;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::time::Duration;
 
 /// Benchmark CapabilityGraph node and edge operations
@@ -73,10 +73,9 @@ fn bench_reachability_queries(c: &mut Criterion) {
             &(&graph, &nodes),
             |b, (graph, nodes)| {
                 b.iter(|| {
-                    black_box(graph.is_reachable(
-                        black_box(nodes[0]),
-                        black_box(nodes[nodes.len() - 1]),
-                    ))
+                    black_box(
+                        graph.is_reachable(black_box(nodes[0]), black_box(nodes[nodes.len() - 1])),
+                    )
                 });
             },
         );
@@ -86,10 +85,9 @@ fn bench_reachability_queries(c: &mut Criterion) {
             &(&graph, &nodes),
             |b, (graph, nodes)| {
                 b.iter(|| {
-                    black_box(graph.shortest_path(
-                        black_box(nodes[0]),
-                        black_box(nodes[nodes.len() - 1]),
-                    ))
+                    black_box(
+                        graph.shortest_path(black_box(nodes[0]), black_box(nodes[nodes.len() - 1])),
+                    )
                 });
             },
         );

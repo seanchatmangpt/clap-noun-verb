@@ -1,13 +1,12 @@
+use chrono::{DateTime, Duration, Utc};
 /// Capability Trading Marketplace
 ///
 /// Dynamic marketplace for agents to buy/sell capabilities with flexible pricing models,
 /// SLA guarantees, and smart contract enforcement.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Pricing model for a capability
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,7 +32,7 @@ impl PricingModel {
 /// Service Level Agreement for capability provisioning
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceLevelAgreement {
-    pub uptime_percent: f64,      // 99.9 = 99.9%
+    pub uptime_percent: f64, // 99.9 = 99.9%
     pub max_latency_ms: u64,
     pub availability_window: String, // "24x7" or specific hours
     pub breach_penalty_percent: f64,
@@ -60,7 +59,7 @@ pub struct CapabilityListing {
     pub pricing: PricingModel,
     pub sla: ServiceLevelAgreement,
     pub available_quantity: Option<u64>,
-    pub rating: f64,        // 0.0 to 5.0
+    pub rating: f64, // 0.0 to 5.0
     pub review_count: u32,
     pub listed_at: DateTime<Utc>,
     pub active: bool,
@@ -199,17 +198,19 @@ impl CapabilityMarket {
     /// Get best listing by value (rating per dollar)
     pub async fn find_best_value(&self, capability_name: &str) -> Option<CapabilityListing> {
         let listings = self.find_capability(capability_name).await;
-        listings.iter().min_by(|a, b| {
-            a.value_score().partial_cmp(&b.value_score()).unwrap()
-        }).cloned()
+        listings
+            .iter()
+            .min_by(|a, b| a.value_score().partial_cmp(&b.value_score()).unwrap())
+            .cloned()
     }
 
     /// Get best listing by SLA uptime
     pub async fn find_best_sla(&self, capability_name: &str) -> Option<CapabilityListing> {
         let listings = self.find_capability(capability_name).await;
-        listings.iter().max_by(|a, b| {
-            a.sla.uptime_percent.partial_cmp(&b.sla.uptime_percent).unwrap()
-        }).cloned()
+        listings
+            .iter()
+            .max_by(|a, b| a.sla.uptime_percent.partial_cmp(&b.sla.uptime_percent).unwrap())
+            .cloned()
     }
 
     /// Create a trading contract
@@ -265,12 +266,7 @@ impl CapabilityMarket {
     /// Get trade history
     pub async fn trade_history(&self, limit: usize) -> Vec<Trade> {
         let trades = self.trades.read().await;
-        trades
-            .iter()
-            .rev()
-            .take(limit)
-            .cloned()
-            .collect()
+        trades.iter().rev().take(limit).cloned().collect()
     }
 
     /// Get total volume traded
@@ -348,12 +344,7 @@ mod tests {
             ServiceLevelAgreement::default(),
         );
 
-        let contract = CapabilityContract::new(
-            "buyer-1".to_string(),
-            &listing,
-            100,
-            30,
-        );
+        let contract = CapabilityContract::new("buyer-1".to_string(), &listing, 100, 30);
 
         assert_eq!(contract.status, ContractStatus::Active);
         assert!(contract.is_active());
@@ -375,14 +366,8 @@ mod tests {
         let found = market.find_capability("database.query").await;
         assert_eq!(found.len(), 1);
 
-        let contract = market
-            .create_contract(
-                "buyer-1".to_string(),
-                &listing.listing_id,
-                10,
-                30,
-            )
-            .await;
+        let contract =
+            market.create_contract("buyer-1".to_string(), &listing.listing_id, 10, 30).await;
 
         assert!(contract.is_some());
     }

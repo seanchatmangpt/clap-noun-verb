@@ -7,9 +7,9 @@
 //! - Event logging
 //! - Performance tracking
 
-use clap_noun_verb::telemetry::{TelemetryManager, Span, TraceContext, Metrics};
-use std::sync::Arc;
+use clap_noun_verb::telemetry::{Metrics, Span, TelemetryManager, TraceContext};
 use parking_lot::Mutex;
+use std::sync::Arc;
 use std::time::Duration;
 
 // ============================================================================
@@ -610,5 +610,8 @@ fn test_telemetry_performance_overhead() {
     let duration = start.elapsed();
 
     // Assert - 1000 span operations should complete quickly
-    assert!(duration.as_millis() < 100, "Telemetry overhead should be minimal (<100ms for 1000 ops)");
+    assert!(
+        duration.as_millis() < 100,
+        "Telemetry overhead should be minimal (<100ms for 1000 ops)"
+    );
 }

@@ -104,12 +104,7 @@ pub struct CapabilityVersion {
 impl CapabilityVersion {
     /// Create a new capability version
     pub fn new(version: impl Into<String>, capability_id: CapabilityId) -> Self {
-        Self {
-            version: version.into(),
-            capability_id,
-            stable: true,
-            deprecated: None,
-        }
+        Self { version: version.into(), capability_id, stable: true, deprecated: None }
     }
 
     /// Mark this version as unstable
@@ -239,11 +234,7 @@ pub struct CapabilityChangelog {
 impl CapabilityChangelog {
     /// Create a new changelog for a version
     pub fn new(cli_version: impl Into<String>) -> Self {
-        Self {
-            cli_version: cli_version.into(),
-            changes: Vec::new(),
-            has_breaking_changes: false,
-        }
+        Self { cli_version: cli_version.into(), changes: Vec::new(), has_breaking_changes: false }
     }
 
     /// Add a change to the changelog
@@ -320,9 +311,7 @@ mod tests {
             "Changed restart argument format",
         );
 
-        let changelog = CapabilityChangelog::new("3.0.0")
-            .add_change(change1)
-            .add_change(change2);
+        let changelog = CapabilityChangelog::new("3.0.0").add_change(change1).add_change(change2);
 
         assert!(changelog.is_breaking());
         assert_eq!(changelog.changes.len(), 2);

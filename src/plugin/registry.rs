@@ -21,10 +21,7 @@ impl std::fmt::Debug for PluginRegistry {
 impl PluginRegistry {
     /// Create a new plugin registry.
     pub fn new() -> Self {
-        Self {
-            plugins: HashMap::new(),
-            capability_index: HashMap::new(),
-        }
+        Self { plugins: HashMap::new(), capability_index: HashMap::new() }
     }
 
     /// Register a plugin in the registry.
@@ -48,10 +45,7 @@ impl PluginRegistry {
 
         // Index capabilities
         for cap in plugin.capabilities() {
-            self.capability_index
-                .entry(cap)
-                .or_insert_with(Vec::new)
-                .push(name.clone());
+            self.capability_index.entry(cap).or_insert_with(Vec::new).push(name.clone());
         }
 
         // Register the plugin
@@ -66,10 +60,9 @@ impl PluginRegistry {
     ///
     /// Returns an error if the plugin is not found or if unloading fails.
     pub fn unregister(&mut self, name: &str) -> crate::Result<()> {
-        let (mut plugin, _) = self
-            .plugins
-            .remove(name)
-            .ok_or_else(|| crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name)))?;
+        let (mut plugin, _) = self.plugins.remove(name).ok_or_else(|| {
+            crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name))
+        })?;
 
         // Unload the plugin
         plugin.unload()?;
@@ -98,10 +91,9 @@ impl PluginRegistry {
     ///
     /// Returns an error if the plugin is not found.
     pub fn enable(&mut self, name: &str) -> crate::Result<()> {
-        let entry = self
-            .plugins
-            .get_mut(name)
-            .ok_or_else(|| crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name)))?;
+        let entry = self.plugins.get_mut(name).ok_or_else(|| {
+            crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name))
+        })?;
 
         entry.1 = PluginState::Loaded;
         Ok(())
@@ -113,10 +105,9 @@ impl PluginRegistry {
     ///
     /// Returns an error if the plugin is not found.
     pub fn disable(&mut self, name: &str) -> crate::Result<()> {
-        let entry = self
-            .plugins
-            .get_mut(name)
-            .ok_or_else(|| crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name)))?;
+        let entry = self.plugins.get_mut(name).ok_or_else(|| {
+            crate::NounVerbError::PluginError(format!("Plugin '{}' not found", name))
+        })?;
 
         entry.1 = PluginState::Disabled;
         Ok(())
@@ -209,9 +200,7 @@ mod tests {
     #[test]
     fn test_plugin_registry_register() {
         let mut registry = PluginRegistry::new();
-        let plugin = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
+        let plugin = Box::new(MockPlugin { name: "test".to_string() });
         assert!(registry.register(plugin).is_ok());
         assert_eq!(registry.count(), 1);
     }
@@ -219,12 +208,8 @@ mod tests {
     #[test]
     fn test_plugin_registry_duplicate() {
         let mut registry = PluginRegistry::new();
-        let plugin1 = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
-        let plugin2 = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
+        let plugin1 = Box::new(MockPlugin { name: "test".to_string() });
+        let plugin2 = Box::new(MockPlugin { name: "test".to_string() });
 
         registry.register(plugin1).unwrap();
         assert!(registry.register(plugin2).is_err());
@@ -233,9 +218,7 @@ mod tests {
     #[test]
     fn test_plugin_registry_get() {
         let mut registry = PluginRegistry::new();
-        let plugin = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
+        let plugin = Box::new(MockPlugin { name: "test".to_string() });
         registry.register(plugin).unwrap();
         assert!(registry.get("test").is_some());
         assert!(registry.get("unknown").is_none());
@@ -244,9 +227,7 @@ mod tests {
     #[test]
     fn test_plugin_registry_find_by_capability() {
         let mut registry = PluginRegistry::new();
-        let plugin = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
+        let plugin = Box::new(MockPlugin { name: "test".to_string() });
         registry.register(plugin).unwrap();
         let found = registry.find_by_capability(PluginCapability::Command);
         assert_eq!(found.len(), 1);
@@ -256,25 +237,15 @@ mod tests {
     #[test]
     fn test_plugin_registry_list_all() {
         let mut registry = PluginRegistry::new();
-        registry
-            .register(Box::new(MockPlugin {
-                name: "test1".to_string(),
-            }))
-            .unwrap();
-        registry
-            .register(Box::new(MockPlugin {
-                name: "test2".to_string(),
-            }))
-            .unwrap();
+        registry.register(Box::new(MockPlugin { name: "test1".to_string() })).unwrap();
+        registry.register(Box::new(MockPlugin { name: "test2".to_string() })).unwrap();
         assert_eq!(registry.list_all().len(), 2);
     }
 
     #[test]
     fn test_plugin_registry_enable_disable() {
         let mut registry = PluginRegistry::new();
-        let plugin = Box::new(MockPlugin {
-            name: "test".to_string(),
-        });
+        let plugin = Box::new(MockPlugin { name: "test".to_string() });
         registry.register(plugin).unwrap();
         assert_eq!(registry.get_state("test"), Some(PluginState::Loaded));
 

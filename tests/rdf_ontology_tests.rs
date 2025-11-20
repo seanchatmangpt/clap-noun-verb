@@ -34,25 +34,19 @@ mod sparql_validation_tests {
         "#;
 
         // Act
-        let query_results = ontology.execute_sparql_query(sparql_query)
+        let query_results = ontology
+            .execute_sparql_query(sparql_query)
             .expect("SPARQL query should execute successfully");
 
         // Assert
         let agent_count = query_results.unique_agents().len();
-        assert!(
-            agent_count >= 54,
-            "Expected at least 54 agents, found {}",
-            agent_count
-        );
+        assert!(agent_count >= 54, "Expected at least 54 agents, found {}", agent_count);
 
         // Verify each agent has required properties
         for agent in query_results.iter() {
             assert!(agent.has_property("name"), "Agent missing 'name' property");
             assert!(agent.has_property("type"), "Agent missing 'type' property");
-            assert!(
-                agent.capabilities().len() >= 1,
-                "Agent must have at least 1 capability"
-            );
+            assert!(agent.capabilities().len() >= 1, "Agent must have at least 1 capability");
             assert!(agent.has_property("useCase"), "Agent missing 'useCase' property");
         }
     }
@@ -82,28 +76,20 @@ mod sparql_validation_tests {
         "#;
 
         // Act
-        let query_results = ontology.execute_sparql_query(sparql_query)
+        let query_results = ontology
+            .execute_sparql_query(sparql_query)
             .expect("SPARQL query should execute successfully");
 
         // Assert
-        let expected_phases = vec![
-            "Specification",
-            "Pseudocode",
-            "Architecture",
-            "Refinement",
-            "Completion",
-        ];
+        let expected_phases =
+            vec!["Specification", "Pseudocode", "Architecture", "Refinement", "Completion"];
 
         let phase_names: Vec<String> = query_results
             .iter()
             .map(|result| result.get_string("name").expect("Phase should have name"))
             .collect();
 
-        assert_eq!(
-            phase_names.len(),
-            5,
-            "Expected exactly 5 SPARC phases"
-        );
+        assert_eq!(phase_names.len(), 5, "Expected exactly 5 SPARC phases");
 
         for expected_phase in expected_phases {
             assert!(
@@ -150,20 +136,17 @@ mod sparql_validation_tests {
         "#;
 
         // Act
-        let query_results = ontology.execute_sparql_query(sparql_query)
+        let query_results = ontology
+            .execute_sparql_query(sparql_query)
             .expect("SPARQL query should execute successfully");
 
         // Assert
-        assert_eq!(
-            query_results.len(),
-            9,
-            "Expected exactly 9 absolute rules"
-        );
+        assert_eq!(query_results.len(), 9, "Expected exactly 9 absolute rules");
 
         // Verify all absolute rules are mandatory
         for rule in query_results.iter() {
-            let mandatory = rule.get_boolean("mandatory")
-                .expect("Rule should have 'mandatory' property");
+            let mandatory =
+                rule.get_boolean("mandatory").expect("Rule should have 'mandatory' property");
             assert!(
                 mandatory,
                 "Absolute rule should have mandatory=true: {:?}",
@@ -198,7 +181,8 @@ mod sparql_validation_tests {
         "#;
 
         // Act
-        let query_results = ontology.execute_sparql_query(sparql_query)
+        let query_results = ontology
+            .execute_sparql_query(sparql_query)
             .expect("SPARQL query should execute successfully");
 
         // Assert
@@ -207,12 +191,8 @@ mod sparql_validation_tests {
             .map(|result| result.get_string("targetClass").expect("Shape should have targetClass"))
             .collect();
 
-        let expected_classes = vec![
-            "claude:Agent",
-            "claude:Rule",
-            "claude:SPARCPhase",
-            "claude:SLO",
-        ];
+        let expected_classes =
+            vec!["claude:Agent", "claude:Rule", "claude:SPARCPhase", "claude:SLO"];
 
         for expected_class in expected_classes {
             assert!(
@@ -223,10 +203,7 @@ mod sparql_validation_tests {
         }
 
         // Verify at least one constraint per shape
-        assert!(
-            query_results.len() > 0,
-            "Expected at least one SHACL constraint"
-        );
+        assert!(query_results.len() > 0, "Expected at least one SHACL constraint");
     }
 
     // Helper functions for test setup

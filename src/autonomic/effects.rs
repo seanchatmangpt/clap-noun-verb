@@ -32,7 +32,10 @@ impl EffectType {
 
     /// Check if this effect type is critical (security or ontology mutations)
     pub fn is_critical(&self) -> bool {
-        matches!(self, EffectType::MutateSecurity | EffectType::MutateOntology | EffectType::Privileged)
+        matches!(
+            self,
+            EffectType::MutateSecurity | EffectType::MutateOntology | EffectType::Privileged
+        )
     }
 
     /// Check if this effect type requires network access
@@ -42,7 +45,10 @@ impl EffectType {
 
     /// Check if this effect type writes to storage
     pub fn writes_storage(&self) -> bool {
-        matches!(self, EffectType::StorageWrite | EffectType::MutateState | EffectType::MutateConfig)
+        matches!(
+            self,
+            EffectType::StorageWrite | EffectType::MutateState | EffectType::MutateConfig
+        )
     }
 }
 

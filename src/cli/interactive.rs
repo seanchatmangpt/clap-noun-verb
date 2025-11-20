@@ -109,7 +109,9 @@ impl InteractiveHelp {
             if let Some(option) = self.options.iter().find(|o| o.key == choice) {
                 match &option.action {
                     MenuAction::Exit => {
-                        println!("\nThank you for using ggen! Run 'ggen help' anytime for assistance.");
+                        println!(
+                            "\nThank you for using ggen! Run 'ggen help' anytime for assistance."
+                        );
                         break;
                     }
                     MenuAction::ShowExample(example) => {
@@ -155,9 +157,10 @@ impl InteractiveHelp {
     fn read_input(&self) -> Result<String> {
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
-            crate::error::NounVerbError::execution_error(
-                format!("Failed to read input from stdin: {}", e)
-            )
+            crate::error::NounVerbError::execution_error(format!(
+                "Failed to read input from stdin: {}",
+                e
+            ))
         })?;
         Ok(input.trim().to_string())
     }
@@ -356,10 +359,8 @@ mod tests {
     #[test]
     fn test_menu_has_categories() {
         let help = InteractiveHelp::new();
-        let has_category = help
-            .options
-            .iter()
-            .any(|o| matches!(o.action, MenuAction::ShowCategory(_)));
+        let has_category =
+            help.options.iter().any(|o| matches!(o.action, MenuAction::ShowCategory(_)));
         assert!(has_category);
     }
 
@@ -374,8 +375,7 @@ mod tests {
     #[test]
     fn test_menu_has_guided_setup() {
         let help = InteractiveHelp::new();
-        let has_setup =
-            help.options.iter().any(|o| matches!(o.action, MenuAction::GuidedSetup));
+        let has_setup = help.options.iter().any(|o| matches!(o.action, MenuAction::GuidedSetup));
         assert!(has_setup);
     }
 

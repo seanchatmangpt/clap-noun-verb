@@ -2,7 +2,6 @@
 ///
 /// Pub/Sub system enabling communication between 2028 and 2029+ systems,
 /// coordinating distributed events across the trillion-agent ecosystem.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -117,17 +116,12 @@ impl EventBus {
         // Update stats
         let mut stats = self.stats.write().await;
         stats.total_events += 1;
-        *stats
-            .events_by_type
-            .entry(format!("{:?}", event.event_type))
-            .or_insert(0) += 1;
+        *stats.events_by_type.entry(format!("{:?}", event.event_type)).or_insert(0) += 1;
         drop(stats);
 
         // Publish to subscribers
         if self.tx.receiver_count() > 0 {
-            self.tx
-                .send(event)
-                .map_err(|_| "Failed to publish event".to_string())?;
+            self.tx.send(event).map_err(|_| "Failed to publish event".to_string())?;
         }
 
         Ok(())
@@ -173,12 +167,7 @@ impl EventBus {
     /// Get event history
     pub async fn get_history(&self, limit: usize) -> Vec<Event> {
         let history = self.event_history.read().await;
-        history
-            .iter()
-            .rev()
-            .take(limit)
-            .cloned()
-            .collect()
+        history.iter().rev().take(limit).cloned().collect()
     }
 
     /// Get statistics
@@ -189,22 +178,13 @@ impl EventBus {
     /// Get subscriptions for agent
     pub async fn agent_subscriptions(&self, agent_id: &str) -> Vec<Subscription> {
         let subs = self.subscriptions.read().await;
-        subs.values()
-            .filter(|s| s.agent_id == agent_id)
-            .cloned()
-            .collect()
+        subs.values().filter(|s| s.agent_id == agent_id).cloned().collect()
     }
 
     /// Filter events by type
     pub async fn get_events_by_type(&self, event_type: EventType, limit: usize) -> Vec<Event> {
         let history = self.event_history.read().await;
-        history
-            .iter()
-            .filter(|e| e.event_type == event_type)
-            .rev()
-            .take(limit)
-            .cloned()
-            .collect()
+        history.iter().filter(|e| e.event_type == event_type).rev().take(limit).cloned().collect()
     }
 }
 
@@ -215,35 +195,23 @@ pub struct EventHandlerRegistry {
 
 impl EventHandlerRegistry {
     pub fn new() -> Self {
-        Self {
-            handlers: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { handlers: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     /// Register handler for event type
     pub async fn register(&self, event_type_name: String, handler: EventHandler) {
         let mut handlers = self.handlers.write().await;
-        handlers
-            .entry(event_type_name)
-            .or_insert_with(Vec::new)
-            .push(handler);
+        handlers.entry(event_type_name).or_insert_with(Vec::new).push(handler);
     }
 
     /// Get handlers for event type
     pub async fn get_handlers(&self, event_type_name: &str) -> Vec<EventHandler> {
-        self.handlers
-            .read()
-            .await
-            .get(event_type_name)
-            .cloned()
-            .unwrap_or_default()
+        self.handlers.read().await.get(event_type_name).cloned().unwrap_or_default()
     }
 
     /// Execute all handlers for event
     pub async fn execute_handlers(&self, event: &Event) {
-        let handlers = self
-            .get_handlers(&format!("{:?}", event.event_type))
-            .await;
+        let handlers = self.get_handlers(&format!("{:?}", event.event_type)).await;
 
         for handler in handlers {
             handler(event);
@@ -292,11 +260,7 @@ mod tests {
     async fn test_publish_event() {
         let bus = EventBus::new(100);
 
-        let event = Event::new(
-            EventType::AgentStarted,
-            "agent-1".to_string(),
-            "data".to_string(),
-        );
+        let event = Event::new(EventType::AgentStarted, "agent-1".to_string(), "data".to_string());
 
         let result = bus.publish(event.clone()).await;
         assert!(result.is_ok());
@@ -310,10 +274,7 @@ mod tests {
         let bus = EventBus::new(100);
 
         let (_sub_id, _rx) = bus
-            .subscribe(
-                "agent-1".to_string(),
-                vec![EventType::AgentStarted, EventType::AgentFailed],
-            )
+            .subscribe("agent-1".to_string(), vec![EventType::AgentStarted, EventType::AgentFailed])
             .await;
 
         let stats = bus.stats().await;
@@ -328,9 +289,7 @@ mod tests {
             // Handler logic
         });
 
-        registry
-            .register("AgentStarted".to_string(), handler)
-            .await;
+        registry.register("AgentStarted".to_string(), handler).await;
 
         let handlers = registry.get_handlers("AgentStarted").await;
         assert_eq!(handlers.len(), 1);

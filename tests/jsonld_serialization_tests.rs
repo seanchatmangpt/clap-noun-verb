@@ -22,11 +22,10 @@ mod jsonld_serialization_tests {
         let original_triples = original_rdf.all_triples();
 
         // Act
-        let jsonld = original_rdf.to_jsonld()
-            .expect("RDF should serialize to JSON-LD");
+        let jsonld = original_rdf.to_jsonld().expect("RDF should serialize to JSON-LD");
 
-        let deserialized_rdf = RDFOntology::from_jsonld(&jsonld)
-            .expect("JSON-LD should deserialize to RDF");
+        let deserialized_rdf =
+            RDFOntology::from_jsonld(&jsonld).expect("JSON-LD should deserialize to RDF");
 
         let deserialized_triples = deserialized_rdf.all_triples();
 
@@ -68,23 +67,24 @@ mod jsonld_serialization_tests {
         });
 
         // Act
-        let expanded = expand_jsonld(&compacted_jsonld)
-            .expect("JSON-LD should expand successfully");
+        let expanded =
+            expand_jsonld(&compacted_jsonld).expect("JSON-LD should expand successfully");
 
         // Assert
         // Verify @type uses full URI
-        let type_value = expanded.get("@type")
+        let type_value = expanded
+            .get("@type")
             .and_then(|v| v.as_str())
             .expect("Expanded JSON-LD should have @type");
 
         assert_eq!(
-            type_value,
-            "http://claude.ai/config#Agent",
+            type_value, "http://claude.ai/config#Agent",
             "Expanded @type should use full URI"
         );
 
         // Verify properties use full URIs
-        let name_property = expanded.get("http://claude.ai/config#name")
+        let name_property = expanded
+            .get("http://claude.ai/config#name")
             .expect("Expanded JSON-LD should have full URI for 'name' property");
 
         assert_eq!(
@@ -115,33 +115,27 @@ mod jsonld_serialization_tests {
         };
 
         // Act
-        let jsonld = agent.to_jsonld()
-            .expect("Agent should serialize to JSON-LD");
+        let jsonld = agent.to_jsonld().expect("Agent should serialize to JSON-LD");
 
         // Assert
-        let capabilities = jsonld.get("claude:hasCapability")
+        let capabilities = jsonld
+            .get("claude:hasCapability")
             .and_then(|v| v.as_array())
             .expect("JSON-LD should have capabilities array");
 
-        assert_eq!(
-            capabilities.len(),
-            3,
-            "Should preserve all 3 capabilities"
-        );
+        assert_eq!(capabilities.len(), 3, "Should preserve all 3 capabilities");
 
         assert!(
             capabilities.iter().any(|c| c.as_str() == Some("production_readiness")),
             "Should contain 'production_readiness' capability"
         );
 
-        let use_case = jsonld.get("claude:useCase")
+        let use_case = jsonld
+            .get("claude:useCase")
             .and_then(|v| v.as_str())
             .expect("JSON-LD should have useCase property");
 
-        assert!(
-            use_case.contains("Validating deployments"),
-            "useCase should be preserved"
-        );
+        assert!(use_case.contains("Validating deployments"), "useCase should be preserved");
     }
 
     /// Test: Rule serialization preserves mandatory flag
@@ -160,28 +154,22 @@ mod jsonld_serialization_tests {
         };
 
         // Act
-        let jsonld = rule.to_jsonld()
-            .expect("Rule should serialize to JSON-LD");
+        let jsonld = rule.to_jsonld().expect("Rule should serialize to JSON-LD");
 
         // Assert
-        let mandatory = jsonld.get("claude:isMandatory")
+        let mandatory = jsonld
+            .get("claude:isMandatory")
             .and_then(|v| v.as_bool())
             .expect("JSON-LD should have isMandatory property");
 
-        assert!(
-            mandatory,
-            "Mandatory flag should be true"
-        );
+        assert!(mandatory, "Mandatory flag should be true");
 
-        let category = jsonld.get("claude:ruleCategory")
+        let category = jsonld
+            .get("claude:ruleCategory")
             .and_then(|v| v.as_str())
             .expect("JSON-LD should have ruleCategory property");
 
-        assert_eq!(
-            category,
-            "absolute",
-            "Rule category should be 'absolute'"
-        );
+        assert_eq!(category, "absolute", "Rule category should be 'absolute'");
     }
 
     /// Test: Nested JSON-LD serialization (agent with capabilities as objects)
@@ -196,44 +184,30 @@ mod jsonld_serialization_tests {
         let agent = Agent {
             name: "system-architect".to_string(),
             agent_type: AgentType::HyperAdvanced,
-            capabilities: vec![
-                "system_design".to_string(),
-                "integration_patterns".to_string(),
-            ],
+            capabilities: vec!["system_design".to_string(), "integration_patterns".to_string()],
             use_case: "Designing systems, integration patterns".to_string(),
         };
 
-        let config = ClaudeConfig {
-            agents: vec![agent],
-            rules: vec![],
-            sparc_phases: vec![],
-        };
+        let config = ClaudeConfig { agents: vec![agent], rules: vec![], sparc_phases: vec![] };
 
         // Act
-        let jsonld = config.to_jsonld()
-            .expect("Config should serialize to JSON-LD");
+        let jsonld = config.to_jsonld().expect("Config should serialize to JSON-LD");
 
         // Assert
-        let agents_array = jsonld.get("claude:hasAgent")
+        let agents_array = jsonld
+            .get("claude:hasAgent")
             .and_then(|v| v.as_array())
             .expect("JSON-LD should have agents array");
 
-        assert_eq!(
-            agents_array.len(),
-            1,
-            "Should have 1 agent"
-        );
+        assert_eq!(agents_array.len(), 1, "Should have 1 agent");
 
         let first_agent = &agents_array[0];
-        let agent_capabilities = first_agent.get("claude:hasCapability")
+        let agent_capabilities = first_agent
+            .get("claude:hasCapability")
             .and_then(|v| v.as_array())
             .expect("Agent should have capabilities array");
 
-        assert_eq!(
-            agent_capabilities.len(),
-            2,
-            "Agent should have 2 capabilities"
-        );
+        assert_eq!(agent_capabilities.len(), 2, "Agent should have 2 capabilities");
     }
 
     // Helper functions

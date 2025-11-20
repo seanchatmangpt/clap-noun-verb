@@ -55,9 +55,7 @@ pub struct Binding {
 
 impl Binding {
     pub fn new() -> Self {
-        Self {
-            variables: std::collections::HashMap::new(),
-        }
+        Self { variables: std::collections::HashMap::new() }
     }
 }
 
@@ -70,11 +68,7 @@ struct LruCache<K, V> {
 
 impl<K: Clone + Eq + std::hash::Hash, V: Clone> LruCache<K, V> {
     fn new(capacity: usize) -> Self {
-        Self {
-            capacity,
-            map: HashMap::new(),
-            order: Vec::new(),
-        }
+        Self { capacity, map: HashMap::new(), order: Vec::new() }
     }
 
     fn get(&mut self, key: &K) -> Option<&V> {
@@ -154,38 +148,40 @@ impl SparqlPlanner {
     /// Create a new SPARQL planner
     pub fn new(ontology: Arc<Ontology>) -> Self {
         let executor = QueryExecutor::new(ontology.clone());
-        Self {
-            ontology,
-            cache: Arc::new(Mutex::new(LruCache::new(1000))),
-            executor,
-        }
+        Self { ontology, cache: Arc::new(Mutex::new(LruCache::new(1000))), executor }
     }
 
     /// Execute raw SPARQL 1.1 query with full parser/optimizer/executor
     pub fn execute_raw(&self, sparql: &str) -> std::result::Result<Vec<Binding>, SparqlError> {
         let parser = SparqlParser::new();
-        let parsed = parser.parse(sparql)
-            .map_err(|e| SparqlError::InvalidPattern(e.to_string()))?;
+        let parsed =
+            parser.parse(sparql).map_err(|e| SparqlError::InvalidPattern(e.to_string()))?;
 
-        self.executor.execute(&parsed)
-            .map_err(|e| SparqlError::ExecutionError(e.to_string()))
+        self.executor.execute(&parsed).map_err(|e| SparqlError::ExecutionError(e.to_string()))
     }
 
     /// Discover commands by intent using SPARQL filters
-    pub fn discover_by_intent(&self, intent: &str) -> std::result::Result<Vec<String>, SparqlError> {
+    pub fn discover_by_intent(
+        &self,
+        intent: &str,
+    ) -> std::result::Result<Vec<String>, SparqlError> {
         let query = format!(
             r#"SELECT ?cmd WHERE {{ ?cmd rdfs:comment ?desc . FILTER(CONTAINS(?desc, "{}")) }}"#,
             intent
         );
 
         let bindings = self.execute_raw(&query)?;
-        Ok(bindings.into_iter()
+        Ok(bindings
+            .into_iter()
             .filter_map(|b| b.variables.get("?cmd").map(|v| v.as_str().to_string()))
             .collect())
     }
 
     /// Find commands by argument names
-    pub fn find_commands_by_args(&self, arg_names: &[&str]) -> std::result::Result<Vec<String>, SparqlError> {
+    pub fn find_commands_by_args(
+        &self,
+        arg_names: &[&str],
+    ) -> std::result::Result<Vec<String>, SparqlError> {
         let mut commands = Vec::new();
 
         for arg in arg_names {
@@ -195,8 +191,11 @@ impl SparqlPlanner {
             );
 
             let bindings = self.execute_raw(&query)?;
-            commands.extend(bindings.into_iter()
-                .filter_map(|b| b.variables.get("?cmd").map(|v| v.as_str().to_string())));
+            commands.extend(
+                bindings
+                    .into_iter()
+                    .filter_map(|b| b.variables.get("?cmd").map(|v| v.as_str().to_string())),
+            );
         }
 
         commands.sort();
@@ -205,7 +204,10 @@ impl SparqlPlanner {
     }
 
     /// Get related commands using property paths
-    pub fn get_related_commands(&self, command: &str) -> std::result::Result<Vec<String>, SparqlError> {
+    pub fn get_related_commands(
+        &self,
+        command: &str,
+    ) -> std::result::Result<Vec<String>, SparqlError> {
         // Find commands with same noun or verb using property paths
         let query = format!(
             r#"SELECT ?related WHERE {{
@@ -217,7 +219,8 @@ impl SparqlPlanner {
         );
 
         let bindings = self.execute_raw(&query)?;
-        Ok(bindings.into_iter()
+        Ok(bindings
+            .into_iter()
             .filter_map(|b| b.variables.get("?related").map(|v| v.as_str().to_string()))
             .collect())
     }
@@ -229,10 +232,9 @@ impl SparqlPlanner {
             QueryPattern::ListVerbs { noun } => SparqlQuery::list_verbs(&noun),
             QueryPattern::FindCommand { noun, verb } => SparqlQuery::find_command(&noun, &verb),
             QueryPattern::FindReadOnlyCommands => SparqlQuery::find_read_only(),
-            QueryPattern::Custom(sparql) => SparqlQuery {
-                pattern: sparql,
-                variables: vec!["?result".to_string()],
-            },
+            QueryPattern::Custom(sparql) => {
+                SparqlQuery { pattern: sparql, variables: vec!["?result".to_string()] }
+            }
         };
 
         self.execute(&query.pattern)
@@ -435,10 +437,7 @@ impl SparqlPlanner {
 impl SparqlQuery {
     /// Create query to list all nouns
     pub fn list_nouns() -> Self {
-        Self {
-            pattern: "LIST NOUNS".to_string(),
-            variables: vec!["?noun".to_string()],
-        }
+        Self { pattern: "LIST NOUNS".to_string(), variables: vec!["?noun".to_string()] }
     }
 
     /// Create query to list verbs for a noun
@@ -479,9 +478,7 @@ mod tests {
         builder
             .add_command("services-list", "services", "list", "List services")
             .expect("add command");
-        builder
-            .add_command("config-set", "config", "set", "Set config")
-            .expect("add command");
+        builder.add_command("config-set", "config", "set", "Set config").expect("add command");
 
         Arc::new(builder.build().expect("build ontology"))
     }
@@ -509,9 +506,7 @@ mod tests {
         let planner = SparqlPlanner::new(ontology);
 
         let results = planner
-            .query(QueryPattern::ListVerbs {
-                noun: "services".to_string(),
-            })
+            .query(QueryPattern::ListVerbs { noun: "services".to_string() })
             .expect("list verbs");
         assert!(results.contains(&"status".to_string()));
         assert!(results.contains(&"list".to_string()));
@@ -537,9 +532,7 @@ mod tests {
         let ontology = create_test_ontology();
         let planner = SparqlPlanner::new(ontology);
 
-        let results = planner
-            .query(QueryPattern::FindReadOnlyCommands)
-            .expect("find read-only");
+        let results = planner.query(QueryPattern::FindReadOnlyCommands).expect("find read-only");
         assert!(results.contains(&"services-status".to_string()));
         assert!(results.contains(&"services-list".to_string()));
         assert!(!results.contains(&"config-set".to_string()));

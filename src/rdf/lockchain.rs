@@ -29,24 +29,16 @@ pub struct Lockchain {
 impl Lockchain {
     /// Create new empty lockchain
     pub fn new() -> Self {
-        Self {
-            entries: Mutex::new(Vec::new()),
-            head: Mutex::new(None),
-        }
+        Self { entries: Mutex::new(Vec::new()), head: Mutex::new(None) }
     }
 
     /// Append receipt to chain (atomic operation)
     ///
     /// Returns the chain hash of the new entry
     pub fn append(&self, receipt: LockchainReceipt) -> Result<Blake3Hash> {
-        let mut entries = self
-            .entries
-            .lock()
-            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
-        let mut head = self
-            .head
-            .lock()
-            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+        let mut entries =
+            self.entries.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+        let mut head = self.head.lock().map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
 
         let index = entries.len() as u64;
         let chain_hash = self.compute_chain_hash(&receipt, head.as_ref());
@@ -132,7 +124,11 @@ impl Lockchain {
     /// Compute chain hash from receipt and previous hash
     ///
     /// chain_hash = blake3(invocation_hash || result_hash || prev_hash)
-    fn compute_chain_hash(&self, receipt: &LockchainReceipt, prev: Option<&Blake3Hash>) -> Blake3Hash {
+    fn compute_chain_hash(
+        &self,
+        receipt: &LockchainReceipt,
+        prev: Option<&Blake3Hash>,
+    ) -> Blake3Hash {
         let mut hasher = blake3::Hasher::new();
         hasher.update(&receipt.invocation_hash.0);
         hasher.update(&receipt.result_hash.0);
@@ -284,17 +280,11 @@ mod tests {
         // Act & Assert
         let entry0 = chain.get_entry(0).unwrap();
         assert_eq!(entry0.index, 0);
-        assert_eq!(
-            entry0.receipt.invocation_hash,
-            receipt1.invocation_hash
-        );
+        assert_eq!(entry0.receipt.invocation_hash, receipt1.invocation_hash);
 
         let entry1 = chain.get_entry(1).unwrap();
         assert_eq!(entry1.index, 1);
-        assert_eq!(
-            entry1.receipt.invocation_hash,
-            receipt2.invocation_hash
-        );
+        assert_eq!(entry1.receipt.invocation_hash, receipt2.invocation_hash);
 
         assert!(chain.get_entry(2).is_none());
     }

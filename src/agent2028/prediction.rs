@@ -1,13 +1,12 @@
+use chrono::{DateTime, Duration, Utc};
 /// Predictive Capability Planning
 ///
 /// ML-based workload forecasting, capacity planning, and resource provisioning
 /// to proactively allocate resources before bottlenecks occur.
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Time series data point
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,10 +20,10 @@ pub struct TimeSeriesPoint {
 pub struct WorkloadForecast {
     pub forecast_id: String,
     pub capability_name: String,
-    pub predictions: Vec<(DateTime<Utc>, f64)>,  // (timestamp, predicted_volume)
-    pub confidence_interval: f64,                // 0.0-1.0
+    pub predictions: Vec<(DateTime<Utc>, f64)>, // (timestamp, predicted_volume)
+    pub confidence_interval: f64,               // 0.0-1.0
     pub forecast_horizon_hours: u32,
-    pub model_accuracy: f64,                    // MAPE (Mean Absolute Percentage Error)
+    pub model_accuracy: f64, // MAPE (Mean Absolute Percentage Error)
 }
 
 impl WorkloadForecast {
@@ -41,10 +40,7 @@ impl WorkloadForecast {
 
     /// Get prediction for a specific time
     pub fn prediction_at(&self, time: DateTime<Utc>) -> Option<f64> {
-        self.predictions
-            .iter()
-            .find(|(t, _)| (*t - time).num_minutes().abs() < 5)
-            .map(|(_, v)| *v)
+        self.predictions.iter().find(|(t, _)| (*t - time).num_minutes().abs() < 5).map(|(_, v)| *v)
     }
 
     /// Get peak predicted load in forecast
@@ -70,19 +66,14 @@ pub struct WorkloadForecaster {
 
 impl WorkloadForecaster {
     pub fn new() -> Self {
-        Self {
-            historical_data: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { historical_data: Arc::new(RwLock::new(HashMap::new())) }
     }
 
     /// Record historical data point
     pub async fn record(&self, capability_name: String, value: f64) {
         let mut data = self.historical_data.write().await;
         let series = data.entry(capability_name).or_insert_with(Vec::new);
-        series.push(TimeSeriesPoint {
-            timestamp: Utc::now(),
-            value,
-        });
+        series.push(TimeSeriesPoint { timestamp: Utc::now(), value });
 
         // Keep only last 30 days of data
         let cutoff = Utc::now() - Duration::days(30);
@@ -119,10 +110,7 @@ impl WorkloadForecaster {
             let recent = series.iter().rev().take(10).collect::<Vec<_>>();
             if recent.len() >= 2 {
                 let mean = recent.iter().map(|p| p.value).sum::<f64>() / recent.len() as f64;
-                let variance = recent
-                    .iter()
-                    .map(|p| (p.value - mean).powi(2))
-                    .sum::<f64>()
+                let variance = recent.iter().map(|p| (p.value - mean).powi(2)).sum::<f64>()
                     / recent.len() as f64;
                 let stddev = variance.sqrt();
                 forecast.model_accuracy = (1.0 - (stddev / (mean + 1.0))).max(0.0);
@@ -138,13 +126,7 @@ impl WorkloadForecaster {
         let cutoff = Utc::now() - Duration::hours(hours);
 
         data.get(capability_name)
-            .map(|series| {
-                series
-                    .iter()
-                    .filter(|p| p.timestamp > cutoff)
-                    .cloned()
-                    .collect()
-            })
+            .map(|series| series.iter().filter(|p| p.timestamp > cutoff).cloned().collect())
             .unwrap_or_default()
     }
 }
@@ -159,8 +141,8 @@ impl Default for WorkloadForecaster {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CapabilityDemand {
     pub capability: String,
-    pub predicted_demand: f64,    // 0.0 to 1.0 (normalized)
-    pub priority: u8,            // 1-10, higher = more important
+    pub predicted_demand: f64, // 0.0 to 1.0 (normalized)
+    pub priority: u8,          // 1-10, higher = more important
     pub predicted_at: DateTime<Utc>,
 }
 
@@ -172,13 +154,19 @@ pub struct ProvisioningRecommendation {
     pub current_capacity: u32,
     pub recommended_capacity: u32,
     pub confidence: f64,
-    pub urgency: u8,             // 1-10, higher = more urgent
+    pub urgency: u8, // 1-10, higher = more urgent
     pub estimated_cost: f64,
 }
 
 impl ProvisioningRecommendation {
     pub fn new(capability: String, current: u32, recommended: u32) -> Self {
-        let urgency = if recommended > current * 2 { 10 } else if recommended > current { 5 } else { 1 };
+        let urgency = if recommended > current * 2 {
+            10
+        } else if recommended > current {
+            5
+        } else {
+            1
+        };
 
         Self {
             recommendation_id: uuid::Uuid::new_v4().to_string(),
@@ -220,7 +208,11 @@ impl CapacityPlanner {
     }
 
     /// Plan capacity based on forecast
-    pub async fn plan_capacity(&self, capability: &str, hours_ahead: u32) -> Option<ProvisioningRecommendation> {
+    pub async fn plan_capacity(
+        &self,
+        capability: &str,
+        hours_ahead: u32,
+    ) -> Option<ProvisioningRecommendation> {
         let forecast = self.forecaster.forecast(capability, hours_ahead).await;
         let peak = forecast.peak_load()?;
 
@@ -309,8 +301,8 @@ pub struct CostOptimization {
 pub struct RiskAssessment {
     pub assessment_id: String,
     pub capability: String,
-    pub bottleneck_probability: f64,  // 0.0 to 1.0
-    pub severity: String,             // "low", "medium", "high", "critical"
+    pub bottleneck_probability: f64, // 0.0 to 1.0
+    pub severity: String,            // "low", "medium", "high", "critical"
     pub recommended_actions: Vec<String>,
 }
 
@@ -346,10 +338,7 @@ impl RiskAssessor {
             0.0
         };
 
-        let mut assessment = RiskAssessment::new(
-            forecast.capability_name.clone(),
-            probability,
-        );
+        let mut assessment = RiskAssessment::new(forecast.capability_name.clone(), probability);
 
         if probability > 0.5 {
             assessment.recommended_actions.push("Scale capacity immediately".to_string());
@@ -380,11 +369,7 @@ mod tests {
 
     #[test]
     fn test_provisioning_recommendation() {
-        let rec = ProvisioningRecommendation::new(
-            "database.query".to_string(),
-            100,
-            200,
-        );
+        let rec = ProvisioningRecommendation::new("database.query".to_string(), 100, 200);
 
         assert_eq!(rec.scale_factor(), 2.0);
         assert_eq!(rec.urgency, 5);
@@ -411,6 +396,8 @@ mod tests {
         let forecast = WorkloadForecast::new("database.query".to_string(), 24);
         let assessment = RiskAssessor::assess(&forecast, 100.0);
 
-        assert!(assessment.bottleneck_probability >= 0.0 && assessment.bottleneck_probability <= 1.0);
+        assert!(
+            assessment.bottleneck_probability >= 0.0 && assessment.bottleneck_probability <= 1.0
+        );
     }
 }

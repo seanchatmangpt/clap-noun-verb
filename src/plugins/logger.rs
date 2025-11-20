@@ -80,52 +80,49 @@ impl LoggerPlugin {
     }
 
     fn log_at_level(&self, level: LogLevel, message: &str) -> crate::Result<()> {
-        let mut logs = self.logs.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Log lock failed".to_string())
-        })?;
+        let mut logs = self
+            .logs
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Log lock failed".to_string()))?;
 
-        logs.push(LogEntry {
-            timestamp: SystemTime::now(),
-            level,
-            message: message.to_string(),
-        });
+        logs.push(LogEntry { timestamp: SystemTime::now(), level, message: message.to_string() });
 
         Ok(())
     }
 
     pub fn get_logs(&self) -> crate::Result<Vec<LogEntry>> {
-        let logs = self.logs.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Log lock failed".to_string())
-        })?;
+        let logs = self
+            .logs
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Log lock failed".to_string()))?;
         Ok(logs.clone())
     }
 
     pub fn count_logs(&self) -> crate::Result<usize> {
-        let logs = self.logs.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Log lock failed".to_string())
-        })?;
+        let logs = self
+            .logs
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Log lock failed".to_string()))?;
         Ok(logs.len())
     }
 
     pub fn clear_logs(&self) -> crate::Result<()> {
-        let mut logs = self.logs.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Log lock failed".to_string())
-        })?;
+        let mut logs = self
+            .logs
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Log lock failed".to_string()))?;
         logs.clear();
         Ok(())
     }
 
     pub fn get_logs_by_level(&self, level: &str) -> crate::Result<Vec<LogEntry>> {
-        let logs = self.logs.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Log lock failed".to_string())
-        })?;
+        let logs = self
+            .logs
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Log lock failed".to_string()))?;
 
         let level_str = level.to_uppercase();
-        Ok(logs
-            .iter()
-            .filter(|entry| entry.level.to_string() == level_str)
-            .cloned()
-            .collect())
+        Ok(logs.iter().filter(|entry| entry.level.to_string() == level_str).cloned().collect())
     }
 }
 
@@ -335,4 +332,3 @@ mod tests {
         }
     }
 }
-

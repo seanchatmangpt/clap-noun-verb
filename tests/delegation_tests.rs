@@ -157,8 +157,7 @@ fn test_temporal_constraint_validity() {
 #[test]
 fn test_temporal_constraint_max_uses() {
     // GIVEN: A constraint with max uses
-    let constraint = TemporalConstraint::valid_for(Duration::from_secs(3600))
-        .with_max_uses(3);
+    let constraint = TemporalConstraint::valid_for(Duration::from_secs(3600)).with_max_uses(3);
 
     // THEN: Max uses is set
     assert_eq!(constraint.max_uses, Some(3));
@@ -167,15 +166,10 @@ fn test_temporal_constraint_max_uses() {
 #[test]
 fn test_delegation_token_creation() {
     // GIVEN: Delegator and delegate
-    let delegator = Principal::new(
-        AgentIdentity::human("alice"),
-        TenantIdentity::default_tenant(),
-    );
+    let delegator = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
 
-    let delegate = Principal::delegated(
-        AgentIdentity::human("bob"),
-        TenantIdentity::default_tenant(),
-    );
+    let delegate =
+        Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
 
     // WHEN: We create a delegation token
     let token = DelegationToken::new(
@@ -206,15 +200,10 @@ fn test_delegation_token_verification_success() {
 #[test]
 fn test_delegation_token_expiration() {
     // GIVEN: A token that expires immediately
-    let delegator = Principal::new(
-        AgentIdentity::anonymous(),
-        TenantIdentity::default_tenant(),
-    );
+    let delegator = Principal::new(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
-    let delegate = Principal::delegated(
-        AgentIdentity::anonymous(),
-        TenantIdentity::default_tenant(),
-    );
+    let delegate =
+        Principal::delegated(AgentIdentity::anonymous(), TenantIdentity::default_tenant());
 
     let token = DelegationToken::new(
         delegator,
@@ -245,10 +234,7 @@ fn test_delegation_token_usage_limit() {
     // THEN: Third use fails
     let result = token.record_use();
     assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        DelegationError::UsageLimitExceeded
-    ));
+    assert!(matches!(result.unwrap_err(), DelegationError::UsageLimitExceeded));
 }
 
 #[test]
@@ -336,10 +322,7 @@ fn test_sub_delegation_constraint_intersection() {
 #[test]
 fn test_delegation_chain_direct() {
     // GIVEN: Direct execution (no delegation)
-    let principal = Principal::new(
-        AgentIdentity::human("alice"),
-        TenantIdentity::default_tenant(),
-    );
+    let principal = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
 
     // WHEN: We create a direct chain
     let chain = DelegationChain::direct(principal.clone());
@@ -371,7 +354,8 @@ fn test_delegation_chain_multiple_delegations() {
     // GIVEN: A chain of delegations
     let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
     let bob = Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
-    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+    let charlie =
+        Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
 
     let token1 = DelegationToken::new(
         alice.clone(),
@@ -402,7 +386,8 @@ fn test_delegation_chain_broken_continuity() {
     // GIVEN: Two unrelated tokens
     let alice = Principal::new(AgentIdentity::human("alice"), TenantIdentity::default_tenant());
     let bob = Principal::delegated(AgentIdentity::human("bob"), TenantIdentity::default_tenant());
-    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+    let charlie =
+        Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
     let dave = Principal::delegated(AgentIdentity::human("dave"), TenantIdentity::default_tenant());
 
     let token1 = DelegationToken::new(
@@ -467,8 +452,14 @@ fn test_delegation_chain_effective_constraints() {
         max_effect_level: None,
     };
 
-    let charlie = Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
-    let token2 = DelegationToken::new(bob.clone(), charlie.clone(), constraints2, TemporalConstraint::valid_for(Duration::from_secs(3600)));
+    let charlie =
+        Principal::delegated(AgentIdentity::human("charlie"), TenantIdentity::default_tenant());
+    let token2 = DelegationToken::new(
+        bob.clone(),
+        charlie.clone(),
+        constraints2,
+        TemporalConstraint::valid_for(Duration::from_secs(3600)),
+    );
 
     let chain = DelegationChain::with_delegation(token1).add_delegation(token2);
 

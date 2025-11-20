@@ -9,8 +9,8 @@
 //! Status: Foundation for template generation pipeline
 //! Note: Requires full ggen integration for SPARQL + RDF capabilities
 
-use oxigraph::store::Store;
 use oxigraph::sparql::QueryResults;
+use oxigraph::store::Store;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -55,7 +55,12 @@ pub struct TemplateContext {
 
 impl TeraTemplateGenerator {
     pub fn new(ontology_path: PathBuf, template_path: PathBuf, output_dir: PathBuf) -> Self {
-        TeraTemplateGenerator { store: Store::new().expect("Failed to create RDF store"), ontology_path, template_path, output_dir }
+        TeraTemplateGenerator {
+            store: Store::new().expect("Failed to create RDF store"),
+            ontology_path,
+            template_path,
+            output_dir,
+        }
     }
 
     /// Load RDF ontology
@@ -85,8 +90,10 @@ impl TeraTemplateGenerator {
                     .get("verbLabel")
                     .map(|v| v.to_string())
                     .unwrap_or_else(|| "Unknown".to_string());
-                let operation =
-                    solution.get("operation").map(|v| v.to_string()).unwrap_or_else(|| "unknown".to_string());
+                let operation = solution
+                    .get("operation")
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
                 let result_type = solution
                     .get("resultType")
                     .map(|v| v.to_string())
@@ -147,7 +154,10 @@ impl TeraTemplateGenerator {
     }
 
     /// Generate single template
-    fn generate_template(&self, context: &TemplateContext) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    fn generate_template(
+        &self,
+        context: &TemplateContext,
+    ) -> Result<PathBuf, Box<dyn std::error::Error>> {
         // Load Tera template
         let template_content = fs::read_to_string(&self.template_path)?;
 
@@ -155,7 +165,8 @@ impl TeraTemplateGenerator {
         let output_content = self.render_simple_template(&template_content, context);
 
         // Generate output filename
-        let output_filename = format!("{}_{}_.rs", context.noun.to_lowercase(), context.verb.to_lowercase());
+        let output_filename =
+            format!("{}_{}_.rs", context.noun.to_lowercase(), context.verb.to_lowercase());
         let output_path = self.output_dir.join(&output_filename);
 
         // Write to file
@@ -189,7 +200,11 @@ pub fn run_batch_generation(
     println!("🧬 Tera + SPARQL Batch Template Generator\n");
 
     // Initialize generator
-    let mut generator = TeraTemplateGenerator::new(ontology_path.to_path_buf(), template_path.to_path_buf(), output_dir.to_path_buf());
+    let mut generator = TeraTemplateGenerator::new(
+        ontology_path.to_path_buf(),
+        template_path.to_path_buf(),
+        output_dir.to_path_buf(),
+    );
 
     // Load ontology
     println!("📚 Loading RDF ontology...");

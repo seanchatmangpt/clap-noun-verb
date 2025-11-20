@@ -215,8 +215,8 @@ impl SemanticConferenceStore {
 
         // Add to RDF store
         let store = self.store.lock().unwrap();
-        let paper_uri =
-            NamedNode::new(&format!("http://acm.org/paper/{}", paper.id)).map_err(|e| e.to_string())?;
+        let paper_uri = NamedNode::new(&format!("http://acm.org/paper/{}", paper.id))
+            .map_err(|e| e.to_string())?;
 
         let quads = vec![
             Quad {
@@ -257,8 +257,8 @@ impl SemanticConferenceStore {
         agents.push(agent.clone());
 
         let store = self.store.lock().unwrap();
-        let agent_uri =
-            NamedNode::new(&format!("http://acm.org/agent/{}", agent.id)).map_err(|e| e.to_string())?;
+        let agent_uri = NamedNode::new(&format!("http://acm.org/agent/{}", agent.id))
+            .map_err(|e| e.to_string())?;
 
         let quad = Quad {
             subject: agent_uri.into(),
@@ -462,10 +462,7 @@ impl SymposiumOrchestrator {
         }
 
         summary.push_str(&format!("✅ Symposium Complete!\n"));
-        summary.push_str(&format!(
-            "📊 Total Decisions: {}\n",
-            self.store.get_decisions().len()
-        ));
+        summary.push_str(&format!("📊 Total Decisions: {}\n", self.store.get_decisions().len()));
 
         Ok(summary)
     }
@@ -615,7 +612,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Paper {
             id: "paper-003".to_string(),
             title: "Distributed Knowledge Graphs for Multi-Agent Systems".to_string(),
-            authors: vec!["Diana White".to_string(), "Eve Brown".to_string(), "Frank Green".to_string()],
+            authors: vec![
+                "Diana White".to_string(),
+                "Eve Brown".to_string(),
+                "Frank Green".to_string(),
+            ],
             abstract_text: "Federated RDF across multiple systems enables...".to_string(),
             status: "submitted".to_string(),
             score: 0.0,
@@ -708,19 +709,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
 
         Commands::Query(cmd) => match cmd {
-            QueryCommands::Sparql { query } => {
-                match store.query_sparql(&query) {
-                    Ok(results) => {
-                        println!("🔍 Query Results:");
-                        println!("{}", results);
-                        Ok(())
-                    }
-                    Err(e) => {
-                        println!("❌ Query error: {}", e);
-                        Ok(())
-                    }
+            QueryCommands::Sparql { query } => match store.query_sparql(&query) {
+                Ok(results) => {
+                    println!("🔍 Query Results:");
+                    println!("{}", results);
+                    Ok(())
                 }
-            }
+                Err(e) => {
+                    println!("❌ Query error: {}", e);
+                    Ok(())
+                }
+            },
             QueryCommands::Papers => {
                 let papers = store.get_papers();
                 println!("📄 Papers in RDF Store: ({} total)", papers.len());
@@ -733,7 +732,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let agents = store.get_agents();
                 println!("👥 Hive Mind Agents: ({} total)", agents.len());
                 for agent in agents {
-                    println!("  - {} ({}): confidence {:.0}%", agent.id, agent.role, agent.confidence * 100.0);
+                    println!(
+                        "  - {} ({}): confidence {:.0}%",
+                        agent.id,
+                        agent.role,
+                        agent.confidence * 100.0
+                    );
                 }
                 Ok(())
             }

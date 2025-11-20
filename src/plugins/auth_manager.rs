@@ -2,8 +2,8 @@
 //! See PLUGIN_IMPLEMENTATION_GUIDE.md for full specification
 
 use crate::plugin::{Plugin, PluginCapability, PluginMetadata};
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// User credentials
 #[derive(Clone, Debug)]
@@ -31,14 +31,13 @@ impl AuthManagerPlugin {
 
     /// Register a new user
     pub fn register(&self, username: &str, password: &str) -> crate::Result<()> {
-        let mut users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let mut users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
 
         if users.contains_key(username) {
-            return Err(crate::NounVerbError::MiddlewareError(
-                "User already exists".to_string(),
-            ));
+            return Err(crate::NounVerbError::MiddlewareError("User already exists".to_string()));
         }
 
         users.insert(
@@ -55,32 +54,30 @@ impl AuthManagerPlugin {
 
     /// Authenticate a user and return a token
     pub fn authenticate(&self, username: &str, password: &str) -> crate::Result<String> {
-        let users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
 
-        let user = users.get(username).ok_or_else(|| {
-            crate::NounVerbError::MiddlewareError("User not found".to_string())
-        })?;
+        let user = users
+            .get(username)
+            .ok_or_else(|| crate::NounVerbError::MiddlewareError("User not found".to_string()))?;
 
         if user.password != password {
-            return Err(crate::NounVerbError::MiddlewareError(
-                "Invalid credentials".to_string(),
-            ));
+            return Err(crate::NounVerbError::MiddlewareError("Invalid credentials".to_string()));
         }
 
         // Generate token using current time and username
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let timestamp =
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
         let token = format!("token_{}__{}", username, timestamp);
         drop(users);
 
         // Store token
-        let mut tokens = self.tokens.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string())
-        })?;
+        let mut tokens = self
+            .tokens
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string()))?;
         tokens.insert(token.clone(), username.to_string());
 
         Ok(token)
@@ -88,30 +85,33 @@ impl AuthManagerPlugin {
 
     /// Verify a token and return the username
     pub fn verify_token(&self, token: &str) -> crate::Result<Option<String>> {
-        let tokens = self.tokens.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string())
-        })?;
+        let tokens = self
+            .tokens
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string()))?;
         Ok(tokens.get(token).cloned())
     }
 
     /// Revoke a token (logout)
     pub fn revoke_token(&self, token: &str) -> crate::Result<()> {
-        let mut tokens = self.tokens.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string())
-        })?;
+        let mut tokens = self
+            .tokens
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Tokens lock failed".to_string()))?;
         tokens.remove(token);
         Ok(())
     }
 
     /// Add role to user
     pub fn add_role(&self, username: &str, role: &str) -> crate::Result<()> {
-        let mut users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let mut users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
 
-        let user = users.get_mut(username).ok_or_else(|| {
-            crate::NounVerbError::MiddlewareError("User not found".to_string())
-        })?;
+        let user = users
+            .get_mut(username)
+            .ok_or_else(|| crate::NounVerbError::MiddlewareError("User not found".to_string()))?;
 
         if !user.roles.contains(&role.to_string()) {
             user.roles.push(role.to_string());
@@ -122,30 +122,33 @@ impl AuthManagerPlugin {
 
     /// Check if user has role
     pub fn has_role(&self, username: &str, role: &str) -> crate::Result<bool> {
-        let users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
 
-        let user = users.get(username).ok_or_else(|| {
-            crate::NounVerbError::MiddlewareError("User not found".to_string())
-        })?;
+        let user = users
+            .get(username)
+            .ok_or_else(|| crate::NounVerbError::MiddlewareError("User not found".to_string()))?;
 
         Ok(user.roles.contains(&role.to_string()))
     }
 
     /// Get all users
     pub fn list_users(&self) -> crate::Result<Vec<String>> {
-        let users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
         Ok(users.keys().cloned().collect())
     }
 
     /// Delete a user
     pub fn delete_user(&self, username: &str) -> crate::Result<()> {
-        let mut users = self.users.lock().map_err(|_| {
-            crate::NounVerbError::MiddlewareError("Users lock failed".to_string())
-        })?;
+        let mut users = self
+            .users
+            .lock()
+            .map_err(|_| crate::NounVerbError::MiddlewareError("Users lock failed".to_string()))?;
         users.remove(username);
         Ok(())
     }
@@ -333,9 +336,7 @@ mod tests {
 
         // Setup users
         for i in 0..5 {
-            plugin
-                .register(&format!("user_{}", i), "pass")
-                .unwrap();
+            plugin.register(&format!("user_{}", i), "pass").unwrap();
         }
 
         let plugin = Arc::new(plugin);
@@ -357,4 +358,3 @@ mod tests {
         }
     }
 }
-

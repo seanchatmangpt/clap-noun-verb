@@ -34,20 +34,13 @@ struct ConfigData {
 /// Example 1: Correct - Result<T> where T: Serialize ✅
 #[verb("status", "demo")]
 fn show_status() -> Result<ServiceStatus> {
-    Ok(ServiceStatus {
-        name: "api".to_string(),
-        running: true,
-        uptime_seconds: 3600,
-    })
+    Ok(ServiceStatus { name: "api".to_string(), running: true, uptime_seconds: 3600 })
 }
 
 /// Example 2: Correct - Option<T> where T: Serialize ✅
 #[verb("config", "demo")]
 fn get_config() -> Result<Option<ConfigData>> {
-    Ok(Some(ConfigData {
-        port: 8080,
-        host: "localhost".to_string(),
-    }))
+    Ok(Some(ConfigData { port: 8080, host: "localhost".to_string() }))
 }
 
 /// Example 3: Correct - Auto-inferred verb name ✅

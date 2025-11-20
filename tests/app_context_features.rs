@@ -111,7 +111,9 @@ fn test_concurrent_write_different_types() {
                     ctx_clone.insert(thread_id as i32).expect("Failed to insert i32");
                 }
                 1 => {
-                    ctx_clone.insert(format!("thread-{}", thread_id)).expect("Failed to insert String");
+                    ctx_clone
+                        .insert(format!("thread-{}", thread_id))
+                        .expect("Failed to insert String");
                 }
                 2 => {
                     ctx_clone.insert(thread_id as f64).expect("Failed to insert f64");
@@ -230,9 +232,8 @@ fn test_closure_based_access() {
     ctx.insert("test data".to_string()).expect("Failed to insert string");
 
     // Use with() to transform the value
-    let result = ctx
-        .with::<String, _, _>(|s| format!("Result: {}", s))
-        .expect("Failed to execute closure");
+    let result =
+        ctx.with::<String, _, _>(|s| format!("Result: {}", s)).expect("Failed to execute closure");
 
     assert_eq!(result, "Result: test data", "Closure should transform value correctly");
 

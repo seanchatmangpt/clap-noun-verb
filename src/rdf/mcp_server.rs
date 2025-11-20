@@ -31,11 +31,7 @@ impl RdfMcpServer {
 
     /// Create with existing lockchain (for testing)
     pub fn with_lockchain(ontology: Arc<Ontology>, lockchain: Arc<Lockchain>) -> Self {
-        Self {
-            sparql_planner: SparqlPlanner::new(ontology.clone()),
-            ontology,
-            lockchain,
-        }
+        Self { sparql_planner: SparqlPlanner::new(ontology.clone()), ontology, lockchain }
     }
 
     /// Start MCP server (stdio-based)
@@ -115,9 +111,7 @@ impl RdfMcpServer {
 
     /// Read resource content
     fn read_resource(&self, request: &Value) -> Result<Value> {
-        let uri = request["params"]["uri"]
-            .as_str()
-            .context("Missing URI parameter")?;
+        let uri = request["params"]["uri"].as_str().context("Missing URI parameter")?;
 
         match uri {
             "ontology:///types" => self.serialize_types(),
@@ -191,9 +185,7 @@ impl RdfMcpServer {
 
     /// Call a tool
     fn call_tool(&mut self, request: &Value) -> Result<Value> {
-        let tool_name = request["params"]["name"]
-            .as_str()
-            .context("Missing tool name")?;
+        let tool_name = request["params"]["name"].as_str().context("Missing tool name")?;
         let args = &request["params"]["arguments"];
 
         match tool_name {
@@ -205,18 +197,14 @@ impl RdfMcpServer {
                 Ok(json!({ "results": results }))
             }
             "discover_commands" => {
-                let intent = args["intent"]
-                    .as_str()
-                    .context("Missing intent parameter")?;
+                let intent = args["intent"].as_str().context("Missing intent parameter")?;
                 // FUTURE: implement discover_by_intent() on SparqlPlanner
                 let _ = intent;
                 let commands: Vec<String> = vec![];
                 Ok(json!({ "commands": commands }))
             }
             "validate_invocation" => {
-                let command = args["command"]
-                    .as_str()
-                    .context("Missing command parameter")?;
+                let command = args["command"].as_str().context("Missing command parameter")?;
                 let _arguments = &args["arguments"];
 
                 // FUTURE: implement command validation
@@ -432,10 +420,7 @@ mod tests {
         let receipt = LockchainReceipt {
             invocation_hash: Blake3Hash([1u8; 32]),
             result_hash: Blake3Hash([2u8; 32]),
-            metadata: ReceiptMetadata {
-                timestamp: 1234567890,
-                agent_id: "test-agent".to_string(),
-            },
+            metadata: ReceiptMetadata { timestamp: 1234567890, agent_id: "test-agent".to_string() },
         };
 
         let request = json!({
@@ -495,10 +480,7 @@ mod tests {
         let receipt = LockchainReceipt {
             invocation_hash: Blake3Hash([1u8; 32]),
             result_hash: Blake3Hash([2u8; 32]),
-            metadata: ReceiptMetadata {
-                timestamp: 1234567890,
-                agent_id: "test-agent".to_string(),
-            },
+            metadata: ReceiptMetadata { timestamp: 1234567890, agent_id: "test-agent".to_string() },
         };
         lockchain.append(receipt).unwrap();
 

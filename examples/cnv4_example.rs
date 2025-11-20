@@ -5,8 +5,8 @@
 //! 2. Session Kernel
 //! 3. Version Negotiation
 
-use clap_noun_verb::kernel::*;
 use clap_noun_verb::kernel::grammar::{GrammarNoun, GrammarVerb};
+use clap_noun_verb::kernel::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== CNV 4.0: Autonomic Command Fabric Demo ===\n");
@@ -106,10 +106,7 @@ fn demonstrate_session_kernel() -> Result<(), Box<dyn std::error::Error>> {
     // Yield a log frame
     println!("Yielding log frame:");
     let log_frame = session.yield_log("info", "Operation completed successfully", None)?;
-    println!(
-        "  - Log frame: seq={}, stream={}",
-        log_frame.sequence, log_frame.stream_id
-    );
+    println!("  - Log frame: seq={}, stream={}", log_frame.sequence, log_frame.stream_id);
     println!();
 
     // Check metrics

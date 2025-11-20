@@ -179,9 +179,7 @@ impl HelpSystem {
 
     /// Generate detailed help for a command
     pub fn generate_command_help(&self, name: &str) -> Result<CommandHelp> {
-        let cmd = self
-            .find_command(name)
-            .ok_or_else(|| NounVerbError::command_not_found(name))?;
+        let cmd = self.find_command(name).ok_or_else(|| NounVerbError::command_not_found(name))?;
 
         Ok(CommandHelp {
             name: cmd.name.clone(),
@@ -212,10 +210,12 @@ impl Default for HelpSystem {
         // Register popular commands with examples
         system.register_command(
             CommandInfo::new("pack list", CommandCategory::Pack, "List available packs")
-                .with_description("Display all code generation packs available in the current workspace")
+                .with_description(
+                    "Display all code generation packs available in the current workspace",
+                )
                 .with_example("ggen pack list")
                 .with_example("ggen pack list --category templates")
-                .with_popularity(95)
+                .with_popularity(95),
         );
 
         system.register_command(
@@ -223,15 +223,19 @@ impl Default for HelpSystem {
                 .with_description("Use AI to generate code based on natural language descriptions")
                 .with_example("ggen ai generate \"Create a REST API handler\"")
                 .with_example("ggen ai generate --template rust-api \"User authentication\"")
-                .with_popularity(90)
+                .with_popularity(90),
         );
 
         system.register_command(
-            CommandInfo::new("marketplace search", CommandCategory::Marketplace, "Search marketplace")
-                .with_description("Search the community marketplace for packs and templates")
-                .with_example("ggen marketplace search \"web framework\"")
-                .with_example("ggen marketplace search --category backend")
-                .with_popularity(85)
+            CommandInfo::new(
+                "marketplace search",
+                CommandCategory::Marketplace,
+                "Search marketplace",
+            )
+            .with_description("Search the community marketplace for packs and templates")
+            .with_example("ggen marketplace search \"web framework\"")
+            .with_example("ggen marketplace search --category backend")
+            .with_popularity(85),
         );
 
         system.register_command(
@@ -239,7 +243,7 @@ impl Default for HelpSystem {
                 .with_description("Render a code template with provided variables")
                 .with_example("ggen template render my-template.hbs --vars config.json")
                 .with_example("ggen template render api-handler --name UserService")
-                .with_popularity(80)
+                .with_popularity(80),
         );
 
         system.register_command(
@@ -247,7 +251,7 @@ impl Default for HelpSystem {
                 .with_description("Install a code generation pack from marketplace or local path")
                 .with_example("ggen pack install rust-web-api")
                 .with_example("ggen pack install ./my-pack.tar.gz")
-                .with_popularity(75)
+                .with_popularity(75),
         );
 
         system.register_command(
@@ -255,7 +259,7 @@ impl Default for HelpSystem {
                 .with_description("Configure ggen settings and preferences")
                 .with_example("ggen config set ai.provider openai")
                 .with_example("ggen config set template.default handlebars")
-                .with_popularity(70)
+                .with_popularity(70),
         );
 
         system.register_command(
@@ -263,7 +267,7 @@ impl Default for HelpSystem {
                 .with_description("Create a new code generation template")
                 .with_example("ggen template create my-template --type handlebars")
                 .with_example("ggen template create api-endpoint --from examples/rest.hbs")
-                .with_popularity(65)
+                .with_popularity(65),
         );
 
         system.register_command(
@@ -271,15 +275,19 @@ impl Default for HelpSystem {
                 .with_description("Create a new code generation pack")
                 .with_example("ggen pack create my-pack")
                 .with_example("ggen pack create web-api --template typescript")
-                .with_popularity(60)
+                .with_popularity(60),
         );
 
         system.register_command(
-            CommandInfo::new("marketplace install", CommandCategory::Marketplace, "Install from marketplace")
-                .with_description("Install a pack directly from the marketplace")
-                .with_example("ggen marketplace install typescript-backend")
-                .with_example("ggen marketplace install react-components --version 2.0")
-                .with_popularity(70)
+            CommandInfo::new(
+                "marketplace install",
+                CommandCategory::Marketplace,
+                "Install from marketplace",
+            )
+            .with_description("Install a pack directly from the marketplace")
+            .with_example("ggen marketplace install typescript-backend")
+            .with_example("ggen marketplace install react-components --version 2.0")
+            .with_popularity(70),
         );
 
         system.register_command(
@@ -287,7 +295,7 @@ impl Default for HelpSystem {
                 .with_description("Use AI to analyze existing code and suggest improvements")
                 .with_example("ggen ai analyze src/main.rs")
                 .with_example("ggen ai analyze . --focus performance")
-                .with_popularity(55)
+                .with_popularity(55),
         );
 
         system
