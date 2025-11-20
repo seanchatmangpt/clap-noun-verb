@@ -64,6 +64,11 @@ blake3 = "1.5"
 rmcp = { version = "0.9", features = ["server", "macros"] }
 schemars = { version = "0.8", features = ["uuid", "chrono"] }
 
+# New in v5.1 - Semantic RDF Management
+oxigraph = "0.5.1"
+lru = "0.12"
+ahash = "0.8"
+
 [dev-dependencies]
 anyhow = "1.0"
 cargo-make = "0.37"
