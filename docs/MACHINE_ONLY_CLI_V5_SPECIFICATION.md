@@ -1,26 +1,32 @@
-# Machine-Only CLI System for clap-noun-verb v5
+# Machine-Centric v5 Architecture for clap-noun-verb
 
-**Radical Redesign**: From human-centric (v4) to machine-centric (v5)
+**Dual-Mode Design**: v4 (human) + v5 (machine) coexisting in same binary
 
 **Date**: 2025-11-19
-**Scope**: Complete architectural redesign for agent/machine callers only
-**Key Insight**: Everything designed for AI agents, not human users
+**Scope**: Add machine-centric layer alongside existing human CLI
+**Key Insight**: Two distinct caller paths - humans and machines - in one framework
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-clap-noun-verb v5 is the **first machine-only CLI framework** - designed exclusively for:
+clap-noun-verb v5 is a **dual-mode framework** supporting both:
 
+### v4 Path (Human-Centric) - Fully Supported
+- Human developers working in terminals
+- Prose help, interactive prompts, friendly errors
+- Progressive disclosure and learning
+
+### v5 Path (Machine-Centric) - NEW Capabilities
 - **AI Agents** (Claude, GPT, specialized agents)
 - **Automated Systems** (orchestrators, workflow engines)
 - **Inter-process Communication** (IPC between services)
 - **MCP Integration** (Machine Control Protocol)
 - **Swarm Coordination** (agent-to-agent calls)
 
-**Not for**: Humans typing commands in terminals
+**Same binary, different caller detection** - routes requests to appropriate handler
 
-This requires a **180° architectural flip**:
+This adds a **parallel machine-optimized path**:
 
 | Dimension | v4 (Human) | v5 (Machine) |
 |-----------|-----------|-------------|
@@ -74,53 +80,64 @@ src/autonomic/      ← Has machine features already!
 └── receipts.rs      ← Execution proofs
 ```
 
-### 1.2 Proposed v5 Architecture (Machine-Only)
+### 1.2 v5 Architecture (Machine-Centric Path)
 
 ```
-Machine/Agent Request (JSON/MCP)
+CALLER DETECTION
     ↓
-Capability Introspection
-    ↓
-Schema Validation
-    ↓
-Guard Evaluation (preconditions)
-    ↓
-Effect Declaration (what will happen)
-    ↓
-Noun-Verb Dispatcher
-    ↓
-Verb Function (core logic)
-    ↓
-Execution Receipt (proof of execution)
-    ↓
-Structured Response (JSON)
-    ↓
-Agent processes response
+    ├─→ Human Request? (CLI args)
+    │       ↓
+    │   v4 PATH: Help system, interactive prompts, friendly errors
+    │       ↓
+    │   Output: Human-readable text
+    │
+    └─→ Machine Request? (JSON/MCP/API)
+            ↓
+        v5 PATH: Capability introspection, formal verification
+            ↓
+        Capability Introspection
+            ↓
+        Schema Validation
+            ↓
+        Guard Evaluation (preconditions)
+            ↓
+        Effect Declaration (what will happen)
+            ↓
+        Noun-Verb Dispatcher
+            ↓
+        Verb Function (core logic) ← SAME business logic for both!
+            ↓
+        Execution Receipt (proof of execution)
+            ↓
+        Structured Response (JSON + receipt)
+            ↓
+        Agent processes response
 ```
 
-**Required Components:**
+**Existing Components (Already Implemented):**
 ```
-src/machine/              ← NEW: Machine-only layer
-├── capability_schema.rs  ← OpenAPI-like capability declarations
-├── introspection.rs      ← Query all available operations
-├── effect_model.rs       ← Formal effect declarations
-├── guard_system.rs       ← Pre-execution safety gates
-├── delegation.rs         ← Agent-to-agent authorization
-└── execution_receipt.rs  ← Cryptographic execution proofs
-
-src/cli/                  ← REMOVE/DEPRECATE
-├── help.rs               ❌ DELETE - No prose help
-├── interactive.rs        ❌ DELETE - No human interaction
-├── examples.rs           ❌ DELETE - Examples in schemas
-└── discovery.rs          ⚠️  REFACTOR - Use introspection
-
-src/autonomic/            ← EXPAND - Already has most features
-├── introspection.rs      ✅ Core to v5
+src/autonomic/            ← ✅ ALREADY HAS v5 FEATURES
+├── introspection.rs      ✅ Query all available operations
 ├── schema.rs             ✅ Argument declarations
 ├── effects.rs            ✅ Effect modeling
 ├── guards.rs             ✅ Pre-condition gates
 ├── receipts.rs           ✅ Execution proofs
-└── delegation.rs         ✅ Agent authorization
+├── delegation.rs         ✅ Agent-to-agent authorization
+├── contracts.rs          ✅ Contract verification
+├── governance.rs         ✅ Audit trail management
+├── protocol.rs           ✅ MCP integration
+├── certificates.rs       ✅ Digital signatures
+├── phases.rs             ✅ Execution lifecycle
+└── ... (15+ more files)  ✅ All core features present
+
+src/cli/                  ← KEEP - v4 human path
+├── help.rs               ✅ Prose help system (human only)
+├── interactive.rs        ✅ Interactive prompts (human only)
+├── examples.rs           ✅ Usage examples (human learning)
+└── discovery.rs          ✅ Human command search
+
+NEW LAYER (v5 dispatcher):
+└── v5_router.rs          ← Route machine requests to autonomic layer
 ```
 
 ---

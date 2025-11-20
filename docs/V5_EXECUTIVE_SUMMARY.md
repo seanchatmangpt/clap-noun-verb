@@ -40,9 +40,9 @@ This completely changes the architecture:
 
 ---
 
-## CORE INSIGHT: Three Completely Different Frameworks
+## CORE INSIGHT: Dual-Mode Framework (v4 + v5)
 
-### v4: Human-Centric (Current)
+### v4: Human-Centric (Fully Supported)
 
 ```
 For: Developers building human CLIs
@@ -52,7 +52,7 @@ Errors: User-friendly messages with suggestions
 Target: make CLIs that humans love
 ```
 
-### v5: Machine-Only (Proposed)
+### v5: Machine-Centric (NEW - Coexists with v4)
 
 ```
 For: Developers building agent-callable APIs
@@ -62,41 +62,44 @@ Errors: Structured codes with recovery instructions
 Target: Make CLIs that machines trust
 ```
 
-### Key Difference
+### Key Insight
 
 **v4 helps humans understand what to do.**
 **v5 helps machines verify they should do it.**
 
+**BOTH MODES ACTIVE SIMULTANEOUSLY** - Same binary, different caller paths
+
 ---
 
-## WHAT CHANGES FROM v4 → v5
+## WHAT CHANGES FROM v4 → v5 (SIDE-BY-SIDE APPROACH)
 
-### Radical Removals
+### Architecture: v4 and v5 Coexist
 
-| Component | v4 | v5 | Reason |
-|-----------|----|----|--------|
-| **Help system** | Core feature (prose) | ❌ Removed | Irrelevant to machines |
-| **Interactive mode** | `--interactive` support | ❌ Removed | Machines don't prompt |
-| **Error messages** | "Did you mean X?" | ❌ Removed | Use error codes instead |
-| **Examples** | In docs, help system | ❌ Removed | In schemas, not prose |
-| **Help documentation** | 8 markdown files | ❌ Removed | Replace with OpenAPI specs |
+**Decision**: Keep both v4 (human) and v5 (machine) paths running **simultaneously in the same binary**.
 
-**Files to DELETE**: ~35 files, ~1,100 lines
+| Component | v4 (Human) | v5 (Machine) | Implementation |
+|-----------|-----------|-------------|--------|
+| **Help system** | Core feature (prose) | ✨ Alternative: JSON schemas | Both paths available |
+| **Interactive mode** | `--interactive` support | N/A (machines don't prompt) | v4 path only |
+| **Error messages** | "Did you mean X?" | ✨ Structured error codes | Route based on caller |
+| **Arguments** | Type-inferred, flexible | ✨ Formally declared schemas | Validation from schema |
+| **Output** | Human-readable + JSON | ✨ Machine-verifiable receipts | Based on request |
+| **Discovery** | Help text in CLI | ✨ Introspection API | Both available |
 
-### Critical Additions
+### Critical Additions (NEW in v5)
 
-| Component | v4 | v5 | Purpose |
-|-----------|----|----|---------|
-| **Capability Registry** | None | ✨ New | Machine discovery |
-| **Formal Guards** | None | ✨ New | Precondition verification |
-| **Effect Model** | Implicit | ✨ New | Declare what will happen |
-| **Execution Receipt** | No | ✨ New | Cryptographic proof |
-| **Audit Ledger** | Optional | ✨ New | Immutable audit trail |
-| **Delegation Chain** | No | ✨ New | Agent-to-agent authorization |
-| **Introspection API** | Help text | ✨ New | Machine capability queries |
-| **Error Codes** | Messages | ✨ New | Structured error responses |
+| Component | Status | Purpose |
+|-----------|--------|---------|
+| **Capability Registry** | ✅ IMPLEMENTED | Machine discovery of available operations |
+| **Formal Guards** | ✅ IMPLEMENTED | Precondition verification before execution |
+| **Effect Model** | ✅ IMPLEMENTED | Formal declaration of side effects |
+| **Execution Receipt** | ✅ IMPLEMENTED | Cryptographic proof of execution |
+| **Audit Ledger** | ✅ IMPLEMENTED | Immutable audit trail of operations |
+| **Delegation Chain** | ✅ IMPLEMENTED | Agent-to-agent authorization with proofs |
+| **Introspection API** | ✅ IMPLEMENTED | Machine-queryable capability metadata |
+| **Error Codes** | ✅ IMPLEMENTED | Structured error responses with recovery info |
 
-**New Code**: ~3,500 lines in `src/machine/`
+**Location**: `src/autonomic/` (27 files, ~10,000 lines - ALL IMPLEMENTED)
 
 ### What STAYS Unchanged
 
@@ -107,6 +110,7 @@ Target: Make CLIs that machines trust
 ✅ Async/await support
 ✅ Application context system
 ✅ JSON output serialization
+✅ v4 human CLI interface (fully supported)
 
 ---
 

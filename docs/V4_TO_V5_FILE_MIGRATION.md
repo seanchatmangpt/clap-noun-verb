@@ -1,6 +1,8 @@
-# v4 → v5 File Migration: Complete Reference
+# v4 → v5 File Integration: Complete Reference
 
-**Purpose**: Line-by-line breakdown of what changes in the codebase for machine-only transformation
+**Purpose**: Strategic integration of machine-centric v5 layer alongside human-centric v4
+
+**Approach**: SIDE-BY-SIDE - Keep both paths active in same binary
 
 ---
 
@@ -9,145 +11,172 @@
 **Total Files**: 300+ (in src/ examples/ tests/ docs/)
 
 **Changes**:
-- ❌ **DELETE**: 35 files (human-only components)
-- ⚠️  **REFACTOR**: 45 files (redesign for machines)
-- ✅ **KEEP**: 180 files (core logic unchanged)
-- ✨ **NEW**: 25+ files (machine layer)
+- ✅ **KEEP**: 35+ files (human-only components - v4 path)
+- ✅ **KEEP**: 45+ files (core logic unchanged)
+- ✅ **KEEP**: 180+ files (existing infrastructure)
+- ✨ **EXPAND**: 27 files in `src/autonomic/` (v5 machine layer - ALREADY IMPLEMENTED)
+- ✨ **NEW**: 2-3 files (v5 dispatcher/router to call autonomic layer)
 
 ---
 
-## PART 1: DELETION MATRIX (Remove Human-Only Components)
+## PART 1: SIDE-BY-SIDE ARCHITECTURE (Keep Everything, Add v5 Path)
 
-### 1.1 Help System Files - DELETE
+### 1.1 Human Path (v4) - KEEP EVERYTHING
 
-| File | Reason | Impact |
+| File | Purpose | Status |
+|------|---------|--------|
+| `src/cli/help.rs` | Prose help system for humans | ✅ KEEP - v4 path |
+| `src/cli/interactive.rs` | Interactive prompts for humans | ✅ KEEP - v4 path |
+| `src/cli/examples.rs` | Human learning examples | ✅ KEEP - v4 path |
+| `src/cli/discovery.rs` | Human command search | ✅ KEEP - v4 path |
+
+**Behavior**: These files are used when humans call the CLI directly. No changes needed.
+
+### 1.2 Machine Path (v5) - ALREADY IMPLEMENTED IN src/autonomic/
+
+| Component | Files | Status |
+|-----------|-------|--------|
+| Introspection | `src/autonomic/introspection.rs` | ✅ READY |
+| Schema | `src/autonomic/schema.rs` | ✅ READY |
+| Guards | `src/autonomic/guards.rs` | ✅ READY |
+| Effects | `src/autonomic/effects.rs` | ✅ READY |
+| Receipts | `src/autonomic/receipts.rs` | ✅ READY |
+| Delegation | `src/autonomic/delegation.rs` | ✅ READY |
+| Contracts | `src/autonomic/contracts.rs` | ✅ READY |
+| Governance | `src/autonomic/governance.rs` | ✅ READY |
+| Protocol | `src/autonomic/protocol.rs` | ✅ READY |
+| And 15+ more modules | All present | ✅ COMPLETE |
+
+**No action needed** - v5 machine layer already built and tested!
+
+### 1.3 Documentation Strategy (SIDE-BY-SIDE)
+
+Keep existing docs for v4 human path:
+- ✅ `docs/QUICKSTART.md` - For humans learning CLI
+- ✅ `docs/TUTORIALS/` - Remain for human onboarding
+- ✅ `docs/CLI_REFERENCE.md` - Human command reference
+- ✅ `docs/CLI_COOKBOOK.md` - How-to guides for humans
+
+Add NEW docs for v5 machine path:
+- ✨ `docs/V5_MACHINE_API.md` - Machine API specification
+- ✨ `docs/CAPABILITY_REGISTRY.md` - Capability discovery guide
+- ✨ `docs/INTROSPECTION_API.md` - Introspection API reference
+- ✨ `docs/AGENT_INTEGRATION.md` - How agents call the system
+- ✨ `docs/DELEGATION_GUIDE.md` - Agent-to-agent authorization
+- ✨ `docs/AUDIT_LEDGER.md` - Audit trail documentation
+
+Update existing docs (don't delete):
+- `docs/ARCHITECTURE.md` - Add dual-mode explanation
+- `docs/ARCHITECTURE_REVIEW_V4.md` - Rename to reflect dual-mode
+
+### 1.4 Examples Strategy (SIDE-BY-SIDE)
+
+Keep v4 examples (human learning):
+- ✅ `examples/basic.rs` - Basic CLI usage
+- ✅ `examples/services.rs` - Service management example
+- ✅ `examples/async_example.rs` - Async patterns
+- ✅ `examples/context_example.rs` - App context
+- ✅ `examples/validation.rs` - Validation patterns
+
+Add NEW v5 examples (machine integration):
+- ✨ `examples/machine_integration.rs` - Call as machine/agent
+- ✨ `examples/agent_example.rs` - Agent calling system
+- ✨ `examples/mcp_server.rs` - MCP protocol server
+- ✨ `examples/capability_discovery.rs` - Introspection usage
+- ✨ `examples/delegation_example.rs` - Agent delegation
+- ✨ `examples/audit_ledger_example.rs` - Audit trail
+
+---
+
+## PART 2: INTEGRATION WORK (Add v5 Dispatcher Layer)
+
+### 2.1 NEW: Create v5 Dispatcher/Router
+
+**File**: `src/v5/dispatcher.rs` (NEW FILE)
+
+**Purpose**: Route machine requests to autonomic layer, while preserving v4 human CLI path
+
+**Logic**:
+```rust
+pub struct V5Dispatcher;
+
+impl V5Dispatcher {
+    /// Detect if request is from machine or human
+    pub fn detect_caller(args: &[String]) -> CallerType {
+        if args.contains(&"--machine".to_string()) {
+            CallerType::Machine
+        } else if args.contains(&"--introspect".to_string()) {
+            CallerType::Machine
+        } else if is_json_input(args) {
+            CallerType::Machine
+        } else {
+            CallerType::Human
+        }
+    }
+
+    /// Route to appropriate handler
+    pub fn dispatch(args: &[String]) -> Result<()> {
+        match Self::detect_caller(args) {
+            CallerType::Human => {
+                // Use existing v4 CLI path (help.rs, interactive.rs, etc.)
+                v4_cli_run(args)
+            }
+            CallerType::Machine => {
+                // Use autonomic layer for machine requests
+                autonomic_dispatcher(args)
+            }
+        }
+    }
+}
+```
+
+### 2.2 NEW: Machine Handler Bridge
+
+**File**: `src/v5/machine_handler.rs` (NEW FILE)
+
+**Purpose**: Bridge between dispatcher and autonomic layer
+
+**Calls**:
+- `autonomic::introspection::get_capabilities()` - Capability discovery
+- `autonomic::guards::evaluate_guards()` - Pre-execution checks
+- `autonomic::schema::validate_input()` - Schema validation
+- `autonomic::effects::declare_effects()` - Effect declaration
+- `autonomic::receipts::create_receipt()` - Execution proof
+
+### 2.3 EXISTING: No Changes Needed to v4 Path
+
+| File | Change | Reason |
 |------|--------|--------|
-| `src/cli/help.rs` | Prose help useless to machines | HIGH - Remove 450 lines |
-| `src/cli/interactive.rs` | Interactive prompts for humans only | MEDIUM - Remove 200 lines |
-| `src/cli/examples.rs` | Human learning examples | LOW - Merge into schema |
-| `src/cli/discovery.rs` | Human search feature | MEDIUM - Replace with introspection |
+| `src/cli/help.rs` | ✅ NO CHANGE | Used by v4 human path |
+| `src/cli/interactive.rs` | ✅ NO CHANGE | Used by v4 human path |
+| `src/cli/examples.rs` | ✅ NO CHANGE | Used by v4 documentation |
+| `src/cli/discovery.rs` | ✅ NO CHANGE | Used by v4 human path |
+| `src/cli/router.rs` | ✅ NO CHANGE | Handles v4 routing |
+| `src/cli/mod.rs` | ✅ MINOR: Add v5 exports | Export new dispatcher |
 
-### 1.2 Documentation Files - DELETE
-
-| File | Reason | Replacement |
-|------|--------|-------------|
-| `docs/QUICKSTART.md` | For humans learning CLI | `docs/MACHINE_CLI_SPEC.md` |
-| `docs/TUTORIALS/` | Directory of tutorial docs | API documentation only |
-| `docs/CLI_REFERENCE.md` | Human command reference | OpenAPI schema export |
-| `docs/CLI_COOKBOOK.md` | "How to do X" for humans | Agent integration guide |
-| `docs/CLI_TROUBLESHOOTING.md` | Troubleshooting guide | Error code reference |
-| `docs/HELP_SYSTEM_REDESIGN.md` | Help system design (for v4) | `docs/CAPABILITY_SCHEMA.md` |
-
-**Files to delete from docs/**:
-```
-docs/QUICKSTART.md
-docs/CLI_REFERENCE.md
-docs/CLI_COOKBOOK.md
-docs/CLI_TROUBLESHOOTING.md
-docs/HELP_SYSTEM_REDESIGN.md
-docs/COMMON_MISTAKES.md
-docs/ERROR_MESSAGE_IMPROVEMENTS.md
-docs/CLAP_TYPER_ANALYSIS_FOR_V5.md  ← Not applicable to machine-only system
-```
-
-### 1.3 Example Files - DELETE
-
-**Reason**: Examples are for human learning. Machines query OpenAPI schema.
-
-| File | Delete? | Alternative |
-|------|---------|-------------|
-| `examples/basic.rs` | ✅ DELETE | Use `examples/machine_integration.rs` |
-| `examples/services.rs` | ✅ DELETE | Use agent example |
-| `examples/attribute_macro.rs` | ✅ DELETE | Schema-driven development |
-| `examples/async_example.rs` | ⚠️ KEEP | Shows async patterns still valid |
-| `examples/context_example.rs` | ⚠️ KEEP | App context still used |
-| `examples/format_example.rs` | ✅ DELETE | Output format is always JSON in v5 |
-| `examples/interactive.rs` | ✅ DELETE | No interactivity |
-| `examples/ggen/` | ✅ DELETE | Specific to ggen project |
-| `examples/nested.rs` | ✅ DELETE | For human understanding |
-| `examples/positional.rs` | ✅ DELETE | For human understanding |
-
-**Examples to KEEP** (still relevant):
-```
-examples/async_example.rs           ← Async patterns
-examples/context_example.rs         ← App context
-examples/validation.rs              ← Validation patterns
-examples/env_vars.rs                ← Environment handling
-```
-
-**New examples to CREATE**:
-```
-examples/machine_integration.rs      ← Call as machine
-examples/agent_example.rs           ← Agent calling system
-examples/mcp_server.rs              ← MCP protocol server
-examples/capability_discovery.rs    ← Introspection usage
-examples/delegation_example.rs      ← Agent delegation
-examples/audit_ledger_example.rs    ← Audit trail
-```
-
----
-
-## PART 2: REFACTORING MATRIX (Redesign for Machines)
-
-### 2.1 CLI Layer - REFACTOR
-
-#### `src/cli/mod.rs`
-
-**Current** (v4):
+**v4 router logic stays unchanged**:
 ```rust
-pub use help::{CommandCategory, CommandInfo, HelpSystem};
-pub use examples::{Example, ExamplesRegistry};
-pub use interactive::{InteractiveHelp, InteractiveOutput};
-pub use discovery::{CommandDiscovery, SearchResult};
-
-pub fn run() -> Result<()> {
-    // Auto-run CLI with help system
-}
-```
-
-**Refactored** (v5):
-```rust
-// REMOVE: help, examples, interactive, discovery exports
-// KEEP: Registry, Router, Validator, Builder
-
-pub use registry::CommandRegistry;
-pub use router::CommandRouter;
-pub use validator::ArgValidator;
-pub use builder::CliBuilder;
-
-// NEW: Machine layer exports
-pub use crate::machine::{
-    CapabilityRegistry,
-    Introspection,
-    ExecutionReceipt
-};
-
-pub fn run() -> Result<()> {
-    // Parse args, execute, return JSON/receipt
-    // NO help system
-}
-```
-
-**Changes**:
-- Remove 4 pub use statements
-- Remove help routing
-- Add machine layer exports
-- Keep core routing logic
-
-#### `src/cli/router.rs`
-
-**Current** (v4):
-```rust
+// Existing v4 CLI handling - KEEP AS-IS
 match args.len() {
-    0 => show_help(),           // ← REMOVE
-    1 if args[0] == "--help" => help_system.main_help(),  // ← REMOVE
-    1 if args[0] == "help" => interactive_help(),  // ← REMOVE
-    _ => execute_noun_verb()
+    0 => show_help(),           // ← KEEP
+    1 if args[0] == "--help" => help_system.main_help(),  // ← KEEP
+    1 if args[0] == "help" => interactive_help(),  // ← KEEP
+    _ => execute_noun_verb()    // ← KEEP
 }
 ```
 
-**Refactored** (v5):
+Only wrapper checks for v5 machine request first:
 ```rust
+pub fn run(args: &[String]) -> Result<()> {
+    // NEW: Check if machine request first
+    if let Some(result) = try_v5_dispatch(args) {
+        return result;
+    }
+
+    // EXISTING: v4 human CLI path
+    existing_v4_cli_logic(args)
+}
+```
 match args.len() {
     0 => return_introspection_endpoint(),  // ← NEW: Return capability schema
     1 if args[0] == "--version" => return_version(),
