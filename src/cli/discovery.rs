@@ -7,7 +7,7 @@
 //! - Command suggestions for typos
 
 use crate::cli::help::{CommandCategory, CommandInfo};
-use crate::error::{NounVerbError, Result};
+use crate::error::Result;
 use serde::Serialize;
 
 /// Command discovery system

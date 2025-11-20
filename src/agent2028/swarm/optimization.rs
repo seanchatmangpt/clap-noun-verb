@@ -3,7 +3,6 @@
 /// Particle Swarm Optimization (PSO), Ant Colony Optimization (ACO),
 /// and other swarm-based metaheuristics for solving optimization problems.
 use serde::{Deserialize, Serialize};
-use std::f64::consts::PI;
 
 /// Solution quality score
 #[derive(Debug, Clone, Serialize, Deserialize)]

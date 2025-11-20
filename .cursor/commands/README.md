@@ -108,6 +108,11 @@ Add, Commit, Push workflow - Complete git workflow with validation checkpoints. 
 
 **Use when**: Staging changes, committing code, pushing to remote
 
+#### `/fix-lint-errors`
+Efficient lint error fixing - Systematic approach to fixing all lint errors using automated fixes, batch processing, and priority-based resolution.
+
+**Use when**: Fixing clippy errors, addressing code quality issues, preparing for commit
+
 ## Command Categories
 
 ### By Purpose
@@ -124,13 +129,13 @@ Add, Commit, Push workflow - Complete git workflow with validation checkpoints. 
 
 **Requirements**: `/voice-of-customer-qfd`
 
-**Git Workflow**: `/acp`
+**Git Workflow**: `/acp`, `/fix-lint-errors`
 
 ### By Workflow Complexity
 
 **Quick (5-10 minutes)**: `/andon-signals`, `/gemba-walk`, `/80-20-fill-gaps`
 
-**Medium (15-30 minutes)**: `/kaizen-improvement`, `/eliminate-muda`, `/eliminate-mura`, `/expert-testing-patterns`, `/acp`
+**Medium (15-30 minutes)**: `/kaizen-improvement`, `/eliminate-muda`, `/eliminate-mura`, `/expert-testing-patterns`, `/acp`, `/fix-lint-errors`
 
 **Comprehensive (30+ minutes)**: `/dmaic-problem-solving`, `/root-cause-analysis`, `/fmea`, `/robust-design`
 
@@ -158,7 +163,7 @@ Commands are designed to work together:
 - **New Feature**: `/voice-of-customer-qfd` → `/poka-yoke-design` → `/expert-testing-patterns`
 - **Quality Improvement**: `/verify-tests` → `/root-cause-analysis` → `/poka-yoke-design`
 - **Code Quality**: `/gemba-walk` → `/eliminate-muda` → `/eliminate-mura`
-- **Git Workflow**: `/acp` → `/verify-tests` → `/release-preparation`
+- **Git Workflow**: `/acp` → `/fix-lint-errors` → `/verify-tests` → `/release-preparation`
 
 ## Usage Tips
 
@@ -168,6 +173,7 @@ Commands are designed to work together:
 4. **Prevent Errors**: Use `/poka-yoke-design` for type safety
 5. **New Designs**: Use `/poka-yoke-design` for new features
 6. **Git Workflow**: Use `/acp` for all git operations
+7. **Lint Errors**: Use `/fix-lint-errors` before committing to fix all lint issues efficiently
 
 ## Build System
 

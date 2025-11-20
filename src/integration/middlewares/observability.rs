@@ -58,14 +58,12 @@ impl Middleware for ObservabilityMiddleware {
             .with_attribute("requester", request.requester().unwrap_or("unknown"))
             .build("observability_trace");
 
-        #[cfg(feature = "tracing")]
-        {
-            tracing::info!(
-                command = request.command(),
-                args = ?request.args(),
-                "Command execution started"
-            );
-        }
+        // Always use tracing (it's a required dependency)
+        tracing::info!(
+            command = request.command(),
+            args = ?request.args(),
+            "Command execution started"
+        );
 
         Ok(true)
     }
@@ -75,13 +73,11 @@ impl Middleware for ObservabilityMiddleware {
             return Ok(());
         }
 
-        #[cfg(feature = "tracing")]
-        {
-            if response.is_success() {
-                tracing::info!(message = response.message(), "Command execution succeeded");
-            } else {
-                tracing::warn!(message = response.message(), "Command execution failed");
-            }
+        // Always use tracing (it's a required dependency)
+        if response.is_success() {
+            tracing::info!(message = response.message(), "Command execution succeeded");
+        } else {
+            tracing::warn!(message = response.message(), "Command execution failed");
         }
 
         Ok(())

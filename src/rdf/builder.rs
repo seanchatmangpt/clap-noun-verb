@@ -2,7 +2,6 @@
 
 use crate::rdf::ontology::Ontology;
 use crate::rdf::types::{RdfTriple, RdfValue};
-use crate::Result;
 
 /// Builder for constructing CNV ontology from registered verbs
 pub struct OntologyBuilder {

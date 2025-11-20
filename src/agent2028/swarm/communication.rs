@@ -3,7 +3,7 @@
 /// Efficient bandwidth-limited communication for swarms with millions of agents.
 /// Implements gossip protocols, layered broadcasting, and dynamic topology adaptation.
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Message in swarm network
 #[derive(Debug, Clone, Serialize, Deserialize)]

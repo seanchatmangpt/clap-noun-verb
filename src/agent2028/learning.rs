@@ -92,8 +92,8 @@ impl CommandProfile {
         self.min_execution_time_ms = self.min_execution_time_ms.min(metric.execution_time_ms);
         self.max_execution_time_ms = self.max_execution_time_ms.max(metric.execution_time_ms);
 
-        self.avg_memory_bytes = ((self.avg_memory_bytes as f64 * (1.0 - alpha)
-            + metric.memory_used_bytes as f64 * alpha) as u64);
+        self.avg_memory_bytes = (self.avg_memory_bytes as f64 * (1.0 - alpha)
+            + metric.memory_used_bytes as f64 * alpha) as u64;
 
         self.success_rate = self.successful_executions as f64 / self.total_executions as f64;
     }

@@ -358,7 +358,7 @@ impl BidValidator {
         if fulfilled {
             *reliability = (*reliability * 0.9) + 0.1; // Increase
         } else {
-            *reliability = (*reliability * 0.8); // Decrease more
+            *reliability = *reliability * 0.8; // Decrease more
         }
     }
 
@@ -428,7 +428,7 @@ impl PheromoneValidator {
         if success {
             *confidence = (*confidence * 0.8) + 0.2; // Boost
         } else {
-            *confidence = (*confidence * 0.7); // Reduce
+            *confidence = *confidence * 0.7; // Reduce
         }
     }
 

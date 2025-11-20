@@ -3,7 +3,6 @@
 /// Formal ontology-based thesis planning and validation using RDF
 /// Supports Λ-scheduling, Π-profiling, and Γ-checking
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
 /// Seven canonical shard families

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 /// Stigmergic Communication System
 ///
 /// Indirect coordination via virtual pheromones. Agents leave chemical markers

@@ -112,8 +112,6 @@ impl RdfRegistry {
     /// For production use, integrate a proper Turtle parser library.
     /// This implementation handles basic triple patterns.
     fn parse_simple_turtle(&self, ttl: &str) -> Result<Vec<crate::rdf::types::RdfTriple>> {
-        use crate::rdf::types::{RdfTriple, RdfValue};
-
         let mut triples = Vec::new();
         let mut current_subject: Option<String> = None;
 
@@ -145,7 +143,7 @@ impl RdfRegistry {
         line: &str,
         current_subject: &mut Option<String>,
     ) -> Result<Option<crate::rdf::types::RdfTriple>> {
-        use crate::rdf::types::{RdfTriple, RdfValue};
+        use crate::rdf::types::RdfTriple;
 
         let line = line.trim_end_matches(['.', ';'].as_ref()).trim();
 

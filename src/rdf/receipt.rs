@@ -2,7 +2,6 @@
 
 use crate::rdf::invocation::ParsedInvocation;
 use crate::rdf::types::{RdfTriple, RdfValue};
-use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;

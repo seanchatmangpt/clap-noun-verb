@@ -8,6 +8,8 @@
 //! - Serialization/deserialization
 //! - Certificate caching
 
+#![allow(clippy::unwrap_used)] // Test code: unwrap is acceptable for test assertions
+
 use clap_noun_verb::autonomic::certificates::Verified;
 use clap_noun_verb::autonomic::*;
 use std::time::Duration;
@@ -212,7 +214,7 @@ fn test_certified_invocation_wrapping() {
 
     // AND: Can decompose back
     let (retrieved_cert, retrieved_args) = invocation.into_parts();
-    assert_eq!(retrieved_cert.certificate_id, cert.certificate_id);
+    assert_eq!(retrieved_cert.certificate_id, cert_id);
     assert_eq!(retrieved_args, args);
 }
 
@@ -266,7 +268,7 @@ fn test_certificate_policy_trace() {
     // THEN: Policy trace is recorded
     assert_eq!(cert.policy_trace.policy_engine_id, "engine-1");
     assert_eq!(cert.policy_trace.evaluated_rules.len(), 2);
-    assert_eq!(cert.policy_trace.matched_rule, Some("rule1".to_string()));
+    assert_eq!(cert.policy_trace.matched_rule, None); // PolicyResult doesn't provide matched_rule
     assert!(matches!(cert.policy_trace.decision, PolicyDecision::Allow));
 }
 

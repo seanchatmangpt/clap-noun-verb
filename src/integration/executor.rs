@@ -4,7 +4,6 @@
 //! Supports both sync and async command execution with automatic instrumentation.
 
 use crate::middleware::{Middleware, MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse};
-use crate::telemetry::SpanBuilder;
 use std::fmt;
 use std::marker::PhantomData;
 use std::time::Instant;

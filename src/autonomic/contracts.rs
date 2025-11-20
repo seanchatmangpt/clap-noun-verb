@@ -11,7 +11,6 @@
 //! 4. **Composable**: Contracts can be combined and refined
 
 use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
 use std::time::Duration;
 
 /// Duration class for expected execution time

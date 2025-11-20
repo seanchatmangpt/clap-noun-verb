@@ -13,7 +13,7 @@
 //! All SIMD intrinsics are properly gated behind target feature checks and
 //! provide fallback implementations for platforms without SIMD support.
 
-use std::arch::*;
+// SIMD arch imports handled per-platform via feature gates below
 
 /// SIMD-accelerated batch hash computation for correlation IDs
 ///

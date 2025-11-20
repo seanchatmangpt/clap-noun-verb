@@ -137,11 +137,7 @@ Target: Make CLIs that machines trust
 
 ### 2. File Migration Guide
 
-**File**: `docs/V4_TO_V5_FILE_MIGRATION.md`
-**Length**: 5,000+ words
-**Contains**:
-- Detailed deletion matrix (35 files)
-- Refactoring requirements (45 files)
+**Note**: The detailed file-by-file migration guide has been archived. See `docs/MIGRATION_V4_TO_V5.md` for user-facing migration instructions.
 - Keep list (180 files)
 - New file structure (25+ files)
 - Phase-by-phase migration checklist

@@ -199,6 +199,8 @@ path = "examples/template_generator.rs"
 # Core team best practices - deny unsafe patterns
 unsafe_code = "deny"
 bare_trait_objects = "warn"
+# Allow kani cfg condition for formal verification (optional external tool)
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
 
 [lints.clippy]
 # Error handling - never use unwrap or expect in production

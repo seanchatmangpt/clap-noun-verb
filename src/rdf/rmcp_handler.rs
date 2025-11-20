@@ -3,8 +3,7 @@
 //! Implements the official Rust SDK (rmcp) for Model Context Protocol,
 //! exposing RDF ontology resources and SPARQL execution tools.
 
-use crate::rdf::{Lockchain, Ontology, Receipt, SparqlPlanner};
-use chrono;
+use crate::rdf::{Lockchain, Ontology, SparqlPlanner};
 use rmcp::model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo};
 use rmcp::{Json, ServerHandler, ServiceExt};
 use schemars::JsonSchema;

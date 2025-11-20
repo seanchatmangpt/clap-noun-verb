@@ -44,15 +44,8 @@ impl Middleware for LoggingMiddleware {
             format!("Executing command: {}", request.command())
         };
 
-        #[cfg(feature = "tracing")]
-        {
-            tracing::info!("{}", log_msg);
-        }
-
-        #[cfg(not(feature = "tracing"))]
-        {
-            eprintln!("[INFO] {}", log_msg);
-        }
+        // Always use tracing (it's a required dependency)
+        tracing::info!("{}", log_msg);
 
         Ok(true)
     }
@@ -61,15 +54,8 @@ impl Middleware for LoggingMiddleware {
         let status = if response.is_success() { "OK" } else { "FAILED" };
         let log_msg = format!("Command completed: {} - {}", status, response.message());
 
-        #[cfg(feature = "tracing")]
-        {
-            tracing::info!("{}", log_msg);
-        }
-
-        #[cfg(not(feature = "tracing"))]
-        {
-            eprintln!("[INFO] {}", log_msg);
-        }
+        // Always use tracing (it's a required dependency)
+        tracing::info!("{}", log_msg);
 
         Ok(())
     }

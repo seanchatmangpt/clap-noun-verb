@@ -100,7 +100,8 @@ impl TelemetryCollector {
             return;
         }
 
-        let mut counters = self.counters.lock().unwrap();
+        let mut counters = self.counters.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         let counter =
             counters.entry(name.to_string()).or_insert_with(|| Arc::new(AtomicU64::new(0)));
 
@@ -113,7 +114,8 @@ impl TelemetryCollector {
             return;
         }
 
-        let mut histograms = self.histograms.lock().unwrap();
+        let mut histograms = self.histograms.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         let histogram = histograms.entry(name.to_string()).or_insert_with(Histogram::new);
 
         histogram.observe(value);
@@ -121,7 +123,8 @@ impl TelemetryCollector {
 
     /// Set gauge value
     pub fn gauge_set(&self, name: &str, value: u64) {
-        let mut gauges = self.gauges.lock().unwrap();
+        let mut gauges = self.gauges.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         let gauge = gauges.entry(name.to_string()).or_insert_with(|| Arc::new(AtomicU64::new(0)));
 
         gauge.store(value, Ordering::Relaxed);
@@ -135,7 +138,10 @@ impl TelemetryCollector {
         }
 
         // Simple deterministic sampling based on timestamp
-        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0); // Fallback to 0 if system time is before UNIX epoch (practically impossible)
 
         (now % rate as u128) == 0
     }
@@ -145,7 +151,8 @@ impl TelemetryCollector {
         let mut output = String::new();
 
         // Export counters
-        let counters = self.counters.lock().unwrap();
+        let counters = self.counters.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         for (name, counter) in counters.iter() {
             let value = counter.load(Ordering::Relaxed);
             output.push_str(&format!("# TYPE {} counter\n", name));
@@ -153,7 +160,8 @@ impl TelemetryCollector {
         }
 
         // Export gauges
-        let gauges = self.gauges.lock().unwrap();
+        let gauges = self.gauges.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         for (name, gauge) in gauges.iter() {
             let value = gauge.load(Ordering::Relaxed);
             output.push_str(&format!("# TYPE {} gauge\n", name));
@@ -161,7 +169,8 @@ impl TelemetryCollector {
         }
 
         // Export histograms
-        let histograms = self.histograms.lock().unwrap();
+        let histograms = self.histograms.lock()
+            .unwrap_or_else(|e| e.into_inner()); // Recover from poisoned mutex
         for (name, histogram) in histograms.iter() {
             output.push_str(&format!("# TYPE {} summary\n", name));
             output.push_str(&format!("{}_count {}\n", name, histogram.count()));

@@ -16,7 +16,7 @@ use super::{
     effects::EffectMetadata,
     policy::{PolicyDecision, PolicyResult},
     schema::{InputSchema, OutputSchema},
-    tenancy::{AgentIdentity, InvocationContext, TenantIdentity},
+    tenancy::{AgentIdentity, TenantIdentity},
 };
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -103,8 +103,10 @@ impl CertificateId {
     /// Generate a new unique certificate ID
     pub fn generate() -> Self {
         use sha2::{Digest, Sha256};
-        let timestamp =
-            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+        let timestamp = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0); // Fallback to 0 if system time is before UNIX epoch (practically impossible)
         let random = uuid::Uuid::new_v4();
         let input = format!("{}{}", timestamp, random);
         let hash = Sha256::digest(input.as_bytes());
@@ -120,7 +122,9 @@ impl SchemaHash {
     /// Compute hash of input schema
     pub fn from_input_schema(schema: &InputSchema) -> Self {
         use sha2::{Digest, Sha256};
-        let serialized = serde_json::to_string(schema).unwrap();
+        // Use debug representation as fallback if serialization fails
+        let serialized = serde_json::to_string(schema)
+            .unwrap_or_else(|_| format!("{:?}", schema));
         let hash = Sha256::digest(serialized.as_bytes());
         Self(hex::encode(&hash[..16]))
     }
@@ -128,7 +132,9 @@ impl SchemaHash {
     /// Compute hash of output schema
     pub fn from_output_schema(schema: &OutputSchema) -> Self {
         use sha2::{Digest, Sha256};
-        let serialized = serde_json::to_string(schema).unwrap();
+        // Use debug representation as fallback if serialization fails
+        let serialized = serde_json::to_string(schema)
+            .unwrap_or_else(|_| format!("{:?}", schema));
         let hash = Sha256::digest(serialized.as_bytes());
         Self(hex::encode(&hash[..16]))
     }

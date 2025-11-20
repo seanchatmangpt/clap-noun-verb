@@ -2,7 +2,6 @@
 
 use crate::rdf::ontology::Ontology;
 use crate::rdf::types::{Invocation, RdfTriple, RdfValue};
-use crate::Result;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use thiserror::Error;

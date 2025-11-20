@@ -24,8 +24,6 @@
 //! ```
 
 use bytes::BytesMut;
-use std::pin::Pin;
-use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 /// Configuration for backpressure handling

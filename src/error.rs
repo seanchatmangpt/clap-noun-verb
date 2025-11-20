@@ -50,20 +50,11 @@ impl NounVerbError {
     /// Enhance error with recovery suggestions from RDF guard validation
     ///
     /// Attempts to provide helpful suggestions using the RDF ontology and SPARQL queries.
+    ///
+    /// FUTURE: v5.1 - Complete RDF recovery suggestions
     pub fn with_recovery_suggestions(self) -> String {
-        let msg = self.to_string();
-
-        // Try to load middleware and get suggestions
-        #[cfg(feature = "rdf-control")]
-        {
-            use crate::rdf::{recover_from_error, GuardValidationMiddleware};
-            let middleware = GuardValidationMiddleware::global();
-            if let Ok(Some(suggestion)) = recover_from_error(&self, &middleware) {
-                return format!("{}\n\n{}", msg, suggestion);
-            }
-        }
-
-        msg
+        // RDF-control feature deferred to v5.1
+        self.to_string()
     }
 
     /// Create a command not found error

@@ -32,6 +32,7 @@
 macro_rules! verify_contract {
     ($cond:expr, $msg:expr) => {{
         #[cfg(kani)]
+        #[allow(unexpected_cfgs)]
         kani::assert($cond, $msg);
 
         #[cfg(not(kani))]
@@ -48,6 +49,7 @@ macro_rules! verify_bounds {
         let max = $max;
 
         #[cfg(kani)]
+        #[allow(unexpected_cfgs)]
         {
             kani::assume(v >= min);
             kani::assume(v <= max);
@@ -92,6 +94,7 @@ pub fn verify_temporal_ordering(start: std::time::SystemTime, deadline: std::tim
 ///
 /// Proves that certificate transitions maintain type safety
 #[cfg(kani)]
+#[allow(unexpected_cfgs)]
 #[kani::proof]
 fn verify_certificate_state_machine() {
     use crate::autonomic::{
@@ -144,6 +147,7 @@ fn verify_certificate_state_machine() {
 ///
 /// Proves that delegation chains maintain capability narrowing invariant
 #[cfg(kani)]
+#[allow(unexpected_cfgs)]
 #[kani::proof]
 fn verify_delegation_narrowing() {
     use crate::autonomic::{
@@ -176,6 +180,7 @@ fn verify_delegation_narrowing() {
 ///
 /// Proves that InvocationQueue maintains FIFO ordering
 #[cfg(kani)]
+#[allow(unexpected_cfgs)]
 #[kani::proof]
 fn verify_queue_fifo_ordering() {
     use crate::autonomic::InvocationQueue;
@@ -204,6 +209,7 @@ fn verify_queue_fifo_ordering() {
 ///
 /// Proves that if A→B and B→C then A→C
 #[cfg(kani)]
+#[allow(unexpected_cfgs)]
 #[kani::proof]
 fn verify_graph_transitivity() {
     use crate::autonomic::{

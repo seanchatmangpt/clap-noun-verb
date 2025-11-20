@@ -68,11 +68,8 @@ impl Middleware for DistributedTracingMiddleware {
             return Ok(true);
         }
 
-        #[cfg(feature = "tracing")]
-        {
-            // In production, extract trace context from request headers
-            // and propagate to all downstream operations
-        }
+        // In production, extract trace context from request headers
+        // and propagate to all downstream operations
 
         Ok(true)
     }
