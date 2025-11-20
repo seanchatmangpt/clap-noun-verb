@@ -1,52 +1,77 @@
 # clap-noun-verb
 
-A framework for building composable CLI patterns on top of clap using the **noun-verb pattern** (e.g., `services status`, `collector up`). Inspired by Python's Typer.
+**Machine-grade CLI framework for AI agents and autonomous systems**
 
-## What is clap-noun-verb?
+> ⚠️ **Architecture First:** This framework enforces domain logic separation.
+> Your CLI is an interface, not your application.
 
-**clap-noun-verb** is a framework that enables composition rather than providing specific compositions. It provides a high-level, ergonomic API for building CLI applications organized around the noun-verb pattern, where commands follow the structure `noun verb` (e.g., `services status`, `collector up`).
+---
 
-### Key Features
+## Quick Navigation (Diataxis)
 
-- **Attribute Macros**: `#[noun]` and `#[verb]` for zero-boilerplate command registration
-- **Auto-Discovery**: Commands automatically discovered at compile time
-- **Auto-Inference**: Verb names from function names, noun names from filenames
-- **Type Inference**: Arguments inferred from function signatures
-- **JSON Output**: All output automatically serialized to JSON (perfect for agents/MCP)
-- **Async Support**: Execute async operations from sync handlers
-- **Application Context**: Share typed state across all commands
-- **Output Formats**: JSON, YAML, TOML, Table, and TSV support
-- **Shell Completions**: Auto-generate completions for bash, zsh, fish, powershell, and elvish
-- **Machine-Centric v5.0** (NEW): Autonomic CLI layer with introspection, RDF ontology, cryptographic receipts, delegation chains, and MCP SDK integration for AI agents and trillion-agent ecosystems
+### 🎓 Tutorial - Get Started in 5 Minutes
+**For:** Agents bootstrapping new CLI projects
+**Shows:** Domain-separated architecture from first line of code
+**Status:** Coming soon in v5 docs
 
-### The Noun-Verb Pattern
+### 📘 How-To Guides - Production Patterns
+**For:** Agents implementing specific features
+**Includes:**
+- Domain logic separation patterns
+- Testing strategies (Chicago TDD)
+- MCP server integration
+- Deployment patterns
+**Status:** Coming soon in v5 docs
 
-The noun-verb pattern structures commands hierarchically:
+### 📚 Reference - Complete API Catalog
+**For:** Agents looking up signatures and semantics
+**Includes:**
+- All public types and traits
+- v5 autonomic CLI API
+- Macro system reference
+- Error types
+**Status:** Coming soon in v5 docs
+
+### 💡 Explanation - Architecture & Philosophy
+**For:** Agents understanding the "why"
+**Includes:**
+- [Domain separation rationale](#architecture-principle)
+- [Type-first design principles](#elite-rust-mindset)
+- Zero-cost abstraction patterns
+- [Agent2028 integration](#v50-highlights)
+**See also:** [AUTONOMIC.md](AUTONOMIC.md) for machine-grade interface details
+
+---
+
+## Architecture Principle
+
+**The Golden Rule:** CLI validates, domain computes, integration connects.
 
 ```
-myapp
-├── services
-│   ├── status
-│   ├── logs
-│   └── restart
-├── collector
-│   ├── up
-│   ├── down
-│   └── status
-└── dev
-    ├── test
-    └── lint
+┌─────────────┐
+│   CLI Layer │  ← clap-noun-verb (this crate)
+│  (thin, UI) │
+└──────┬──────┘
+       │
+┌──────▼──────────┐
+│ Integration     │  ← Glue code (minimal)
+└──────┬──────────┘
+       │
+┌──────▼──────────┐
+│  Domain Logic   │  ← Your business logic (pure, testable)
+│  (pure, tested) │
+└─────────────────┘
 ```
 
-Where:
-- **Nouns** are entities or concepts (e.g., `services`, `collector`, `dev`)
-- **Verbs** are actions performed on nouns (e.g., `status`, `logs`, `up`)
+**Why this matters:**
+- CLI layer is thin validation and routing
+- Domain logic is pure Rust functions (testable, reusable)
+- Integration glues CLI to domain
+- Tests focus on domain, not CLI parsing
 
-This creates an intuitive, scalable command structure that's easy to understand and extend.
+---
 
-## Quick Start
-
-Add to `Cargo.toml`:
+## Installation
 
 ```toml
 [dependencies]
@@ -54,38 +79,249 @@ clap-noun-verb = "5.0.0"
 clap-noun-verb-macros = "5.0.0"
 ```
 
-Create your first command:
+---
+
+## 30-Second Example (Domain-Separated)
 
 ```rust
-// services.rs
-//! Manage application services
+// domain/calculator.rs - Pure business logic
+pub fn add(x: i32, y: i32) -> i32 {
+    x + y
+}
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add() {
+        assert_eq!(add(2, 3), 5);
+    }
+}
+
+// cli/commands.rs - Thin CLI wrapper
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
 use serde::Serialize;
 
 #[derive(Serialize)]
-struct Status {
+struct AddResult {
+    result: i32,
+}
+
+#[verb]
+fn add(x: i32, y: i32) -> Result<AddResult> {
+    let result = crate::domain::calculator::add(x, y);
+    Ok(AddResult { result })
+}
+```
+
+**Key principles:**
+1. ✅ CLI function delegates to domain immediately
+2. ✅ Zero business logic in CLI layer
+3. ✅ Domain functions are pure and testable
+4. ✅ CLI returns JSON for agent consumption
+
+---
+
+## v5.0.0 Highlights
+
+### Autonomic CLI Layer
+Machine-grade introspection API for autonomous systems:
+- **Introspection:** `--capabilities`, `--introspect`, `--graph`
+- **Effect Metadata:** Commands declare side-effects and sensitivity
+- **Plane Interactions:** O (Observations), Σ (Ontology), Q (Invariants), ΔΣ (Overlays)
+- **Guards & Budgets:** Resource constraints enforced at runtime
+- **Execution Receipts:** Structured audit logs for MAPE-K loops
+
+**See:** [AUTONOMIC.md](AUTONOMIC.md) for complete autonomic layer documentation
+
+### MCP Integration
+Native [Model Context Protocol](https://modelcontextprotocol.io/) support:
+- Commands expose MCP-compatible interfaces
+- JSON-LD export for semantic interoperability
+- Agent-friendly capability discovery
+
+### Agent2028
+Designed for trillion-agent ecosystems:
+- Cryptographic receipts for command execution
+- Delegation chains for capability transfer
+- Zero-trust verification of command origins
+- Deterministic execution with guard enforcement
+
+### Type-Safe & Zero-Cost
+- Compile-time command validation
+- Zero-cost abstractions (generics, macros, const generics)
+- Type-first API design
+- Memory safety without runtime overhead
+
+---
+
+## Elite Rust Mindset
+
+### Type-First Thinking
+Types encode invariants; compiler is your design tool:
+
+```rust
+// ✅ GOOD: Types make invalid states unrepresentable
+enum ServiceState {
+    Running { pid: u32, uptime: Duration },
+    Stopped,
+}
+
+// ❌ BAD: Runtime validation needed
+struct ServiceState {
+    running: bool,
+    pid: Option<u32>,  // What if running=true but pid=None?
+}
+```
+
+**Principles:**
+- Use types to make invalid states unrepresentable
+- Const generics over runtime values
+- Ask: **"What can I express in types?"** before "What values do I need?"
+
+### Zero-Cost Awareness
+Understanding what's free in Rust:
+
+```rust
+// ✅ Zero-cost (monomorphization)
+fn process<T: Serialize>(item: T) -> String {
+    serde_json::to_string(&item).unwrap()
+}
+
+// ⚠️ Dynamic dispatch cost (trait object)
+fn process(item: &dyn Serialize) -> String {
+    serde_json::to_string(item).unwrap()
+}
+```
+
+**Checklist:**
+- Generics monomorphize (zero-cost)
+- References are zero-cost
+- Trait objects have dynamic dispatch cost
+- Ask: **"Is this abstraction zero-cost?"**
+
+### Memory Safety
+Ownership and borrowing enable zero-cost safety:
+
+```rust
+// ✅ GOOD: Ownership explicit
+fn process_data(data: Vec<u8>) -> Result<Output> {
+    // data moved here, caller can't use stale data
+}
+
+// ⚠️ Consider: Does caller need data after?
+fn process_data(data: &[u8]) -> Result<Output> {
+    // data borrowed, caller retains ownership
+}
+```
+
+**Principles:**
+- Ownership is explicit
+- Borrowing enables zero-cost sharing
+- Lifetimes prevent use-after-free
+- Ask: **"What are the ownership semantics?"**
+
+### API Design
+Make misuse impossible through types:
+
+```rust
+// ✅ GOOD: Type-safe by construction
+struct ValidatedEmail(String);
+
+impl ValidatedEmail {
+    pub fn new(email: String) -> Result<Self, ValidationError> {
+        if email.contains('@') {
+            Ok(Self(email))
+        } else {
+            Err(ValidationError::InvalidEmail)
+        }
+    }
+}
+
+fn send_email(to: ValidatedEmail) {
+    // Guaranteed to be valid - validation at construction
+}
+
+// ❌ BAD: Runtime validation at every use
+fn send_email(to: String) -> Result<()> {
+    if !to.contains('@') {
+        return Err("Invalid email");
+    }
+    // ...
+}
+```
+
+**Principles:**
+- Type-safe by default (errors impossible through types)
+- Ergonomic interfaces (easy to use correctly, hard to misuse)
+- Self-documenting types
+- Explicit error handling (Result types, not panics)
+- Ask: **"How can I make misuse impossible?"**
+
+---
+
+## Documentation Hub
+
+All documentation follows [Diataxis](https://diataxis.fr/) framework:
+
+| Quadrant | Purpose | Target Audience |
+|----------|---------|-----------------|
+| **Tutorial** | Learning-oriented | New projects, first-time users |
+| **How-To** | Problem-solving | Specific feature implementation |
+| **Reference** | Information | API lookup, type signatures |
+| **Explanation** | Understanding | Architecture, design decisions |
+
+### Current Documentation (v4)
+
+**Quick Start:**
+- [QUICKSTART.md](docs/QUICKSTART.md) - Get started in 10 minutes
+- [CLI_REFERENCE.md](docs/CLI_REFERENCE.md) - Complete API reference
+- [CLI_COOKBOOK.md](docs/CLI_COOKBOOK.md) - Common recipes
+
+**Architecture:**
+- [AUTONOMIC.md](AUTONOMIC.md) - Machine-grade interface for agents
+- [SEMANTIC_CLI_ARCHITECTURE.md](docs/SEMANTIC_CLI_ARCHITECTURE.md) - RDF/SPARQL semantic layer
+
+**Migration:**
+- Migration guide from v4 to v5 coming soon
+
+### v5 Documentation (In Progress)
+
+The v5 documentation is being restructured using Diataxis principles. Current v4 docs remain valid for core features. New v5-specific features are documented in:
+- [AUTONOMIC.md](AUTONOMIC.md) - Autonomic CLI layer
+- [SEMANTIC_CLI_ARCHITECTURE.md](docs/SEMANTIC_CLI_ARCHITECTURE.md) - Semantic control architecture
+
+---
+
+## Quick Example: Full CLI in <50 Lines
+
+```rust
+use clap_noun_verb::prelude::*;
+use serde::Serialize;
+
+// Domain logic (pure, testable)
+mod domain {
+    pub fn calculate_health(services: &[&str]) -> bool {
+        !services.is_empty()
+    }
+}
+
+// CLI layer (thin wrapper)
+#[derive(Serialize)]
+struct ServiceStatus {
     services: Vec<String>,
     healthy: bool,
 }
 
-/// Show service status
-#[verb] // Verb "status" auto-inferred, noun "services" auto-inferred from filename
-fn show_status() -> Result<Status> {
-    Ok(Status {
-        services: vec!["api".to_string(), "worker".to_string()],
-        healthy: true,
-    })
-}
+#[verb] // Verb "status" auto-inferred from function name
+fn show_status() -> Result<ServiceStatus> {
+    let services = vec!["api".to_string(), "worker".to_string()];
+    let healthy = domain::calculate_health(&services.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
-/// Show logs for a service
-#[verb] // Verb "logs" auto-inferred, noun "services" auto-inferred from filename
-fn show_logs(service: String, lines: Option<usize>) -> Result<Logs> {
-    Ok(Logs {
-        service,
-        lines: lines.unwrap_or(50),
-        entries: vec![],
+    Ok(ServiceStatus {
+        services,
+        healthy,
     })
 }
 
@@ -98,337 +334,64 @@ fn main() -> Result<()> {
 ```bash
 $ myapp services status
 {"services":["api","worker"],"healthy":true}
-
-$ myapp services logs api --lines 100
-{"service":"api","lines":100,"entries":[]}
 ```
 
-## CLI Documentation
+---
 
-### Learning Resources
+## Why clap-noun-verb?
 
-| Document | Description | Time to Read |
-|----------|-------------|--------------|
-| **[Quick Start Guide](docs/QUICKSTART.md)** | Get started in 5 easy steps | 10 minutes |
-| **[CLI Reference](docs/CLI_REFERENCE.md)** | Complete command and API reference | 30 minutes |
-| **[CLI Cookbook](docs/CLI_COOKBOOK.md)** | 10+ practical recipes for common tasks | 20 minutes |
-| **[Troubleshooting](docs/CLI_TROUBLESHOOTING.md)** | Common issues and solutions | 15 minutes |
+### For Humans
+- **Intuitive structure:** `noun verb` pattern (e.g., `services status`)
+- **Zero boilerplate:** `#[verb]` macro does the work
+- **Better errors:** Type-safe validation with helpful messages
 
-### Quick Links
+### For AI Agents
+- **Machine-readable:** JSON output by default
+- **Introspectable:** `--capabilities`, `--introspect` flags
+- **Semantic:** RDF/SPARQL layer for intent-based discovery
+- **Autonomous:** MAPE-K loop integration with execution receipts
 
-**For Beginners:**
-- [Installation & First Command](docs/QUICKSTART.md#step-1-installation--setup-2-minutes)
-- [Understanding Noun-Verb Pattern](docs/QUICKSTART.md#step-2-list-available-commands-1-minute)
-- [Common Mistakes](docs/CLI_TROUBLESHOOTING.md#command-discovery-issues)
+### For Developers
+- **Type-first:** Encode invariants in types
+- **Zero-cost:** No runtime overhead for abstractions
+- **Domain-separated:** CLI validates, domain computes
+- **Production-ready:** Chicago TDD, comprehensive testing
 
-**For Developers:**
-- [Argument Configuration](docs/CLI_REFERENCE.md#argument-attributes)
-- [Type Inference Guide](docs/CLI_REFERENCE.md#type-inference)
-- [Async Operations](docs/CLI_REFERENCE.md#async-operations)
-- [Performance Tuning](docs/CLI_COOKBOOK.md#9-performance-tuning)
+---
 
-**For Advanced Users:**
-- [Multi-Template Composition](docs/CLI_COOKBOOK.md#3-use-multiple-templates-together)
-- [CI/CD Integration](docs/CLI_COOKBOOK.md#7-integrate-with-cicd)
-- [Custom Error Handling](docs/CLI_COOKBOOK.md#10-advanced-error-handling)
+## Performance Metrics
 
-### Documentation by Task
+**From v4.0.0 validation:**
+- **Compile Time:** <2 seconds (incremental builds)
+- **Binary Size:** ~2.5MB (release mode)
+- **Command Discovery:** <1ms (compile-time registration)
+- **JSON Serialization:** <100μs per command
+- **Memory Usage:** <5MB per command execution
 
-**I want to...**
-- Build my first CLI → [Quick Start Guide](docs/QUICKSTART.md)
-- Add custom arguments → [Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes)
-- Use async/await → [Async Operations](docs/CLI_REFERENCE.md#async-operations)
-- Handle errors gracefully → [Error Handling](docs/CLI_REFERENCE.md#error-handling)
-- Output in different formats → [Output Formats](docs/CLI_REFERENCE.md#output-formats)
-- Share state between commands → [Application Context](docs/CLI_REFERENCE.md#application-context)
-- Generate shell completions → [Shell Completions](docs/CLI_REFERENCE.md#shell-completions)
-- Deploy in CI/CD → [CI/CD Integration](docs/CLI_COOKBOOK.md#7-integrate-with-cicd)
-- Debug my CLI → [Debug Template Issues](docs/CLI_COOKBOOK.md#8-debug-template-issues)
-- Fix compilation errors → [Compilation Errors](docs/CLI_TROUBLESHOOTING.md#compilation-errors)
+---
 
-## How-to Guides
+## Examples
 
-### How to configure arguments
-
-Use `#[arg(...)]` attributes to configure arguments:
-
-```rust
-#[verb("config")]
-fn set_config(
-    // Short flag with default value
-    #[arg(short = 'p', default_value = "8080")]
-    port: u16,
-
-    // Environment variable fallback
-    #[arg(env = "SERVER_HOST", default_value = "localhost")]
-    host: String,
-
-    // Positional argument (index 0)
-    #[arg(index = 0)]
-    url: String,
-
-    // Count action (auto-inferred for usize, but can be explicit)
-    #[arg(short = 'v', action = "count")]
-    verbose: usize,
-
-    // Multiple values
-    #[arg(multiple)]
-    tags: Vec<String>,
-
-    // Custom value name in help
-    #[arg(value_name = "FILE")]
-    output: String,
-
-    // Aliases
-    #[arg(short = 'd', alias = "debug")]
-    verbose_debug: bool,
-
-    // Argument groups (exclusive)
-    #[arg(group = "format")]
-    json: bool,
-    #[arg(group = "format")]
-    yaml: bool,
-
-    // Requires another argument
-    #[arg(requires = "output")]
-    format: Option<String>,
-
-    // Conflicts with another argument
-    #[arg(conflicts_with = "format")]
-    raw: bool,
-) -> Result<Config> {
-    Ok(get_config(port, host, url, verbose, tags, output))
-}
-```
-
-See [CLI Reference - Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes) for complete documentation.
-
-### How to use async operations
-
-Execute async operations from within synchronous verb handlers using `run_async()`:
-
-```rust
-use clap_noun_verb::async_verb::run_async;
-use clap_noun_verb::VerbArgs;
-use serde::Serialize;
-use std::time::Duration;
-
-#[derive(Serialize)]
-struct Output {
-    message: String,
-}
-
-#[verb("fetch")]
-fn fetch_data(args: &VerbArgs) -> Result<Output> {
-    run_async(async {
-        // Your async code here
-        tokio::time::sleep(Duration::from_millis(100)).await;
-
-        // Database queries, HTTP calls, etc.
-        let data = fetch_from_api().await?;
-
-        Ok(Output {
-            message: data.into(),
-        })
-    })
-}
-```
-
-See [CLI Reference - Async Operations](docs/CLI_REFERENCE.md#async-operations) for more examples.
-
-### How to share state across commands
-
-Use `AppContext` to share typed state across all commands:
-
-```rust
-use clap_noun_verb::AppContext;
-use std::sync::Arc;
-
-struct AppState {
-    db: Arc<Database>,
-    config: Config,
-}
-
-// At startup
-let context = AppContext::new();
-context.insert(AppState { ... })?;
-
-// In handlers
-#[verb("query")]
-fn query_database(args: &VerbArgs) -> Result<QueryResult> {
-    let context = // get from somewhere
-    let state: AppState = context.get()?;
-    let db = &state.db;
-    // Use database connection...
-}
-```
-
-See [CLI Reference - Application Context](docs/CLI_REFERENCE.md#application-context) for complete guide.
-
-### How to format output
-
-Generate output in multiple formats:
-
-```rust
-use clap_noun_verb::OutputFormat;
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct Result {
-    name: String,
-    value: i32
-}
-
-let output = Result {
-    name: "test".to_string(),
-    value: 42
-};
-
-// JSON (default)
-let json = OutputFormat::Json.format(&output)?;
-
-// YAML
-let yaml = OutputFormat::Yaml.format(&output)?;
-
-// Table format
-let table = OutputFormat::Table.format(&output)?;
-
-// TSV for spreadsheets
-let tsv = OutputFormat::Tsv.format(&output)?;
-```
-
-Supported formats: `json`, `yaml`, `toml`, `table`, `tsv`
-
-See [CLI Reference - Output Formats](docs/CLI_REFERENCE.md#output-formats) for more details.
-
-### How to generate shell completions
-
-Auto-generate shell completions for supported shells:
-
-```rust
-use clap_noun_verb::{generate_completion, Shell};
-use clap::Command;
-
-let mut cmd = my_cli_command();
-let completion = generate_completion(&mut cmd, Shell::Bash, "myapp");
-println!("{}", completion);
-
-// Or print directly
-print_completion(&mut cmd, Shell::Fish, "myapp")?;
-```
-
-Supported shells: `bash`, `zsh`, `fish`, `powershell`, `elvish`
-
-Installation example for bash:
 ```bash
-# Output completions
-myapp --generate-completion bash > myapp.bash
+# Basic noun-verb pattern
+cargo run --example basic -- services status
 
-# Source in .bashrc
-source myapp.bash
+# Attribute macros with auto-discovery
+cargo run --example attribute_macro -- services status
+
+# Autonomic CLI features
+cargo run --example autonomic_example -- --capabilities
+cargo run --example autonomic_example -- --introspect
+cargo run --example autonomic_example -- --graph
 ```
 
-See [CLI Reference - Shell Completions](docs/CLI_REFERENCE.md#shell-completions) for all shells.
+See the [`examples/`](examples/) directory for more examples.
 
-### How to mark commands as deprecated
+---
 
-Mark commands as deprecated with helpful migration messages:
+## Comparison with Pure Clap
 
-```rust
-use clap_noun_verb::deprecation::{Deprecation, DeprecationType};
-
-let deprecation = Deprecation::new(DeprecationType::Verb)
-    .since("3.5.0")
-    .removed_in("4.0.0")
-    .note("This verb has been replaced for clarity")
-    .suggestion("Use 'new-verb' instead");
-
-let warning = deprecation.warning_message("old-verb");
-// Output:
-// ⚠️  Verb 'old-verb' is deprecated since v3.5.0 (will be removed in v4.0.0)
-//
-//   This verb has been replaced for clarity
-//
-//   💡 Suggestion: Use 'new-verb' instead
-```
-
-## Reference
-
-### Type Inference
-
-Arguments are automatically inferred from function signatures:
-
-- `String` → Required argument `--name`
-- `Option<T>` → Optional argument `--name <value>`
-- `bool` → Flag `--name` (true if present, uses `SetTrue` action)
-- `usize` → Count action `--name` (e.g., `-vvv` → 3)
-- `Vec<T>` → Multiple values `--name <value1> <value2> ...` (uses `Append` action)
-
-See [CLI Reference - Type Inference](docs/CLI_REFERENCE.md#type-inference) for complete type mapping.
-
-### Argument Attributes
-
-Available `#[arg(...)]` attributes:
-
-- `short = 'c'` - Short flag character
-- `long = "name"` - Long flag name (defaults to parameter name)
-- `default_value = "value"` - Default value as string
-- `env = "VAR_NAME"` - Environment variable fallback
-- `index = 0` - Positional argument index
-- `action = "count"` - Custom action (count, set_true, set_false, append)
-- `multiple` - Accept multiple values
-- `value_name = "FILE"` - Custom value name in help
-- `alias = "name"` - Argument aliases
-- `group = "group_name"` - Argument group membership
-- `requires = "other_arg"` - Requires another argument
-- `conflicts_with = "other_arg"` - Conflicts with another argument
-- `hide` - Hide from help text
-- `help = "..."` - Custom help text
-- `long_help = "..."` - Long help text
-- `next_line_help` - Next line help formatting
-- `display_order = 1` - Display order in help
-- `exclusive` - Exclusive group flag
-- `trailing_vararg` - Trailing variable arguments
-- `allow_negative_numbers` - Allow negative numbers
-
-See [CLI Reference - Argument Attributes](docs/CLI_REFERENCE.md#argument-attributes) for detailed documentation and examples.
-
-### Verb Registration
-
-- **Single-noun files** (e.g., `services.rs`): Use `#[verb]` only - noun auto-inferred from filename
-- **Multi-noun files**: Use `#[verb("verb_name", "noun_name")]` with explicit noun
-- **Custom verb name**: Use `#[verb("custom_name")]` to override auto-inferred name
-
-### Available Output Formats
-
-- `OutputFormat::Json` - JSON format (default)
-- `OutputFormat::Yaml` - YAML format
-- `OutputFormat::Toml` - TOML format
-- `OutputFormat::Table` - ASCII table format
-- `OutputFormat::Tsv` - Tab-separated values format
-
-### Supported Shells for Completions
-
-- `Shell::Bash` - Bash completions
-- `Shell::Zsh` - Zsh completions
-- `Shell::Fish` - Fish shell completions
-- `Shell::PowerShell` - PowerShell completions
-- `Shell::Elvish` - Elvish completions
-
-## Explanation
-
-### Design Philosophy
-
-**clap-noun-verb** is a **framework** that enables composition rather than providing specific compositions:
-
-- **Composable by Design** - Users compose their own CLI patterns
-- **Type-Safe** - Compile-time verification of command structure
-- **Zero-Cost** - Thin wrapper over clap with no runtime overhead
-- **JSON-First** - Optimized for modern tooling and AI agents
-
-### Comparison with clap
-
-#### Direct clap (verbose):
+### Direct clap (verbose):
 
 ```rust
 use clap::{Parser, Subcommand};
@@ -464,7 +427,7 @@ fn main() {
 }
 ```
 
-#### With clap-noun-verb:
+### With clap-noun-verb:
 
 ```rust
 // services.rs
@@ -486,59 +449,29 @@ fn main() -> Result<()> {
 - ✅ Auto-discovery - Commands automatically registered
 - ✅ Better organization - Commands grouped by functionality
 - ✅ JSON output - Perfect for agents/MCP
+- ✅ Type-safe - Compile-time validation
 
-### Migration from clap
+---
 
-1. Replace builder/enum-based commands with `#[noun]` and `#[verb]` attributes
-2. Add `#[derive(Serialize)]` to output types
-3. Return `Result<T>` where `T: Serialize` for JSON output
-4. Call `clap_noun_verb::run()` in `main()`
+## Community & Contributing
 
-See [Quick Start Guide](docs/QUICKSTART.md) for step-by-step migration.
+- **Repository:** [github.com/seanchatmangpt/clap-noun-verb](https://github.com/seanchatmangpt/clap-noun-verb)
+- **Issues:** [Report bugs](https://github.com/seanchatmangpt/clap-noun-verb/issues)
+- **Discussions:** [Ask questions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
-## Examples
-
-```bash
-cargo run --example attribute_macro -- services status
-cargo run --example basic -- services status
-```
-
-See the [`examples/`](examples/) directory for more examples.
-
-## Documentation
-
-### User Guides
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
-- **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete API reference
-- **[CLI Cookbook](docs/CLI_COOKBOOK.md)** - Common recipes and patterns
-- **[Troubleshooting](docs/CLI_TROUBLESHOOTING.md)** - Common issues and solutions
-
-### Advanced Topics
-- [Examples](examples/) - Working code examples
-- [Book Documentation](docs/book/src/) - Comprehensive guide for porting CLI applications
-- [Autonomic CLI Layer](AUTONOMIC.md) - Machine-grade interface for agents and MAPE-K loops
-
-### Community
-- [Contributing](CONTRIBUTING.md) - Contribution guidelines
-- [Changelog](CHANGELOG.md) - Version history
-- [GitHub Issues](https://github.com/ruvnet/clap-noun-verb/issues) - Report bugs
-- [GitHub Discussions](https://github.com/ruvnet/clap-noun-verb/discussions) - Ask questions
-
-## Performance Metrics
-
-**From v4.0.0 validation:**
-- **Compile Time:** <2 seconds (incremental builds)
-- **Binary Size:** ~2.5MB (release mode)
-- **Command Discovery:** <1ms (compile-time registration)
-- **JSON Serialization:** <100μs per command
-- **Memory Usage:** <5MB per command execution
+---
 
 ## License
 
 MIT OR Apache-2.0
+
+---
 
 ## Acknowledgments
 
 - Inspired by Python's [Typer](https://typer.tiangolo.com/)
 - Built on [clap](https://crates.io/crates/clap)
 - Error handling with [thiserror](https://crates.io/crates/thiserror)
+- RDF/SPARQL with [Oxigraph](https://crates.io/crates/oxigraph)
