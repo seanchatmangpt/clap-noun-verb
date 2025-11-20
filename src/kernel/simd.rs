@@ -18,7 +18,8 @@
 //! - **Zero allocations** in hot path
 //! - **SIMD acceleration** on x86_64 and ARM
 
-use crate::kernel::session::{Frame, FramePayload, SessionId, StreamId};
+// Session types are now in autonomic module
+use crate::autonomic::{SessionId, SessionState};
 use std::io::Write;
 use std::mem;
 

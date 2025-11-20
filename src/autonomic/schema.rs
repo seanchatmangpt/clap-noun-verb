@@ -197,6 +197,12 @@ impl OutputSchema {
     }
 }
 
+impl Default for OutputSchema {
+    fn default() -> Self {
+        Self::new(TypeSchema::primitive(PrimitiveType::Null))
+    }
+}
+
 /// Resource that a command consumes or produces
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Resource {

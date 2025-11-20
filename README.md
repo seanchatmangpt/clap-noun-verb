@@ -17,7 +17,7 @@ A framework for building composable CLI patterns on top of clap using the **noun
 - **Application Context**: Share typed state across all commands
 - **Output Formats**: JSON, YAML, TOML, Table, and TSV support
 - **Shell Completions**: Auto-generate completions for bash, zsh, fish, powershell, and elvish
-- **Autonomic CLI Layer** (NEW in v3.8.0): Machine-grade interface with introspection, effect modeling, guards, and receipts for agents and MAPE-K loops
+- **Machine-Centric v5.0** (NEW): Autonomic CLI layer with introspection, RDF ontology, cryptographic receipts, delegation chains, and MCP SDK integration for AI agents and trillion-agent ecosystems
 
 ### The Noun-Verb Pattern
 
@@ -50,8 +50,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "4.0.2"
-clap-noun-verb-macros = "4.0.2"
+clap-noun-verb = "5.0.0"
+clap-noun-verb-macros = "5.0.0"
 ```
 
 Create your first command:

@@ -19,8 +19,8 @@
 
 mod io_detection;
 mod rdf_generation;
-mod validation;
 mod telemetry_validation;
+mod validation;
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -117,10 +117,7 @@ pub fn declare_span(input: TokenStream) -> TokenStream {
     };
 
     let name = match &args[1] {
-        syn::Expr::Lit(syn::ExprLit {
-            lit: syn::Lit::Str(s),
-            ..
-        }) => s.value(),
+        syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => s.value(),
         _ => {
             return syn::Error::new_spanned(
                 &args[1],
@@ -1099,11 +1096,8 @@ fn generate_verb_registration(
 
     // GAP 2: Generate duplicate verb detection
     let noun_name_for_check = noun_name.as_deref().unwrap_or("__auto__");
-    let duplicate_check = validation::generate_duplicate_detection(
-        &verb_name,
-        noun_name_for_check,
-        fn_name,
-    );
+    let duplicate_check =
+        validation::generate_duplicate_detection(&verb_name, noun_name_for_check, fn_name);
 
     // Generate telemetry span instrumentation
     let telemetry_instrumentation = telemetry_validation::generate_verb_instrumentation(

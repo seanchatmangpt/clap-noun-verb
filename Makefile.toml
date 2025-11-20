@@ -12,6 +12,12 @@ command = "cargo"
 args = ["fmt"]
 description = "Format code with rustfmt"
 
+[tasks.timeout-check]
+description = "Verify timeout command exists before running tasks"
+script = '''
+which timeout || (echo "ERROR: timeout command not found" && exit 1)
+'''
+
 [tasks.format-check]
 command = "cargo"
 args = ["fmt", "--", "--check"]
@@ -24,7 +30,7 @@ args = ["clippy", "--", "-D", "warnings"]
 description = "Run clippy linter"
 
 [tasks.lint]
-dependencies = ["format-check", "clippy"]
+dependencies = ["timeout-check", "format-check", "clippy"]
 description = "Run all linting checks"
 
 # Testing

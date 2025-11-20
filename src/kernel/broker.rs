@@ -20,7 +20,11 @@
 //!                └─ Session Frame Logger
 //! ```
 
-use crate::kernel::attestation::AttestationChain;
+// AttestationChain is now defined as placeholder here
+// Note: Full implementation will move to attestation module
+#[derive(Debug, Clone)]
+pub struct AttestationChain;
+
 use crate::kernel::capability::CapabilityContract;
 use crate::kernel::session_log::SessionLogFrame;
 use crate::autonomic::capability_id::CapabilityId;

@@ -12,6 +12,7 @@
 //! 6. Governance - Observability and replay
 
 use clap_noun_verb::autonomic::*;
+use clap_noun_verb::autonomic::contracts::AvailableResources;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -86,16 +87,21 @@ fn test_complete_swarm_native_execution_flow() {
         CapabilityId::from_path("user.read"),
         "Read User",
         InputSchema {
-            required: vec![(
-                "user_id".to_string(),
-                TypeSchema::primitive(PrimitiveType::String),
-            )],
-            optional: vec![],
+            required: {
+                let mut map = std::collections::HashMap::new();
+                map.insert(
+                    "user_id".to_string(),
+                    TypeSchema::primitive(PrimitiveType::String),
+                );
+                map
+            },
+            optional: std::collections::HashMap::new(),
             accepts_stdin: false,
+            stdin_schema: None,
         },
         OutputSchema {
             success: TypeSchema::primitive(PrimitiveType::String),
-            error: TypeSchema::primitive(PrimitiveType::String),
+            error: Some(TypeSchema::primitive(PrimitiveType::String)),
             outputs_stdout: true,
             named_outputs: std::collections::HashMap::new(),
         },
@@ -106,6 +112,7 @@ fn test_complete_swarm_native_execution_flow() {
             required_role: Some("user".to_string()),
             data_sensitivity: vec![DataSensitivityTag::Pii],
             isolation: IsolationRequirement::Shared,
+            supports_dry_run: false,
         }],
     );
 
@@ -121,6 +128,7 @@ fn test_complete_swarm_native_execution_flow() {
             required_role: Some("user".to_string()),
             data_sensitivity: vec![],
             isolation: IsolationRequirement::Shared,
+            supports_dry_run: false,
         }],
     );
 
@@ -185,16 +193,21 @@ fn test_complete_swarm_native_execution_flow() {
         capability_id.clone(),
         "1.0.0",
         InputSchema {
-            required: vec![(
-                "user_id".to_string(),
-                TypeSchema::primitive(PrimitiveType::String),
-            )],
-            optional: vec![],
+            required: {
+                let mut map = std::collections::HashMap::new();
+                map.insert(
+                    "user_id".to_string(),
+                    TypeSchema::primitive(PrimitiveType::String),
+                );
+                map
+            },
+            optional: std::collections::HashMap::new(),
             accepts_stdin: false,
+            stdin_schema: None,
         },
         OutputSchema {
             success: TypeSchema::primitive(PrimitiveType::String),
-            error: TypeSchema::primitive(PrimitiveType::String),
+            error: Some(TypeSchema::primitive(PrimitiveType::String)),
             outputs_stdout: true,
             named_outputs: std::collections::HashMap::new(),
         },
@@ -208,6 +221,7 @@ fn test_complete_swarm_native_execution_flow() {
         required_role: Some("user".to_string()),
         data_sensitivity: vec![DataSensitivityTag::Pii],
         isolation: IsolationRequirement::Shared,
+        supports_dry_run: false,
     }])
     .with_correlation_id("swarm-request-42")
     .build();

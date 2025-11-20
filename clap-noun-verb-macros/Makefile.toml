@@ -1,6 +1,12 @@
 [config]
 skip_core_tasks = false
 
+[tasks.timeout-check]
+description = "Verify timeout command exists before running tasks"
+script = '''
+which timeout || (echo "ERROR: timeout command not found" && exit 1)
+'''
+
 [tasks.notification]
 script = '''
 echo "Task failed - check output above"
@@ -18,6 +24,10 @@ args = ["fmt", "--", "--check"]
 [tasks.clippy]
 command = "cargo"
 args = ["clippy", "--", "-D", "warnings"]
+
+[tasks.lint]
+dependencies = ["timeout-check", "format-check", "clippy"]
+description = "Run all linting checks"
 
 [tasks.test]
 command = "cargo"

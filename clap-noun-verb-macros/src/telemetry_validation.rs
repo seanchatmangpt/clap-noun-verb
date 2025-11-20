@@ -307,9 +307,7 @@ pub fn generate_verb_instrumentation(
 
 /// Sanitize identifier for use in span const names
 fn sanitize_ident(s: &str) -> String {
-    s.chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect()
+    s.chars().map(|c| if c.is_alphanumeric() { c } else { '_' }).collect()
 }
 
 /// Build system integration
@@ -330,7 +328,8 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src/");
 }
-"#.to_string()
+"#
+    .to_string()
 }
 
 #[cfg(test)]

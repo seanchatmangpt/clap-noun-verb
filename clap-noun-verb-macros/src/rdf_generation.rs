@@ -38,12 +38,7 @@ pub struct ArgMetadata {
 ///     cnv:type xsd:boolean ;
 ///     cnv:required false .
 /// ```
-pub fn generate_rdf_for_verb(
-    name: &str,
-    noun: &str,
-    doc: &str,
-    args: &[ArgMetadata],
-) -> String {
+pub fn generate_rdf_for_verb(name: &str, noun: &str, doc: &str, args: &[ArgMetadata]) -> String {
     let mut rdf = String::new();
 
     // Command URI
@@ -61,10 +56,8 @@ pub fn generate_rdf_for_verb(
     // Argument URIs
     if !args.is_empty() {
         rdf.push_str("    cnv:hasArgument ");
-        let arg_uris: Vec<String> = args
-            .iter()
-            .map(|arg| format!("cli:arg-{}", arg.name))
-            .collect();
+        let arg_uris: Vec<String> =
+            args.iter().map(|arg| format!("cli:arg-{}", arg.name)).collect();
         rdf.push_str(&arg_uris.join(", "));
         rdf.push_str(" .\n");
     } else {
@@ -154,11 +147,7 @@ fn generate_argument_rdf(arg: &ArgMetadata) -> String {
 ///         sh:maxCount 1 ;
 ///     ] .
 /// ```
-pub fn generate_shacl_shapes_for_verb(
-    name: &str,
-    noun: &str,
-    args: &[ArgMetadata],
-) -> String {
+pub fn generate_shacl_shapes_for_verb(name: &str, noun: &str, args: &[ArgMetadata]) -> String {
     let mut shacl = String::new();
 
     let shape_name = format!(":{}-{}-shape", noun, name);
@@ -301,18 +290,16 @@ mod tests {
 
     #[test]
     fn test_generate_simple_rdf() {
-        let args = vec![
-            ArgMetadata {
-                name: "verbose".to_string(),
-                ty: "bool".to_string(),
-                required: false,
-                doc: Some("Enable verbose output".to_string()),
-                bounds: None,
-                pattern: None,
-                min_length: None,
-                max_length: None,
-            },
-        ];
+        let args = vec![ArgMetadata {
+            name: "verbose".to_string(),
+            ty: "bool".to_string(),
+            required: false,
+            doc: Some("Enable verbose output".to_string()),
+            bounds: None,
+            pattern: None,
+            min_length: None,
+            max_length: None,
+        }];
 
         let rdf = generate_rdf_for_verb("status", "services", "Show service status", &args);
 
@@ -325,18 +312,16 @@ mod tests {
 
     #[test]
     fn test_generate_rdf_with_constraints() {
-        let args = vec![
-            ArgMetadata {
-                name: "port".to_string(),
-                ty: "u16".to_string(),
-                required: true,
-                doc: Some("Server port".to_string()),
-                bounds: Some((1, 65535)),
-                pattern: None,
-                min_length: None,
-                max_length: None,
-            },
-        ];
+        let args = vec![ArgMetadata {
+            name: "port".to_string(),
+            ty: "u16".to_string(),
+            required: true,
+            doc: Some("Server port".to_string()),
+            bounds: Some((1, 65535)),
+            pattern: None,
+            min_length: None,
+            max_length: None,
+        }];
 
         let rdf = generate_rdf_for_verb("start", "server", "Start server", &args);
 
@@ -348,18 +333,16 @@ mod tests {
 
     #[test]
     fn test_generate_shacl_shapes() {
-        let args = vec![
-            ArgMetadata {
-                name: "name".to_string(),
-                ty: "String".to_string(),
-                required: true,
-                doc: Some("Resource name".to_string()),
-                bounds: None,
-                pattern: Some("^[a-z0-9-]+$".to_string()),
-                min_length: Some(3),
-                max_length: Some(50),
-            },
-        ];
+        let args = vec![ArgMetadata {
+            name: "name".to_string(),
+            ty: "String".to_string(),
+            required: true,
+            doc: Some("Resource name".to_string()),
+            bounds: None,
+            pattern: Some("^[a-z0-9-]+$".to_string()),
+            min_length: Some(3),
+            max_length: Some(50),
+        }];
 
         let shacl = generate_shacl_shapes_for_verb("create", "resource", &args);
 

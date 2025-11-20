@@ -8,8 +8,8 @@
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{spanned::Spanned, ItemFn, ReturnType, Type};
 use syn::parse::Parser;
+use syn::{spanned::Spanned, ItemFn, ReturnType, Type};
 
 /// Gap 3: Validate that return type implements serde::Serialize
 ///
@@ -46,12 +46,8 @@ pub fn validate_return_type(return_type: &ReturnType, fn_name: &syn::Ident) -> s
 fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) -> syn::Result<()> {
     match ty {
         Type::Path(type_path) => {
-            let type_name = type_path
-                .path
-                .segments
-                .last()
-                .map(|s| s.ident.to_string())
-                .unwrap_or_default();
+            let type_name =
+                type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
 
             // Special handling for Result<T, E> and Option<T>
             match type_name.as_str() {
@@ -127,10 +123,7 @@ fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) -> syn::Result
 /// - #[verb]
 /// - #[verb("name")]
 /// - #[verb("name", "noun")]
-pub fn validate_verb_attribute_syntax(
-    args: &TokenStream,
-    input_fn: &ItemFn,
-) -> syn::Result<()> {
+pub fn validate_verb_attribute_syntax(args: &TokenStream, input_fn: &ItemFn) -> syn::Result<()> {
     let fn_name = &input_fn.sig.ident;
 
     // Try parsing as comma-separated expressions
@@ -187,10 +180,7 @@ pub fn validate_verb_attribute_syntax(
     // Validate that all arguments are string literals
     for (idx, arg) in args_vec.iter().enumerate() {
         match arg {
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Str(_),
-                ..
-            }) => {
+            syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(_), .. }) => {
                 // Valid string literal
             }
             syn::Expr::Path(path) => {
@@ -297,9 +287,7 @@ pub fn generate_duplicate_detection(
 
 /// Sanitize a string to be a valid Rust identifier
 fn sanitize_ident(s: &str) -> String {
-    s.chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect()
+    s.chars().map(|c| if c.is_alphanumeric() { c } else { '_' }).collect()
 }
 
 /// Generate compile-time check that return type implements Serialize

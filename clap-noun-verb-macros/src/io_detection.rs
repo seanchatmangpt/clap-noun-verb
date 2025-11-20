@@ -3,7 +3,7 @@
 //! Provides advanced type detection for Input and Output types,
 //! enabling auto-wiring of I/O parameters in the #[verb] macro.
 
-use syn::{Type, GenericArgument, PathArguments};
+use syn::{GenericArgument, PathArguments, Type};
 
 /// Represents detected I/O types in function parameters
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -132,7 +132,9 @@ impl IoArgConfig {
                 io_type: detected.clone(),
                 value_parser: detected.value_parser().to_string(),
                 help: detected.help_text().to_string(),
-                is_positional: arg_name.starts_with("input") || arg_name == "src" || arg_name == "source",
+                is_positional: arg_name.starts_with("input")
+                    || arg_name == "src"
+                    || arg_name == "source",
             })
         } else {
             None
@@ -141,10 +143,7 @@ impl IoArgConfig {
 
     /// Generate clap configuration tokens
     pub fn clap_config(&self) -> String {
-        format!(
-            ".value_parser({})\n.help(\"{}\")",
-            self.value_parser, self.help
-        )
+        format!(".value_parser({})\n.help(\"{}\")", self.value_parser, self.help)
     }
 }
 
@@ -179,9 +178,6 @@ mod tests {
 
     #[test]
     fn test_io_value_parser() {
-        assert_eq!(
-            DetectedIoType::Input.value_parser(),
-            "clio::Input::value_parser()"
-        );
+        assert_eq!(DetectedIoType::Input.value_parser(), "clio::Input::value_parser()");
     }
 }

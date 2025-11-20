@@ -17,7 +17,8 @@
 //! - O(1) memory per session
 //! - Linear scalability to 1000+ cores
 
-use crate::kernel::session::{SessionHandle, SessionId, Frame};
+// Session types are in autonomic module, not kernel::session
+use crate::autonomic::{SessionId, SessionState};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::collections::HashMap;

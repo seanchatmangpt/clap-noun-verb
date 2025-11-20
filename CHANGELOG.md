@@ -5,6 +5,73 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2025-11-20
+
+### Added - v5 Major Release
+
+#### Machine-Centric Capability System
+- **Autonomic CLI Layer**: Machine-grade interface for AI agents and autonomous systems
+- **MCP SDK Integration**: Official support for Claude AI protocol (rmcp 0.9)
+- **RDF/Ontology Layer**: Semantic capability management with oxigraph integration
+- **Introspection API**: Machines can query available capabilities via unified interface
+- **Formal Effects Declaration**: Machine-readable side-effect specifications for verifiable operations
+- **Cryptographic Receipts**: blake3-based execution proofs for audit and verification
+- **Delegation Chains**: Agent-to-agent authorization with cryptographic proof tracking
+- **Audit Ledger**: Immutable execution tracking for compliance and governance
+
+#### Agent2028 Ecosystem Support
+- **Trillion-Agent Compatibility**: Designed for massively distributed agent systems
+- **Kernel Determinism**: Deterministic execution for formal verification and reproducibility
+- **MAPE-K Loop Integration**: Monitor-Analyze-Plan-Execute-Knowledge autonomic computing pattern
+- **Multi-Agent Coordination**: Built-in support for agent swarms and distributed decision-making
+
+#### Advanced Features
+- **Unified Telemetry Manager**: Consolidated facade for all telemetry operations
+- **Distributed Tracing**: Full support for trace_id propagation across agent boundaries
+- **Smart Dispatcher**: Automatic routing between v4 (human) and v5 (machine) execution paths
+- **Backward Compatibility**: Full v4 CLI features continue to work unchanged
+
+### Breaking Changes
+
+- **Telemetry API**: Direct telemetry access replaced with TelemetryManager facade
+  - Migration: Use `TelemetryManager::instance()` instead of direct telemetry calls
+  - See `docs/MIGRATION_V4_TO_V5.md` for step-by-step upgrade instructions
+- **Span API**: Now requires `trace_id` parameter for distributed tracing
+  - Migration: Add trace_id to all span creation calls
+  - Existing spans work but generate warnings
+- **Dispatcher Architecture**: New routing layer between v4 and v5 execution paths
+  - Migration: Automatic - no user action needed for CLI features
+  - Machine integrations should use v5 introspection API
+
+### Migration Guide
+
+See `docs/MIGRATION_V4_TO_V5.md` for comprehensive upgrade instructions including:
+- Step-by-step migration from v4 to v5
+- Telemetry API changes and code examples
+- Machine integration quickstart
+- Troubleshooting common issues
+
+### Deprecations
+
+- Direct access to autonomic layer APIs (use introspection API instead)
+- Raw telemetry calls without TelemetryManager (deprecated, will warn)
+- Legacy span creation without trace_id (deprecated, will warn in future releases)
+
+### Performance
+
+- **Compilation**: Incremental builds ≤ 2s
+- **CLI Execution**: ≤ 100ms end-to-end (unchanged from v4)
+- **Test Suite**: Unit tests ≤ 10s, Integration tests ≤ 30s
+- **Memory Usage**: ≤ 10MB per CLI execution
+- **Agent Operations**: Introspection queries ≤ 1ms
+
+### Documentation
+
+- **Migration Guide**: Complete v4 → v5 upgrade path
+- **Machine API Reference**: Full v5 machine-centric API documentation
+- **Tutorials**: Getting started with v5 for agents and human users
+- **Architecture Guide**: Understanding v5's dual-mode (human + machine) design
+
 ## [4.0.2] - 2025-11-18
 
 ### Added
