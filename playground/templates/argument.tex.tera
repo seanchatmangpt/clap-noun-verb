@@ -1,0 +1,38 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{ {{- title -}} }
+\author{ {{- author -}} }
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+{{ abstract }}
+\end{abstract}
+
+% Argument Thesis Structure: Claims, Grounds, Proofs
+% This structure focuses on building and defending scholarly arguments
+
+\section{Claims}
+{{ claims }}
+
+The central claims of this argument establish the foundation for scholarly discourse and position-taking within the academic field.
+
+\section{Grounds}
+{{ grounds }}
+
+The grounds provide evidence and justification supporting the claims, drawing from empirical data, theoretical frameworks, and established scholarship.
+
+\section{Proofs}
+{{ proofs }}
+
+The proofs offer logical validation and demonstration of the argument's validity, connecting claims to grounds through rigorous reasoning.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

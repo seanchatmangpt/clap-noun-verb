@@ -210,3 +210,106 @@ fn test_version() {
         String::from_utf8_lossy(&output.stderr));
     assert!(combined.contains("2.0.0") || combined.contains("playground"), "Should show version");
 }
+
+// ============================================================================
+// TEST-1: papers generate with multiple families
+// ============================================================================
+
+#[test]
+fn test_papers_generate_imrad() {
+    // CLI uses positional argument for family, not --family flag
+    let out = assert_success(&["papers", "generate", "IMRaD"]);
+    assert!(out.contains("IMRaD") || out.contains("generate"), "Should generate IMRaD paper");
+}
+
+#[test]
+fn test_papers_generate_argument() {
+    // CLI uses positional argument for family, not --family flag
+    let out = assert_success(&["papers", "generate", "Argument"]);
+    assert!(out.contains("Argument") || out.contains("generate"), "Should generate Argument paper");
+}
+
+// ============================================================================
+// TEST-2: thesis schedule with multiple families
+// ============================================================================
+
+#[test]
+fn test_thesis_schedule_imrad() {
+    // CLI uses positional argument for family, not --family flag
+    let out = assert_success(&["thesis", "schedule", "IMRaD"]);
+    assert!(out.contains("IMRaD") || out.contains("schedule") || out.contains("phase"), "Should schedule IMRaD thesis");
+}
+
+#[test]
+fn test_thesis_schedule_dsr() {
+    // CLI uses positional argument for family, not --family flag
+    let out = assert_success(&["thesis", "schedule", "DSR"]);
+    assert!(out.contains("DSR") || out.contains("schedule") || out.contains("phase"), "Should schedule DSR thesis");
+}
+
+// ============================================================================
+// TEST-3: config get/set verification
+// ============================================================================
+
+#[test]
+fn test_config_set_and_get() {
+    // Set a config value
+    let set_out = assert_success(&["config", "set", "output_dir", "/tmp/test_output"]);
+    assert!(set_out.contains("output_dir") || set_out.contains("set") || set_out.contains("/tmp"), "Should confirm set");
+
+    // Get the value back
+    let get_out = assert_success(&["config", "get", "output_dir"]);
+    assert!(get_out.contains("output") || get_out.contains("/tmp"), "Should get config value");
+}
+
+// ============================================================================
+// TEST-4: Error conditions
+// ============================================================================
+
+#[test]
+fn test_invalid_noun_error() {
+    let output = playground()
+        .args(&["invalid_noun", "list"])
+        .output()
+        .expect("Failed to execute");
+
+    // Invalid noun should fail
+    assert!(!output.status.success(), "Invalid noun should fail");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("error") || stderr.contains("invalid") || stderr.contains("unrecognized"),
+        "Should show error message for invalid noun");
+}
+
+#[test]
+fn test_invalid_verb_error() {
+    let output = playground()
+        .args(&["papers", "invalid_verb"])
+        .output()
+        .expect("Failed to execute");
+
+    // Invalid verb should fail
+    assert!(!output.status.success(), "Invalid verb should fail");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("error") || stderr.contains("invalid") || stderr.contains("unrecognized"),
+        "Should show error message for invalid verb");
+}
+
+// ============================================================================
+// TEST-5: --format flag on multiple commands
+// ============================================================================
+
+#[test]
+fn test_papers_list_format_json() {
+    let out = assert_success(&["papers", "list", "--format", "json"]);
+    // JSON output should contain brackets or quotes
+    assert!(out.contains("[") || out.contains("{") || out.contains("\""),
+        "Should output JSON format");
+}
+
+#[test]
+fn test_thesis_families_format_yaml() {
+    let out = assert_success(&["thesis", "families", "--format", "yaml"]);
+    // YAML output should contain colons or dashes
+    assert!(out.contains(":") || out.contains("-") || out.contains("name"),
+        "Should output YAML format");
+}

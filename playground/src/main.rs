@@ -70,13 +70,29 @@ fn get_format(args: &VerbArgs) -> OutputFormat {
 }
 
 fn main() -> Result<()> {
-    println!("{}", "⚡ Playground CLI - clap-noun-verb v5.1.0 Comprehensive Demo".bright_cyan().bold());
-    println!("{}", "Domain-Separated Architecture with ALL v5 Features\n".bright_black());
+    // TRIZ-2: Check for --quiet/-q flag before printing banner
+    let args: Vec<String> = std::env::args().collect();
+    let quiet = args.iter().any(|a| a == "-q" || a == "--quiet");
+
+    // TRIZ-1: Print banner to stderr so it doesn't pollute scripted output
+    if !quiet {
+        eprintln!("{}", "⚡ Playground CLI - clap-noun-verb v5.1.0 Comprehensive Demo".bright_cyan().bold());
+        eprintln!("{}", "Domain-Separated Architecture with ALL v5 Features\n".bright_black());
+    }
 
     let cli = CliBuilder::new()
         .name("playground")
         .version("2.0.0")
         .about("Comprehensive v5 feature showcase demonstrating clap-noun-verb from crates.io")
+        // TRIZ-2: Register global --quiet/-q flag
+        .global_args(vec![
+            clap::Arg::new("quiet")
+                .short('q')
+                .long("quiet")
+                .help("Suppress banner output")
+                .action(clap::ArgAction::SetTrue)
+                .global(true),
+        ])
 
         // ═══════════════════════════════════════════════════════════════════
         // PAPERS NOUN - Academic paper operations
@@ -87,21 +103,38 @@ fn main() -> Result<()> {
                 let family_str = args.get_one_str_opt("family").unwrap_or_else(|| "IMRaD".to_string());
                 let format = get_format(args);
 
+                // FMEA-4: Validate paper family input before generation
+                let valid_families = PaperFamily::all();
+                let valid_names: Vec<_> = valid_families.iter().map(|f| f.name().to_lowercase()).collect();
                 let family = PaperFamily::from_str(&family_str)
-                    .ok_or_else(|| to_cli_error(format!("Unknown family: {}", family_str)))?;
+                    .ok_or_else(|| to_cli_error(format!(
+                        "Invalid paper family: '{}'. Valid options: {}",
+                        family_str,
+                        valid_names.join(", ")
+                    )))?;
 
                 let paper = Paper::new(family.clone(), None, None);
 
+                // GEMBA-5: Progress indicator
+                eprintln!("{}", "Generating...".bright_yellow());
                 println!("\n{} {}", "📝 Generating paper:".bright_green(), family.name().bright_yellow());
 
                 let tera = init_template_engine().map_err(to_cli_error)?;
                 let latex = render_paper_latex(&paper, &tera).map_err(to_cli_error)?;
 
-                ensure_output_dir("output").map_err(to_cli_error)?;
-                let path = format!("output/{}-paper.tex", family.name().to_lowercase());
+                // TRIZ-3: Support custom output path via --output/-o flag
+                let path = if let Some(output_path) = args.get_one_str_opt("output") {
+                    // Use provided output path directly
+                    output_path
+                } else {
+                    // Default to output directory
+                    ensure_output_dir("output").map_err(to_cli_error)?;
+                    format!("output/{}-paper.tex", family.name().to_lowercase())
+                };
                 write_paper(&path, &latex).map_err(to_cli_error)?;
 
                 println!("{} {}", "✅ Paper generated:".bright_green(), path.bright_cyan());
+                eprintln!("{}", "Done".bright_green());
 
                 let output = PaperGeneratedOutput {
                     family: family.name().to_string(),
@@ -114,6 +147,7 @@ fn main() -> Result<()> {
             }, args: [
                 clap::Arg::new("family").help("Thesis family").default_value("IMRaD"),
                 clap::Arg::new("format").short('f').long("format").help("Output format (json, yaml, table)"),
+                clap::Arg::new("output").short('o').long("output").help("Output file path"),
             ]),
 
             verb!("list", "List available paper families", |args: &VerbArgs| {
@@ -300,6 +334,32 @@ fn main() -> Result<()> {
         // ═══════════════════════════════════════════════════════════════════
         .noun(noun!("meta", "v5 autonomic features (introspection, ontology, telemetry)", [
 
+
+            verb!("health", "Health check endpoint returning JSON status", |args: &VerbArgs| {
+                let format = get_format(args);
+                let timestamp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+
+                let health = serde_json::json!({
+                    "status": "ok",
+                    "version": env!("CARGO_PKG_VERSION"),
+                    "timestamp": timestamp
+                });
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "Health Check".bright_cyan().bold());
+                    println!("  {}: {}", "status".bright_yellow(), "ok".bright_green());
+                    println!("  {}: {}", "version".bright_yellow(), env!("CARGO_PKG_VERSION"));
+                    println!("  {}: {}", "timestamp".bright_yellow(), timestamp);
+                } else {
+                    println!("{}", format_output(&health, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
             verb!("introspect", "Machine-grade CLI introspection for AI agents", |args: &VerbArgs| {
                 let format = get_format(args);
                 let capabilities = build_playground_ontology();
@@ -497,6 +557,83 @@ fn main() -> Result<()> {
             }, args: [
                 clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
+
+            // GEMBA-2: Man page command
+            verb!("manpage", "Output basic man page format", |_args: &VerbArgs| {
+                println!(r#".TH PLAYGROUND 1 "2024" "v2.0.0" "Playground CLI Manual"
+.SH NAME
+playground \- Comprehensive v5 feature showcase for clap-noun-verb
+
+.SH SYNOPSIS
+.B playground
+.I noun
+.I verb
+[OPTIONS]
+
+.SH DESCRIPTION
+Playground CLI demonstrates the clap-noun-verb framework for building
+semantic CLIs with RDF/SPARQL integration and AI agent coordination.
+
+.SH NOUNS
+.TP
+.B papers
+Academic paper operations (generate, list, validate)
+.TP
+.B thesis
+Thesis structure operations (structure, families, schedule)
+.TP
+.B config
+Configuration management (get, set, show)
+.TP
+.B meta
+v5 autonomic features (introspect, ontology, sparql, completions, middleware, telemetry, formats, manpage)
+
+.SH EXAMPLES
+.TP
+Generate an IMRaD paper:
+.B playground papers generate IMRaD
+.TP
+List paper families:
+.B playground papers list
+.TP
+Get CLI introspection:
+.B playground meta introspect -f json
+.TP
+Generate shell completions:
+.B playground meta completions bash
+
+.SH PAPER FAMILIES
+.TP
+.B IMRaD
+Introduction, Method, Results, Discussion
+.TP
+.B Argument
+Claims, Grounds, Proofs
+.TP
+.B Contribution
+Gap, Design, Evaluation, Impact
+.TP
+.B Monograph
+Context, Canon, Method, Analysis
+.TP
+.B DSR
+Problem, Artifact, Evaluation, Theory
+.TP
+.B Narrative
+Field, Voice, Pattern, Insight
+
+.SH OUTPUT FORMATS
+json, json-pretty, yaml, table, plain
+
+.SH AUTHOR
+clap-noun-verb framework
+
+.SH SEE ALSO
+.BR clap (1),
+.BR tera (1)
+"#);
+                Ok(())
+            }, args: []),
         ]));
 
     cli.run()

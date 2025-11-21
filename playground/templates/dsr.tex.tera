@@ -3,37 +3,37 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\title{Sample DSR Paper}
-\author{Playground CLI}
+\title{ {{- title -}} }
+\author{ {{- author -}} }
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This DSR paper demonstrates the clap-noun-verb framework for building semantic CLIs.
+{{ abstract }}
 \end{abstract}
 
 % Design Science Research (DSR) Thesis Structure: Problem, Artifact, Evaluation, Theory
 % This structure follows the DSR methodology for creating and evaluating artifacts
 
 \section{Problem}
-Identification of the research gap and motivation.
+{{ problem }}
 
 Identification and motivation of the research problem, establishing relevance and defining the problem space for design science inquiry.
 
 \section{Artifact}
-Design and implementation of the solution artifact.
+{{ artifact }}
 
 Design and development of the solution artifact, including design principles, architecture, and implementation details.
 
 \section{Evaluation}
-Validation of artifact effectiveness.
+{{ evaluation }}
 
 Rigorous evaluation of the artifact's effectiveness and utility, demonstrating that it addresses the identified problem.
 
 \section{Theory}
-Contribution to the knowledge base.
+{{ theory }}
 
 Contribution to the theoretical knowledge base, generalizing findings and establishing design principles for future research.
 

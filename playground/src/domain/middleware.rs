@@ -6,25 +6,13 @@
 use serde::{Deserialize, Serialize};
 
 /// Middleware configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MiddlewareConfig {
     pub logging: LoggingConfig,
     pub auth: AuthConfig,
     pub rate_limiting: RateLimitConfig,
     pub caching: CacheConfig,
     pub profiling: ProfilingConfig,
-}
-
-impl Default for MiddlewareConfig {
-    fn default() -> Self {
-        Self {
-            logging: LoggingConfig::default(),
-            auth: AuthConfig::default(),
-            rate_limiting: RateLimitConfig::default(),
-            caching: CacheConfig::default(),
-            profiling: ProfilingConfig::default(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

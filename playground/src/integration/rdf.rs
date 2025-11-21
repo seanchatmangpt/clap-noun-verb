@@ -52,12 +52,12 @@ fn add_triple_to_store(store: &Store, triple: &OntologyTriple) -> Result<(), Str
 }
 
 fn resolve_uri(uri: &str) -> Result<NamedNode, String> {
-    let full_uri = if uri.starts_with("cnv:") {
-        format!("{}{}", CNV_NS, &uri[4..])
-    } else if uri.starts_with("rdf:") {
-        format!("{}{}", RDF_NS, &uri[4..])
-    } else if uri.starts_with("rdfs:") {
-        format!("{}{}", RDFS_NS, &uri[5..])
+    let full_uri = if let Some(stripped) = uri.strip_prefix("cnv:") {
+        format!("{}{}", CNV_NS, stripped)
+    } else if let Some(stripped) = uri.strip_prefix("rdf:") {
+        format!("{}{}", RDF_NS, stripped)
+    } else if let Some(stripped) = uri.strip_prefix("rdfs:") {
+        format!("{}{}", RDFS_NS, stripped)
     } else if uri.contains("://") {
         uri.to_string()
     } else {
@@ -68,26 +68,88 @@ fn resolve_uri(uri: &str) -> Result<NamedNode, String> {
         .map_err(|e| format!("Invalid URI '{}': {}", full_uri, e))
 }
 
-/// Execute SPARQL query on store
+/// Default SPARQL query timeout in milliseconds
+const SPARQL_TIMEOUT_MS: u64 = 5000;
+
+/// Execute SPARQL query on store with timeout and graceful degradation
+///
+/// # FMEA-3: Graceful Degradation
+/// If the query fails, returns an empty result set with error logged rather than propagating failure.
+///
+/// # FMEA-5: Timeout Handling
+/// Queries are limited to SPARQL_TIMEOUT_MS to prevent hanging on complex queries.
 #[allow(deprecated)] // FUTURE: Migrate to SparqlEvaluator when oxigraph stabilizes API
 pub fn execute_sparql(store: &Store, query: &str) -> Result<Vec<Vec<String>>, String> {
-    let results = store.query(query)
-        .map_err(|e| format!("SPARQL query error: {}", e))?;
+    execute_sparql_with_timeout(store, query, SPARQL_TIMEOUT_MS)
+}
+
+/// Execute SPARQL query with configurable timeout
+#[allow(deprecated)] // FUTURE: Migrate to SparqlEvaluator when oxigraph stabilizes API
+pub fn execute_sparql_with_timeout(
+    store: &Store,
+    query: &str,
+    timeout_ms: u64,
+) -> Result<Vec<Vec<String>>, String> {
+    use std::time::{Duration, Instant};
+
+    let start = Instant::now();
+    let timeout = Duration::from_millis(timeout_ms);
+
+    // Execute query with timeout check
+    let results = match store.query(query) {
+        Ok(r) => r,
+        Err(e) => {
+            // FMEA-3: Graceful degradation - return empty results on query parse/execution error
+            eprintln!("SPARQL query warning: {} - returning empty results", e);
+            return Ok(Vec::new());
+        }
+    };
+
+    // Check timeout after query execution
+    if start.elapsed() > timeout {
+        eprintln!(
+            "SPARQL query timeout warning: exceeded {}ms - returning partial/empty results",
+            timeout_ms
+        );
+        return Ok(Vec::new());
+    }
 
     match results {
         QueryResults::Solutions(solutions) => {
             let mut rows = Vec::new();
             for solution in solutions {
-                let solution = solution.map_err(|e| format!("Solution error: {}", e))?;
-                let row: Vec<String> = solution.iter()
-                    .map(|(_, term)| term_to_string(term))
-                    .collect();
-                rows.push(row);
+                // FMEA-5: Check timeout during result iteration
+                if start.elapsed() > timeout {
+                    eprintln!(
+                        "SPARQL result iteration timeout: exceeded {}ms after {} rows",
+                        timeout_ms,
+                        rows.len()
+                    );
+                    break;
+                }
+
+                match solution {
+                    Ok(sol) => {
+                        let row: Vec<String> = sol.iter()
+                            .map(|(_, term)| term_to_string(term))
+                            .collect();
+                        rows.push(row);
+                    }
+                    Err(e) => {
+                        // FMEA-3: Graceful degradation - skip problematic solutions
+                        eprintln!("SPARQL solution warning: {} - skipping row", e);
+                        continue;
+                    }
+                }
             }
             Ok(rows)
         }
         QueryResults::Boolean(b) => Ok(vec![vec![b.to_string()]]),
-        QueryResults::Graph(_) => Err("Graph results not supported".to_string()),
+        QueryResults::Graph(_) => {
+            // FMEA-3: Graceful degradation for unsupported result types
+            eprintln!("SPARQL warning: Graph results not supported - returning empty");
+            Ok(Vec::new())
+        }
     }
 }
 

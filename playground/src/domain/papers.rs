@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 /// Supported paper/thesis families
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)] // DSR is a well-known acronym (Design Science Research)
 pub enum PaperFamily {
     IMRaD,
     Papers,
