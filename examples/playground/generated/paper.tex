@@ -1,0 +1,33 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{cite}
+
+\title{Neural Network Optimization for Large Language Models}
+\author{Alice Smith, Bob Jones}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Abstract}
+This paper presents a novel approach to neural network optimization for large language models. We demonstrate significant improvements in training efficiency and model performance.
+
+\section{Introduction}
+Large language models have revolutionized natural language processing.
+\cite{transformer2017}
+
+\section{Method}
+Our optimization approach uses adaptive learning rates:
+\begin{equation}
+\alpha_t = \alpha_0 \cdot \frac{1}{\sqrt{t}}
+\end{equation}
+
+\section{Results}
+We achieved 15% improvement in training speed.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

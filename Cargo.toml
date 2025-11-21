@@ -188,6 +188,30 @@ path = "examples/semantic_submissions.rs"
 name = "template_generator"
 path = "examples/template_generator.rs"
 
+[[example]]
+name = "rdf_interactive_playground"
+path = "examples/playground/rdf_interactive_playground.rs"
+
+[[example]]
+name = "rdf_oxigraph_sparql"
+path = "examples/playground/rdf_oxigraph_sparql.rs"
+
+[[example]]
+name = "rdf_mcp_lean"
+path = "examples/playground/rdf_mcp_lean.rs"
+
+[[example]]
+name = "rdf_mcp_core"
+path = "examples/playground/rdf_mcp_core.rs"
+
+[[example]]
+name = "thesis_rdf_mcp_80_20"
+path = "examples/playground/thesis_rdf_mcp_80_20.rs"
+
+[[example]]
+name = "arxiv_paper_generator"
+path = "examples/playground/arxiv_paper_generator.rs"
+
 [package.metadata.docs.rs]
 # docs.rs build configuration
 # All features are enabled by default for documentation
