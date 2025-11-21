@@ -18,13 +18,14 @@
 
 ```toml
 [dependencies]
-clap = { version = "4.5", features = ["derive"] }
+clap-noun-verb = "5.1.0"  # Published on crates.io
+clap = "4.5"
 colored = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ```
 
-**NOTE**: This CLI is completely independent - uses only published crates from crates.io.
+**NOTE**: This CLI uses the published clap-noun-verb v5.1.0 from crates.io - completely standalone with no local dependencies.
 
 ---
 
@@ -298,7 +299,7 @@ The Playground CLI integrates with the **Hyper-Thesis Framework** to provide sem
 
 ```bash
 cargo run -- papers generate IMRaD
-# Output: playground/output/imrad-paper.tex
+# Output: output/imrad-paper.tex
 ```
 
 ### Use Case 2: Explore Thesis Families
@@ -333,23 +334,34 @@ cargo run -- papers validate thesis.tex
 playground/
 ├── Cargo.toml              # Standalone dependencies (crates.io only)
 ├── src/
-│   └── main.rs             # CLI implementation (395 lines)
+│   └── main.rs             # CLI implementation (224 lines)
 ├── output/                 # Generated papers
-│   └── imrad-paper.tex
+│   ├── imrad-paper.tex
+│   ├── papers-paper.tex
+│   └── dsr-paper.tex
 └── README.md               # This file
 ```
 
 ### Adding New Commands
 
 ```rust
-// In create_cli_app()
-app.register_noun("mycommand", "My command description")?
-    .register_verb("action", "Action description", my_action_handler)?;
+use clap_noun_verb::{noun, verb, CliBuilder, VerbArgs, Result};
 
-fn my_action_handler(args: CommandArgs) -> Result<CommandOutput> {
-    // Your implementation
-    Ok(CommandOutput::success("Success!"))
-}
+let cli = CliBuilder::new()
+    .name("myapp")
+    .noun(noun!("mycommand", "My command description", [
+        verb!("action", "Action description", |args: &VerbArgs| {
+            let value = args.get_one_str("arg")?;
+            println!("Received: {}", value);
+            Ok(())
+        }, args: [
+            clap::Arg::new("arg")
+                .help("Required argument")
+                .required(true),
+        ]),
+    ]));
+
+cli.run()
 ```
 
 ### Integration with Thesis Ontology
