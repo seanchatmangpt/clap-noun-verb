@@ -1,3 +1,7 @@
+[workspace]
+# Exclude standalone playground CLI (uses published crates.io version)
+exclude = ["playground"]
+
 [package]
 name = "clap-noun-verb"
 version = "5.1.0"

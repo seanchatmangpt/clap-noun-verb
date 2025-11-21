@@ -1,0 +1,46 @@
+@startuml Playground CLI - C4 Component Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Playground CLI - C4 Component Diagram (Papers Command Detail)
+
+Container(cli_app, "CLI Application", "Main binary")
+
+Container_Boundary(papers_cmd, "Papers Commands Module") {
+    Component(cmd_parser, "Command Parser", "clap-noun-verb", "Noun-verb routing\nArgument validation\nResult types")
+
+    Component(generate, "Generate Handler", "Rust fn", "generate_paper()\nIMRaD/Papers/Argument\nSection composition")
+
+    Component(list, "List Handler", "Rust fn", "list_papers()\nQuery stored papers\nFormat output")
+
+    Component(validate, "Validate Handler", "Rust fn", "validate_paper()\nCheck structure\nVerify citations")
+}
+
+Container_Boundary(core_services, "Core Services") {
+    Component(ontology_query, "Ontology Query", "SPARQL", "Query thesis families\nΛ-schedule extraction\nΠ-profile mapping")
+
+    Component(paper_builder, "Paper Builder", "Domain Model", "Paper struct\nSection assembly\nContent validation")
+
+    Component(latex_renderer, "LaTeX Renderer", "Handlebars", "Template selection\nEquation formatting\nBibTeX generation")
+
+    Component(file_writer, "File Writer", "std::fs", "Write .tex files\nWrite .bib files\nCreate directories")
+}
+
+ContainerDb(rdf_store, "RDF Store", "Oxigraph")
+ContainerDb(config_store, "Config", "TOML")
+
+Rel(cli_app, cmd_parser, "Invokes", "papers <verb>")
+
+Rel(cmd_parser, generate, "Routes to", "papers generate")
+Rel(cmd_parser, list, "Routes to", "papers list")
+Rel(cmd_parser, validate, "Routes to", "papers validate")
+
+Rel(generate, ontology_query, "Queries", "Get structure")
+Rel(generate, paper_builder, "Uses", "Build paper")
+Rel(paper_builder, latex_renderer, "Renders", "To LaTeX")
+Rel(latex_renderer, file_writer, "Writes", "Output files")
+
+Rel(ontology_query, rdf_store, "SPARQL queries")
+Rel(generate, config_store, "Reads", "User preferences")
+
+SHOW_LEGEND()
+@enduml

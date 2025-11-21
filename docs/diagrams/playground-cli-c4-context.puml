@@ -1,0 +1,23 @@
+@startuml Playground CLI - C4 Context Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Playground CLI - C4 Context Diagram (System Context)
+
+Person(researcher, "Academic Researcher", "PhD student or professor writing papers")
+Person(developer, "CLI Developer", "Developer learning clap-noun-verb")
+
+System(playground_cli, "Playground CLI", "Standalone CLI demonstrating clap-noun-verb from crates.io\n\nGenerate papers, manage thesis, configure settings")
+
+System_Ext(crates_io, "crates.io", "Published clap-noun-verb crate v5.1.0")
+System_Ext(thesis_ontology, "Thesis Ontology", "RDF/Turtle files defining thesis structures (HTF)")
+System_Ext(filesystem, "File System", "LaTeX output, BibTeX, generated papers")
+
+Rel(researcher, playground_cli, "Uses", "CLI commands")
+Rel(developer, playground_cli, "Studies", "Example usage")
+
+Rel(playground_cli, crates_io, "Depends on", "clap-noun-verb = 5.1.0")
+Rel(playground_cli, thesis_ontology, "Queries", "SPARQL")
+Rel(playground_cli, filesystem, "Writes", "Generated files")
+
+SHOW_LEGEND()
+@enduml

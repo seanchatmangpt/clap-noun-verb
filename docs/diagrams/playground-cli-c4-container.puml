@@ -1,0 +1,42 @@
+@startuml Playground CLI - C4 Container Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Playground CLI - C4 Container Diagram (Container View)
+
+Person(user, "User", "Researcher or developer")
+
+System_Boundary(playground_cli, "Playground CLI") {
+    Container(cli_app, "CLI Application", "Rust Binary", "Main entry point\nCommand routing\nArgument parsing")
+
+    Container(papers_cmd, "Papers Commands", "Rust Module", "papers generate\npapers list\npapers validate")
+
+    Container(thesis_cmd, "Thesis Commands", "Rust Module", "thesis structure\nthesis families\nthesis schedule")
+
+    Container(config_cmd, "Config Commands", "Rust Module", "config get\nconfig set\nconfig show")
+
+    ContainerDb(ontology_store, "Ontology Store", "Oxigraph RDF", "In-memory SPARQL database\nThesis ontology triples")
+
+    Container(latex_gen, "LaTeX Generator", "Handlebars", "Template rendering\nEquation formatting\nBibTeX generation")
+}
+
+System_Ext(crates_io, "crates.io", "clap-noun-verb = 5.1.0\noxigraph = 0.5.1\nhandlebars = 5.1")
+System_Ext(thesis_ttl, "thesis-ontology.ttl", "357 lines RDF/Turtle\n7 thesis families")
+System_Ext(output_files, "Output Files", "paper.tex\nreferences.bib\nconfig.toml")
+
+Rel(user, cli_app, "Executes", "cargo run -- <command>")
+
+Rel(cli_app, papers_cmd, "Routes", "papers *")
+Rel(cli_app, thesis_cmd, "Routes", "thesis *")
+Rel(cli_app, config_cmd, "Routes", "config *")
+
+Rel(papers_cmd, ontology_store, "Queries", "SPARQL")
+Rel(papers_cmd, latex_gen, "Uses", "Render LaTeX")
+Rel(thesis_cmd, ontology_store, "Queries", "Λ/Π/Γ")
+
+Rel(ontology_store, thesis_ttl, "Loads", "RDF triples")
+Rel(latex_gen, output_files, "Writes", "Generated files")
+
+Rel(cli_app, crates_io, "Depends on", "External crates")
+
+SHOW_LEGEND()
+@enduml
