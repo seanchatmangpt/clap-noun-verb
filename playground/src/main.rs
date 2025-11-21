@@ -1,4 +1,4 @@
-//! Playground CLI - Domain-Separated Exemplar of clap-noun-verb v5.1.0
+//! Playground CLI - Comprehensive v5 Feature Showcase
 //!
 //! Architecture follows the golden rule: "CLI validates, domain computes, integration connects"
 //!
@@ -8,7 +8,7 @@
 //! └──────┬──────┘
 //!        │
 //! ┌──────▼──────────┐
-//! │ Integration     │  ← Glue code (Tera, file I/O)
+//! │ Integration     │  ← Glue code (Tera, Oxigraph, file I/O)
 //! └──────┬──────────┘
 //!        │
 //! ┌──────▼──────────┐
@@ -16,16 +16,14 @@
 //! └─────────────────┘
 //! ```
 //!
-//! Commands:
-//! - papers generate [family] - Generate academic paper with tera templates
-//! - papers list              - List available paper families
-//! - papers validate <file>   - Validate paper structure
-//! - thesis structure         - Show HTF thesis structure (Explanation)
-//! - thesis families          - List all thesis families (Reference)
-//! - thesis schedule [family] - Show Λ-schedule for family (How-To)
-//! - config get <key>         - Get configuration value
-//! - config set <key> <value> - Set configuration value
-//! - config show              - Show all configuration
+//! ## v5 Features Demonstrated
+//!
+//! - **Autonomic CLI**: Machine-grade introspection (`meta introspect`)
+//! - **RDF/Ontology**: SPARQL queries and Turtle export (`meta ontology`, `meta sparql`)
+//! - **Output Formats**: JSON, YAML, Table output modes (`--format`)
+//! - **Shell Completions**: Bash, Zsh, Fish, PowerShell (`meta completions`)
+//! - **Middleware**: Logging, profiling, rate-limiting (`meta middleware`)
+//! - **Telemetry**: Execution receipts and metrics (`meta telemetry`)
 
 mod domain;
 mod integration;
@@ -35,12 +33,22 @@ use colored::Colorize;
 use serde::Serialize;
 
 // Domain imports - pure business logic
-use domain::{Paper, PaperFamily, ThesisStructure, ThesisFamily, ThesisSchedule, Config};
+use domain::{
+    Paper, PaperFamily, ThesisStructure, ThesisFamily, ThesisSchedule, Config,
+    // v5 features
+    build_playground_ontology, IntrospectionResponse, OutputFormat, format_output,
+    ShellType, generate_completion_script, MiddlewareConfig, MiddlewareStats,
+    ExecutionSpan, SpanStatus, ExecutionReceipt, SparqlQueryType,
+};
 
 // Integration imports - glue code with side effects
-use integration::{init_template_engine, render_paper_latex, write_paper, ensure_output_dir};
+use integration::{
+    init_template_engine, render_paper_latex, write_paper, ensure_output_dir,
+    // v5 features
+    init_ontology_store, execute_sparql, export_turtle,
+};
 
-/// JSON output for paper generation (CLI presentation concern)
+/// JSON output for paper generation
 #[derive(Serialize)]
 struct PaperGeneratedOutput {
     family: String,
@@ -54,47 +62,45 @@ fn to_cli_error(msg: String) -> NounVerbError {
     NounVerbError::execution_error(msg)
 }
 
+/// Get output format from args (default: json-pretty)
+fn get_format(args: &VerbArgs) -> OutputFormat {
+    args.get_one_str_opt("format")
+        .and_then(|f| OutputFormat::from_str(&f))
+        .unwrap_or(OutputFormat::JsonPretty)
+}
+
 fn main() -> Result<()> {
-    println!("{}", "⚡ Playground CLI - clap-noun-verb v5.1.0 Demo".bright_cyan().bold());
-    println!("{}", "Domain-Separated Exemplar Architecture\n".bright_black());
+    println!("{}", "⚡ Playground CLI - clap-noun-verb v5.1.0 Comprehensive Demo".bright_cyan().bold());
+    println!("{}", "Domain-Separated Architecture with ALL v5 Features\n".bright_black());
 
     let cli = CliBuilder::new()
         .name("playground")
-        .version("1.0.0")
-        .about("Domain-separated CLI demonstrating clap-noun-verb from crates.io")
+        .version("2.0.0")
+        .about("Comprehensive v5 feature showcase demonstrating clap-noun-verb from crates.io")
 
         // ═══════════════════════════════════════════════════════════════════
         // PAPERS NOUN - Academic paper operations
         // ═══════════════════════════════════════════════════════════════════
         .noun(noun!("papers", "Academic paper operations", [
 
-            // papers generate [family] - Generate paper with Tera
             verb!("generate", "Generate academic paper with Tera templates", |args: &VerbArgs| {
-                // 1. CLI: Parse and validate input
-                let family_str = args.get_one_str_opt("family")
-                    .unwrap_or_else(|| "IMRaD".to_string());
+                let family_str = args.get_one_str_opt("family").unwrap_or_else(|| "IMRaD".to_string());
+                let format = get_format(args);
 
-                // 2. Domain: Parse family (pure validation)
                 let family = PaperFamily::from_str(&family_str)
                     .ok_or_else(|| to_cli_error(format!("Unknown family: {}", family_str)))?;
 
-                // 3. Domain: Create paper structure (pure computation)
                 let paper = Paper::new(family.clone(), None, None);
 
                 println!("\n{} {}", "📝 Generating paper:".bright_green(), family.name().bright_yellow());
 
-                // 4. Integration: Initialize template engine (side effect)
                 let tera = init_template_engine().map_err(to_cli_error)?;
-
-                // 5. Integration: Render paper to LaTeX (side effect)
                 let latex = render_paper_latex(&paper, &tera).map_err(to_cli_error)?;
 
-                // 6. Integration: Write to file system (side effect)
                 ensure_output_dir("output").map_err(to_cli_error)?;
                 let path = format!("output/{}-paper.tex", family.name().to_lowercase());
                 write_paper(&path, &latex).map_err(to_cli_error)?;
 
-                // 7. CLI: Format output for display
                 println!("{} {}", "✅ Paper generated:".bright_green(), path.bright_cyan());
 
                 let output = PaperGeneratedOutput {
@@ -103,57 +109,54 @@ fn main() -> Result<()> {
                     template_engine: "Tera 1.20".to_string(),
                     sections: paper.sections.len(),
                 };
-                println!("\n{}", serde_json::to_string_pretty(&output)
-                    .map_err(|e| to_cli_error(e.to_string()))?);
+                println!("\n{}", format_output(&output, format).map_err(to_cli_error)?);
                 Ok(())
             }, args: [
-                clap::Arg::new("family")
-                    .help("Thesis family (IMRaD, Papers, DSR, etc.)")
-                    .default_value("IMRaD"),
+                clap::Arg::new("family").help("Thesis family").default_value("IMRaD"),
+                clap::Arg::new("format").short('f').long("format").help("Output format (json, yaml, table)"),
             ]),
 
-            // papers list - List available families
-            verb!("list", "List available paper families", |_args: &VerbArgs| {
-                println!("\n{}", "📚 Available Paper Families".bright_cyan().bold());
+            verb!("list", "List available paper families", |args: &VerbArgs| {
+                let format = get_format(args);
+                let families: Vec<_> = PaperFamily::all().iter()
+                    .map(|f| serde_json::json!({"name": f.name(), "description": f.description()}))
+                    .collect();
 
-                // Domain: Get all families (pure)
-                let families = PaperFamily::all();
-
-                // CLI: Format for display
-                for family in families {
-                    println!("  {} {}",
-                        family.name().bright_yellow().bold(),
-                        format!("- {}", family.description()).bright_black()
-                    );
-                }
-                Ok(())
-            }),
-
-            // papers validate <file> - Validate paper structure
-            verb!("validate", "Validate paper structure", |args: &VerbArgs| {
-                // CLI: Get file argument
-                let file = args.get_one_str("file")?;
-
-                println!("\n{} {}", "🔍 Validating paper:".bright_green(), file.bright_yellow());
-
-                // Domain: Validate path (pure)
-                let result = domain::papers::ValidationResult::validate_path(&file);
-
-                // CLI: Display results
-                if result.is_valid {
-                    println!("  {}", "✅ Structure valid".bright_green());
-                    println!("  {}", "✅ Citations valid".bright_green());
-                    println!("  {}", "✅ Formatting valid".bright_green());
-                } else {
-                    for error in &result.errors {
-                        println!("  {} {}", "❌".bright_red(), error);
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "📚 Available Paper Families".bright_cyan().bold());
+                    for family in PaperFamily::all() {
+                        println!("  {} {}", family.name().bright_yellow().bold(), format!("- {}", family.description()).bright_black());
                     }
+                } else {
+                    println!("{}", format_output(&families, format).map_err(to_cli_error)?);
                 }
                 Ok(())
             }, args: [
-                clap::Arg::new("file")
-                    .help("Paper file to validate")
-                    .required(true),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("validate", "Validate paper structure", |args: &VerbArgs| {
+                let file = args.get_one_str("file")?;
+                let format = get_format(args);
+
+                let result = domain::papers::ValidationResult::validate_path(&file);
+
+                if format == OutputFormat::Plain {
+                    println!("\n{} {}", "🔍 Validating paper:".bright_green(), file.bright_yellow());
+                    if result.is_valid {
+                        println!("  {}", "✅ All checks passed".bright_green());
+                    } else {
+                        for error in &result.errors {
+                            println!("  {} {}", "❌".bright_red(), error);
+                        }
+                    }
+                } else {
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("file").help("Paper file to validate").required(true),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
         ]))
 
@@ -162,66 +165,66 @@ fn main() -> Result<()> {
         // ═══════════════════════════════════════════════════════════════════
         .noun(noun!("thesis", "Thesis structure operations", [
 
-            // thesis structure - Show HTF structure (Explanation quadrant)
-            verb!("structure", "Show thesis structure (HTF framework)", |_args: &VerbArgs| {
-                println!("\n{}", "🏗️  Thesis Structure (HTF - Hyper-Thesis Framework)".bright_cyan().bold());
-
-                // Domain: Get structure (pure)
+            verb!("structure", "Show thesis structure (HTF framework)", |args: &VerbArgs| {
+                let format = get_format(args);
                 let structure = ThesisStructure::get();
 
-                // CLI: Format for display
-                for component in &structure.components {
-                    println!("\n{}", component.name.bright_yellow());
-                    for detail in &component.details {
-                        println!("  - {}", detail);
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "🏗️  Thesis Structure (HTF)".bright_cyan().bold());
+                    for component in &structure.components {
+                        println!("\n{}", component.name.bright_yellow());
+                        for detail in &component.details {
+                            println!("  - {}", detail);
+                        }
                     }
+                } else {
+                    println!("{}", format_output(&structure, format).map_err(to_cli_error)?);
                 }
                 Ok(())
-            }),
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
 
-            // thesis families - List all families (Reference quadrant)
-            verb!("families", "List all thesis families", |_args: &VerbArgs| {
-                println!("\n{}", "👥 Thesis Families (7 Total)".bright_cyan().bold());
-
-                // Domain: Get all families (pure)
+            verb!("families", "List all thesis families", |args: &VerbArgs| {
+                let format = get_format(args);
                 let families = ThesisFamily::all();
 
-                // CLI: Format for display
-                for family in &families {
-                    println!("\n  {}", format!("{}. {}", family.number, family.name).bright_yellow().bold());
-                    println!("    {}: {}", "Structure".bright_black(), family.structure);
-                    println!("    {}: {}", "Context".bright_black(), family.context);
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "👥 Thesis Families (7 Total)".bright_cyan().bold());
+                    for family in &families {
+                        println!("\n  {}", format!("{}. {}", family.number, family.name).bright_yellow().bold());
+                        println!("    {}: {}", "Structure".bright_black(), family.structure);
+                        println!("    {}: {}", "Context".bright_black(), family.context);
+                    }
+                } else {
+                    println!("{}", format_output(&families, format).map_err(to_cli_error)?);
                 }
                 Ok(())
-            }),
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
 
-            // thesis schedule [family] - Show Λ-schedule (How-To quadrant)
             verb!("schedule", "Show Λ-schedule for family", |args: &VerbArgs| {
-                // CLI: Parse argument
-                let family_str = args.get_one_str_opt("family")
-                    .unwrap_or_else(|| "IMRaD".to_string());
+                let family_str = args.get_one_str_opt("family").unwrap_or_else(|| "IMRaD".to_string());
+                let format = get_format(args);
 
-                // Domain: Parse and compute schedule (pure)
                 let family = PaperFamily::from_str(&family_str)
                     .ok_or_else(|| to_cli_error(format!("Unknown family: {}", family_str)))?;
                 let schedule = ThesisSchedule::for_family(&family);
 
-                // CLI: Format for display
-                println!("\n{} {}", "📅 Λ-Schedule for".bright_cyan().bold(), schedule.family.bright_yellow().bold());
-                println!("\n  {}", "Optimal Writing Order:".bright_green());
-
-                for step in &schedule.steps {
-                    println!("    {} {} - {}",
-                        format!("{}", step.order).bright_yellow(),
-                        step.chapter.bright_white(),
-                        step.description.bright_black()
-                    );
+                if format == OutputFormat::Plain {
+                    println!("\n{} {}", "📅 Λ-Schedule for".bright_cyan().bold(), schedule.family.bright_yellow().bold());
+                    println!("\n  {}", "Optimal Writing Order:".bright_green());
+                    for step in &schedule.steps {
+                        println!("    {} {} - {}", format!("{}", step.order).bright_yellow(), step.chapter.bright_white(), step.description.bright_black());
+                    }
+                } else {
+                    println!("{}", format_output(&schedule, format).map_err(to_cli_error)?);
                 }
                 Ok(())
             }, args: [
-                clap::Arg::new("family")
-                    .help("Thesis family")
-                    .default_value("IMRaD"),
+                clap::Arg::new("family").help("Thesis family").default_value("IMRaD"),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
         ]))
 
@@ -230,71 +233,270 @@ fn main() -> Result<()> {
         // ═══════════════════════════════════════════════════════════════════
         .noun(noun!("config", "Configuration management", [
 
-            // config get <key> - Get configuration value
             verb!("get", "Get configuration value", |args: &VerbArgs| {
-                // CLI: Get key argument
                 let key = args.get_one_str("key")?;
-
-                // Domain: Get config value (pure)
+                let format = get_format(args);
                 let config = Config::default();
-                let value = config.get(&key);
 
-                // CLI: Display result
-                println!("\n{} {}", "🔑 Getting config:".bright_green(), key.bright_yellow());
-                match value {
-                    Some(v) => println!("  {} {}", "Value:".bright_black(), v.bright_cyan()),
-                    None => println!("  {} {}", "Value:".bright_black(), "not set".bright_red()),
+                let result = serde_json::json!({
+                    "key": key,
+                    "value": config.get(&key),
+                    "valid_key": Config::is_valid_key(&key)
+                });
+
+                if format == OutputFormat::Plain {
+                    println!("\n{} {}", "🔑 Config:".bright_green(), key.bright_yellow());
+                    match config.get(&key) {
+                        Some(v) => println!("  {} {}", "Value:".bright_black(), v.bright_cyan()),
+                        None => println!("  {} {}", "Value:".bright_black(), "not set".bright_red()),
+                    }
+                } else {
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
                 }
                 Ok(())
             }, args: [
-                clap::Arg::new("key")
-                    .help("Configuration key")
-                    .required(true),
+                clap::Arg::new("key").help("Configuration key").required(true),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
 
-            // config set <key> <value> - Set configuration value
             verb!("set", "Set configuration value", |args: &VerbArgs| {
-                // CLI: Get arguments
                 let key = args.get_one_str("key")?;
                 let value = args.get_one_str("value")?;
 
-                // Domain: Validate key (pure)
                 if !Config::is_valid_key(&key) {
                     println!("\n{} Unknown key: {}", "⚠️".bright_yellow(), key);
                     println!("  Valid keys: output_dir, default_family, latex_engine, ontology_path");
                 }
 
-                // CLI: Display confirmation
-                println!("\n{} {} = {}",
-                    "⚙️  Setting config:".bright_green(),
-                    key.bright_yellow(),
-                    value.bright_cyan()
-                );
+                println!("\n{} {} = {}", "⚙️  Setting:".bright_green(), key.bright_yellow(), value.bright_cyan());
                 println!("  {}", "✅ Configuration saved".bright_green());
                 Ok(())
             }, args: [
-                clap::Arg::new("key")
-                    .help("Configuration key")
-                    .required(true),
-                clap::Arg::new("value")
-                    .help("Configuration value")
-                    .required(true),
+                clap::Arg::new("key").help("Configuration key").required(true),
+                clap::Arg::new("value").help("Configuration value").required(true),
             ]),
 
-            // config show - Show all configuration
-            verb!("show", "Show all configuration", |_args: &VerbArgs| {
-                println!("\n{}", "⚙️  Configuration".bright_cyan().bold());
-
-                // Domain: Get all config entries (pure)
+            verb!("show", "Show all configuration", |args: &VerbArgs| {
+                let format = get_format(args);
                 let config = Config::default();
-                let entries = config.all_entries();
+                let entries: std::collections::HashMap<_, _> = config.all_entries().into_iter().collect();
 
-                // CLI: Format for display
-                for (key, value) in entries {
-                    println!("  {} = {}", key.bright_yellow(), value.bright_cyan());
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "⚙️  Configuration".bright_cyan().bold());
+                    for (key, value) in config.all_entries() {
+                        println!("  {} = {}", key.bright_yellow(), value.bright_cyan());
+                    }
+                } else {
+                    println!("{}", format_output(&entries, format).map_err(to_cli_error)?);
                 }
                 Ok(())
-            }),
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+        ]))
+
+        // ═══════════════════════════════════════════════════════════════════
+        // META NOUN - v5 Features: Introspection, Ontology, Completions
+        // ═══════════════════════════════════════════════════════════════════
+        .noun(noun!("meta", "v5 autonomic features (introspection, ontology, telemetry)", [
+
+            verb!("introspect", "Machine-grade CLI introspection for AI agents", |args: &VerbArgs| {
+                let format = get_format(args);
+                let capabilities = build_playground_ontology();
+                let response = IntrospectionResponse::from_capabilities(
+                    "playground", "2.0.0", "Comprehensive v5 feature showcase", &capabilities
+                );
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "🤖 CLI Introspection (Autonomic Interface)".bright_cyan().bold());
+                    println!("\n  {}: {}", "CLI".bright_yellow(), response.cli_name);
+                    println!("  {}: {}", "Version".bright_yellow(), response.version);
+                    println!("  {}: {}", "Capabilities".bright_yellow(), response.total_capabilities);
+                    println!("\n  {}:", "Nouns".bright_green());
+                    for noun in &response.nouns {
+                        println!("    {} ({} verbs)", noun.name.bright_yellow(), noun.verbs.len());
+                    }
+                    println!("\n  {}:", "Autonomic Features".bright_green());
+                    for feature in &response.autonomic_features {
+                        println!("    - {}", feature);
+                    }
+                } else {
+                    println!("{}", format_output(&response, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("ontology", "Export CLI as RDF/Turtle ontology", |args: &VerbArgs| {
+                let format = get_format(args);
+                let capabilities = build_playground_ontology();
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "📊 CLI Ontology (RDF/Turtle)".bright_cyan().bold());
+                    let turtle = export_turtle(&capabilities);
+                    println!("{}", turtle);
+                } else {
+                    let turtle = export_turtle(&capabilities);
+                    let result = serde_json::json!({
+                        "format": "text/turtle",
+                        "triples": capabilities.len() * 5,
+                        "content": turtle
+                    });
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("sparql", "Execute SPARQL query on CLI ontology", |args: &VerbArgs| {
+                let query_type = args.get_one_str_opt("query").unwrap_or_else(|| "capabilities".to_string());
+                let format = get_format(args);
+
+                let capabilities = build_playground_ontology();
+                let store = init_ontology_store(&capabilities).map_err(to_cli_error)?;
+
+                let sparql = match query_type.as_str() {
+                    "capabilities" => SparqlQueryType::SelectCapabilities.to_sparql(),
+                    "papers" => SparqlQueryType::SelectByNoun("papers".to_string()).to_sparql(),
+                    "mutating" => SparqlQueryType::SelectByEffect(domain::EffectType::Mutating).to_sparql(),
+                    custom => custom.to_string(),
+                };
+
+                let results = execute_sparql(&store, &sparql).map_err(to_cli_error)?;
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "🔍 SPARQL Query Results".bright_cyan().bold());
+                    println!("  {}: {}", "Query".bright_yellow(), query_type);
+                    println!("  {}: {} rows\n", "Results".bright_yellow(), results.len());
+                    for row in &results {
+                        println!("  {}", row.join(" | ").bright_white());
+                    }
+                } else {
+                    let result = serde_json::json!({
+                        "query": query_type,
+                        "rows": results.len(),
+                        "results": results
+                    });
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("query").help("Query type or custom SPARQL").default_value("capabilities"),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("completions", "Generate shell completion scripts", |args: &VerbArgs| {
+                let shell_str = args.get_one_str("shell")?;
+                let format = get_format(args);
+
+                let shell = ShellType::from_str(&shell_str)
+                    .ok_or_else(|| to_cli_error(format!("Unknown shell: {}. Use: bash, zsh, fish, powershell, elvish", shell_str)))?;
+
+                let capabilities = build_playground_ontology();
+                let script = generate_completion_script("playground", &capabilities, shell);
+
+                if format == OutputFormat::Plain {
+                    println!("{}", script.script);
+                } else {
+                    let result = serde_json::json!({
+                        "shell": shell.name(),
+                        "cli": script.cli_name,
+                        "script": script.script
+                    });
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("shell").help("Shell type (bash, zsh, fish, powershell, elvish)").required(true),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("middleware", "Show middleware configuration and stats", |args: &VerbArgs| {
+                let format = get_format(args);
+                let config = MiddlewareConfig::default();
+                let stats = MiddlewareStats::default();
+
+                let result = serde_json::json!({
+                    "config": config,
+                    "stats": stats
+                });
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "🔧 Middleware Configuration".bright_cyan().bold());
+                    println!("\n  {}:", "Logging".bright_yellow());
+                    println!("    enabled: {}", config.logging.enabled);
+                    println!("    verbose: {}", config.logging.verbose);
+                    println!("\n  {}:", "Rate Limiting".bright_yellow());
+                    println!("    enabled: {}", config.rate_limiting.enabled);
+                    println!("    max_requests: {}/{}s", config.rate_limiting.max_requests, config.rate_limiting.window_seconds);
+                    println!("\n  {}:", "Caching".bright_yellow());
+                    println!("    enabled: {}", config.caching.enabled);
+                    println!("    ttl: {}s", config.caching.ttl_seconds);
+                } else {
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("telemetry", "Show telemetry data and execution receipts", |args: &VerbArgs| {
+                let format = get_format(args);
+
+                // Create sample execution span and receipt
+                let span = ExecutionSpan::new("meta.telemetry")
+                    .with_attribute("format", format.name())
+                    .complete(SpanStatus::Ok);
+
+                let receipt = ExecutionReceipt::new("meta telemetry", &[], span.duration_ms.unwrap_or(0), true)
+                    .with_agent("playground-cli");
+
+                let result = serde_json::json!({
+                    "span": span,
+                    "receipt": receipt,
+                    "trace_id": span.trace_id
+                });
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "📊 Telemetry & Observability".bright_cyan().bold());
+                    println!("\n  {}:", "Execution Span".bright_yellow());
+                    println!("    trace_id: {}", span.trace_id);
+                    println!("    operation: {}", span.operation);
+                    println!("    status: {:?}", span.status);
+                    println!("    duration: {}ms", span.duration_ms.unwrap_or(0));
+                    println!("\n  {}:", "Execution Receipt".bright_yellow());
+                    println!("    receipt_id: {}", receipt.receipt_id);
+                    println!("    command: {}", receipt.command);
+                    println!("    agent: {:?}", receipt.agent_id);
+                } else {
+                    println!("{}", format_output(&result, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("formats", "List available output formats", |args: &VerbArgs| {
+                let format = get_format(args);
+                let formats: Vec<_> = OutputFormat::all().iter()
+                    .map(|f| serde_json::json!({"name": f.name(), "description": f.description()}))
+                    .collect();
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "📋 Available Output Formats".bright_cyan().bold());
+                    for f in OutputFormat::all() {
+                        println!("  {} - {}", f.name().bright_yellow(), f.description().bright_black());
+                    }
+                    println!("\n  Usage: {} <command> -f <format>", "playground".bright_green());
+                } else {
+                    println!("{}", format_output(&formats, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
         ]));
 
     cli.run()
