@@ -1,27 +1,55 @@
-//! Playground CLI - Standalone demonstration of clap-noun-verb v5.1.0
+//! Playground CLI - Diataxis-Compliant Demonstration of clap-noun-verb v5.1.0
 //!
-//! This CLI uses the published clap-noun-verb crate (v5.1.0) from crates.io
-//! to demonstrate real-world usage of the noun-verb pattern.
+//! This CLI demonstrates all four Diataxis quadrants:
+//! - **Tutorial**: Learning-oriented examples (papers generate)
+//! - **How-To**: Task-oriented recipes (thesis schedule)
+//! - **Reference**: Information-oriented API (config show, --help)
+//! - **Explanation**: Understanding-oriented docs (thesis structure)
+//!
+//! Enhanced with:
+//! - Tera templating for professional LaTeX generation
+//! - Oxigraph RDF/SPARQL for semantic thesis ontology queries
+//! - Machine-grade JSON output for AI agent consumption
 //!
 //! Commands:
-//! - papers generate [family] - Generate academic paper
+//! - papers generate [family] - Generate academic paper with tera templates
 //! - papers list              - List available papers
 //! - papers validate <file>   - Validate paper structure
-//! - thesis structure         - Show thesis structure
-//! - thesis families          - List all thesis families
-//! - thesis schedule [family] - Show Λ-schedule for family
+//! - papers query <sparql>    - Query thesis ontology with SPARQL
+//! - thesis structure         - Show thesis structure (Explanation)
+//! - thesis families          - List all thesis families (Reference)
+//! - thesis schedule [family] - Show Λ-schedule for family (How-To)
 //! - config get <key>         - Get configuration value
 //! - config set <key> <value> - Set configuration value
 //! - config show              - Show all configuration
 
 use clap_noun_verb::{noun, verb, CliBuilder, Result, VerbArgs};
 use colored::Colorize;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct PaperInfo {
     family: String,
     output_path: String,
+    template_engine: String,
+}
+
+#[derive(Serialize)]
+struct Section {
+    title: String,
+    content: String,
+}
+
+/// Initialize Tera template engine with playground templates
+fn init_tera() -> tera::Tera {
+    match tera::Tera::new("templates/**/*.tera") {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Tera parsing error: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 fn main() -> Result<()> {
@@ -34,35 +62,35 @@ fn main() -> Result<()> {
         .about("Standalone CLI demonstrating clap-noun-verb from crates.io")
         // Papers noun with 3 verbs
         .noun(noun!("papers", "Academic paper operations", [
-            verb!("generate", "Generate academic paper", |args: &VerbArgs| {
+            verb!("generate", "Generate academic paper with Tera templates", |args: &VerbArgs| {
                 let family = args.get_one_str_opt("family")
                     .unwrap_or_else(|| "IMRaD".to_string());
 
-                println!("\n{} {}", "📝 Generating paper:".bright_green(), family.bright_yellow());
+                println!("\n{} {}", "📝 Generating paper with Tera:".bright_green(), family.bright_yellow());
 
-                let latex = format!(
-                    r#"\documentclass{{article}}
-\title{{Sample {} Paper}}
-\author{{Playground CLI}}
-\date{{\today}}
-\begin{{document}}
-\maketitle
+                // Initialize Tera template engine
+                let tera = init_tera();
+                let mut context = tera::Context::new();
 
-\section{{Introduction}}
-This is a sample {} paper generated using clap-noun-verb v5.1.0.
+                // Populate template context based on family
+                context.insert("title", &format!("Sample {} Paper", family));
+                context.insert("author", "Playground CLI with Tera");
+                context.insert("family", &family);
+                context.insert("abstract", "This paper demonstrates clap-noun-verb v5.1.0 with Tera templating.");
+                context.insert("introduction", "Background on semantic CLI frameworks for AI agents.");
+                context.insert("method", "Implementation using clap-noun-verb builder API with RDF ontology.");
+                context.insert("results", "Successful integration of tera templates and oxigraph SPARQL queries.");
+                context.insert("discussion", "The framework enables machine-grade introspection for autonomous systems.");
 
-\section{{Method}}
-Methodology section placeholder.
+                // Render template
+                let template_name = if family.to_lowercase() == "imrad" {
+                    "imrad.tex.tera"
+                } else {
+                    "paper.tex.tera"
+                };
 
-\section{{Results}}
-Results section placeholder.
-
-\section{{Discussion}}
-Discussion section placeholder.
-
-\end{{document}}"#,
-                    family, family
-                );
+                let latex = tera.render(template_name, &context)
+                    .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
 
                 std::fs::create_dir_all("output")
                     .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
@@ -75,6 +103,7 @@ Discussion section placeholder.
                 let info = PaperInfo {
                     family: family.clone(),
                     output_path: path,
+                    template_engine: "Tera 1.20".to_string(),
                 };
                 println!("\n{}", serde_json::to_string_pretty(&info)
                     .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?);

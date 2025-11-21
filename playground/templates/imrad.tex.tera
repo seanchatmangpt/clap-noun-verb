@@ -3,34 +3,34 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 
-\title{Sample IMRaD Paper}
-\author{Playground CLI with Tera}
+\title{ {{- title -}} }
+\author{ {{- author -}} }
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This IMRaD paper demonstrates the clap-noun-verb framework for building semantic CLIs with RDF/SPARQL integration.
+This {{ family }} paper demonstrates the clap-noun-verb framework for building semantic CLIs with RDF/SPARQL integration.
 \end{abstract}
 
 \section{Introduction}
-Background on semantic CLI frameworks for AI agents.
+{{ introduction }}
 
 This research explores the integration of semantic ontologies with command-line interfaces for AI agent coordination.
 
 \section{Method}
-Implementation using clap-noun-verb builder API with RDF ontology.
+{{ method }}
 
 We employ the Hyper-Thesis Framework (HTF) with Λ-scheduling for optimal chapter writing order.
 
 \section{Results}
-Successful integration of tera templates and oxigraph SPARQL queries.
+{{ results }}
 
 The clap-noun-verb framework successfully enables machine-grade CLI introspection for autonomous systems.
 
 \section{Discussion}
-The framework enables machine-grade introspection for autonomous systems.
+{{ discussion }}
 
 Our findings demonstrate the viability of RDF-controlled CLI patterns for trillion-agent ecosystems.
 
