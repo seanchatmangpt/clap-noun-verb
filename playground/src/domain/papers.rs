@@ -19,6 +19,11 @@ pub enum PaperFamily {
 }
 
 impl PaperFamily {
+    /// Get all valid family value strings for clap PossibleValuesParser
+    pub fn valid_values() -> [&'static str; 7] {
+        ["imrad", "papers", "argument", "contribution", "monograph", "dsr", "narrative"]
+    }
+
     /// Parse a family name from string (case-insensitive)
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {

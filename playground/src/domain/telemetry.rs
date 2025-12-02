@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime};
+use uuid::Uuid;
 
 /// Execution span for distributed tracing
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -155,12 +156,7 @@ impl ExecutionReceipt {
 }
 
 fn generate_id() -> String {
-    use std::time::UNIX_EPOCH;
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_nanos();
-    format!("{:x}", nanos)
+    Uuid::new_v4().to_string()
 }
 
 #[cfg(test)]
