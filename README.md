@@ -75,8 +75,8 @@
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.0.0"
-clap-noun-verb-macros = "5.0.0"
+clap-noun-verb = "5.1.1"
+clap-noun-verb-macros = "5.1.1"
 ```
 
 ---
