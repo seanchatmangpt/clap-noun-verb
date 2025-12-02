@@ -41,8 +41,8 @@ description = "Run tests (quiet mode)"
 
 [tasks.test-timeout]
 command = "timeout"
-args = ["1s", "cargo", "test", "--quiet"]
-description = "Run tests with 1s timeout to prevent freezing"
+args = ["10s", "cargo", "test", "--quiet"]
+description = "Run tests with 10s timeout (macros need compilation time)"
 
 [tasks.test-all]
 command = "cargo"
