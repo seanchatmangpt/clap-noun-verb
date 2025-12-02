@@ -45,10 +45,7 @@ fn load_thesis_ontology(store: &Store) -> Result<(), Box<dyn Error>> {
     let turtle_data = std::fs::read_to_string("playground/thesis-ontology.ttl")?;
 
     // Parse and load into oxigraph
-    store.load_from_reader(
-        oxigraph::io::RdfFormat::Turtle,
-        turtle_data.as_bytes(),
-    )?;
+    store.load_from_reader(oxigraph::io::RdfFormat::Turtle, turtle_data.as_bytes())?;
 
     Ok(())
 }
@@ -113,7 +110,8 @@ fn execute_sparql(store: &Store, query: &str, title: &str) {
                     match solution {
                         Ok(sol) => {
                             let vars: Vec<_> = sol.variables().into_iter().collect();
-                            let values: Vec<_> = vars.iter()
+                            let values: Vec<_> = vars
+                                .iter()
                                 .filter_map(|v| sol.get(*v))
                                 .map(|t| format!("{}", t))
                                 .collect();

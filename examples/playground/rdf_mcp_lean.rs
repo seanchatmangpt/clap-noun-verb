@@ -7,8 +7,8 @@
 //!
 //! Run: cargo run --example rdf_mcp_lean
 
-use clap_noun_verb::rdf::CNV_NAMESPACE;
 use clap_noun_verb::rdf::types::{RdfTriple, RdfValue};
+use clap_noun_verb::rdf::CNV_NAMESPACE;
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,7 +42,6 @@ fn build_minimal_ontology() -> Vec<RdfTriple> {
         // Safe read-only commands
         ("services-list", "services", "list", vec![], vec!["read-only"]),
         ("config-get", "config", "get", vec!["key"], vec!["read-only"]),
-
         // Unsafe state-changing commands
         ("services-start", "services", "start", vec!["name"], vec!["state-change", "idempotent"]),
         ("services-stop", "services", "stop", vec!["name"], vec!["state-change"]),
@@ -83,12 +82,14 @@ fn triple(subj: &str, pred: &str, obj: RdfValue) -> RdfTriple {
 
 // 80/20 Query 1: What's safe for autonomous agents?
 fn query_command_safety(triples: &[RdfTriple]) {
-    let read_only: Vec<_> = triples.iter()
+    let read_only: Vec<_> = triples
+        .iter()
         .filter(|t| t.predicate.contains("effect") && t.object.as_str() == "read-only")
         .map(|t| extract_command_name(&t.subject))
         .collect();
 
-    let state_change: Vec<_> = triples.iter()
+    let state_change: Vec<_> = triples
+        .iter()
         .filter(|t| t.predicate.contains("effect") && t.object.as_str() == "state-change")
         .map(|t| extract_command_name(&t.subject))
         .collect();
@@ -102,7 +103,8 @@ fn query_required_params(triples: &[RdfTriple]) {
     let mut cmd_params: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     for t in triples.iter().filter(|t| t.predicate.contains("requires")) {
-        cmd_params.entry(extract_command_name(&t.subject))
+        cmd_params
+            .entry(extract_command_name(&t.subject))
             .or_default()
             .push(t.object.as_str().to_string());
     }
@@ -118,7 +120,8 @@ fn query_required_params(triples: &[RdfTriple]) {
 
 // 80/20 Query 3: Which operations are safe to retry?
 fn query_idempotent_commands(triples: &[RdfTriple]) {
-    let idempotent: Vec<_> = triples.iter()
+    let idempotent: Vec<_> = triples
+        .iter()
         .filter(|t| t.predicate.contains("effect") && t.object.as_str() == "idempotent")
         .map(|t| extract_command_name(&t.subject))
         .collect();

@@ -607,13 +607,15 @@ mod tests {
     fn test_governance_ledger() {
         let ledger = GovernanceLedger::new();
 
-        ledger.record_capability_granted(
-            CapabilityId::from_path("user.create"),
-            AgentIdentity::anonymous(),
-            AgentIdentity::anonymous(),
-            TenantIdentity::default_tenant(),
-            "test",
-        );
+        assert!(ledger
+            .record_capability_granted(
+                CapabilityId::from_path("user.create"),
+                AgentIdentity::anonymous(),
+                AgentIdentity::anonymous(),
+                TenantIdentity::default_tenant(),
+                "test",
+            )
+            .is_ok());
 
         assert_eq!(ledger.event_count().unwrap(), 1);
     }
@@ -625,21 +627,25 @@ mod tests {
         let agent1 = AgentIdentity::human("user1");
         let agent2 = AgentIdentity::human("user2");
 
-        ledger.record_capability_granted(
-            CapabilityId::from_path("cap1"),
-            agent1.clone(),
-            agent1.clone(),
-            TenantIdentity::default_tenant(),
-            "test1",
-        );
+        assert!(ledger
+            .record_capability_granted(
+                CapabilityId::from_path("cap1"),
+                agent1.clone(),
+                agent1.clone(),
+                TenantIdentity::default_tenant(),
+                "test1",
+            )
+            .is_ok());
 
-        ledger.record_capability_granted(
-            CapabilityId::from_path("cap2"),
-            agent2.clone(),
-            agent2.clone(),
-            TenantIdentity::default_tenant(),
-            "test2",
-        );
+        assert!(ledger
+            .record_capability_granted(
+                CapabilityId::from_path("cap2"),
+                agent2.clone(),
+                agent2.clone(),
+                TenantIdentity::default_tenant(),
+                "test2",
+            )
+            .is_ok());
 
         let events = ledger.query().agent("user1".to_string()).execute().unwrap_or_default();
         assert_eq!(events.len(), 1);

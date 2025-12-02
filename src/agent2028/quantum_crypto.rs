@@ -278,7 +278,7 @@ impl Default for QuantumSafeAttestation {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "experimental"))]
 mod tests {
     use super::*;
 

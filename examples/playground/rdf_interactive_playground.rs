@@ -9,7 +9,7 @@
 //! Run with: cargo run --example rdf_interactive_playground
 
 use clap_noun_verb::rdf::prelude::*;
-use clap_noun_verb::rdf::{CNV_NAMESPACE, RDF_NS, RDFS_NS};
+use clap_noun_verb::rdf::{CNV_NAMESPACE, RDFS_NS, RDF_NS};
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -110,13 +110,11 @@ fn build_cli_ontology() -> Result<CliOntology, Box<dyn std::error::Error>> {
             noun: "services".to_string(),
             verb: "start".to_string(),
             description: "Start a service".to_string(),
-            parameters: vec![
-                Parameter {
-                    name: "name".to_string(),
-                    param_type: "string".to_string(),
-                    required: true,
-                },
-            ],
+            parameters: vec![Parameter {
+                name: "name".to_string(),
+                param_type: "string".to_string(),
+                required: true,
+            }],
             guards: vec!["authenticated".to_string(), "authorized".to_string()],
             effects: vec!["state-change".to_string(), "idempotent".to_string()],
         },
@@ -145,13 +143,11 @@ fn build_cli_ontology() -> Result<CliOntology, Box<dyn std::error::Error>> {
             noun: "config".to_string(),
             verb: "get".to_string(),
             description: "Get configuration value".to_string(),
-            parameters: vec![
-                Parameter {
-                    name: "key".to_string(),
-                    param_type: "string".to_string(),
-                    required: true,
-                },
-            ],
+            parameters: vec![Parameter {
+                name: "key".to_string(),
+                param_type: "string".to_string(),
+                required: true,
+            }],
             guards: vec!["authenticated".to_string()],
             effects: vec!["read-only".to_string()],
         },
@@ -295,9 +291,7 @@ fn demonstrate_sparql_queries(triples: &[RdfTriple]) {
 fn find_commands_by_effect(triples: &[RdfTriple], effect: &str) -> Vec<String> {
     triples
         .iter()
-        .filter(|t| {
-            t.predicate.contains("hasEffect") && t.object.as_str() == effect
-        })
+        .filter(|t| t.predicate.contains("hasEffect") && t.object.as_str() == effect)
         .map(|t| t.subject.clone())
         .collect()
 }
@@ -305,9 +299,7 @@ fn find_commands_by_effect(triples: &[RdfTriple], effect: &str) -> Vec<String> {
 fn find_commands_by_noun(triples: &[RdfTriple], noun: &str) -> Vec<String> {
     triples
         .iter()
-        .filter(|t| {
-            t.predicate.contains("noun") && t.object.as_str() == noun
-        })
+        .filter(|t| t.predicate.contains("noun") && t.object.as_str() == noun)
         .map(|t| t.subject.clone())
         .collect()
 }
@@ -315,9 +307,7 @@ fn find_commands_by_noun(triples: &[RdfTriple], noun: &str) -> Vec<String> {
 fn find_commands_by_guard(triples: &[RdfTriple], guard: &str) -> Vec<String> {
     triples
         .iter()
-        .filter(|t| {
-            t.predicate.contains("requiresGuard") && t.object.as_str() == guard
-        })
+        .filter(|t| t.predicate.contains("requiresGuard") && t.object.as_str() == guard)
         .map(|t| t.subject.clone())
         .collect()
 }
@@ -327,10 +317,7 @@ fn analyze_command_relationships(ontology: &CliOntology) {
     // Group by noun
     let mut noun_groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for cmd in &ontology.commands {
-        noun_groups
-            .entry(cmd.noun.clone())
-            .or_default()
-            .push(cmd.verb.clone());
+        noun_groups.entry(cmd.noun.clone()).or_default().push(cmd.verb.clone());
     }
 
     println!("Command groups by noun:");
@@ -362,17 +349,18 @@ fn demonstrate_shacl_validation(ontology: &CliOntology) {
 
     let mut valid_count = 0;
     for cmd in &ontology.commands {
-        let is_valid = !cmd.noun.is_empty()
-            && !cmd.verb.is_empty()
-            && !cmd.description.is_empty();
+        let is_valid = !cmd.noun.is_empty() && !cmd.verb.is_empty() && !cmd.description.is_empty();
 
         if is_valid {
             valid_count += 1;
         }
     }
 
-    println!("\n✅ Validation: {}/{} commands conform to shape",
-             valid_count, ontology.commands.len());
+    println!(
+        "\n✅ Validation: {}/{} commands conform to shape",
+        valid_count,
+        ontology.commands.len()
+    );
 }
 
 /// Demonstrate MCP integration

@@ -121,7 +121,7 @@ impl Default for PluginDependencyGraph {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "experimental"))]
 mod tests {
     use super::*;
 

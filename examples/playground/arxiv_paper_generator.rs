@@ -117,7 +117,9 @@ impl DiagramType {
                     source
                 ))
             }
-            Self::TikZ(source) => Ok(format!("\\begin{{tikzpicture}}\n{}\n\\end{{tikzpicture}}", source)),
+            Self::TikZ(source) => {
+                Ok(format!("\\begin{{tikzpicture}}\n{}\n\\end{{tikzpicture}}", source))
+            }
             Self::Mermaid(source) => {
                 // Convert Mermaid to TikZ (simplified)
                 Ok(format!(
@@ -139,11 +141,7 @@ pub struct Section {
 
 impl Section {
     fn new(section_type: SectionType, title: String) -> Self {
-        Self {
-            section_type,
-            title,
-            content: Vec::new(),
-        }
+        Self { section_type, title, content: Vec::new() }
     }
 
     fn add_text(&mut self, text: impl Into<String>) -> &mut Self {
@@ -192,12 +190,7 @@ pub struct Paper {
 
 impl Paper {
     fn new(title: String, authors: Vec<String>) -> Self {
-        Self {
-            title,
-            authors,
-            sections: Vec::new(),
-            bibliography: Vec::new(),
-        }
+        Self { title, authors, sections: Vec::new(), bibliography: Vec::new() }
     }
 
     fn add_section(&mut self, section: Section) -> &mut Self {
@@ -260,10 +253,7 @@ impl ThesisOntology {
                             .and_then(|t| t.as_ref().to_string().parse::<i32>().ok())
                             .unwrap_or(0);
 
-                        let purpose = sol
-                            .get("purpose")
-                            .map(|t| t.to_string())
-                            .unwrap_or_default();
+                        let purpose = sol.get("purpose").map(|t| t.to_string()).unwrap_or_default();
 
                         templates.push(SectionTemplate { position, purpose });
                     }
@@ -304,10 +294,7 @@ impl ThesisOntology {
             if let oxigraph::sparql::QueryResults::Solutions(solutions) = results {
                 for solution in solutions {
                     if let Ok(sol) = solution {
-                        let purpose = sol
-                            .get("purpose")
-                            .map(|t| t.to_string())
-                            .unwrap_or_default();
+                        let purpose = sol.get("purpose").map(|t| t.to_string()).unwrap_or_default();
 
                         mapping
                             .entry("contribution".to_string())
@@ -391,10 +378,8 @@ impl LatexGenerator {
                 section_content.push('\n');
             }
 
-            sections_data.push(SectionData {
-                title: section.title.clone(),
-                content: section_content,
-            });
+            sections_data
+                .push(SectionData { title: section.title.clone(), content: section_content });
         }
 
         // Render template (simplified - handlebars needs HashMap)
@@ -470,10 +455,7 @@ pub struct PaperPipeline {
 
 impl PaperPipeline {
     fn new() -> Result<Self, Box<dyn Error>> {
-        Ok(Self {
-            generator: LatexGenerator::new()?,
-            ontology: ThesisOntology::load()?,
-        })
+        Ok(Self { generator: LatexGenerator::new()?, ontology: ThesisOntology::load()? })
     }
 
     /// Build paper from thesis family structure
@@ -520,42 +502,28 @@ fn create_sample_paper() -> Paper {
     );
 
     // Abstract
-    let mut abstract_section = Section::new(
-        SectionType::Abstract,
-        "Abstract".to_string(),
-    );
+    let mut abstract_section = Section::new(SectionType::Abstract, "Abstract".to_string());
     abstract_section.add_text(
         "This paper presents a novel approach to neural network optimization \
          for large language models. We demonstrate significant improvements in \
-         training efficiency and model performance."
+         training efficiency and model performance.",
     );
     paper.add_section(abstract_section);
 
     // Introduction
-    let mut intro = Section::new(
-        SectionType::Introduction,
-        "Introduction".to_string(),
-    );
-    intro.add_text(
-        "Large language models have revolutionized natural language processing."
-    );
+    let mut intro = Section::new(SectionType::Introduction, "Introduction".to_string());
+    intro.add_text("Large language models have revolutionized natural language processing.");
     intro.add_citation("transformer2017");
     paper.add_section(intro);
 
     // Method
-    let mut method = Section::new(
-        SectionType::Method,
-        "Method".to_string(),
-    );
+    let mut method = Section::new(SectionType::Method, "Method".to_string());
     method.add_text("Our optimization approach uses adaptive learning rates:");
     method.add_equation(r"\alpha_t = \alpha_0 \cdot \frac{1}{\sqrt{t}}");
     paper.add_section(method);
 
     // Results
-    let mut results = Section::new(
-        SectionType::Results,
-        "Results".to_string(),
-    );
+    let mut results = Section::new(SectionType::Results, "Results".to_string());
     results.add_text("We achieved 15% improvement in training speed.");
     paper.add_section(results);
 
@@ -823,10 +791,7 @@ mod tests {
 
     // Helper for tests
     fn create_simple_test_paper() -> Paper {
-        let mut paper = Paper::new(
-            "Test Paper".to_string(),
-            vec!["Test Author".to_string()],
-        );
+        let mut paper = Paper::new("Test Paper".to_string(), vec!["Test Author".to_string()]);
 
         let mut section = Section::new(SectionType::Abstract, "Abstract".to_string());
         section.add_text("Test abstract content.");

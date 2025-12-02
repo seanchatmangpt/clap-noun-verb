@@ -7,8 +7,8 @@
 //!
 //! Run: cargo run --example rdf_mcp_core
 
-use clap_noun_verb::rdf::CNV_NAMESPACE;
 use clap_noun_verb::rdf::types::{RdfTriple, RdfValue};
+use clap_noun_verb::rdf::CNV_NAMESPACE;
 use std::collections::BTreeMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -60,12 +60,7 @@ enum Safety {
 
 /// Builder function (DRY principle)
 fn cmd(noun: &'static str, verb: &'static str, params: &[&'static str], safety: Safety) -> Command {
-    Command {
-        noun,
-        verb,
-        params: params.to_vec(),
-        safety,
-    }
+    Command { noun, verb, params: params.to_vec(), safety }
 }
 
 /// RDF Ontology abstraction (Single Responsibility)

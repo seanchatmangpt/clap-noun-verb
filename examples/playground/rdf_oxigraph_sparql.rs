@@ -4,9 +4,9 @@
 //!
 //! Run with: cargo run --example rdf_oxigraph_sparql
 
-use clap_noun_verb::rdf::{CNV_NAMESPACE, RDF_NS, RDFS_NS};
-use oxigraph::store::Store;
+use clap_noun_verb::rdf::{CNV_NAMESPACE, RDFS_NS, RDF_NS};
 use oxigraph::model::*;
+use oxigraph::store::Store;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -127,21 +127,51 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn load_cli_ontology(store: &Store) -> Result<(), Box<dyn Error>> {
     // Define commands as RDF triples
     let commands = vec![
-        ("services-list", "services", "list", "List all available services",
-         vec![("filter", "string", false), ("verbose", "boolean", false)],
-         vec!["authenticated"], vec!["read-only"]),
-        ("services-start", "services", "start", "Start a service",
-         vec![("name", "string", true)],
-         vec!["authenticated", "authorized"], vec!["state-change", "idempotent"]),
-        ("services-stop", "services", "stop", "Stop a service",
-         vec![("name", "string", true), ("force", "boolean", false)],
-         vec!["authenticated", "authorized"], vec!["state-change"]),
-        ("config-get", "config", "get", "Get configuration value",
-         vec![("key", "string", true)],
-         vec!["authenticated"], vec!["read-only"]),
-        ("config-set", "config", "set", "Set configuration value",
-         vec![("key", "string", true), ("value", "string", true)],
-         vec!["authenticated", "authorized"], vec!["state-change", "idempotent"]),
+        (
+            "services-list",
+            "services",
+            "list",
+            "List all available services",
+            vec![("filter", "string", false), ("verbose", "boolean", false)],
+            vec!["authenticated"],
+            vec!["read-only"],
+        ),
+        (
+            "services-start",
+            "services",
+            "start",
+            "Start a service",
+            vec![("name", "string", true)],
+            vec!["authenticated", "authorized"],
+            vec!["state-change", "idempotent"],
+        ),
+        (
+            "services-stop",
+            "services",
+            "stop",
+            "Stop a service",
+            vec![("name", "string", true), ("force", "boolean", false)],
+            vec!["authenticated", "authorized"],
+            vec!["state-change"],
+        ),
+        (
+            "config-get",
+            "config",
+            "get",
+            "Get configuration value",
+            vec![("key", "string", true)],
+            vec!["authenticated"],
+            vec!["read-only"],
+        ),
+        (
+            "config-set",
+            "config",
+            "set",
+            "Set configuration value",
+            vec![("key", "string", true), ("value", "string", true)],
+            vec!["authenticated", "authorized"],
+            vec!["state-change", "idempotent"],
+        ),
     ];
 
     // Load triples into store
@@ -151,12 +181,7 @@ fn load_cli_ontology(store: &Store) -> Result<(), Box<dyn Error>> {
         let cmd_type = NamedNode::new(format!("{}Command", CNV_NAMESPACE))?;
 
         // Command type
-        store.insert(&Quad::new(
-            cmd_iri.clone(),
-            rdf_type,
-            cmd_type,
-            GraphName::DefaultGraph,
-        ))?;
+        store.insert(&Quad::new(cmd_iri.clone(), rdf_type, cmd_type, GraphName::DefaultGraph))?;
 
         // Label
         let label_pred = NamedNode::new(format!("{}label", RDFS_NS))?;
@@ -269,7 +294,8 @@ fn execute_sparql(store: &Store, query: &str, title: &str) {
                     match solution {
                         Ok(sol) => {
                             let vars: Vec<_> = sol.variables().into_iter().collect();
-                            let values: Vec<_> = vars.iter()
+                            let values: Vec<_> = vars
+                                .iter()
                                 .filter_map(|v| sol.get(*v))
                                 .map(|t| format!("{}", t))
                                 .collect();

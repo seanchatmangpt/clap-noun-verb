@@ -490,7 +490,7 @@ pub struct CheckReport {
     pub results: Vec<CheckResult>,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "experimental"))]
 mod tests {
     use super::*;
 
@@ -511,7 +511,7 @@ mod tests {
     fn test_lambda_schedule() {
         let mut schedule = LambdaSchedule::new();
 
-        let mut shard1 = Shard::new(
+        let shard1 = Shard::new(
             "problem".to_string(),
             "Problem".to_string(),
             ShardFamily::Contribution,

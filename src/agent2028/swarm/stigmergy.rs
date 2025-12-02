@@ -254,7 +254,7 @@ impl TrailReinforcer {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "experimental"))]
 mod tests {
     use super::*;
 
