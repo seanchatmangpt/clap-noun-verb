@@ -58,8 +58,8 @@ struct PaperGeneratedOutput {
 }
 
 /// Convert integration/domain errors to NounVerbError
-fn to_cli_error(msg: String) -> NounVerbError {
-    NounVerbError::execution_error(msg)
+fn to_cli_error(msg: impl Into<String>) -> NounVerbError {
+    NounVerbError::execution_error(msg.into())
 }
 
 /// Get output format from args (default: json-pretty)
