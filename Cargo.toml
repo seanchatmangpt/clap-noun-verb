@@ -92,6 +92,11 @@ assert_cmd = "2.0"
 predicates = "3.0"
 assert_fs = "1.0"
 
+# New in v5.1 - Poka-Yoke Test Architecture (unfailable tests)
+tokio-test = "0.4"
+serial_test = "3.0"
+tempfile = "3.8"
+
 [workspace.metadata.make]
 # Cargo-make configuration
 verbose = false

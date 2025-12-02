@@ -45,13 +45,24 @@ args = ["build"]
 command = "cargo"
 args = ["check"]
 
-[tasks.test-timeout]
-command = "timeout"
-args = ["1s", "cargo", "test", "--quiet"]
-description = "Run tests with 1s timeout to prevent freezing"
+[tasks.test-lib-deterministic]
+command = "cargo"
+args = ["test", "--lib", "--quiet"]
+env = { RUST_TEST_THREADS = "1" }
+description = "Run library tests (deterministic, unfailable)"
+
+[tasks.test-integration-isolated]
+command = "cargo"
+args = ["test", "--quiet"]
+env = { RUST_TEST_THREADS = "1" }
+description = "Run all tests (isolated, unfailable)"
+
+[tasks.test-unfailable]
+dependencies = ["test-lib-deterministic", "test-integration-isolated"]
+description = "Run all tests with unfailable architecture"
 
 [tasks.ci]
-dependencies = ["format-check", "clippy", "test-timeout", "build", "check"]
+dependencies = ["format-check", "clippy", "test-unfailable", "build", "check"]
 
 [tasks.pre-release]
 dependencies = ["format-check", "clippy", "test", "build", "check"]

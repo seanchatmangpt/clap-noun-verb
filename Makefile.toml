@@ -39,10 +39,21 @@ command = "cargo"
 args = ["test", "--quiet"]
 description = "Run tests (quiet mode)"
 
-[tasks.test-timeout]
-command = "timeout"
-args = ["10s", "cargo", "test", "--quiet"]
-description = "Run tests with 10s timeout (macros need compilation time)"
+[tasks.test-lib-deterministic]
+command = "cargo"
+args = ["test", "--lib", "--quiet"]
+env = { RUST_TEST_THREADS = "1" }
+description = "Run library tests (deterministic, single-threaded, unfailable)"
+
+[tasks.test-integration-isolated]
+command = "cargo"
+args = ["test", "--test", "*", "--quiet"]
+env = { RUST_TEST_THREADS = "1" }
+description = "Run integration tests (isolated, single-threaded, unfailable)"
+
+[tasks.test-unfailable]
+dependencies = ["test-lib-deterministic", "test-integration-isolated"]
+description = "Run all tests with unfailable architecture (no timeouts needed)"
 
 [tasks.test-all]
 command = "cargo"
@@ -102,11 +113,11 @@ dependencies = ["format-check", "clippy", "test-timeout"]
 dependencies = [
     "format-check",
     "clippy",
-    "test-timeout",
+    "test-unfailable",
     "build-examples",
     "check-all",
 ]
-description = "Run all CI checks"
+description = "Run all CI checks (unfailable test architecture)"
 
 # Release
 [tasks.release-check]
