@@ -305,13 +305,17 @@ pub fn noun(args: TokenStream, input: TokenStream) -> TokenStream {
         #output_fn
 
         // Auto-generated registration
+        // CRITICAL FIX: Use named function instead of closure to satisfy fn() type requirement
         #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__NOUN_REGISTRY)]
-        static #init_fn_name: fn() = || {
-            ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
-                #name_str,
-                #about_str,
-            );
+        static #init_fn_name: fn() = {
+            fn __register_impl() {
+                ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
+                    #name_str,
+                    #about_str,
+                );
+            }
+            __register_impl  // Return function pointer (not a call!)
         };
     };
 
@@ -366,13 +370,13 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
                 // If parsing fails, extract verb name from function name
                 let verb_name = extract_verb_name_from_fn_name(&input_fn);
                 let docstring = extract_docstring(&input_fn);
-                let arg_descriptions = parse_argument_descriptions(&docstring);
+                let arg_relationships = parse_argument_descriptions_with_relationships(&docstring);
                 return generate_verb_registration(
                     input_fn,
                     verb_name,
                     None,
                     None,
-                    arg_descriptions,
+                    arg_relationships,
                 );
             }
         };
@@ -434,10 +438,12 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
     // Extract docstring for help text
     let docstring = extract_docstring(&input_fn);
 
-    // Parse argument descriptions from docstring
-    let arg_descriptions = parse_argument_descriptions(&docstring);
+    // Parse argument descriptions with relationship metadata from docstring
+    let arg_relationships = parse_argument_descriptions_with_relationships(&docstring);
 
-    generate_verb_registration(input_fn, verb_name, noun_name, Some(docstring), arg_descriptions)
+    // Clean docstring for about - remove # Arguments section and relationship tags
+    let clean_about = clean_docstring_for_about(&docstring);
+    generate_verb_registration(input_fn, verb_name, noun_name, Some(clean_about), arg_relationships)
 }
 
 /// Extract verb name from function name (remove common prefixes)
@@ -569,24 +575,259 @@ fn extract_docstring(input_fn: &ItemFn) -> String {
             }
         })
         .collect::<Vec<_>>()
-        .join(" ")
+        .join("\n")
         .trim()
         .to_string()
 }
 
-/// Parse argument descriptions from docstring
+/// Argument relationship metadata extracted from doc comments
 ///
-/// Extracts individual argument descriptions from a `# Arguments` section
-/// in the docstring. Format:
-/// ```rust
-/// /// # Arguments
-/// /// * `arg_name` - Description of argument
-/// /// * `other_arg` - Another description
+/// Typer-like syntax for relationships in doc comments:
+/// - `[group: name]` - Argument belongs to exclusive group "name"
+/// - `[requires: arg]` - Argument requires "arg" to be present
+/// - `[conflicts: arg]` - Argument conflicts with "arg"
+///
+/// Example:
+/// ```text
+/// # Arguments
+/// * `json` - Export as JSON [group: format]
+/// * `yaml` - Export as YAML [group: format]
+/// * `filename` - Output filename [requires: format]
+/// * `raw` - Raw output mode [conflicts: format]
+/// * `config` - Config file [env: APP_CONFIG] [default: config.toml]
+/// * `verbose` - Verbose output [hide]
+/// * `format` - Output format [value_hint: file_path]
+/// * `debug` - Debug mode [global]
+/// * `force` - Force operation [exclusive]
+/// * `output` - Output options [help_heading: Output]
 /// ```
+#[derive(Default, Clone)]
+struct DocArgRelationships {
+    /// Group name (for exclusive groups)
+    group: Option<String>,
+    /// Arguments this one requires
+    requires: Vec<String>,
+    /// Arguments this one conflicts with
+    conflicts_with: Vec<String>,
+    /// Environment variable to read value from
+    env: Option<String>,
+    /// Whether this argument should be hidden from help
+    hide: bool,
+    /// Default value for the argument
+    default_value: Option<String>,
+    /// Value hint for shell completion (file_path, dir_path, url, etc.)
+    value_hint: Option<String>,
+    /// Whether this argument is global (propagates to subcommands)
+    global: bool,
+    /// Whether this argument is exclusive (cannot be used with any other args)
+    exclusive: bool,
+    /// Help heading to group this argument under
+    help_heading: Option<String>,
+    /// Clean description without relationship tags
+    description: String,
+}
+
+/// Clean docstring for command about text
 ///
-/// Returns a HashMap mapping argument names to their descriptions
-fn parse_argument_descriptions(docstring: &str) -> std::collections::HashMap<String, String> {
-    let mut descriptions = std::collections::HashMap::new();
+/// Removes the `# Arguments` section entirely (clap generates its own help for arguments)
+/// and strips any relationship tags from the remaining text.
+fn clean_docstring_for_about(docstring: &str) -> String {
+    let mut result_lines = Vec::new();
+    let mut in_arguments_section = false;
+
+    for line in docstring.lines() {
+        let trimmed = line.trim();
+
+        // Check if we've entered the Arguments section
+        if trimmed == "# Arguments" || trimmed.starts_with("# Arguments") {
+            in_arguments_section = true;
+            continue;
+        }
+
+        // If we hit another section heading, we're done with Arguments
+        if in_arguments_section && trimmed.starts_with('#') && !trimmed.starts_with("# Arguments") {
+            in_arguments_section = false;
+        }
+
+        // Skip lines in the Arguments section
+        if in_arguments_section {
+            continue;
+        }
+
+        // Strip any relationship tags from the line
+        let clean_line = strip_relationship_tags(line);
+        if !clean_line.is_empty() || line.is_empty() {
+            result_lines.push(clean_line);
+        }
+    }
+
+    // Trim trailing empty lines
+    while result_lines.last().map(|s| s.trim().is_empty()).unwrap_or(false) {
+        result_lines.pop();
+    }
+
+    result_lines.join("\n").trim().to_string()
+}
+
+/// Strip relationship tags from a line of text
+///
+/// Removes [group: xxx], [requires: xxx], [conflicts: xxx], [env: xxx], [hide],
+/// [default: xxx], [value_hint: xxx], [global], [exclusive], [help_heading: xxx] tags.
+fn strip_relationship_tags(text: &str) -> String {
+    let mut result = String::new();
+    let mut remaining = text;
+
+    while !remaining.is_empty() {
+        if let Some(tag_start) = remaining.find('[') {
+            // Add text before the tag
+            result.push_str(&remaining[..tag_start]);
+
+            // Find the end of the tag
+            if let Some(tag_end) = remaining[tag_start..].find(']') {
+                let tag_content = &remaining[tag_start + 1..tag_start + tag_end];
+
+                // Check if this is a relationship tag we should strip
+                let is_relationship_tag = if let Some(colon_pos) = tag_content.find(':') {
+                    let key = tag_content[..colon_pos].trim().to_lowercase();
+                    matches!(
+                        key.as_str(),
+                        "group"
+                            | "requires"
+                            | "require"
+                            | "conflicts"
+                            | "conflicts_with"
+                            | "conflict"
+                            | "env"
+                            | "default"
+                            | "value_hint"
+                            | "help_heading"
+                    )
+                } else {
+                    // Tags without colon
+                    let key = tag_content.trim().to_lowercase();
+                    matches!(key.as_str(), "hide" | "global" | "exclusive")
+                };
+
+                if !is_relationship_tag {
+                    // Keep unknown tags
+                    result.push('[');
+                    result.push_str(tag_content);
+                    result.push(']');
+                }
+
+                // Move past the tag
+                remaining = &remaining[tag_start + tag_end + 1..];
+            } else {
+                // No closing bracket, add rest as-is
+                result.push_str(remaining);
+                break;
+            }
+        } else {
+            // No more tags, add the rest
+            result.push_str(remaining);
+            break;
+        }
+    }
+
+    result
+}
+
+/// Parse relationship metadata from a description string
+///
+/// Extracts all Typer-like tags from argument descriptions:
+/// - `[group: name]` - Argument belongs to exclusive group
+/// - `[requires: arg]` - Argument requires another argument
+/// - `[conflicts: arg]` - Argument conflicts with another argument
+/// - `[env: VAR]` - Read value from environment variable
+/// - `[hide]` - Hide this argument from help
+/// - `[default: value]` - Default value for the argument
+/// - `[value_hint: type]` - Value hint for shell completion
+/// - `[global]` - Propagate to subcommands
+/// - `[exclusive]` - Cannot be used with any other args
+/// - `[help_heading: name]` - Group under help heading
+fn parse_doc_relationships(description: &str) -> DocArgRelationships {
+    let mut result = DocArgRelationships::default();
+    let mut clean_parts = Vec::new();
+
+    // Parse description, extracting relationship tags
+    let mut remaining = description;
+
+    while !remaining.is_empty() {
+        // Look for a tag
+        if let Some(tag_start) = remaining.find('[') {
+            // Add text before the tag
+            let before = remaining[..tag_start].trim();
+            if !before.is_empty() {
+                clean_parts.push(before.to_string());
+            }
+
+            // Find the end of the tag
+            if let Some(tag_end) = remaining[tag_start..].find(']') {
+                let tag_content = &remaining[tag_start + 1..tag_start + tag_end];
+
+                // Parse tag content: "key: value" or "key" (for boolean tags)
+                if let Some(colon_pos) = tag_content.find(':') {
+                    let key = tag_content[..colon_pos].trim().to_lowercase();
+                    let value = tag_content[colon_pos + 1..].trim().to_string();
+
+                    match key.as_str() {
+                        "group" => result.group = Some(value),
+                        "requires" | "require" => result.requires.push(value),
+                        "conflicts" | "conflicts_with" | "conflict" => {
+                            result.conflicts_with.push(value)
+                        }
+                        "env" => result.env = Some(value),
+                        "default" | "default_value" => result.default_value = Some(value),
+                        "value_hint" | "hint" => result.value_hint = Some(value),
+                        "help_heading" | "heading" => result.help_heading = Some(value),
+                        _ => {
+                            // Unknown tag, keep it in the description
+                            clean_parts.push(format!("[{}]", tag_content));
+                        }
+                    }
+                } else {
+                    // Boolean tags without colon (e.g., [hide], [global], [exclusive])
+                    let key = tag_content.trim().to_lowercase();
+                    match key.as_str() {
+                        "hide" | "hidden" => result.hide = true,
+                        "global" => result.global = true,
+                        "exclusive" => result.exclusive = true,
+                        _ => {
+                            // Unknown tag, keep it in the description
+                            clean_parts.push(format!("[{}]", tag_content));
+                        }
+                    }
+                }
+
+                // Move past the tag
+                remaining = &remaining[tag_start + tag_end + 1..];
+            } else {
+                // No closing bracket, add rest as-is
+                clean_parts.push(remaining.to_string());
+                break;
+            }
+        } else {
+            // No more tags, add the rest
+            let rest = remaining.trim();
+            if !rest.is_empty() {
+                clean_parts.push(rest.to_string());
+            }
+            break;
+        }
+    }
+
+    result.description = clean_parts.join(" ").trim().to_string();
+    result
+}
+
+/// Parse argument descriptions WITH relationship metadata from docstring
+///
+/// Similar to parse_argument_descriptions but also extracts Typer-like
+/// relationship tags from the description text.
+fn parse_argument_descriptions_with_relationships(
+    docstring: &str,
+) -> std::collections::HashMap<String, DocArgRelationships> {
+    let mut results = std::collections::HashMap::new();
 
     // Split docstring into lines
     let lines: Vec<&str> = docstring.lines().collect();
@@ -607,31 +848,27 @@ fn parse_argument_descriptions(docstring: &str) -> std::collections::HashMap<Str
         }
 
         // Parse argument description line
-        // Format: `* `arg_name` - description` or `* arg_name - description`
         if in_arguments_section && trimmed.starts_with('*') {
             let rest = trimmed[1..].trim();
 
-            // Extract argument name and description
-            // Support formats:
-            // - `* `arg_name` - description`
-            // - `* arg_name - description`
-            // - `* \`arg_name\` - description`
             if let Some(dash_pos) = rest.find('-') {
                 let before_dash = rest[..dash_pos].trim();
-                let description = rest[dash_pos + 1..].trim().to_string();
+                let description = rest[dash_pos + 1..].trim();
 
                 // Extract argument name (remove backticks and asterisks)
                 let arg_name =
                     before_dash.trim_start_matches('*').trim().trim_matches('`').trim().to_string();
 
                 if !arg_name.is_empty() && !description.is_empty() {
-                    descriptions.insert(arg_name, description);
+                    // Parse relationships from description
+                    let relationships = parse_doc_relationships(description);
+                    results.insert(arg_name, relationships);
                 }
             }
         }
     }
 
-    descriptions
+    results
 }
 
 /// Generate verb registration code with full type inference
@@ -640,7 +877,7 @@ fn generate_verb_registration(
     verb_name: String,
     noun_name: Option<String>,
     about: Option<String>,
-    arg_descriptions: std::collections::HashMap<String, String>,
+    arg_relationships: std::collections::HashMap<String, DocArgRelationships>,
 ) -> TokenStream {
     let fn_name = &input_fn.sig.ident;
     let wrapper_name = quote::format_ident!("__{}_wrapper", fn_name);
@@ -682,9 +919,9 @@ fn generate_verb_registration(
             };
 
             if is_count_action {
-                // Count action - extract count from input
+                // Count action - extract count from __handler_input
                 arg_extractions.push(quote! {
-                    let #arg_name: usize = input.args.get(#arg_name_str)
+                    let #arg_name: usize = __handler_input.args.get(#arg_name_str)
                         .and_then(|v| v.parse::<usize>().ok())
                         .unwrap_or(0);
                 });
@@ -692,16 +929,16 @@ fn generate_verb_registration(
             } else if is_flag {
                 // Boolean flags
                 arg_extractions.push(quote! {
-                    let #arg_name = input.opts.get(#arg_name_str)
+                    let #arg_name = __handler_input.opts.get(#arg_name_str)
                         .map(|v| v.parse::<bool>().unwrap_or(false))
                         .unwrap_or(false);
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_vec {
-                // Vec<T> types - extract from input.args as comma-separated string, then parse
+                // Vec<T> types - extract from __handler_input.args as comma-separated string, then parse
                 // The registry extracts multiple values and joins them
                 arg_extractions.push(quote! {
-                    let #arg_name: #pat_type.ty = if let Some(value_str) = input.args.get(#arg_name_str) {
+                    let #arg_name: #pat_type.ty = if let Some(value_str) = __handler_input.args.get(#arg_name_str) {
                         // Parse comma-separated values
                         value_str.split(',')
                             .map(|s| s.trim().parse::<#vec_inner_type>())
@@ -717,14 +954,14 @@ fn generate_verb_registration(
             } else if is_option {
                 // Optional arguments
                 arg_extractions.push(quote! {
-                    let #arg_name = input.args.get(#arg_name_str)
+                    let #arg_name = __handler_input.args.get(#arg_name_str)
                         .and_then(|v| v.parse::<#inner_type>().ok());
                 });
                 arg_calls.push(quote! { #arg_name });
             } else {
                 // Required arguments
                 arg_extractions.push(quote! {
-                    let #arg_name = input.args.get(#arg_name_str)
+                    let #arg_name = __handler_input.args.get(#arg_name_str)
                         .ok_or_else(|| ::clap_noun_verb::error::NounVerbError::missing_argument(#arg_name_str))?
                         .parse::<#inner_type>()
                         .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
@@ -835,16 +1072,27 @@ fn generate_verb_registration(
             };
 
             // Get help text - priority: #[arg(help = "...")] > docstring > default
+            // Note: For docstring, use the clean description (without relationship tags)
             let help_token = if let Some(config) = &arg_config {
                 if let Some(ref explicit_help) = config.help {
                     quote! { Some(#explicit_help.to_string()) }
-                } else if let Some(help) = arg_descriptions.get(&arg_name) {
+                } else if let Some(rel) = arg_relationships.get(&arg_name) {
+                    let help = &rel.description;
+                    if !help.is_empty() {
+                        quote! { Some(#help.to_string()) }
+                    } else {
+                        quote! { None }
+                    }
+                } else {
+                    quote! { None }
+                }
+            } else if let Some(rel) = arg_relationships.get(&arg_name) {
+                let help = &rel.description;
+                if !help.is_empty() {
                     quote! { Some(#help.to_string()) }
                 } else {
                     quote! { None }
                 }
-            } else if let Some(help) = arg_descriptions.get(&arg_name) {
-                quote! { Some(#help.to_string()) }
             } else {
                 quote! { None }
             };
@@ -953,8 +1201,23 @@ fn generate_verb_registration(
                 quote! { None }
             };
 
+            // Get group from doc comment or #[arg] attribute
+            // Priority: #[arg(group = "...")] > doc comment [group: ...]
+            let doc_rel = arg_relationships.get(&arg_name);
             let group_token = if let Some(config) = &arg_config {
                 if let Some(ref g) = config.group {
+                    quote! { Some(#g.to_string()) }
+                } else if let Some(rel) = doc_rel {
+                    if let Some(ref g) = rel.group {
+                        quote! { Some(#g.to_string()) }
+                    } else {
+                        quote! { None }
+                    }
+                } else {
+                    quote! { None }
+                }
+            } else if let Some(rel) = doc_rel {
+                if let Some(ref g) = rel.group {
                     quote! { Some(#g.to_string()) }
                 } else {
                     quote! { None }
@@ -963,26 +1226,56 @@ fn generate_verb_registration(
                 quote! { None }
             };
 
-            let requires_token = if let Some(config) = &arg_config {
-                if !config.requires.is_empty() {
-                    let requires_vec = &config.requires;
-                    quote! { vec![#(#requires_vec.to_string()),*] }
-                } else {
-                    quote! { vec![] }
+            // Get requires from doc comment or #[arg] attribute
+            // Merges both sources if present
+            let requires_token = {
+                let mut requires_all = Vec::new();
+
+                // Add from #[arg(requires = "...")]
+                if let Some(config) = &arg_config {
+                    requires_all.extend(config.requires.iter().cloned());
                 }
-            } else {
-                quote! { vec![] }
+
+                // Add from doc comment [requires: ...]
+                if let Some(rel) = doc_rel {
+                    for req in &rel.requires {
+                        if !requires_all.contains(req) {
+                            requires_all.push(req.clone());
+                        }
+                    }
+                }
+
+                if requires_all.is_empty() {
+                    quote! { vec![] }
+                } else {
+                    quote! { vec![#(#requires_all.to_string()),*] }
+                }
             };
 
-            let conflicts_with_token = if let Some(config) = &arg_config {
-                if !config.conflicts_with.is_empty() {
-                    let conflicts_vec = &config.conflicts_with;
-                    quote! { vec![#(#conflicts_vec.to_string()),*] }
-                } else {
-                    quote! { vec![] }
+            // Get conflicts_with from doc comment or #[arg] attribute
+            // Merges both sources if present
+            let conflicts_with_token = {
+                let mut conflicts_all = Vec::new();
+
+                // Add from #[arg(conflicts_with = "...")]
+                if let Some(config) = &arg_config {
+                    conflicts_all.extend(config.conflicts_with.iter().cloned());
                 }
-            } else {
-                quote! { vec![] }
+
+                // Add from doc comment [conflicts: ...]
+                if let Some(rel) = doc_rel {
+                    for conf in &rel.conflicts_with {
+                        if !conflicts_all.contains(conf) {
+                            conflicts_all.push(conf.clone());
+                        }
+                    }
+                }
+
+                if conflicts_all.is_empty() {
+                    quote! { vec![] }
+                } else {
+                    quote! { vec![#(#conflicts_all.to_string()),*] }
+                }
             };
 
             // Handle value_parser
@@ -1059,6 +1352,109 @@ fn generate_verb_registration(
                 quote! { false }
             };
 
+            // New tokens for extended doc comment tags
+            // Priority: #[arg] attribute > doc comment tag
+
+            // Get env from doc comment (already have env_token from #[arg])
+            let doc_env_token = if let Some(rel) = doc_rel {
+                if let Some(ref env_var) = rel.env {
+                    quote! { Some(#env_var.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+            // Merge: prefer #[arg(env)] if present, else use doc comment
+            let final_env_token = if let Some(config) = &arg_config {
+                if config.env.is_some() {
+                    env_token.clone()
+                } else {
+                    doc_env_token
+                }
+            } else {
+                doc_env_token
+            };
+
+            // Get hide from doc comment
+            let hide_token = if let Some(rel) = doc_rel {
+                let hide_val = rel.hide;
+                quote! { #hide_val }
+            } else {
+                quote! { false }
+            };
+
+            // Get default_value from doc comment (already have default_value_token from #[arg])
+            let doc_default_token = if let Some(rel) = doc_rel {
+                if let Some(ref dv) = rel.default_value {
+                    quote! { Some(#dv.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+            // Merge: prefer #[arg(default_value)] if present, else use doc comment
+            let final_default_token = if let Some(config) = &arg_config {
+                if config.default_value.is_some() {
+                    default_value_token.clone()
+                } else {
+                    doc_default_token
+                }
+            } else {
+                doc_default_token
+            };
+
+            // Get value_hint from doc comment
+            let value_hint_token = if let Some(rel) = doc_rel {
+                if let Some(ref vh) = rel.value_hint {
+                    quote! { Some(#vh.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
+            // Get global from doc comment
+            let global_token = if let Some(rel) = doc_rel {
+                let global_val = rel.global;
+                quote! { #global_val }
+            } else {
+                quote! { false }
+            };
+
+            // Get exclusive from doc comment (merge with #[arg(exclusive)])
+            let doc_exclusive_token = if let Some(rel) = doc_rel {
+                if rel.exclusive {
+                    quote! { Some(true) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+            let final_exclusive_token = if let Some(config) = &arg_config {
+                if config.exclusive.is_some() {
+                    exclusive_token.clone()
+                } else {
+                    doc_exclusive_token
+                }
+            } else {
+                doc_exclusive_token
+            };
+
+            // Get help_heading from doc comment
+            let help_heading_token = if let Some(rel) = doc_rel {
+                if let Some(ref hh) = rel.help_heading {
+                    quote! { Some(#hh.to_string()) }
+                } else {
+                    quote! { None }
+                }
+            } else {
+                quote! { None }
+            };
+
             arg_metadata.push(quote! {
                 ::clap_noun_verb::cli::registry::ArgMetadata {
                     name: #arg_name.to_string(),
@@ -1070,8 +1466,8 @@ fn generate_verb_registration(
                     min_length: #min_length_token,
                     max_length: #max_length_token,
                     short: #short_token,
-                    default_value: #default_value_token,
-                    env: #env_token,
+                    default_value: #final_default_token,
+                    env: #final_env_token,
                     multiple: #multiple_values,
                     value_name: #value_name_token,
                     aliases: #aliases_token,
@@ -1081,14 +1477,16 @@ fn generate_verb_registration(
                     requires: #requires_token,
                     conflicts_with: #conflicts_with_token,
                     value_parser: #value_parser_token,
-                    hide: false,
-                    next_help_heading: None,
+                    hide: #hide_token,
+                    next_help_heading: #help_heading_token,
                     long_help: #long_help_token,
                     next_line_help: #next_line_help_token,
                     display_order: #display_order_token,
-                    exclusive: #exclusive_token,
+                    exclusive: #final_exclusive_token,
                     trailing_vararg: #trailing_vararg_token,
                     allow_negative_numbers: #allow_negative_numbers_token,
+                    value_hint: #value_hint_token,
+                    global: #global_token,
                 }
             });
         }
@@ -1133,7 +1531,8 @@ fn generate_verb_registration(
         #duplicate_check
 
         // Wrapper function that adapts HandlerInput to function signature
-        fn #wrapper_name(input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
+        // NOTE: Use __handler_input to avoid shadowing if user has an arg named "input"
+        fn #wrapper_name(__handler_input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
             // Telemetry: Start span for this verb execution
             let mut _verb_span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(
                 concat!(#noun_name_str, ".", #verb_name)
@@ -1152,67 +1551,79 @@ fn generate_verb_registration(
         }
 
         // Auto-generated registration
+        // CRITICAL FIX: Use named function instead of closure to satisfy fn() type requirement
         #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__VERB_REGISTRY)]
-        static #init_fn_name: fn() = || {
-            // Core team approach: Auto-infer noun name from filename if not explicitly provided
-            let (noun_name_static, noun_about_static, verb_name_final) = if #noun_name_str == "__auto__" {
-                // Extract noun name from filename using file!() macro
-                let file_path = file!();
-                let inferred_name = ::std::path::Path::new(file_path)
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("unknown")
-                    .to_string();
+        static #init_fn_name: fn() = {
+            fn __register_impl() {
+                // Core team approach: Auto-infer noun name from filename if not explicitly provided
+                let (noun_name_static, noun_about_static, verb_name_final) = if #noun_name_str == "__auto__" {
+                    // Extract noun name from filename using file!() macro
+                    let file_path = file!();
+                    let inferred_name = ::std::path::Path::new(file_path)
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                        .to_string();
 
-                // If verb name was auto-inferred, strip noun name from verb name if it appears
-                // Example: show_collector_status() -> verb_name="collector_status", noun="collector" -> verb="status"
-                let mut final_verb_name = #verb_name.to_string();
-                if final_verb_name.starts_with(&inferred_name) && final_verb_name.len() > inferred_name.len() {
-                    if final_verb_name.as_bytes()[inferred_name.len()] == b'_' {
-                        // Strip noun_ prefix (e.g., "collector_status" -> "status")
-                        final_verb_name = final_verb_name[inferred_name.len() + 1..].to_string();
+                    // If verb name was auto-inferred, strip noun name from verb name if it appears
+                    // Example: show_collector_status() -> verb_name="collector_status", noun="collector" -> verb="status"
+                    let mut final_verb_name = #verb_name.to_string();
+                    if final_verb_name.starts_with(&inferred_name) && final_verb_name.len() > inferred_name.len() {
+                        if final_verb_name.as_bytes()[inferred_name.len()] == b'_' {
+                            // Strip noun_ prefix (e.g., "collector_status" -> "status")
+                            final_verb_name = final_verb_name[inferred_name.len() + 1..].to_string();
+                        }
                     }
-                }
 
-                // Extract module doc from function doc as fallback
-                // Note: Full module doc extraction requires parsing the entire file,
-                // which is complex in proc macros. For now, we use function doc as a fallback.
-                // Users can add module doc (`//!`) at the top of the file, but we can't easily extract it.
-                let noun_about = if !#about_str.is_empty() {
-                    #about_str.to_string()
+                    // Extract module doc from function doc as fallback
+                    // Note: Full module doc extraction requires parsing the entire file,
+                    // which is complex in proc macros. For now, we use function doc as a fallback.
+                    // Users can add module doc (`//!`) at the top of the file, but we can't easily extract it.
+                    let noun_about = if !#about_str.is_empty() {
+                        #about_str.to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    // Leak strings to get static lifetime for registration (acceptable for CLI construction)
+                    let name_static: &'static str = Box::leak(inferred_name.into_boxed_str());
+                    let about_static: &'static str = Box::leak(noun_about.into_boxed_str());
+                    let verb_static: &'static str = Box::leak(final_verb_name.into_boxed_str());
+
+                    // Auto-register noun with inferred name and doc
+                    ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
+                        name_static,
+                        about_static,
+                    );
+
+                    (name_static, about_static, verb_static)
                 } else {
-                    String::new()
+                    // Leak explicit noun name and about to get static lifetime
+                    let name_static: &'static str = Box::leak(#noun_name_str.to_string().into_boxed_str());
+                    let about_static: &'static str = Box::leak(String::new().into_boxed_str());
+                    let verb_static: &'static str = #verb_name;
+
+                    // BUGFIX: Auto-register noun even with explicit noun name
+                    // This ensures the noun exists even if no #[noun] attribute was used
+                    ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
+                        name_static,
+                        about_static,
+                    );
+
+                    (name_static, about_static, verb_static)
                 };
 
-                // Leak strings to get static lifetime for registration (acceptable for CLI construction)
-                let name_static: &'static str = Box::leak(inferred_name.into_boxed_str());
-                let about_static: &'static str = Box::leak(noun_about.into_boxed_str());
-                let verb_static: &'static str = Box::leak(final_verb_name.into_boxed_str());
-
-                // Auto-register noun with inferred name and doc
-                ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
-                    name_static,
-                    about_static,
+                let args = vec![#(#arg_metadata),*];
+                ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
+                    noun_name_static,
+                    verb_name_final,
+                    #about_str,
+                    args,
+                    #wrapper_name,
                 );
-
-                (name_static, about_static, verb_static)
-            } else {
-                // Leak explicit noun name and about to get static lifetime
-                let name_static: &'static str = Box::leak(#noun_name_str.to_string().into_boxed_str());
-                let about_static: &'static str = Box::leak(String::new().into_boxed_str());
-                let verb_static: &'static str = #verb_name;
-                (name_static, about_static, verb_static)
-            };
-
-            let args = vec![#(#arg_metadata),*];
-            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
-                noun_name_static,
-                verb_name_final,
-                #about_str,
-                args,
-                #wrapper_name,
-            );
+            }
+            __register_impl  // Return function pointer (not a call!)
         };
     };
 
@@ -1720,5 +2131,59 @@ fn infer_type_parser(ty: &syn::Type) -> Option<String> {
         }
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_doc_relationships_group() {
+        let desc = "Export as JSON [group: format]";
+        let result = parse_doc_relationships(desc);
+        assert_eq!(result.group, Some("format".to_string()));
+        assert_eq!(result.description, "Export as JSON");
+    }
+
+    #[test]
+    fn test_parse_doc_relationships_requires() {
+        let desc = "Output filename [requires: format]";
+        let result = parse_doc_relationships(desc);
+        assert!(result.requires.contains(&"format".to_string()));
+        assert_eq!(result.description, "Output filename");
+    }
+
+    #[test]
+    fn test_parse_doc_relationships_conflicts() {
+        let desc = "Output format [conflicts: raw]";
+        let result = parse_doc_relationships(desc);
+        assert!(result.conflicts_with.contains(&"raw".to_string()));
+        assert_eq!(result.description, "Output format");
+    }
+
+    #[test]
+    fn test_parse_argument_descriptions_with_relationships() {
+        let docstring = r#"Test command
+
+# Arguments
+* `json` - Export as JSON [group: format]
+* `yaml` - Export as YAML [group: format]
+* `filename` - Output filename [requires: format]
+"#;
+        let result = parse_argument_descriptions_with_relationships(docstring);
+
+        assert!(result.contains_key("json"), "Should contain 'json' key");
+        assert!(result.contains_key("yaml"), "Should contain 'yaml' key");
+        assert!(result.contains_key("filename"), "Should contain 'filename' key");
+
+        let json_rel = result.get("json").unwrap();
+        assert_eq!(json_rel.group, Some("format".to_string()), "json should have group='format'");
+
+        let yaml_rel = result.get("yaml").unwrap();
+        assert_eq!(yaml_rel.group, Some("format".to_string()), "yaml should have group='format'");
+
+        let filename_rel = result.get("filename").unwrap();
+        assert!(filename_rel.requires.contains(&"format".to_string()), "filename should require 'format'");
     }
 }

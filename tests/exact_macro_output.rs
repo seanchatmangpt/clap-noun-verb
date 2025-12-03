@@ -57,6 +57,8 @@ static __init_test_opt: fn() = || {
         exclusive: None,
         trailing_vararg: false,
         allow_negative_numbers: false,
+        value_hint: None,
+        global: false,
     }];
     CommandRegistry::register_verb_with_args::<_>(
         noun_name_static,

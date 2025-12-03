@@ -67,6 +67,36 @@ use std::sync::{Mutex, OnceLock};
 ///
 /// For explicit value_parser expressions, it uses pattern matching on
 /// the string representation to apply common patterns.
+/// Parse a value hint string to clap::ValueHint
+///
+/// Supported hints (case-insensitive):
+/// - file_path, filepath, file - File path
+/// - dir_path, dirpath, dir, directory - Directory path
+/// - any_path, anypath, path - Any path
+/// - executable, exe - Executable command
+/// - command, cmd, cmdname - Command name
+/// - username, user - Username
+/// - hostname, host - Hostname
+/// - url - URL
+/// - email - Email address
+/// - other - Other
+fn parse_value_hint(hint: &str) -> clap::ValueHint {
+    match hint.to_lowercase().as_str() {
+        "file_path" | "filepath" | "file" => clap::ValueHint::FilePath,
+        "dir_path" | "dirpath" | "dir" | "directory" => clap::ValueHint::DirPath,
+        "any_path" | "anypath" | "path" => clap::ValueHint::AnyPath,
+        "executable" | "exe" => clap::ValueHint::ExecutablePath,
+        "command" | "cmd" | "cmdname" | "command_name" => clap::ValueHint::CommandName,
+        "commandstring" | "command_string" | "cmdstring" => clap::ValueHint::CommandString,
+        "commandwitharguments" | "commandwithargs" => clap::ValueHint::CommandWithArguments,
+        "username" | "user" => clap::ValueHint::Username,
+        "hostname" | "host" => clap::ValueHint::Hostname,
+        "url" => clap::ValueHint::Url,
+        "email" | "emailaddress" => clap::ValueHint::EmailAddress,
+        _ => clap::ValueHint::Other,
+    }
+}
+
 ///
 /// Takes ownership of Arg and returns the modified Arg to avoid unnecessary
 /// cloning while applying builder-pattern methods that consume and return self.
@@ -200,6 +230,10 @@ pub struct ArgMetadata {
     pub trailing_vararg: bool,
     /// Allow negative numbers
     pub allow_negative_numbers: bool,
+    /// Value hint for shell completion (e.g., FilePath, DirPath, Url)
+    pub value_hint: Option<String>,
+    /// Global flag - propagates to subcommands
+    pub global: bool,
 }
 
 /// Metadata for a registered verb
@@ -589,6 +623,21 @@ impl CommandRegistry {
         if let Some(ref heading) = arg_meta.next_help_heading {
             let heading_static: &'static str = Box::leak(heading.clone().into_boxed_str());
             arg = arg.help_heading(heading_static);
+        }
+
+        // Apply value_hint for shell completion
+        if let Some(ref hint) = arg_meta.value_hint {
+            arg = arg.value_hint(parse_value_hint(hint));
+        }
+
+        // Apply global flag - propagates to subcommands
+        if arg_meta.global {
+            arg = arg.global(true);
+        }
+
+        // Apply exclusive if specified (cannot be used with any other args)
+        if let Some(true) = arg_meta.exclusive {
+            arg = arg.exclusive(true);
         }
 
         arg

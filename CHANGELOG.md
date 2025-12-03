@@ -5,6 +5,45 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0] - 2025-12-03
+
+### Added
+
+- **Typer-like Doc Comment Syntax for Argument Relationships (Phase 2)**
+  - New doc comment tags for declaring argument relationships inline with descriptions
+  - `[group: name]` - Argument belongs to exclusive group "name"
+  - `[requires: arg]` - Argument requires "arg" to be present
+  - `[conflicts: arg]` - Argument conflicts with "arg"
+  - `[env: VAR]` - Read value from environment variable VAR
+  - `[default: value]` - Default value if not provided
+  - `[value_hint: type]` - Shell completion hint (FilePath, DirPath, Url, etc.)
+  - `[hide]` - Hide argument from help output
+  - `[help_heading: name]` - Group arguments under heading in help
+  - `[global]` - Propagate argument to all subcommands
+  - `[exclusive]` - Argument cannot be used with any other arguments
+
+- **Enhanced ArgMetadata Structure**
+  - New `value_hint` field for shell completion hints
+  - New `global` field for subcommand argument propagation
+
+- **Comprehensive Example**
+  - Updated `examples/arg_groups.rs` demonstrating all new Typer-like tags
+  - Real-world usage patterns for argument relationships
+
+### Fixed
+
+- **Critical Variable Shadowing Bug in Macro Generation**
+  - Fixed bug where user function parameters named "input" would shadow the HandlerInput wrapper parameter
+  - Renamed internal wrapper parameter from `input` to `__handler_input` to avoid conflicts
+  - All arg_extractions now use `__handler_input.args`/`__handler_input.opts`
+
+### Technical Details
+
+- **No breaking changes** - Full backward compatibility with v5.1.x
+- **Macro improvements** - Better code generation with conflict-free naming
+- **Parser enhancements** - Doc comment tag parsing with regex-based extraction
+- **Test coverage** - New tests for arg_relationships, attribute_macro_acceptance
+
 ## [5.1.1] - 2025-12-02
 
 ### Added
