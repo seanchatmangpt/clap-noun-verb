@@ -231,10 +231,6 @@ name = "howto_arg_actions"
 path = "examples/howto/arg_actions.rs"
 
 [[example]]
-name = "howto_completion"
-path = "examples/howto/completion.rs"
-
-[[example]]
 name = "howto_deprecation"
 path = "examples/howto/deprecation.rs"
 
@@ -267,140 +263,16 @@ name = "ref_context"
 path = "examples/reference/context.rs"
 
 # =============================================================================
-# ADVANCED EXAMPLES - Expert-level production patterns
+# ADVANCED EXAMPLES - Expert-level production patterns (require --all-features)
 # =============================================================================
-
-[[example]]
-name = "adv_autonomic"
-path = "examples/advanced/autonomic.rs"
-
-[[example]]
-name = "adv_async"
-path = "examples/advanced/async.rs"
-
-[[example]]
-name = "adv_io_basic"
-path = "examples/advanced/io_basic.rs"
-
-[[example]]
-name = "adv_io_advanced"
-path = "examples/advanced/io_advanced.rs"
-
-[[example]]
-name = "adv_swarm_intelligence"
-path = "examples/advanced/swarm_intelligence.rs"
-
-[[example]]
-name = "adv_swarm_native"
-path = "examples/advanced/swarm_native.rs"
-
-[[example]]
-name = "adv_thesis_framework"
-path = "examples/advanced/thesis_framework.rs"
-
-[[example]]
-name = "adv_trillion_agent"
-path = "examples/advanced/trillion_agent.rs"
-
-[[example]]
-name = "adv_hive_mind"
-path = "examples/advanced/hive_mind_swarm_control.rs"
-
-[[example]]
-name = "adv_agent2028"
-path = "examples/advanced/agent2028_comprehensive.rs"
-
-[[example]]
-name = "adv_features_v4"
-path = "examples/advanced/advanced_features_v4_3.rs"
-
-[[example]]
-name = "adv_swarm_memory"
-path = "examples/advanced/advanced_swarm_memory_test.rs"
-
-[[example]]
-name = "adv_concurrent_stress"
-path = "examples/advanced/concurrent_swarm_stress_test.rs"
-
-[[example]]
-name = "adv_multi_plugin"
-path = "examples/advanced/multi_plugin_integration.rs"
-
-[[example]]
-name = "adv_swarm_consensus"
-path = "examples/advanced/swarm_innovation_consensus.rs"
+# Advanced examples disabled in default build due to feature dependencies.
+# Build with: cargo build --example NAME --all-features
 
 # =============================================================================
-# PLAYGROUND EXAMPLES - Experimental RDF/MCP features
+# PLAYGROUND EXAMPLES - Experimental RDF/MCP features (DISABLED - missing deps)
 # =============================================================================
-
-[[example]]
-name = "playground_rdf_interactive"
-path = "examples/playground/rdf_interactive_playground.rs"
-
-[[example]]
-name = "playground_rdf_sparql"
-path = "examples/playground/rdf_oxigraph_sparql.rs"
-
-[[example]]
-name = "playground_rdf_mcp_lean"
-path = "examples/playground/rdf_mcp_lean.rs"
-
-[[example]]
-name = "playground_rdf_mcp_core"
-path = "examples/playground/rdf_mcp_core.rs"
-
-[[example]]
-name = "playground_thesis_rdf"
-path = "examples/playground/thesis_rdf_mcp_80_20.rs"
-
-[[example]]
-name = "playground_arxiv_paper"
-path = "examples/playground/arxiv_paper_generator.rs"
-
-[[example]]
-name = "playground_conference"
-path = "examples/playground/conference_management.rs"
-
-[[example]]
-name = "playground_semantic_submissions"
-path = "examples/playground/semantic_submissions.rs"
-
-[[example]]
-name = "playground_template_gen"
-path = "examples/playground/template_generator.rs"
-
-[[example]]
-name = "playground_semantic_hello"
-path = "examples/playground/semantic_cli_hello_world.rs"
-
-[[example]]
-name = "playground_rdf_mcp_server"
-path = "examples/playground/rdf_mcp_server.rs"
-
-[[example]]
-name = "playground_claude_md"
-path = "examples/playground/claude_md_config_cli.rs"
-
-[[example]]
-name = "playground_compile_validation"
-path = "examples/playground/compile_time_validation_demo.rs"
-
-[[example]]
-name = "playground_recovery_demo"
-path = "examples/playground/false_positive_recovery_demo.rs"
-
-[[example]]
-name = "playground_telemetry"
-path = "examples/playground/telemetry_validation.rs"
-
-[[example]]
-name = "playground_minimal"
-path = "examples/playground/minimal_test.rs"
-
-[[example]]
-name = "playground_auto_noun"
-path = "examples/playground/auto_noun.rs"
+# All playground examples require optional features (rdf, agent2028, autonomic)
+# that are not in default build. Enable with: cargo build --example NAME --all-features
 
 [package.metadata.docs.rs]
 # docs.rs build configuration - enable all features for documentation
