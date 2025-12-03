@@ -100,16 +100,30 @@ fn format_json<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Er
     Ok(serde_json::to_string_pretty(&json)?)
 }
 
-/// YAML formatter
+/// YAML formatter (requires "config-formats" feature)
+#[cfg(feature = "config-formats")]
 fn format_yaml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
     Ok(serde_yaml::to_string(&json)?)
 }
 
-/// TOML formatter
+/// YAML formatter fallback (when "config-formats" is not enabled)
+#[cfg(not(feature = "config-formats"))]
+fn format_yaml<S: Serialize>(_value: &S) -> Result<String, Box<dyn std::error::Error>> {
+    Err("YAML format requires the 'config-formats' feature. Enable it with: cargo add clap-noun-verb --features config-formats".into())
+}
+
+/// TOML formatter (requires "config-formats" feature)
+#[cfg(feature = "config-formats")]
 fn format_toml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
     Ok(toml::to_string_pretty(&json)?)
+}
+
+/// TOML formatter fallback (when "config-formats" is not enabled)
+#[cfg(not(feature = "config-formats"))]
+fn format_toml<S: Serialize>(_value: &S) -> Result<String, Box<dyn std::error::Error>> {
+    Err("TOML format requires the 'config-formats' feature. Enable it with: cargo add clap-noun-verb --features config-formats".into())
 }
 
 /// Table formatter - converts JSON to ASCII table

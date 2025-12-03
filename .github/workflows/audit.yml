@@ -1,34 +1,43 @@
-name: Scheduled Security Audit
+name: Security Audit
 
 on:
   # Run weekly on Monday at 00:00 UTC
   schedule:
     - cron: '0 0 * * 1'
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   audit:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-audit-
+          key: audit-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: taiki-e/install-action@cargo-audit
 
       - name: Run security audit
         run: cargo audit --deny warnings
 
+      - name: Audit passed
+        run: echo "✓ No security vulnerabilities found"
+
+      # Optional: Upload audit report as artifact
+      - name: Generate audit report
+        if: always()
+        run: cargo audit --json > audit-report.json
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report-${{ github.run_number }}
+          path: audit-report.json
+          retention-days: 30

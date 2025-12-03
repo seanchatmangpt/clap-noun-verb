@@ -16,6 +16,7 @@
 //! - **Guards & Budgets**: Latency and resource constraints
 //! - **Receipts**: Structured execution records for audit and analysis
 
+#[cfg(feature = "async")]
 pub mod async_runtime;
 pub mod capability_id;
 pub mod certificates;

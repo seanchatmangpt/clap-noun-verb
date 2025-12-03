@@ -3,20 +3,32 @@
 //! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns
 //! on top of clap, similar to how Python's Typer provides a simpler interface over Click.
 //!
-//! ## Version 3.2.0 Architecture
+//! ## Minimal Dependencies
 //!
-//! Version 3.0.0 introduced attribute macros for zero-boilerplate command registration.
-//! Version 3.2.0 adds complete clap feature support:
+//! By default, clap-noun-verb compiles with **only 10 core dependencies** for basic CLI:
+//! - `clap` - CLI framework
+//! - `clap-noun-verb-macros` - Our proc macros
+//! - `linkme` - Auto-discovery
+//! - `serde`, `serde_json` - JSON output
+//! - `thiserror`, `anyhow` - Error handling
+//! - `once_cell`, `lazy_static`, `atty` - Utilities
+//!
+//! All advanced features are opt-in via cargo features:
+//! - `full` - Enable all features
+//! - `autonomic` - Agent introspection & telemetry spans
+//! - `async` - Async handlers (tokio, futures)
+//! - `io` - Advanced I/O (clio)
+//! - `crypto` - Cryptographic hashing (sha2, sha3, blake3)
+//! - `agent2028` - Trillion-agent ecosystems
+//! - `rdf` - RDF/Ontology with MCP
+//! - `kernel` - Deterministic execution
+//!
+//! ## Version 5.3.0 Architecture
 //!
 //! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[noun]` and `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
 //! - **Type Inference** - Arguments automatically inferred from function signatures
 //! - **JSON Output** - All output automatically serialized to JSON
-//! - **Environment Variables** - `#[arg(env = "VAR_NAME")]` for env var fallback
-//! - **Positional Arguments** - `#[arg(index = 0)]` for positional args
-//! - **Enhanced Actions** - Count, SetFalse with auto-inference (`usize` → Count, `bool` → SetTrue)
-//! - **Argument Groups** - Groups, requires, conflicts_with support
-//! - **Better Help** - long_about, hide, help_heading support
 //!
 //! ### Key Principles
 //!
@@ -24,28 +36,19 @@
 //! 2. **Auto-Discovery** - Commands automatically discovered at compile time
 //! 3. **Type Inference** - Arguments inferred from function signatures
 //! 4. **JSON by Default** - Perfect for agents, MCP, and modern tooling
-//!
-//! ## Framework Philosophy
-//!
-//! Instead of providing specific compositions, this crate provides a framework that allows
-//! users to compose their own CLI patterns. Key features:
-//!
-//! - **Composable Command Structure**: Easy composition of nouns and verbs
-//! - **Separation of Concerns**: CLI validates, logic is separate and reusable
-//! - **Type-Safe Composition**: Compile-time verification of command structure
-//! - **Zero-Cost Abstractions**: Thin wrapper over clap with no runtime overhead
+//! 5. **Minimal Dependencies** - Core CLI needs only 9 crates
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 3.2.0 and above
-//! provide API stability guarantees:
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 5.3.0 provides:
 //!
-//! - **Public APIs** are stable and will not change in a breaking way within the same major version
-//! - **Breaking changes** will only occur in major version bumps (4.0.0, 5.0.0, etc.)
-//! - **Deprecations** will be announced at least one minor version before removal
-//! - **Private APIs** (non-pub items) are not subject to stability guarantees
-//!
-//! All public types, traits, and functions documented in this crate are considered stable.
+//! - **Public APIs** are stable within the same major version
+//! - **Breaking changes** only in major version bumps
+//! - **Feature flags** are stable - won't be removed without deprecation
+
+// =============================================================================
+// CORE MODULES - Always available (no feature flags)
+// =============================================================================
 
 pub mod builder;
 pub mod cli;
@@ -59,52 +62,91 @@ pub mod runtime;
 pub mod tree;
 pub mod verb;
 
-// New in v3.6.0
+// =============================================================================
+// OPTIONAL MODULES - Feature-gated for minimal compile burden
+// =============================================================================
+
+// Async verb support (requires "async" feature)
+#[cfg(feature = "async")]
 pub mod async_verb;
+
+// Shell completion generation (requires "completions" feature)
+#[cfg(feature = "completions")]
 pub mod completion;
+
+// Configuration formats (requires "config-formats" feature)
+#[cfg(feature = "config-formats")]
 pub mod config;
+
+// Execution context
 pub mod context;
+
+// Deprecation warnings
 pub mod deprecation;
+
+// Output formatting
 pub mod format;
+
+// Man page generation (requires "mangen" feature)
+#[cfg(feature = "mangen")]
 pub mod mangen;
+
+// Shell utilities
 pub mod shell;
+
+// URL/Regex validators (requires "validators" feature)
+#[cfg(feature = "validators")]
 pub mod validators;
 
-// New in v3.8.0 - Autonomic CLI Layer
+// Autonomic CLI Layer (requires "autonomic" feature)
+#[cfg(feature = "autonomic")]
 pub mod autonomic;
 
-// New in v3.8.0 - CNV Kernel Capabilities
+// CNV Kernel Capabilities (requires "kernel" feature)
+#[cfg(feature = "kernel")]
 pub mod kernel;
 
-// New in v4.0 - I/O Integration
+// I/O Integration (requires "io" feature)
+#[cfg(feature = "io")]
 pub mod io;
 
-// New in v4.3 - Advanced clap Integration (Phase 7)
+// Advanced clap Integration
 pub mod clap;
 
-// New in v4.3 - Plugin System (Feature 1)
+// Plugin System (requires "full" feature)
+#[cfg(feature = "full")]
 pub mod plugin;
 
-// New in v4.3 - Middleware System (Feature 4)
+// Middleware System (requires "full" feature)
+#[cfg(feature = "full")]
 pub mod middleware;
 
-// New in v4.3 - Telemetry & Observability (Feature 5)
+// Telemetry & Observability (requires "observability" feature)
+#[cfg(feature = "observability")]
 pub mod telemetry;
 
-// New in v4.3 - Integration Layer (Middleware executor, custom implementations, configuration)
+// Integration Layer (requires "full" feature)
+#[cfg(feature = "full")]
 pub mod integration;
 
-// New in v4.3 - 10 Production Plugins with Chicago-TDD Testing
+// Production Plugins (requires "full" feature)
+#[cfg(feature = "full")]
 pub mod plugins;
 
-// New in v5.0 - 2028 Innovations: Trillion-Agent Ecosystems
+// Agent2028 - Trillion-Agent Ecosystems (requires "agent2028" feature)
+#[cfg(feature = "agent2028")]
 pub mod agent2028;
 
-// New in v5.0 - RDF/Ontology Control Layer
+// RDF/Ontology Control Layer (requires "rdf" feature)
+#[cfg(feature = "rdf")]
 pub mod rdf;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
+
+// =============================================================================
+// PUBLIC RE-EXPORTS - Core types always available
+// =============================================================================
 
 // Re-export CLI run function for convenience
 pub use cli::run;
@@ -118,12 +160,22 @@ pub use router::CommandRouter;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
-// New in v3.6.0
-pub use async_verb::{create_runtime, run_async};
-pub use completion::{generate_completion, print_completion, Shell};
+// Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
 pub use format::OutputFormat;
+
+// =============================================================================
+// FEATURE-GATED RE-EXPORTS
+// =============================================================================
+
+// Async support (requires "async" feature)
+#[cfg(feature = "async")]
+pub use async_verb::{create_runtime, run_async};
+
+// Shell completion (requires "completions" feature)
+#[cfg(feature = "completions")]
+pub use completion::{generate_completion, print_completion, Shell};
 
 // Macros are exported at crate root via #[macro_export]
 

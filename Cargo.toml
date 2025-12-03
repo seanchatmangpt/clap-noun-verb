@@ -4,7 +4,7 @@ exclude = ["playground"]
 
 [package]
 name = "clap-noun-verb"
-version = "5.2.0"
+version = "5.3.0"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -22,64 +22,150 @@ name = "clap_noun_verb"
 path = "src/lib.rs"
 
 [features]
-# Experimental Agent2028 features (v5.1 planned, not yet stable)
-experimental = []
+# Default features - truly minimal for basic noun-verb CLI (10 dependencies)
+# Telemetry is now optional - add "autonomic" feature if you need it
+default = []
+
+# Full feature set - all optional modules enabled
+full = ["async", "io", "crypto", "observability", "validators", "agent2028", "rdf", "kernel", "autonomic", "completions", "mangen", "config-formats", "templates", "caching", "concurrency"]
+
+# Async runtime support (tokio, futures)
+async = ["dep:tokio", "dep:tokio-stream", "dep:tokio-util", "dep:futures", "dep:async-trait"]
+
+# Advanced I/O with clio
+io = ["dep:clio", "dep:bytes", "dep:pin-project", "async"]
+
+# Cryptographic hashing (sha2, sha3, blake3)
+crypto = ["dep:sha2", "dep:sha3", "dep:blake3", "dep:hex"]
+
+# Observability (tracing)
+observability = ["dep:tracing", "dep:tracing-subscriber"]
+
+# URL and regex validators
+validators = ["dep:regex", "dep:url"]
+
+# Agent2028 trillion-agent ecosystem (v5.0+)
+agent2028 = ["async", "crypto", "dep:chrono", "dep:uuid", "dep:rand"]
+
+# RDF/Ontology Control Layer with MCP
+rdf = ["crypto", "dep:rmcp", "dep:schemars"]
+
+# Kernel capabilities (deterministic execution, receipts)
+kernel = ["crypto", "async", "dep:uuid", "dep:parking_lot"]
+
+# Autonomic CLI layer (introspection, hot-path, telemetry)
+# Required by #[verb] macro - includes minimal deps for telemetry
+autonomic = ["crypto", "dep:crossbeam", "dep:parking_lot", "dep:uuid", "dep:chrono"]
+
+# Concurrency primitives
+concurrency = ["dep:crossbeam", "dep:parking_lot"]
+
+# Caching support
+caching = ["dep:lru", "dep:ahash"]
+
+# Template engine (handlebars)
+templates = ["dep:handlebars"]
+
+# Configuration formats (yaml, toml)
+config-formats = ["dep:serde_yaml", "dep:toml"]
+
+# Shell completion generation
+completions = ["dep:clap_complete"]
+
+# Man page generation
+mangen = ["dep:clap_mangen"]
+
+# =============================================================================
+# CORE DEPENDENCIES - Always required (MINIMAL for basic noun-verb CLI)
+# =============================================================================
 
 [dependencies]
+# CLI Framework (REQUIRED - this is what we wrap)
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap_complete = "4.5"
-clap_mangen = "0.2"
-thiserror = "1.0"
+clap-noun-verb-macros = { version = "5.3.0", path = "clap-noun-verb-macros" }
+
+# Auto-discovery (REQUIRED - distributed slices for #[noun]/#[verb])
+linkme = "0.3"
+
+# Serialization (REQUIRED - JSON output is fundamental)
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9"
-toml = "0.8"
-async-trait = "0.1"
-tokio-stream = "0.1"
-linkme = "0.3"
-clap-noun-verb-macros = { version = "5.2.0", path = "clap-noun-verb-macros" }
-regex = "1.10"
-url = "2.5"
-once_cell = "1.19"
-atty = "0.2"
-sha2 = "0.10"
-sha3 = "0.10"
-hex = "0.4"
-uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-rand = "0.8"
-crossbeam = "0.8"
-parking_lot = "0.12"
 
-# New in v4.0 - I/O Integration
-clio = { version = "0.3", features = ["clap-parse"] }
+# Error handling (REQUIRED - Result types)
+thiserror = "1.0"
 anyhow = "1.0"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"] }
+
+# Utilities (REQUIRED - lazy initialization)
+once_cell = "1.19"
 lazy_static = "1.4"
+atty = "0.2"
 
-# New in v4.1 - Async I/O and advanced features
-tokio = { version = "1.40", features = ["io-util", "net", "rt", "sync", "time"] }
-tokio-util = { version = "0.7", features = ["codec"] }
-bytes = "1.7"
-pin-project = "1.1"
-futures = "0.3"
+# =============================================================================
+# OPTIONAL DEPENDENCIES - Feature-gated for minimal compile burden
+# =============================================================================
 
-# New in v5.0 - RDF/Ontology Control Layer
-blake3 = "1.5"
+# Shell completion generation (optional)
+clap_complete = { version = "4.5", optional = true }
 
-# New in v5.0.2 - Official MCP SDK
-rmcp = { version = "0.9", features = ["server", "macros"] }
-schemars = { version = "0.8", features = ["uuid", "chrono"] }
+# Man page generation (optional)
+clap_mangen = { version = "0.2", optional = true }
 
-# New in v5.1 - Semantic RDF Management
-oxigraph = "0.5.1"
-lru = "0.12"
-ahash = "0.8"
-handlebars = "5.1"
+# Configuration formats (optional)
+serde_yaml = { version = "0.9", optional = true }
+toml = { version = "0.8", optional = true }
+
+# Async runtime (optional - for async handlers)
+async-trait = { version = "0.1", optional = true }
+tokio = { version = "1.40", features = ["io-util", "net", "rt", "sync", "time"], optional = true }
+tokio-stream = { version = "0.1", optional = true }
+tokio-util = { version = "0.7", features = ["codec"], optional = true }
+futures = { version = "0.3", optional = true }
+
+# Advanced I/O (optional - for clio integration)
+clio = { version = "0.3", features = ["clap-parse"], optional = true }
+bytes = { version = "1.7", optional = true }
+pin-project = { version = "1.1", optional = true }
+
+# Validators (optional - for URL/regex validation)
+regex = { version = "1.10", optional = true }
+url = { version = "2.5", optional = true }
+
+# Cryptography (optional - for receipts/hashing)
+sha2 = { version = "0.10", optional = true }
+sha3 = { version = "0.10", optional = true }
+blake3 = { version = "1.5", optional = true }
+hex = { version = "0.4", optional = true }
+
+# Data types (optional - for agent2028)
+uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+rand = { version = "0.8", optional = true }
+
+# Concurrency (optional - for kernel/autonomic)
+crossbeam = { version = "0.8", optional = true }
+parking_lot = { version = "0.12", optional = true }
+
+# Observability (optional - for telemetry)
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "ansi"], optional = true }
+
+# MCP Integration (optional - for rdf module)
+rmcp = { version = "0.9", features = ["server", "macros"], optional = true }
+schemars = { version = "0.8", features = ["uuid", "chrono"], optional = true }
+
+# Template engine (optional - for advanced help)
+handlebars = { version = "5.1", optional = true }
+
+# Caching (optional - for hot-path optimization)
+lru = { version = "0.12", optional = true }
+ahash = { version = "0.8", optional = true }
+
+# =============================================================================
+# DEV DEPENDENCIES - For tests, examples, and benchmarks
+# =============================================================================
 
 [dev-dependencies]
-anyhow = "1.0"
+# Testing frameworks
 cargo-make = "0.37"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
 criterion = { version = "0.5", features = ["html_reports"] }
@@ -87,157 +173,247 @@ proptest = "1.0"
 insta = { version = "1.0", features = ["json", "yaml"] }
 loom = "0.7"
 
-# New in v4.0 - CLI Testing
+# CLI testing
 assert_cmd = "2.0"
 predicates = "3.0"
 assert_fs = "1.0"
 
-# New in v5.1 - Poka-Yoke Test Architecture (unfailable tests)
+# Async testing
 tokio-test = "0.4"
 serial_test = "3.0"
 tempfile = "3.8"
+
+# RDF/SPARQL for playground examples (NOT used in library)
+oxigraph = "0.5.1"
 
 [workspace.metadata.make]
 # Cargo-make configuration
 verbose = false
 
-[[example]]
-name = "basic"
-path = "examples/basic.rs"
+# =============================================================================
+# TUTORIAL EXAMPLES - Learning-oriented, step-by-step guides
+# =============================================================================
 
 [[example]]
-name = "services"
-path = "examples/services.rs"
+name = "tutorial_basic"
+path = "examples/tutorial/basic.rs"
 
 [[example]]
-name = "collector"
-path = "examples/collector.rs"
+name = "tutorial_arguments"
+path = "examples/tutorial/arguments.rs"
 
 [[example]]
-name = "arguments"
-path = "examples/arguments.rs"
+name = "tutorial_positional"
+path = "examples/tutorial/positional.rs"
 
 [[example]]
-name = "framework"
-path = "examples/framework.rs"
+name = "tutorial_services"
+path = "examples/tutorial/services.rs"
+
+# =============================================================================
+# HOW-TO EXAMPLES - Task-oriented problem solving
+# =============================================================================
 
 [[example]]
-name = "nested"
-path = "examples/nested.rs"
+name = "howto_arg_groups"
+path = "examples/howto/arg_groups.rs"
 
 [[example]]
-name = "attribute_macro"
-path = "examples/attribute_macro.rs"
+name = "howto_validation"
+path = "examples/howto/validation.rs"
 
 [[example]]
-name = "validation"
-path = "examples/validation.rs"
+name = "howto_env_vars"
+path = "examples/howto/env_vars.rs"
 
 [[example]]
-name = "env_vars"
-path = "examples/env_vars.rs"
+name = "howto_arg_actions"
+path = "examples/howto/arg_actions.rs"
 
 [[example]]
-name = "positional"
-path = "examples/positional.rs"
+name = "howto_completion"
+path = "examples/howto/completion.rs"
 
 [[example]]
-name = "arg_actions"
-path = "examples/arg_actions.rs"
+name = "howto_deprecation"
+path = "examples/howto/deprecation.rs"
+
+# =============================================================================
+# REFERENCE EXAMPLES - Complete API demonstrations
+# =============================================================================
 
 [[example]]
-name = "arg_groups"
-path = "examples/arg_groups.rs"
+name = "ref_attribute_macro"
+path = "examples/reference/attribute_macro.rs"
 
 [[example]]
-name = "async_example"
-path = "examples/async_example.rs"
+name = "ref_framework"
+path = "examples/reference/framework.rs"
 
 [[example]]
-name = "context_example"
-path = "examples/context_example.rs"
+name = "ref_nested"
+path = "examples/reference/nested.rs"
 
 [[example]]
-name = "format_example"
-path = "examples/format_example.rs"
+name = "ref_collector"
+path = "examples/reference/collector.rs"
 
 [[example]]
-name = "deprecation_example"
-path = "examples/deprecation_example.rs"
+name = "ref_format"
+path = "examples/reference/format.rs"
 
 [[example]]
-name = "completion_example"
-path = "examples/completion_example.rs"
+name = "ref_context"
+path = "examples/reference/context.rs"
+
+# =============================================================================
+# ADVANCED EXAMPLES - Expert-level production patterns
+# =============================================================================
 
 [[example]]
-name = "autonomic_example"
-path = "examples/autonomic_example.rs"
-
-# [[example]]
-# name = "cnv4_example"
-# path = "examples/cnv4_example.rs"
+name = "adv_autonomic"
+path = "examples/advanced/autonomic.rs"
 
 [[example]]
-name = "io_basic"
-path = "examples/io_basic.rs"
+name = "adv_async"
+path = "examples/advanced/async.rs"
 
 [[example]]
-name = "io_advanced"
-path = "examples/io_advanced.rs"
-
-# [[example]]
-# name = "async_io_example"
-# path = "examples/async_io_example.rs"
+name = "adv_io_basic"
+path = "examples/advanced/io_basic.rs"
 
 [[example]]
-name = "conference_management"
-path = "examples/conference_management.rs"
+name = "adv_io_advanced"
+path = "examples/advanced/io_advanced.rs"
 
 [[example]]
-name = "semantic_submissions"
-path = "examples/semantic_submissions.rs"
+name = "adv_swarm_intelligence"
+path = "examples/advanced/swarm_intelligence.rs"
 
 [[example]]
-name = "template_generator"
-path = "examples/template_generator.rs"
+name = "adv_swarm_native"
+path = "examples/advanced/swarm_native.rs"
 
 [[example]]
-name = "rdf_interactive_playground"
+name = "adv_thesis_framework"
+path = "examples/advanced/thesis_framework.rs"
+
+[[example]]
+name = "adv_trillion_agent"
+path = "examples/advanced/trillion_agent.rs"
+
+[[example]]
+name = "adv_hive_mind"
+path = "examples/advanced/hive_mind_swarm_control.rs"
+
+[[example]]
+name = "adv_agent2028"
+path = "examples/advanced/agent2028_comprehensive.rs"
+
+[[example]]
+name = "adv_features_v4"
+path = "examples/advanced/advanced_features_v4_3.rs"
+
+[[example]]
+name = "adv_swarm_memory"
+path = "examples/advanced/advanced_swarm_memory_test.rs"
+
+[[example]]
+name = "adv_concurrent_stress"
+path = "examples/advanced/concurrent_swarm_stress_test.rs"
+
+[[example]]
+name = "adv_multi_plugin"
+path = "examples/advanced/multi_plugin_integration.rs"
+
+[[example]]
+name = "adv_swarm_consensus"
+path = "examples/advanced/swarm_innovation_consensus.rs"
+
+# =============================================================================
+# PLAYGROUND EXAMPLES - Experimental RDF/MCP features
+# =============================================================================
+
+[[example]]
+name = "playground_rdf_interactive"
 path = "examples/playground/rdf_interactive_playground.rs"
 
 [[example]]
-name = "rdf_oxigraph_sparql"
+name = "playground_rdf_sparql"
 path = "examples/playground/rdf_oxigraph_sparql.rs"
 
 [[example]]
-name = "rdf_mcp_lean"
+name = "playground_rdf_mcp_lean"
 path = "examples/playground/rdf_mcp_lean.rs"
 
 [[example]]
-name = "rdf_mcp_core"
+name = "playground_rdf_mcp_core"
 path = "examples/playground/rdf_mcp_core.rs"
 
 [[example]]
-name = "thesis_rdf_mcp_80_20"
+name = "playground_thesis_rdf"
 path = "examples/playground/thesis_rdf_mcp_80_20.rs"
 
 [[example]]
-name = "arxiv_paper_generator"
+name = "playground_arxiv_paper"
 path = "examples/playground/arxiv_paper_generator.rs"
 
+[[example]]
+name = "playground_conference"
+path = "examples/playground/conference_management.rs"
+
+[[example]]
+name = "playground_semantic_submissions"
+path = "examples/playground/semantic_submissions.rs"
+
+[[example]]
+name = "playground_template_gen"
+path = "examples/playground/template_generator.rs"
+
+[[example]]
+name = "playground_semantic_hello"
+path = "examples/playground/semantic_cli_hello_world.rs"
+
+[[example]]
+name = "playground_rdf_mcp_server"
+path = "examples/playground/rdf_mcp_server.rs"
+
+[[example]]
+name = "playground_claude_md"
+path = "examples/playground/claude_md_config_cli.rs"
+
+[[example]]
+name = "playground_compile_validation"
+path = "examples/playground/compile_time_validation_demo.rs"
+
+[[example]]
+name = "playground_recovery_demo"
+path = "examples/playground/false_positive_recovery_demo.rs"
+
+[[example]]
+name = "playground_telemetry"
+path = "examples/playground/telemetry_validation.rs"
+
+[[example]]
+name = "playground_minimal"
+path = "examples/playground/minimal_test.rs"
+
+[[example]]
+name = "playground_auto_noun"
+path = "examples/playground/auto_noun.rs"
+
 [package.metadata.docs.rs]
-# docs.rs build configuration
-# All features are enabled by default for documentation
-# If you add features in the future, list them here:
-# features = ["feature1", "feature2"]
-# rustdoc-args = ["--cfg", "docsrs"]
+# docs.rs build configuration - enable all features for documentation
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lints.rust]
 # Core team best practices - deny unsafe patterns
 unsafe_code = "deny"
 bare_trait_objects = "warn"
 # Allow kani cfg condition for formal verification (optional external tool)
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+# Also allow docsrs for documentation build
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)'] }
 # Allow dead code for v5.1 feature placeholders
 dead_code = "allow"
 # Allow async fn in traits (stable in Rust 1.75+)

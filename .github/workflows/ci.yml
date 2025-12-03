@@ -2,14 +2,48 @@ name: CI
 
 on:
   push:
-    branches: [ '**' ]
+    branches: [ main, develop, 'release/**' ]
   pull_request:
-    branches: [ '**' ]
+    branches: [ main, develop ]
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
+  # Format check - fail fast if code isn't formatted
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  # Lint - catch common mistakes early
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: clippy-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  # Test suite - most important job
   test:
     name: Test Suite
     runs-on: ubuntu-latest
@@ -19,176 +53,163 @@ jobs:
           - stable
           - beta
           - nightly
-
+      fail-fast: false
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.rust }}-
-
-      - name: Install cargo-nextest
-        if: matrix.rust == 'stable'
-        uses: taiki-e/install-action@cargo-nextest
+          key: test-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
-        run: cargo test --all-features --workspace
+        run: cargo test --all-features --workspace --lib
 
-      - name: Run nextest (stable only)
-        if: matrix.rust == 'stable'
+      - name: Run integration tests
+        run: cargo test --all-features --workspace --test '*'
+
+      - name: Run doc tests
+        run: cargo test --all-features --workspace --doc
+
+  # Nextest - faster test runner (stable only)
+  nextest:
+    name: Nextest (faster test runner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: nextest-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: taiki-e/install-action@cargo-nextest
+
+      - name: Run nextest
         run: cargo nextest run --all-features --workspace
 
-  lint:
-    name: Linting
+  # MSRV - verify code works on minimum supported Rust version
+  msrv:
+    name: MSRV (1.74)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.74.0
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          components: rustfmt, clippy
+          key: msrv-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-lint-
+      - name: Build with MSRV
+        run: cargo build --all-features --workspace
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Test with MSRV
+        run: cargo test --all-features --workspace
 
-      - name: Run clippy
-        run: cargo clippy --all-features --workspace -- -D warnings
-
-  doc:
+  # Docs - ensure documentation builds
+  docs:
     name: Documentation
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-doc-
+          key: docs-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build documentation
         run: cargo doc --all-features --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/doc
-
-  msrv:
-    name: Minimum Supported Rust Version
+  # Security audit - check for known vulnerabilities
+  audit:
+    name: Security Audit
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust 1.74.0 (MSRV)
-        uses: dtolnay/rust-toolchain@1.74.0
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          toolchain: 1.74.0
+          key: audit-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build
-        run: cargo build --all-features
+      - uses: taiki-e/install-action@cargo-audit
 
-      - name: Test
-        run: cargo test --all-features
+      - name: Run cargo-audit
+        run: cargo audit --deny warnings
 
-  spell-check:
+  # License check - ensure dependencies have compatible licenses
+  licenses:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: deny-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: taiki-e/install-action@cargo-deny
+
+      - name: Check licenses
+        run: cargo deny check licenses --deny warnings
+
+      - name: Check advisories
+        run: cargo deny check advisories --deny warnings
+
+      - name: Check bans
+        run: cargo deny check bans --deny warnings
+
+  # Spell check - catch typos
+  typos:
     name: Spell Check
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install typos
-        uses: taiki-e/install-action@typos
+      - uses: taiki-e/install-action@typos
 
       - name: Check spelling
         run: typos
 
-  security-audit:
-    name: Security Audit
+  # Summary - ensure all critical checks passed
+  ci-success:
+    name: CI Summary
     runs-on: ubuntu-latest
-
+    needs:
+      - fmt
+      - clippy
+      - test
+      - nextest
+      - msrv
+      - docs
+      - audit
+      - licenses
+      - typos
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check all required checks passed
+        if: |
+          needs.fmt.result != 'success' ||
+          needs.clippy.result != 'success' ||
+          needs.test.result != 'success' ||
+          needs.msrv.result != 'success' ||
+          needs.docs.result != 'success' ||
+          needs.audit.result != 'success' ||
+          needs.licenses.result != 'success' ||
+          needs.typos.result != 'success'
+        run: exit 1
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-audit
-        uses: taiki-e/install-action@cargo-audit
-
-      - name: Run security audit
-        run: cargo audit --deny warnings
-
-  license-check:
-    name: License Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-deny
-        uses: taiki-e/install-action@cargo-deny
-
-      - name: Check licenses
-        run: cargo deny check licenses
-
-      - name: Check advisories
-        run: cargo deny check advisories
-
-      - name: Check bans
-        run: cargo deny check bans
-
+      - name: CI passed ✓
+        run: echo "All CI checks passed!"

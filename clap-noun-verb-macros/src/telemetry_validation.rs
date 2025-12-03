@@ -138,7 +138,8 @@ pub fn generate_span_declaration(ident: &syn::Ident, name: &str) -> TokenStream 
         #[allow(non_upper_case_globals)]
         pub const #ident: &str = #name_str;
 
-        /// Register span in distributed slice
+        /// Register span in distributed slice (only when autonomic feature enabled)
+        #[cfg(feature = "autonomic")]
         #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::autonomic::telemetry::__SPAN_REGISTRY)]
         static #reg_fn_name: fn() -> (&'static str, &'static str, &'static str) = || {
@@ -181,7 +182,8 @@ pub fn generate_span_usage(span_ident: &syn::Ident) -> TokenStream {
     let usage_fn_name = quote::format_ident!("__span_use_{}_{}", span_ident, unique_id);
 
     quote! {
-        /// Register span usage in distributed slice
+        /// Register span usage in distributed slice (only when autonomic feature enabled)
+        #[cfg(feature = "autonomic")]
         #[allow(non_upper_case_globals)]
         #[linkme::distributed_slice(::clap_noun_verb::autonomic::telemetry::__SPAN_USAGE)]
         static #usage_fn_name: fn() -> &'static str = || {

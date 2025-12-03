@@ -5,6 +5,42 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.0] - 2025-12-03
+
+### Changed
+
+- **BREAKING: Telemetry is now optional (autonomic feature)**
+  - The `autonomic` feature is no longer included in default features
+  - Default builds now have only ~10 dependencies (previously ~18)
+  - Telemetry spans in `#[verb]` macros are conditionally generated based on `autonomic` feature
+  - To enable telemetry, add: `clap-noun-verb = { version = "5.3", features = ["autonomic"] }`
+
+### Fixed
+
+- **#[verb] macro no longer requires autonomic feature**
+  - Telemetry span generation is now wrapped in `#[cfg(feature = "autonomic")]`
+  - Users can now use `#[verb]` with truly minimal dependencies
+  - The `span!` proc macro also conditionally generates telemetry code
+
+### Migration Guide
+
+**From v5.2.x to v5.3.0:**
+
+If your project relied on telemetry spans being automatically generated:
+```toml
+# Before (v5.2.x) - telemetry was automatic
+clap-noun-verb = "5.2"
+
+# After (v5.3.0) - explicitly enable autonomic for telemetry
+clap-noun-verb = { version = "5.3", features = ["autonomic"] }
+```
+
+If you just want a minimal CLI without telemetry:
+```toml
+# Works with truly minimal dependencies (~10 crates)
+clap-noun-verb = "5.3"
+```
+
 ## [5.2.0] - 2025-12-03
 
 ### Added

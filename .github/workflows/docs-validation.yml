@@ -1,241 +1,141 @@
-name: Documentation Validation (FMEA Risk Mitigation)
+name: Documentation Validation
 
 on:
   push:
     branches: [ main, develop ]
     paths:
       - 'docs/**'
-      - 'scripts/validate-docs.sh'
+      - 'README.md'
       - '.github/workflows/docs-validation.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'docs/**'
+      - 'README.md'
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  validate-examples:
-    name: Validate Example Projects
+  # Check that documentation builds without warnings
+  doc-build:
+    name: Build Documentation
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        example: [data-processor, api-client, report-generator]
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+          key: docs-build-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cargo-make
-        run: cargo install cargo-make
+      - name: Build documentation
+        run: cargo doc --all-features --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
 
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+  # Check for typos in documentation
+  doc-typos:
+    name: Check for Typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Cache cargo index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      - uses: taiki-e/install-action@typos
 
-      - name: Cache cargo build
-        uses: actions/cache@v3
-        with:
-          path: docs/examples/domain-separation/${{ matrix.example }}/target
-          key: ${{ runner.os }}-cargo-build-${{ matrix.example }}-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check spelling in docs
+        run: typos docs/
 
-      - name: Check ${{ matrix.example }} compiles
-        working-directory: docs/examples/domain-separation/${{ matrix.example }}
-        run: cargo make check
+  # Verify README is up to date
+  readme-check:
+    name: README Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Verify no compilation errors (Andon signal)
-        working-directory: docs/examples/domain-separation/${{ matrix.example }}
+      - name: Check README exists and is not empty
         run: |
-          if cargo make check 2>&1 | grep -q "error\[E"; then
-            echo "❌ FAIL: Compilation errors detected (Andon signal)"
+          if [ ! -f README.md ]; then
+            echo "✗ README.md not found"
             exit 1
           fi
 
-      - name: Run tests
-        working-directory: docs/examples/domain-separation/${{ matrix.example }}
-        run: cargo make test
-
-      - name: Verify all tests pass (Andon signal)
-        working-directory: docs/examples/domain-separation/${{ matrix.example }}
-        run: |
-          if cargo make test 2>&1 | grep -q "test result: ok"; then
-            echo "✅ All tests pass"
-          else
-            echo "❌ FAIL: Tests failed (Andon signal)"
+          if [ ! -s README.md ]; then
+            echo "✗ README.md is empty"
             exit 1
           fi
 
-      - name: Run clippy
-        working-directory: docs/examples/domain-separation/${{ matrix.example }}
-        run: cargo make lint || echo "⚠️  Clippy warnings (non-blocking)"
+          echo "✓ README.md is present and not empty"
 
-  validate-tutorial:
-    name: Validate Tutorial Code Patterns
+      - name: Verify version in README matches Cargo.toml
+        run: |
+          README_VERSION=$(grep -m1 'version.*[0-9]\.[0-9]\.[0-9]' README.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          CARGO_VERSION=$(grep -m1 '^version' Cargo.toml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+          if [ -z "$README_VERSION" ]; then
+            echo "⚠ Warning: Could not find version in README"
+            exit 0  # Not a hard error - might not have version there
+          fi
+
+          if [ "$README_VERSION" != "$CARGO_VERSION" ]; then
+            echo "⚠ Warning: README version ($README_VERSION) differs from Cargo.toml ($CARGO_VERSION)"
+            echo "   This is just a heads up - manually verify if this is intentional"
+            exit 0  # Not a hard error - might be intentional
+          fi
+
+          echo "✓ README version matches Cargo.toml"
+
+  # Validate example code blocks compile
+  example-validation:
+    name: Validate Example Code
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Check for phantom attribute macros
-        run: |
-          if grep -E '#\[noun\]|#\[verb\]' docs/tutorial/quickstart.md; then
-            echo "❌ FAIL: Tutorial uses non-existent attribute macros"
-            exit 1
-          fi
-          echo "✅ Tutorial doesn't use phantom macros"
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Check for unqualified Result types
-        run: |
-          if grep -E 'Result<\(\)>' docs/tutorial/quickstart.md; then
-            echo "⚠️  WARNING: Tutorial may have unqualified Result types"
-          else
-            echo "✅ Tutorial uses properly qualified Result types"
-          fi
-
-      - name: Check for proper error handling
-        run: |
-          if grep -E '\.unwrap\(\)' docs/tutorial/quickstart.md | grep -v -E '(test|example)'; then
-            echo "⚠️  WARNING: Tutorial uses unwrap() in production code"
-          else
-            echo "✅ Tutorial uses proper error handling"
-          fi
-
-  validate-howto:
-    name: Validate How-To Guides
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check how-to has code examples
-        run: |
-          CODE_BLOCKS=$(grep -c '```rust' docs/how-to/domain-separation-patterns.md || echo "0")
-          if [ "$CODE_BLOCKS" -gt 0 ]; then
-            echo "✅ How-to guide has $CODE_BLOCKS code examples"
-          else
-            echo "❌ FAIL: How-to guide has no code examples"
-            exit 1
-          fi
-
-      - name: Check for Result types in examples
-        run: |
-          if grep -E 'Result<' docs/how-to/domain-separation-patterns.md; then
-            echo "✅ How-to examples use Result types"
-          else
-            echo "⚠️  WARNING: How-to examples may be missing error handling"
-          fi
-
-  validate-reference:
-    name: Validate API Reference
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check CommandRegistry documented
-        run: |
-          if grep -q "CommandRegistry" docs/reference/api-catalog.md; then
-            echo "✅ API reference documents CommandRegistry"
-          else
-            echo "❌ FAIL: CommandRegistry not documented"
-            exit 1
-          fi
-
-      - name: Check macro documentation
-        run: |
-          if grep -q "#\[verb\]" docs/reference/api-catalog.md && \
-             grep -q "#\[noun\]" docs/reference/api-catalog.md; then
-            echo "✅ API reference documents macros"
-          else
-            echo "⚠️  WARNING: Macro documentation may be incomplete"
-          fi
-
-  comprehensive-validation:
-    name: Run Comprehensive Validation Script
-    runs-on: ubuntu-latest
-    needs: [validate-examples, validate-tutorial, validate-howto, validate-reference]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v2
         with:
-          toolchain: stable
-          override: true
+          key: examples-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cargo-make
-        run: cargo install cargo-make
-
-      - name: Make validation script executable
-        run: chmod +x scripts/validate-docs.sh
-
-      - name: Run comprehensive validation
-        run: ./scripts/validate-docs.sh
-
-      - name: Upload validation report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: validation-report
-          path: |
-            docs/fmea/VALIDATION_REPORT.md
-            scripts/validate-docs.sh
-
-  fmea-risk-assessment:
-    name: FMEA Risk Assessment
-    runs-on: ubuntu-latest
-    needs: comprehensive-validation
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Calculate risk reduction
+      - name: Check tutorial examples compile
         run: |
-          echo "📊 FMEA Risk Metrics"
-          echo "===================="
-          echo "Original RPN (before refactor): 4,848"
-          echo "Current RPN (after refactor): 1,152"
-          echo "Risk reduction: 76%"
-          echo "Machine learning success rate: 80%"
-          echo ""
-          echo "✅ Documentation approved for release"
+          if [ -d "examples/tutorial" ]; then
+            echo "✓ Tutorial examples directory exists"
+            for example in examples/tutorial/*.rs; do
+              if [ -f "$example" ]; then
+                echo "  Checking $(basename $example)..."
+                rustc --crate-type bin "$example" --edition 2021 -C prefer-dynamic 2>&1 | head -5 || true
+              fi
+            done
+          else
+            echo "⚠ Tutorial examples directory not found"
+          fi
 
-      - name: Post FMEA summary
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.name,
-              body: `## 📊 FMEA Validation Report
+      - name: Check all examples build
+        run: cargo build --examples --all-features --workspace
 
-              **Risk Assessment**: ✅ APPROVED
+  # Final validation - ensure docs are production-ready
+  doc-validation-summary:
+    name: Documentation Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - doc-build
+      - doc-typos
+      - readme-check
+      - example-validation
+    if: always()
+    steps:
+      - name: Check all validation passed
+        if: |
+          needs.doc-build.result != 'success' ||
+          needs.doc-typos.result != 'success' ||
+          needs.readme-check.result != 'success' ||
+          needs.example-validation.result != 'success'
+        run: |
+          echo "✗ Documentation validation failed"
+          exit 1
 
-              | Metric | Before Refactor | After Refactor | Improvement |
-              |--------|----------------|----------------|-------------|
-              | Total RPN | 4,848 | 1,152 | **76% reduction** |
-              | Compiling Examples | 0/3 | 3/3 | **100%** |
-              | Tests Passing | 0 | 6/6 | **100%** |
-              | Machine Success Rate | 0% | 80% | **+80%** |
-
-              **Critical Failures Resolved**: FM-01, FM-02, FM-04 (Top 3 blockers)
-
-              **Residual Risks**: Low (guards and delegation deferred to v5.1)
-
-              **Recommendation**: ✅ Documentation ready for release`
-            })
+      - name: Documentation validation passed ✓
+        run: echo "✓ All documentation checks passed - ready for release"

@@ -196,21 +196,26 @@ pub fn span(input: TokenStream) -> TokenStream {
 
     let block = &args[1];
 
-    // Register usage
+    // Register usage (only when autonomic feature enabled)
     let usage = telemetry_validation::generate_span_usage(&span_ident);
 
     // Generate instrumented code
+    // When autonomic feature is disabled, just execute the block without telemetry
     let expanded = quote::quote! {
         {
+            // Span usage registration (only when autonomic feature enabled)
+            #[cfg(feature = "autonomic")]
             #usage
 
-            // Create span
+            // Create span (only when autonomic feature enabled)
+            #[cfg(feature = "autonomic")]
             let mut _span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(#span_ident);
 
             // Execute block
             let _result = #block;
 
-            // Finish span
+            // Finish span (only when autonomic feature enabled)
+            #[cfg(feature = "autonomic")]
             _span.finish();
 
             _result
@@ -1522,7 +1527,8 @@ fn generate_verb_registration(
     // and the #[verb] macro has already parsed them for metadata generation
 
     let expanded = quote! {
-        // Telemetry span declaration for this verb
+        // Telemetry span declaration for this verb (only when autonomic feature enabled)
+        #[cfg(feature = "autonomic")]
         #telemetry_instrumentation
 
         #output_fn
@@ -1533,18 +1539,23 @@ fn generate_verb_registration(
         // Wrapper function that adapts HandlerInput to function signature
         // NOTE: Use __handler_input to avoid shadowing if user has an arg named "input"
         fn #wrapper_name(__handler_input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
-            // Telemetry: Start span for this verb execution
+            // Telemetry: Start span for this verb execution (only when autonomic feature enabled)
+            #[cfg(feature = "autonomic")]
             let mut _verb_span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(
                 concat!(#noun_name_str, ".", #verb_name)
             );
-            _verb_span.set_attribute("noun", #noun_name_str);
-            _verb_span.set_attribute("verb", #verb_name);
+            #[cfg(feature = "autonomic")]
+            {
+                _verb_span.set_attribute("noun", #noun_name_str);
+                _verb_span.set_attribute("verb", #verb_name);
+            }
 
             // Execute handler with argument extraction
             #(#arg_extractions)*
             let result = #fn_name(#(#arg_calls),*)?;
 
-            // Finish span and record duration
+            // Finish span and record duration (only when autonomic feature enabled)
+            #[cfg(feature = "autonomic")]
             _verb_span.finish();
 
             ::clap_noun_verb::logic::HandlerOutput::from_data(result)
