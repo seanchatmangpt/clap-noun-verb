@@ -12,6 +12,7 @@
 
 use proc_macro2::TokenStream;
 use quote::quote;
+use quote::ToTokens;
 use syn::parse::Parser;
 use syn::{spanned::Spanned, ItemFn, ReturnType, Type};
 
@@ -355,6 +356,224 @@ pub fn validate_arg_attribute_syntax(attrs: &[syn::Attribute]) -> syn::Result<()
     Ok(())
 }
 
+/// FM-1.2 Poka-Yoke Guard: Validate no CLI type parameters (FM-1.2: Domain Dependency on CLI Types)
+///
+/// Prevents domain functions from accepting CLI types that create circular dependencies:
+/// - Forbidden: clap::ArgMatches, clap::Command, VerbContext, VerbArgs, HandlerInput
+/// - Allowed: String, u32, bool, Vec<T>, PathBuf, domain types
+///
+/// RPN 270: High severity - circular dependencies break modularity
+pub fn validate_no_cli_types_in_params(sig: &syn::Signature) -> syn::Result<()> {
+    for input in &sig.inputs {
+        if let syn::FnArg::Typed(pat_type) = input {
+            if let Some(error) = check_for_cli_types(&pat_type.ty) {
+                return Err(error);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Check if a type contains forbidden CLI types
+fn check_for_cli_types(ty: &Type) -> Option<syn::Error> {
+    let type_str = ty.to_token_stream().to_string();
+
+    // Forbidden CLI types that create architecture violations
+    let forbidden_patterns = [
+        "ArgMatches",
+        "Command",
+        "VerbContext",
+        "VerbArgs",
+        "HandlerInput",
+        "clap :: ArgMatches",
+        "clap :: Command",
+    ];
+
+    for pattern in &forbidden_patterns {
+        if type_str.contains(pattern) {
+            return Some(syn::Error::new(
+                ty.span(),
+                format!(
+                    "🛡️ Poka-Yoke Guard: CLI type contamination detected (FM-1.2)\n\
+                     \n\
+                     Forbidden types: ArgMatches, Command, VerbContext, VerbArgs, HandlerInput\n\
+                     Found: {}\n\
+                     \n\
+                     Problem: Domain functions should not depend on CLI types.\n\
+                     This creates circular dependencies and breaks reusability.\n\
+                     \n\
+                     Solution: Use simple typed parameters instead:\n\
+                     ✅ GOOD:   fn calculate(x: i32, y: i32) -> Result<i32>\n\
+                     ❌ WRONG:  fn calculate(args: VerbArgs) -> Result<i32>\n\
+                     \n\
+                     Pattern:\n\
+                     1. #[verb] functions accept VerbArgs\n\
+                     2. Extract typed values from VerbArgs\n\
+                     3. Call domain functions with plain types\n\
+                     4. Domain layer stays CLI-independent",
+                    type_str
+                ),
+            ));
+        }
+    }
+
+    // Check generic arguments recursively
+    if let Type::Path(type_path) = ty {
+        if let Some(last_segment) = type_path.path.segments.last() {
+            if let syn::PathArguments::AngleBracketed(args) = &last_segment.arguments {
+                for arg in &args.args {
+                    if let syn::GenericArgument::Type(inner_ty) = arg {
+                        if let Some(error) = check_for_cli_types(inner_ty) {
+                            return Some(error);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Check reference types
+    if let Type::Reference(type_ref) = ty {
+        return check_for_cli_types(&type_ref.elem);
+    }
+
+    None
+}
+
+/// FM-1.1 Poka-Yoke Guard: Validate verb function complexity (FM-1.1: CLI Layer Contamination)
+///
+/// Prevents business logic from leaking into #[verb] functions by enforcing low complexity.
+/// Verb functions should ONLY:
+/// 1. Extract typed arguments from VerbArgs
+/// 2. Call domain logic
+/// 3. Format and return output
+///
+/// RPN 336: Critical severity - prevents architecture violations
+pub fn validate_verb_complexity(input_fn: &ItemFn) -> syn::Result<()> {
+    let complexity = calculate_cyclomatic_complexity(input_fn);
+
+    // Threshold: 5 allows for basic verb function pattern (validate → call → format)
+    // Higher complexity indicates business logic creeping into CLI layer
+    if complexity > 5 {
+        return Err(syn::Error::new(
+            input_fn.sig.ident.span(),
+            format!(
+                "🛡️ Poka-Yoke Guard: Verb function too complex (FM-1.1)\n\
+                 \n\
+                 Complexity: {} (max allowed: 5)\n\
+                 Function: {}\n\
+                 \n\
+                 Problem: Verb functions should delegate to domain logic, not implement it.\n\
+                 High complexity indicates business logic leaking into CLI layer.\n\
+                 \n\
+                 Solution: Extract logic into separate domain function\n\
+                 \n\
+                 Correct Pattern (complexity ≤ 5):\n\
+                 #[verb(\"calculate\")]\n\
+                 fn cmd_calculate(x: i32, y: i32) -> Result<CalcResult> {{\n\
+                     // 1. Extract/validate args (simple)\n\
+                     if x < 0 {{ return Err(\"x must be positive\".into()); }}\n\
+                     // 2. Call domain logic (single call)\n\
+                     let result = domain::math::add(x, y);\n\
+                     // 3. Format and return (simple)\n\
+                     Ok(CalcResult {{ value: result }})\n\
+                 }}\n\
+                 \n\
+                 Benefits:\n\
+                 - CLI layer stays thin (easy to test)\n\
+                 - Domain logic stays reusable (can call without CLI)\n\
+                 - Clear separation of concerns\n\
+                 - Business logic testable independently",
+                complexity, input_fn.sig.ident
+            ),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Calculate cyclomatic complexity of a function
+///
+/// Counts decision points: if, else, match arms, loops, &&, ||, ?
+/// Returns simple count suitable for heuristic checking.
+fn calculate_cyclomatic_complexity(input_fn: &ItemFn) -> usize {
+    let mut complexity = 1; // Base complexity
+
+    // Walk through the function block and count decision points
+    count_decision_points(&input_fn.block, &mut complexity);
+
+    complexity
+}
+
+/// Count decision points in a block recursively
+fn count_decision_points(block: &syn::Block, complexity: &mut usize) {
+    use syn::Stmt;
+
+    for stmt in &block.stmts {
+        match stmt {
+            Stmt::Expr(expr, _) => {
+                count_complexity_in_expr(expr, complexity);
+            }
+            Stmt::Item(_) | Stmt::Macro(_) => {
+                // Item definitions and macros don't affect complexity for our purposes
+            }
+            Stmt::Local(local) => {
+                // Check initializer expression
+                if let Some(init) = &local.init {
+                    count_complexity_in_expr(&init.expr, complexity);
+                }
+            }
+        }
+    }
+}
+
+/// Count decision points in an expression using simple heuristics
+/// This is a simplified complexity check that looks for specific patterns
+fn count_complexity_in_expr(expr: &syn::Expr, complexity: &mut usize) {
+    let expr_str = expr.to_token_stream().to_string();
+
+    // Check for decision-making keywords
+    // Use simple string matching for portability across syn versions
+    let decision_keywords = [
+        "if ", "match ", "while ", "for ",  // keywords
+        "=> ", // match arms
+    ];
+
+    for keyword in &decision_keywords {
+        // Count occurrences
+        let count = expr_str.matches(keyword).count();
+        *complexity += count;
+    }
+
+    // Check for logical operators that add branches
+    *complexity += expr_str.matches("&&").count();
+    *complexity += expr_str.matches("||").count();
+
+    // Recursively check sub-expressions if available
+    // This is a simple depth-based check
+    match expr {
+        syn::Expr::Block(block_expr) => {
+            count_decision_points(&block_expr.block, complexity);
+        }
+        syn::Expr::Paren(paren_expr) => {
+            count_complexity_in_expr(&paren_expr.expr, complexity);
+        }
+        syn::Expr::Call(call_expr) => {
+            count_complexity_in_expr(&call_expr.func, complexity);
+            for arg in &call_expr.args {
+                count_complexity_in_expr(arg, complexity);
+            }
+        }
+        syn::Expr::Binary(bin_expr) => {
+            count_complexity_in_expr(&bin_expr.left, complexity);
+            count_complexity_in_expr(&bin_expr.right, complexity);
+        }
+        _ => {
+            // Don't recurse deeply for other expressions - string matching is sufficient
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -459,5 +678,95 @@ mod tests {
         assert_eq!(sanitize_ident("test.service"), "test_service");
         assert_eq!(sanitize_ident("my:service"), "my_service");
         assert_eq!(sanitize_ident("valid_name"), "valid_name");
+    }
+
+    #[test]
+    fn test_validate_no_cli_types_in_params_good() {
+        let fn_item: ItemFn = parse_quote! {
+            fn calculate(x: i32, y: String) -> Result<String> {
+                Ok("test".to_string())
+            }
+        };
+        assert!(validate_no_cli_types_in_params(&fn_item.sig).is_ok());
+    }
+
+    #[test]
+    fn test_validate_no_cli_types_in_params_bad_verbargs() {
+        let fn_item: ItemFn = parse_quote! {
+            fn bad_fn(args: VerbArgs) -> Result<()> {
+                Ok(())
+            }
+        };
+        let result = validate_no_cli_types_in_params(&fn_item.sig);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("CLI type contamination detected"));
+        assert!(err_msg.contains("FM-1.2"));
+    }
+
+    #[test]
+    fn test_validate_no_cli_types_in_params_bad_argmatches() {
+        let fn_item: ItemFn = parse_quote! {
+            fn bad_fn(matches: clap::ArgMatches) -> Result<()> {
+                Ok(())
+            }
+        };
+        let result = validate_no_cli_types_in_params(&fn_item.sig);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("CLI type contamination detected"));
+    }
+
+    #[test]
+    fn test_validate_verb_complexity_simple() {
+        let fn_item: ItemFn = parse_quote! {
+            fn simple_verb(x: i32) -> Result<i32> {
+                let result = domain::calculate(x);
+                Ok(result)
+            }
+        };
+        assert!(validate_verb_complexity(&fn_item).is_ok());
+    }
+
+    #[test]
+    fn test_validate_verb_complexity_acceptable() {
+        let fn_item: ItemFn = parse_quote! {
+            fn verb_with_validation(x: i32) -> Result<i32> {
+                if x < 0 {
+                    return Err("must be positive".into());
+                }
+                let result = domain::calculate(x);
+                Ok(result)
+            }
+        };
+        // Simple if statement should be acceptable
+        assert!(validate_verb_complexity(&fn_item).is_ok());
+    }
+
+    #[test]
+    fn test_validate_verb_complexity_too_high() {
+        let fn_item: ItemFn = parse_quote! {
+            fn complex_verb(x: i32, y: i32) -> Result<i32> {
+                if x < 0 {
+                    if y < 0 {
+                        if x + y < -100 {
+                            match x {
+                                0 => return Ok(0),
+                                1 => return Ok(1),
+                                2 => return Ok(2),
+                                3 => return Ok(3),
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+                Ok(x + y)
+            }
+        };
+        let result = validate_verb_complexity(&fn_item);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("too complex"));
+        assert!(err_msg.contains("FM-1.1"));
     }
 }

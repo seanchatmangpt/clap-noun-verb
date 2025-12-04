@@ -357,6 +357,18 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
         return e.to_compile_error().into();
     }
 
+    // 🛡️ POKA-YOKE FM-1.1: Validate verb function complexity (CLI layer purity)
+    // Prevents business logic from leaking into verb functions
+    if let Err(e) = validation::validate_verb_complexity(&input_fn) {
+        return e.to_compile_error().into();
+    }
+
+    // 🛡️ POKA-YOKE FM-1.2: Validate no CLI types in parameters (domain independence)
+    // Prevents domain functions from depending on CLI types
+    if let Err(e) = validation::validate_no_cli_types_in_params(&input_fn.sig) {
+        return e.to_compile_error().into();
+    }
+
     // Validate #[arg] attributes on parameters
     for input in &input_fn.sig.inputs {
         if let syn::FnArg::Typed(pat_type) = input {
