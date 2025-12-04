@@ -250,6 +250,87 @@ impl VerbArgs {
         })
     }
 
+    /// Get multiple typed values from global arguments (required)
+    ///
+    /// Retrieves multiple values from parent matches (global arguments).
+    /// Returns an error if the argument is not found or has no values.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let hosts: Vec<String> = verb_args.get_global_many("hosts")?;
+    /// ```
+    pub fn get_global_many<T>(&self, name: &str) -> Result<Vec<T>>
+    where
+        T: Clone + Send + Sync + 'static,
+    {
+        let values: Vec<T> = self
+            .parent_matches
+            .as_ref()
+            .and_then(|parent| parent.get_many::<T>(name).map(|iter| iter.cloned().collect()))
+            .unwrap_or_default();
+
+        if values.is_empty() {
+            Err(crate::error::NounVerbError::argument_error(format!(
+                "Required global argument '{}' is missing or has no values",
+                name
+            )))
+        } else {
+            Ok(values)
+        }
+    }
+
+    /// Get multiple typed values from global arguments (optional)
+    ///
+    /// Retrieves multiple values from parent matches (global arguments).
+    /// Returns an empty vector if the argument is not found or has no values.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let hosts: Vec<String> = verb_args.get_global_many_opt("hosts");
+    /// ```
+    pub fn get_global_many_opt<T>(&self, name: &str) -> Vec<T>
+    where
+        T: Clone + Send + Sync + 'static,
+    {
+        self.parent_matches
+            .as_ref()
+            .and_then(|parent| parent.get_many::<T>(name).map(|iter| iter.cloned().collect()))
+            .unwrap_or_default()
+    }
+
+    /// Get multiple string values from arguments using get_raw()
+    ///
+    /// Convenience method that retrieves multiple string values from the original
+    /// CLI input, avoiding type mismatch panics when `value_parser` stores values
+    /// as numeric types (e.g., u16, i64, f64).
+    ///
+    /// Works with any value_parser type by extracting the raw CLI string values.
+    /// Returns an empty vector if the argument is not found or has no values.
+    ///
+    /// Use this method when:
+    /// - Argument values were parsed into numeric or custom types
+    /// - You need the original string representation from the CLI
+    /// - You want flexible handling of multi-value arguments
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// // Works even if the argument was defined with value_parser(value_parser!(u16))
+    /// let ports: Vec<String> = verb_args.get_many_opt_str("ports");
+    /// ```
+    pub fn get_many_opt_str(&self, name: &str) -> Vec<String> {
+        if let Some(raw_values) = self.matches.get_raw(name) {
+            raw_values
+                .into_iter()
+                .filter_map(|os_str| os_str.to_str().map(|s| s.to_string()))
+                .collect()
+        } else {
+            Vec::new()
+        }
+    }
+
     /// Check if a global flag is set (e.g., --verbose)
     pub fn is_global_flag_set(&self, name: &str) -> bool {
         self.parent_matches.as_ref().map(|parent| parent.get_flag(name)).unwrap_or(false)

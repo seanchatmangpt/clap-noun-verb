@@ -12,6 +12,8 @@
 //! - Verifying linearizability properties
 //! - Testing under different memory orderings
 
+#![cfg(feature = "autonomic")]
+
 use clap_noun_verb::autonomic::*;
 use std::sync::{Arc, Barrier};
 use std::thread;
@@ -30,8 +32,8 @@ fn test_queue_concurrent_push_pop_stress() {
 
     // Spawn producer threads
     for thread_id in 0..THREADS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             // Wait for all threads to be ready
@@ -54,9 +56,9 @@ fn test_queue_concurrent_push_pop_stress() {
     let consumed = Arc::new(std::sync::Mutex::new(Vec::new()));
 
     for _ in 0..THREADS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
-        let consumed = Arc::clone(&consumed);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
+        let consumed = consumed.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -99,8 +101,8 @@ fn test_queue_fifo_ordering_spsc() {
     const COUNT: usize = 10000;
 
     let queue = Arc::new(InvocationQueue::new(COUNT));
-    let queue_producer = Arc::clone(&queue);
-    let queue_consumer = Arc::clone(&queue);
+    let queue_producer = queue.clone();
+    let queue_consumer = queue.clone();
 
     let producer = thread::spawn(move || {
         for i in 0..COUNT {
@@ -145,8 +147,8 @@ fn test_queue_stats_accuracy_concurrent() {
 
     // All threads push and pop
     for thread_id in 0..THREADS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -200,16 +202,18 @@ fn test_context_pool_unique_handles_concurrent() {
     let pool = Arc::new(ContextPool::new(THREADS * HANDLES_PER_THREAD));
     let barrier = Arc::new(Barrier::new(THREADS));
 
-    let all_agent_handles = Arc::new(std::sync::Mutex::new(Vec::new()));
-    let all_tenant_handles = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let all_agent_handles: Arc<std::sync::Mutex<Vec<AgentHandle>>> =
+        Arc::new(std::sync::Mutex::new(Vec::new()));
+    let all_tenant_handles: Arc<std::sync::Mutex<Vec<TenantHandle>>> =
+        Arc::new(std::sync::Mutex::new(Vec::new()));
 
     let mut handles = vec![];
 
     for _ in 0..THREADS {
-        let pool = Arc::clone(&pool);
-        let barrier = Arc::clone(&barrier);
-        let agent_handles = Arc::clone(&all_agent_handles);
-        let tenant_handles = Arc::clone(&all_tenant_handles);
+        let pool = pool.clone();
+        let barrier = barrier.clone();
+        let agent_handles = all_agent_handles.clone();
+        let tenant_handles = all_tenant_handles.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -261,8 +265,8 @@ fn test_arena_concurrent_allocation() {
     let mut handles = vec![];
 
     for thread_id in 0..THREADS {
-        let arena: Arc<InvocationArena> = Arc::clone(&arena);
-        let barrier = Arc::clone(&barrier);
+        let arena = arena.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -302,7 +306,7 @@ fn test_queue_memory_visibility() {
     let queue = Arc::new(InvocationQueue::new(COUNT));
 
     // Producer writes incrementing values
-    let queue_prod = Arc::clone(&queue);
+    let queue_prod = queue.clone();
     let producer = thread::spawn(move || {
         for i in 0..COUNT {
             while queue_prod.try_push(i).is_err() {
@@ -312,7 +316,7 @@ fn test_queue_memory_visibility() {
     });
 
     // Consumer reads and verifies visibility
-    let queue_cons = Arc::clone(&queue);
+    let queue_cons = queue.clone();
     let consumer = thread::spawn(move || {
         let mut last_seen = None;
         for _ in 0..COUNT {
@@ -347,8 +351,8 @@ fn test_queue_overflow_handling_concurrent() {
     let mut handles = vec![];
 
     for thread_id in 0..THREADS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -395,8 +399,8 @@ fn test_hot_path_context_concurrent_creation() {
     let mut handles = vec![];
 
     for thread_id in 0..THREADS {
-        let barrier = Arc::clone(&barrier);
-        let contexts = Arc::clone(&all_contexts);
+        let barrier = barrier.clone();
+        let contexts = all_contexts.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -450,8 +454,8 @@ fn test_queue_linearizability() {
 
     // Producers push values
     for thread_id in 0..PRODUCERS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -468,12 +472,12 @@ fn test_queue_linearizability() {
     }
 
     // Consumers pop values
-    let consumed = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let consumed: Arc<std::sync::Mutex<Vec<usize>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
 
     for _ in 0..CONSUMERS {
-        let queue = Arc::clone(&queue);
-        let barrier = Arc::clone(&barrier);
-        let consumed = Arc::clone(&consumed);
+        let queue = queue.clone();
+        let barrier = barrier.clone();
+        let consumed = consumed.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
@@ -525,8 +529,8 @@ fn test_effect_flags_atomic_operations() {
     let mut handles = vec![];
 
     for thread_id in 0..THREADS {
-        let flags = Arc::clone(&flags);
-        let barrier = Arc::clone(&barrier);
+        let flags = flags.clone();
+        let barrier = barrier.clone();
 
         let handle = thread::spawn(move || {
             barrier.wait();
