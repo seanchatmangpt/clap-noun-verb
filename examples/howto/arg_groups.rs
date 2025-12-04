@@ -120,12 +120,10 @@ fn process_data(
     input: Option<String>,
     output: Option<String>,
     verbose: bool,
-    #[allow(unused_variables)]
-    quiet: bool,
+    #[allow(unused_variables)] quiet: bool,
     log_level: Option<String>,
     config: Option<String>,
-    #[allow(unused_variables)]
-    debug_info: bool,
+    #[allow(unused_variables)] debug_info: bool,
     version_check: bool,
 ) -> Result<AdvancedConfig> {
     Ok(create_advanced_config(

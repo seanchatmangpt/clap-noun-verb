@@ -2195,6 +2195,9 @@ mod tests {
         assert_eq!(yaml_rel.group, Some("format".to_string()), "yaml should have group='format'");
 
         let filename_rel = result.get("filename").unwrap();
-        assert!(filename_rel.requires.contains(&"format".to_string()), "filename should require 'format'");
+        assert!(
+            filename_rel.requires.contains(&"format".to_string()),
+            "filename should require 'format'"
+        );
     }
 }

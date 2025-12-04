@@ -90,8 +90,11 @@ impl VerbArgs {
     }
 
     /// Get a required string argument
+    ///
+    /// Uses `get_raw()` internally to avoid type mismatch panics when
+    /// `value_parser` stores values as numeric types (e.g., u16, i64).
     pub fn get_one_str(&self, name: &str) -> Result<String> {
-        self.matches.get_one::<String>(name).cloned().ok_or_else(|| {
+        self.get_one_str_opt(name).ok_or_else(|| {
             crate::error::NounVerbError::argument_error(format!(
                 "Required argument '{}' is missing",
                 name
@@ -100,8 +103,20 @@ impl VerbArgs {
     }
 
     /// Get an optional string argument
+    ///
+    /// Uses `get_raw()` internally to get the original CLI string value,
+    /// avoiding type mismatch panics when `value_parser` stores values
+    /// as numeric types (e.g., u16, i64, f64).
     pub fn get_one_str_opt(&self, name: &str) -> Option<String> {
-        self.matches.get_one::<String>(name).cloned()
+        // Use get_raw() to get the original string value from CLI
+        // This works regardless of what value_parser was used
+        if let Some(raw_values) = self.matches.get_raw(name) {
+            // get_raw returns an iterator of OsStrings, take the first one
+            if let Some(os_str) = raw_values.into_iter().next() {
+                return os_str.to_str().map(|s| s.to_string());
+            }
+        }
+        None
     }
 
     /// Get a required typed argument (e.g., usize, PathBuf)
@@ -218,8 +233,21 @@ impl VerbArgs {
     }
 
     /// Get a global string argument from parent matches
+    ///
+    /// Uses `get_raw()` internally to get the original CLI string value,
+    /// avoiding type mismatch panics when `value_parser` stores values
+    /// as numeric types (e.g., u16, i64, f64).
     pub fn get_global_str(&self, name: &str) -> Option<String> {
-        self.get_global::<String>(name)
+        // Use get_raw() to get the original string value from CLI
+        // This works regardless of what value_parser was used
+        self.parent_matches.as_ref().and_then(|parent| {
+            if let Some(raw_values) = parent.get_raw(name) {
+                if let Some(os_str) = raw_values.into_iter().next() {
+                    return os_str.to_str().map(|s| s.to_string());
+                }
+            }
+            None
+        })
     }
 
     /// Check if a global flag is set (e.g., --verbose)

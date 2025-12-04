@@ -55,10 +55,7 @@ mod readme_examples {
             Stopped,
         }
 
-        let running = ServiceState::Running {
-            pid: 1234,
-            uptime: Duration::from_secs(3600),
-        };
+        let running = ServiceState::Running { pid: 1234, uptime: Duration::from_secs(3600) };
 
         match running {
             ServiceState::Running { pid, uptime } => {
@@ -158,9 +155,7 @@ mod quickstart_examples {
 
         // Simulate the verb logic
         fn status() -> Result<Status> {
-            Ok(Status {
-                message: "System is running".to_string(),
-            })
+            Ok(Status { message: "System is running".to_string() })
         }
 
         let result = status();
@@ -187,16 +182,8 @@ mod quickstart_examples {
         fn status() -> Result<ServiceList> {
             Ok(ServiceList {
                 services: vec![
-                    ServiceStatus {
-                        name: "api".to_string(),
-                        running: true,
-                        port: 8080,
-                    },
-                    ServiceStatus {
-                        name: "worker".to_string(),
-                        running: true,
-                        port: 8081,
-                    },
+                    ServiceStatus { name: "api".to_string(), running: true, port: 8080 },
+                    ServiceStatus { name: "worker".to_string(), running: true, port: 8081 },
                 ],
             })
         }
@@ -220,11 +207,7 @@ mod quickstart_examples {
         }
 
         fn restart(service: String, force: bool) -> Result<ServiceStatus> {
-            Ok(ServiceStatus {
-                name: service,
-                running: true,
-                port: 8080,
-            })
+            Ok(ServiceStatus { name: service, running: true, port: 8080 })
         }
 
         let result = restart("api".to_string(), false);
@@ -293,7 +276,7 @@ mod autonomic_examples {
 
         // Verify receipt structure (using public fields)
         assert_eq!(receipt.command, "services status");
-        assert_eq!(receipt.duration_ms, 50);  // duration_ms is u64, not Option
+        assert_eq!(receipt.duration_ms, 50); // duration_ms is u64, not Option
         assert!(receipt.success);
     }
 
@@ -325,9 +308,7 @@ mod cli_reference_examples {
         }
 
         fn status() -> Result<Output> {
-            Ok(Output {
-                message: "OK".to_string(),
-            })
+            Ok(Output { message: "OK".to_string() })
         }
 
         let result = status();
@@ -344,9 +325,7 @@ mod cli_reference_examples {
         }
 
         fn greet(name: String) -> Result<Greeting> {
-            Ok(Greeting {
-                message: format!("Hello, {}!", name),
-            })
+            Ok(Greeting { message: format!("Hello, {}!", name) })
         }
 
         let result = greet("Alice".to_string());
@@ -423,31 +402,17 @@ mod cookbook_examples {
 
         fn list(limit: usize, domain: Option<String>) -> Result<UserList> {
             let users = vec![
-                User {
-                    id: 1,
-                    name: "Alice".to_string(),
-                    email: "alice@example.com".to_string(),
-                },
-                User {
-                    id: 2,
-                    name: "Bob".to_string(),
-                    email: "bob@example.com".to_string(),
-                },
+                User { id: 1, name: "Alice".to_string(), email: "alice@example.com".to_string() },
+                User { id: 2, name: "Bob".to_string(), email: "bob@example.com".to_string() },
             ];
 
             let filtered = if let Some(domain) = domain {
-                users
-                    .into_iter()
-                    .filter(|u| u.email.ends_with(&domain))
-                    .collect()
+                users.into_iter().filter(|u| u.email.ends_with(&domain)).collect()
             } else {
                 users
             };
 
-            Ok(UserList {
-                total: filtered.len(),
-                users: filtered,
-            })
+            Ok(UserList { total: filtered.len(), users: filtered })
         }
 
         // Test without domain filter
@@ -503,10 +468,7 @@ mod cookbook_examples {
                 duration_ms: 2000,
             });
 
-            Ok(WorkflowResult {
-                steps,
-                success: true,
-            })
+            Ok(WorkflowResult { steps, success: true })
         }
 
         // Test with tests
@@ -545,10 +507,7 @@ mod cookbook_examples {
             field: "email".to_string(),
             message: "Invalid format".to_string(),
         };
-        assert_eq!(
-            validation_error.to_string(),
-            "Validation failed: email: Invalid format"
-        );
+        assert_eq!(validation_error.to_string(), "Validation failed: email: Invalid format");
     }
 }
 

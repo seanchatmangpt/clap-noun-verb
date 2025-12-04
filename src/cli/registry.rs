@@ -643,6 +643,22 @@ impl CommandRegistry {
         arg
     }
 
+    /// Extract a value from ArgMatches as a string
+    ///
+    /// Uses get_raw() to get the original CLI string value, avoiding type mismatch
+    /// panics that occur when value_parser stores values as numeric types.
+    fn extract_value_as_string(verb_matches: &clap::ArgMatches, arg_name: &str) -> Option<String> {
+        // Use get_raw() to get the original string value from CLI
+        // This works regardless of what value_parser was used
+        if let Some(raw_values) = verb_matches.get_raw(arg_name) {
+            // get_raw returns an iterator of OsStrings, take the first one
+            if let Some(os_str) = raw_values.into_iter().next() {
+                return os_str.to_str().map(|s| s.to_string());
+            }
+        }
+        None
+    }
+
     /// Extract arguments from clap matches into a HashMap
     fn extract_args(
         &self,
@@ -657,8 +673,8 @@ impl CommandRegistry {
             // Handle positional arguments differently
             if let Some(_index) = arg_meta.positional {
                 // For positional args, clap extracts by name automatically
-                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
-                    args_map.insert(arg_name.clone(), value.clone());
+                if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
+                    args_map.insert(arg_name.clone(), value);
                 }
             } else if let Some(action) = &arg_meta.action {
                 // Handle custom actions
@@ -687,9 +703,9 @@ impl CommandRegistry {
                         }
                     }
                     _ => {
-                        // For Set and other actions, extract as string
-                        if let Some(value) = verb_matches.get_one::<String>(arg_name) {
-                            args_map.insert(arg_name.clone(), value.clone());
+                        // For Set and other actions, try type-aware extraction
+                        if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
+                            args_map.insert(arg_name.clone(), value);
                         }
                     }
                 }
@@ -699,9 +715,9 @@ impl CommandRegistry {
                     args_map.insert(arg_name.clone(), "true".to_string());
                 }
             } else {
-                // For regular named arguments
-                if let Some(value) = verb_matches.get_one::<String>(arg_name) {
-                    args_map.insert(arg_name.clone(), value.clone());
+                // For regular named arguments - use type-aware extraction
+                if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
+                    args_map.insert(arg_name.clone(), value);
                 }
             }
         }

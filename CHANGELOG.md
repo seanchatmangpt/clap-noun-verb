@@ -5,6 +5,28 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.2] - 2025-12-03
+
+### Fixed
+
+- **Critical: VerbArgs string argument extraction with numeric value_parser**
+  - Fixed panic when calling `get_one_str()` or `get_one_str_opt()` on arguments with numeric `value_parser` types (u16, u64, i64, f64, usize)
+  - Root cause: These methods were using `get_one::<String>()` which panics on type mismatch when clap stores values as numeric types
+  - Solution: Changed to use `get_raw()` which returns original CLI string regardless of value_parser type
+  - Affected methods: `VerbArgs::get_one_str()`, `VerbArgs::get_one_str_opt()`, `VerbArgs::get_global_str()`
+
+- **Comprehensive argument handling tests**
+  - Added JTBD scenario tests for complex argument extraction scenarios
+  - Added 15 end-to-end execution tests covering numeric, boolean, count, and mixed arguments
+  - All tests pass with 100% success rate
+
+### Technical Details
+
+- **get_one_str_opt implementation**: Now uses `ArgMatches::get_raw()` to safely extract string values
+- **get_global_str implementation**: Now uses `ArgMatches::get_raw()` on parent matches
+- **No breaking changes** - Backward compatible fix for v5.3.1 users
+- **Type safety improved** - String extraction now works correctly with any value_parser type
+
 ## [5.3.0] - 2025-12-03
 
 ### Changed

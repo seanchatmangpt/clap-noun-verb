@@ -14,31 +14,29 @@ struct TestOutput {
 /// Test command 1
 #[verb("test1", "testcli")]
 fn test_command_1() -> Result<TestOutput> {
-    Ok(TestOutput {
-        message: "Test 1".to_string(),
-    })
+    Ok(TestOutput { message: "Test 1".to_string() })
 }
 
 /// Test command 2
 #[verb("test2", "testcli")]
 fn test_command_2() -> Result<TestOutput> {
-    Ok(TestOutput {
-        message: "Test 2".to_string(),
-    })
+    Ok(TestOutput { message: "Test 2".to_string() })
 }
 
 #[test]
 fn test_distributed_slice_populated() {
     // This test verifies that the linkme distributed_slice actually contains our registration functions
-    use clap_noun_verb::cli::registry::{__VERB_REGISTRY, __NOUN_REGISTRY};
+    use clap_noun_verb::cli::registry::{__NOUN_REGISTRY, __VERB_REGISTRY};
 
     println!("VERB_REGISTRY length: {}", __VERB_REGISTRY.len());
     println!("NOUN_REGISTRY length: {}", __NOUN_REGISTRY.len());
 
     // After our two #[verb] annotations, we should have at least 2 functions
-    assert!(__VERB_REGISTRY.len() >= 2,
+    assert!(
+        __VERB_REGISTRY.len() >= 2,
         "Expected at least 2 verb registration functions, found {}",
-        __VERB_REGISTRY.len());
+        __VERB_REGISTRY.len()
+    );
 }
 
 #[test]
@@ -52,19 +50,25 @@ fn test_commands_registered() {
     println!("Registered nouns: {:?}", nouns);
 
     let noun_names: Vec<&str> = nouns.iter().map(|(name, _)| *name).collect();
-    assert!(noun_names.contains(&"testcli"),
+    assert!(
+        noun_names.contains(&"testcli"),
         "Expected 'testcli' noun to be registered. Found nouns: {:?}",
-        noun_names);
+        noun_names
+    );
 
     // Check that verbs were registered
     let verbs = reg.get_verbs("testcli");
     println!("Registered verbs for 'testcli': {:?}", verbs);
 
     let verb_names: Vec<&str> = verbs.iter().map(|(name, _)| *name).collect();
-    assert!(verb_names.contains(&"test1"),
+    assert!(
+        verb_names.contains(&"test1"),
         "Expected 'test1' verb to be registered. Found verbs: {:?}",
-        verb_names);
-    assert!(verb_names.contains(&"test2"),
+        verb_names
+    );
+    assert!(
+        verb_names.contains(&"test2"),
         "Expected 'test2' verb to be registered. Found verbs: {:?}",
-        verb_names);
+        verb_names
+    );
 }
