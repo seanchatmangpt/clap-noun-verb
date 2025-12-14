@@ -76,7 +76,7 @@ fn main() -> Result<()> {
 
     // TRIZ-1: Print banner to stderr so it doesn't pollute scripted output
     if !quiet {
-        eprintln!("{}", "⚡ Playground CLI - clap-noun-verb v5.1.0 Comprehensive Demo".bright_cyan().bold());
+        eprintln!("{}", "⚡ Playground CLI - clap-noun-verb v5.3.3 Comprehensive Demo".bright_cyan().bold());
         eprintln!("{}", "Domain-Separated Architecture with ALL v5 Features\n".bright_black());
     }
 

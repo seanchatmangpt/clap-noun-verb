@@ -7,7 +7,7 @@ authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
 
 [dependencies]
 # Use published crates.io version (NOT local workspace)
-clap-noun-verb = "5.1.0"
+clap-noun-verb = "5.3.3"
 clap = "4.5"
 colored = "2.1"
 serde = { version = "1.0", features = ["derive"] }

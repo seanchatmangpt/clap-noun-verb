@@ -1,4 +1,4 @@
-# Playground CLI - clap-noun-verb v5.1.0 Diataxis Demonstration
+# Playground CLI - clap-noun-verb v5.3.3 Diataxis Demonstration
 
 > **The culmination of Diataxis**: This playground demonstrates all four documentation quadrants (Tutorial, How-To, Reference, Explanation) in a single, cohesive CLI application.
 
@@ -6,7 +6,7 @@
 
 ## 🎯 What is This?
 
-**Playground CLI** is a complete, production-ready demonstration of clap-noun-verb v5.1.0 from crates.io. It showcases:
+**Playground CLI** is a complete, production-ready demonstration of clap-noun-verb v5.3.3 from crates.io. It showcases:
 
 - ✅ **Diataxis-compliant structure** - All four quadrants implemented
 - ✅ **Tera templating** - Professional LaTeX generation
@@ -19,6 +19,7 @@
 - Tera 1.20 template engine for LaTeX generation
 - Oxigraph 0.5.1 for RDF/SPARQL semantic capabilities
 - Complete Diataxis documentation structure
+- v5.3.3: Markdown code fence stripping in help text (cleaner CLI output)
 
 ---
 
@@ -81,7 +82,7 @@ The most fundamental operation is generating an academic paper:
 
 **What you should see:**
 ```
-⚡ Playground CLI - clap-noun-verb v5.1.0 Demo
+⚡ Playground CLI - clap-noun-verb v5.3.3 Demo
 Using published crates.io version
 
 📝 Generating paper with Tera: IMRaD
