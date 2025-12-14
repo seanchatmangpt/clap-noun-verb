@@ -644,6 +644,60 @@ struct DocArgRelationships {
     description: String,
 }
 
+/// Remove markdown code fences from text
+///
+/// Removes triple-backtick code blocks (```rust, ```bash, ``` etc.) while preserving
+/// the text content. This prevents code examples from appearing literally in help output.
+///
+/// Examples:
+/// - Input: "Example:\n```rust\nlet x = 5;\n```\nDone."
+/// - Output: "Example:\nlet x = 5;\nDone."
+fn strip_markdown_code_fences(text: &str) -> String {
+    let mut result = String::new();
+    let lines: Vec<&str> = text.lines().collect();
+    let mut i = 0;
+
+    while i < lines.len() {
+        let line = lines[i];
+        let trimmed = line.trim();
+
+        // Check if this line starts a code fence
+        if trimmed.starts_with("```") {
+            // Skip the opening fence line
+            i += 1;
+
+            // Skip lines until we find the closing fence
+            while i < lines.len() {
+                let closing_line = lines[i].trim();
+                if closing_line.starts_with("```") {
+                    // Found closing fence, skip it and move past
+                    i += 1;
+                    break;
+                } else {
+                    // Include content lines (but only if they're meaningful)
+                    let content = lines[i];
+                    if !content.trim().is_empty() {
+                        if !result.is_empty() && !result.ends_with('\n') {
+                            result.push('\n');
+                        }
+                        result.push_str(content);
+                    }
+                    i += 1;
+                }
+            }
+        } else {
+            // Regular line, include it
+            if !result.is_empty() && !result.ends_with('\n') {
+                result.push('\n');
+            }
+            result.push_str(line);
+            i += 1;
+        }
+    }
+
+    result.trim().to_string()
+}
+
 /// Clean docstring for command about text
 ///
 /// Removes the `# Arguments` section entirely (clap generates its own help for arguments)
@@ -683,7 +737,10 @@ fn clean_docstring_for_about(docstring: &str) -> String {
         result_lines.pop();
     }
 
-    result_lines.join("\n").trim().to_string()
+    let joined = result_lines.join("\n").trim().to_string();
+
+    // Remove markdown code fences from the final result
+    strip_markdown_code_fences(&joined)
 }
 
 /// Strip relationship tags from a line of text
@@ -833,7 +890,10 @@ fn parse_doc_relationships(description: &str) -> DocArgRelationships {
         }
     }
 
-    result.description = clean_parts.join(" ").trim().to_string();
+    let description = clean_parts.join(" ").trim().to_string();
+
+    // Remove markdown code fences from the description
+    result.description = strip_markdown_code_fences(&description);
     result
 }
 
