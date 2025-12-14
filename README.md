@@ -6,7 +6,7 @@
 [![Documentation](https://docs.rs/clap-noun-verb/badge.svg)](https://docs.rs/clap-noun-verb)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE.md)
 
-**Current Version**: v5.2.0 | [Changelog](CHANGELOG.md) | [Phase 2 Features](docs/phase2-analysis.md)
+**Current Version**: v5.3.2 | [Changelog](CHANGELOG.md) | [Phase 2 Features](docs/phase2-analysis.md)
 
 > **Architecture First:** CLI is interface, not application. Separate domain logic from CLI.
 
@@ -64,10 +64,10 @@
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.2"
+clap-noun-verb = "5.3"
 ```
 
-For development: also add `clap-noun-verb-macros = "5.2"`
+For development: also add `clap-noun-verb-macros = "5.3"`
 
 ---
 
