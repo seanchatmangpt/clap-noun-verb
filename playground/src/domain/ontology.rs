@@ -130,36 +130,43 @@ pub enum SparqlQueryType {
     Custom(String),
 }
 
+/// SPARQL prefix declarations for playground ontology
+const SPARQL_PREFIXES: &str = r#"
+PREFIX cnv: <https://cnv.dev/ontology#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+"#;
+
 impl SparqlQueryType {
     pub fn to_sparql(&self) -> String {
         match self {
-            Self::SelectCapabilities => r#"
-                SELECT ?noun ?verb ?description
-                WHERE {
-                    ?cap rdf:type cnv:Capability .
-                    ?cap cnv:noun ?noun .
-                    ?cap cnv:verb ?verb .
-                    ?cap rdfs:comment ?description .
-                }
-            "#.to_string(),
-            Self::SelectByNoun(noun) => format!(r#"
-                SELECT ?verb ?description
-                WHERE {{
-                    ?cap rdf:type cnv:Capability .
-                    ?cap cnv:noun "{}" .
-                    ?cap cnv:verb ?verb .
-                    ?cap rdfs:comment ?description .
-                }}
-            "#, noun),
-            Self::SelectByEffect(effect) => format!(r#"
-                SELECT ?noun ?verb
-                WHERE {{
-                    ?cap rdf:type cnv:Capability .
-                    ?cap cnv:effectType "{:?}" .
-                    ?cap cnv:noun ?noun .
-                    ?cap cnv:verb ?verb .
-                }}
-            "#, effect),
+            Self::SelectCapabilities => format!(r#"{}
+SELECT ?noun ?verb ?description
+WHERE {{
+    ?cap rdf:type cnv:Capability .
+    ?cap cnv:noun ?noun .
+    ?cap cnv:verb ?verb .
+    ?cap rdfs:comment ?description .
+}}
+            "#, SPARQL_PREFIXES),
+            Self::SelectByNoun(noun) => format!(r#"{}
+SELECT ?verb ?description
+WHERE {{
+    ?cap rdf:type cnv:Capability .
+    ?cap cnv:noun "{}" .
+    ?cap cnv:verb ?verb .
+    ?cap rdfs:comment ?description .
+}}
+            "#, SPARQL_PREFIXES, noun),
+            Self::SelectByEffect(effect) => format!(r#"{}
+SELECT ?noun ?verb
+WHERE {{
+    ?cap rdf:type cnv:Capability .
+    ?cap cnv:effectType "{:?}" .
+    ?cap cnv:noun ?noun .
+    ?cap cnv:verb ?verb .
+}}
+            "#, SPARQL_PREFIXES, effect),
             Self::Custom(query) => query.clone(),
         }
     }

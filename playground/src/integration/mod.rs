@@ -19,6 +19,6 @@ pub mod io;
 pub mod rdf;
 
 // Re-export integration functions
-pub use templates::{render_paper_latex, init_template_engine};
+pub use templates::{render_paper_latex, get_template_engine};
 pub use io::{write_paper, ensure_output_dir};
-pub use rdf::{init_ontology_store, execute_sparql, export_turtle};
+pub use rdf::{get_ontology_store, execute_sparql, export_turtle};

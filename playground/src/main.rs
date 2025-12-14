@@ -43,9 +43,9 @@ use domain::{
 
 // Integration imports - glue code with side effects
 use integration::{
-    init_template_engine, render_paper_latex, write_paper, ensure_output_dir,
+    get_template_engine, render_paper_latex, write_paper, ensure_output_dir,
     // v5 features
-    init_ontology_store, execute_sparql, export_turtle,
+    get_ontology_store, execute_sparql, export_turtle,
 };
 
 /// JSON output for paper generation
@@ -82,7 +82,7 @@ fn main() -> Result<()> {
 
     let cli = CliBuilder::new()
         .name("playground")
-        .version("2.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .about("Comprehensive v5 feature showcase demonstrating clap-noun-verb from crates.io")
         // TRIZ-2: Register global --quiet/-q flag
         .global_args(vec![
@@ -104,13 +104,12 @@ fn main() -> Result<()> {
                 let format = get_format(args);
 
                 // FMEA-4: Validate paper family input before generation
-                let valid_families = PaperFamily::all();
-                let valid_names: Vec<_> = valid_families.iter().map(|f| f.name().to_lowercase()).collect();
+                // Uses PaperFamily::valid_values() for consistent validation
                 let family = PaperFamily::from_str(&family_str)
                     .ok_or_else(|| to_cli_error(format!(
                         "Invalid paper family: '{}'. Valid options: {}",
                         family_str,
-                        valid_names.join(", ")
+                        PaperFamily::valid_values().join(", ")
                     )))?;
 
                 let paper = Paper::new(family.clone(), None, None);
@@ -119,7 +118,7 @@ fn main() -> Result<()> {
                 eprintln!("{}", "Generating...".bright_yellow());
                 println!("\n{} {}", "📝 Generating paper:".bright_green(), family.name().bright_yellow());
 
-                let tera = init_template_engine().map_err(to_cli_error)?;
+                let tera = get_template_engine().map_err(to_cli_error)?;
                 let latex = render_paper_latex(&paper, &tera).map_err(to_cli_error)?;
 
                 // TRIZ-3: Support custom output path via --output/-o flag
@@ -145,7 +144,11 @@ fn main() -> Result<()> {
                 println!("\n{}", format_output(&output, format).map_err(to_cli_error)?);
                 Ok(())
             }, args: [
-                clap::Arg::new("family").help("Thesis family").default_value("IMRaD"),
+                clap::Arg::new("family")
+                    .help("Paper family")
+                    .default_value("imrad")
+                    .ignore_case(true)
+                    .value_parser(clap::builder::PossibleValuesParser::new(PaperFamily::valid_values())),
                 clap::Arg::new("format").short('f').long("format").help("Output format (json, yaml, table)"),
                 clap::Arg::new("output").short('o').long("output").help("Output file path"),
             ]),
@@ -170,7 +173,9 @@ fn main() -> Result<()> {
             ]),
 
             verb!("validate", "Validate paper structure", |args: &VerbArgs| {
-                let file = args.get_one_str("file")?;
+                // Default to sample file if none provided
+                let file = args.get_one_str_opt("file")
+                    .unwrap_or_else(|| "output/imrad-paper.tex".to_string());
                 let format = get_format(args);
 
                 let result = domain::papers::ValidationResult::validate_path(&file);
@@ -189,7 +194,7 @@ fn main() -> Result<()> {
                 }
                 Ok(())
             }, args: [
-                clap::Arg::new("file").help("Paper file to validate").required(true),
+                clap::Arg::new("file").help("Paper file to validate (default: output/imrad-paper.tex)"),
                 clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
         ]))
@@ -296,18 +301,28 @@ fn main() -> Result<()> {
             verb!("set", "Set configuration value", |args: &VerbArgs| {
                 let key = args.get_one_str("key")?;
                 let value = args.get_one_str("value")?;
+                let format = get_format(args);
 
-                if !Config::is_valid_key(&key) {
-                    println!("\n{} Unknown key: {}", "⚠️".bright_yellow(), key);
-                    println!("  Valid keys: output_dir, default_family, latex_engine, ontology_path");
+                if format == OutputFormat::Plain {
+                    if !Config::is_valid_key(&key) {
+                        eprintln!("\n{} Unknown key: {}", "⚠️".bright_yellow(), key);
+                        eprintln!("  Valid keys: output_dir, default_family, latex_engine, ontology_path");
+                    }
+                    eprintln!("\n{} {} = {}", "⚙️  Setting:".bright_green(), key.bright_yellow(), value.bright_cyan());
+                    eprintln!("  {}", "✅ Configuration saved".bright_green());
                 }
 
-                println!("\n{} {} = {}", "⚙️  Setting:".bright_green(), key.bright_yellow(), value.bright_cyan());
-                println!("  {}", "✅ Configuration saved".bright_green());
+                let result = serde_json::json!({
+                    "key": key,
+                    "value": value,
+                    "saved": true
+                });
+                println!("{}", format_output(&result, format).map_err(to_cli_error)?);
                 Ok(())
             }, args: [
                 clap::Arg::new("key").help("Configuration key").required(true),
                 clap::Arg::new("value").help("Configuration value").required(true),
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
             ]),
 
             verb!("show", "Show all configuration", |args: &VerbArgs| {
@@ -364,7 +379,7 @@ fn main() -> Result<()> {
                 let format = get_format(args);
                 let capabilities = build_playground_ontology();
                 let response = IntrospectionResponse::from_capabilities(
-                    "playground", "2.0.0", "Comprehensive v5 feature showcase", &capabilities
+                    "playground", env!("CARGO_PKG_VERSION"), "Comprehensive v5 feature showcase", &capabilities
                 );
 
                 if format == OutputFormat::Plain {
@@ -414,8 +429,7 @@ fn main() -> Result<()> {
                 let query_type = args.get_one_str_opt("query").unwrap_or_else(|| "capabilities".to_string());
                 let format = get_format(args);
 
-                let capabilities = build_playground_ontology();
-                let store = init_ontology_store(&capabilities).map_err(to_cli_error)?;
+                let store = get_ontology_store().map_err(to_cli_error)?;
 
                 let sparql = match query_type.as_str() {
                     "capabilities" => SparqlQueryType::SelectCapabilities.to_sparql(),
@@ -560,7 +574,9 @@ fn main() -> Result<()> {
 
             // GEMBA-2: Man page command
             verb!("manpage", "Output basic man page format", |_args: &VerbArgs| {
-                println!(r#".TH PLAYGROUND 1 "2024" "v2.0.0" "Playground CLI Manual"
+                let version = env!("CARGO_PKG_VERSION");
+                println!(".TH PLAYGROUND 1 \"2024\" \"v{}\" \"Playground CLI Manual\"", version);
+                println!(r#"
 .SH NAME
 playground \- Comprehensive v5 feature showcase for clap-noun-verb
 

@@ -39,6 +39,8 @@ pub fn get_template_engine() -> Result<&'static Tera, String> {
 ///
 /// # Errors
 /// Returns an error if template parsing fails.
+#[deprecated(since = "0.1.0", note = "Use get_template_engine() instead for cached access")]
+#[allow(dead_code)]
 pub fn init_template_engine() -> Result<&'static Tera, &'static str> {
     TERA_ENGINE.as_ref().map_err(|_| "Failed to initialize Tera engine")
 }
