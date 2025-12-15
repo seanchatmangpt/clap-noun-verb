@@ -1582,6 +1582,8 @@ fn generate_verb_registration(
     );
 
     // Generate wrapper function
+    // Empty string "" means root-level verb (no noun)
+    // "__auto__" means auto-infer from filename
     let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
     let about_str = about.as_deref().unwrap_or("");
 
@@ -1640,7 +1642,12 @@ fn generate_verb_registration(
         static #init_fn_name: fn() = {
             fn __register_impl() {
                 // Core team approach: Auto-infer noun name from filename if not explicitly provided
-                let (noun_name_static, noun_about_static, verb_name_final) = if #noun_name_str == "__auto__" {
+                // Special case: "root" means root-level verb (no noun)
+                let (noun_name_static, noun_about_static, verb_name_final) = if #noun_name_str == "root" {
+                    // Root-level verb: no noun, verb appears directly under CLI binary
+                    // Pass empty string to registry to signal root verb
+                    ("", "", #verb_name)
+                } else if #noun_name_str == "__auto__" {
                     // Extract noun name from filename using file!() macro
                     let file_path = file!();
                     let inferred_name = ::std::path::Path::new(file_path)

@@ -169,6 +169,8 @@ pub struct CommandRegistry {
     nouns: HashMap<String, NounMetadata>,
     /// Registered verbs (noun_name -> verb_name -> verb metadata)
     verbs: HashMap<String, HashMap<String, VerbMetadata>>,
+    /// Root-level verbs (verb_name -> verb metadata) - verbs without a noun
+    root_verbs: HashMap<String, VerbMetadata>,
 }
 
 /// Metadata for a registered noun
@@ -257,7 +259,11 @@ impl CommandRegistry {
         // until initialization completes, so we need a different approach
         let registry = REGISTRY.get_or_init(|| {
             // Create empty registry
-            Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
+            Mutex::new(CommandRegistry {
+                nouns: HashMap::new(),
+                verbs: HashMap::new(),
+                root_verbs: HashMap::new(),
+            })
         });
 
         // After registry is stored, run registration functions
@@ -283,7 +289,11 @@ impl CommandRegistry {
         // Get the registry - this will initialize it if needed
         // During initialization, this will wait until init() completes
         let registry = REGISTRY.get_or_init(|| {
-            Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
+            Mutex::new(CommandRegistry {
+                nouns: HashMap::new(),
+                verbs: HashMap::new(),
+                root_verbs: HashMap::new(),
+            })
         });
         // Lock poisoning should not happen in practice, but handle it gracefully
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
@@ -306,6 +316,9 @@ impl CommandRegistry {
     }
 
     /// Register a verb with argument metadata
+    ///
+    /// If noun_name is empty (""), the verb is registered as a root-level verb
+    /// that appears directly under the CLI binary (e.g., `ggen sync` instead of `ggen noun sync`)
     pub fn register_verb_with_args<F>(
         noun_name: &'static str,
         verb_name: &'static str,
@@ -318,20 +331,32 @@ impl CommandRegistry {
         // Get the registry - this will initialize it if needed
         // During initialization, this will wait until init() completes
         let registry = REGISTRY.get_or_init(|| {
-            Mutex::new(CommandRegistry { nouns: HashMap::new(), verbs: HashMap::new() })
+            Mutex::new(CommandRegistry {
+                nouns: HashMap::new(),
+                verbs: HashMap::new(),
+                root_verbs: HashMap::new(),
+            })
         });
         // Lock poisoning should not happen in practice, but handle it gracefully
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
-        reg.verbs.entry(noun_name.to_string()).or_default().insert(
-            verb_name.to_string(),
-            VerbMetadata {
-                noun_name: noun_name.to_string(),
-                verb_name: verb_name.to_string(),
-                about: about.to_string(),
-                args,
-                handler_fn: Box::new(handler),
-            },
-        );
+
+        let verb_metadata = VerbMetadata {
+            noun_name: noun_name.to_string(),
+            verb_name: verb_name.to_string(),
+            about: about.to_string(),
+            args,
+            handler_fn: Box::new(handler),
+        };
+
+        // If noun_name is empty, register as root verb
+        if noun_name.is_empty() {
+            reg.root_verbs.insert(verb_name.to_string(), verb_metadata);
+        } else {
+            reg.verbs
+                .entry(noun_name.to_string())
+                .or_default()
+                .insert(verb_name.to_string(), verb_metadata);
+        }
     }
 
     /// Get all registered nouns
@@ -392,6 +417,13 @@ impl CommandRegistry {
             .version(env!("CARGO_PKG_VERSION"))
             .arg_required_else_help(true);
 
+        // Add root-level verbs directly as subcommands
+        for (verb_name, verb_meta) in &self.root_verbs {
+            let verb_cmd = self.build_verb_command(verb_name, verb_meta);
+            cmd = cmd.subcommand(verb_cmd);
+        }
+
+        // Add nouns with their nested verbs
         for (noun_name, noun_meta) in &self.nouns {
             let noun_cmd = self.build_noun_command(noun_name, noun_meta);
             cmd = cmd.subcommand(noun_cmd);
@@ -749,8 +781,24 @@ impl CommandRegistry {
         };
 
         // Route command
-        if let Some((noun_name, noun_matches)) = matches.subcommand() {
-            if let Some((verb_name, verb_matches)) = noun_matches.subcommand() {
+        if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
+            // First check if this is a root-level verb
+            if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
+                // Execute root verb directly
+                let args_map = self.extract_args(verb_meta, sub_matches);
+
+                let input = crate::logic::HandlerInput {
+                    args: args_map,
+                    opts: std::collections::HashMap::new(),
+                    context: crate::logic::HandlerContext::new(subcommand_name),
+                };
+
+                let output = self.execute_root_verb(subcommand_name, input)?;
+                let json = output.to_json()?;
+                println!("{}", json);
+            } else if let Some((verb_name, verb_matches)) = sub_matches.subcommand() {
+                // This is a noun with a verb subcommand
+                let noun_name = subcommand_name;
                 // Execute verb - extract arguments from matches
                 let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
                     if let Some(verb_meta) = verbs.get(verb_name) {
@@ -773,6 +821,7 @@ impl CommandRegistry {
                 println!("{}", json);
             } else {
                 // No verb specified - show help for the noun
+                let noun_name = subcommand_name;
                 if let Some(noun_meta) = self.nouns.get(noun_name) {
                     let noun_name_static: &'static str =
                         Box::leak(noun_name.to_string().into_boxed_str());
@@ -822,5 +871,19 @@ impl CommandRegistry {
         }
 
         Ok(())
+    }
+
+    /// Execute a root-level verb handler (verbs without a noun)
+    pub fn execute_root_verb(
+        &self,
+        verb_name: &str,
+        input: HandlerInput,
+    ) -> Result<HandlerOutput> {
+        let verb = self
+            .root_verbs
+            .get(verb_name)
+            .ok_or_else(|| crate::error::NounVerbError::command_not_found(verb_name))?;
+
+        (verb.handler_fn)(input)
     }
 }

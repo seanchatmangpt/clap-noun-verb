@@ -4,7 +4,7 @@ exclude = ["playground"]
 
 [package]
 name = "clap-noun-verb"
-version = "5.3.3"
+version = "5.3.4"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -82,7 +82,7 @@ mangen = ["dep:clap_mangen"]
 [dependencies]
 # CLI Framework (REQUIRED - this is what we wrap)
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb-macros = { version = "5.3.3", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "5.3.4", path = "clap-noun-verb-macros" }
 
 # Auto-discovery (REQUIRED - distributed slices for #[noun]/#[verb])
 linkme = "0.3"
@@ -261,6 +261,10 @@ path = "examples/reference/format.rs"
 [[example]]
 name = "ref_context"
 path = "examples/reference/context.rs"
+
+[[example]]
+name = "ref_root_verb"
+path = "examples/reference/root_verb.rs"
 
 # =============================================================================
 # ADVANCED EXAMPLES - Expert-level production patterns (require --all-features)
