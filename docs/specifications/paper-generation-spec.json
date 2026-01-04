@@ -1,0 +1,304 @@
+{
+  "specification_version": "1.0.0",
+  "framework_metadata": {
+    "name": "clap-noun-verb",
+    "version": "5.3.4",
+    "tagline": "Machine-grade CLI framework for AI agents and autonomous systems",
+    "repository": "https://github.com/seanchatmangpt/clap-noun-verb",
+    "license": "MIT OR Apache-2.0",
+    "rust_version": "1.74+"
+  },
+  "core_themes": {
+    "type_safety": {
+      "description": "Compile-time validation of command structures using Rust's type system",
+      "keywords": ["zero-cost abstractions", "type-level encoding", "compile-time guarantees"],
+      "examples": ["#[noun] and #[verb] macros with distributed slices", "Type-safe command registration", "Builder API with generics"]
+    },
+    "noun_verb_pattern": {
+      "description": "Hierarchical command organization following linguistic patterns (noun-verb CLI)",
+      "keywords": ["semantic CLIs", "command hierarchy", "domain-separated architecture"],
+      "examples": ["calc add", "paper generate", "user create"]
+    },
+    "rdf_integration": {
+      "description": "RDF/SPARQL ontology integration for semantic CLI discovery and introspection",
+      "keywords": ["RDF triples", "SPARQL queries", "semantic discovery", "ontology-driven"],
+      "examples": ["oxigraph integration", "MCP compatibility", "machine-readable CLI schemas"]
+    },
+    "agent_ready": {
+      "description": "Designed for autonomous AI agents with introspection and deterministic execution",
+      "keywords": ["JSON output", "MCP protocol", "agent2028", "trillion-agent ecosystems"],
+      "examples": ["Autonomic CLI layer", "Telemetry and hot-path tracking", "Deterministic receipts"]
+    },
+    "domain_separation": {
+      "description": "Clear separation between CLI interface and domain logic",
+      "keywords": ["thin CLI layer", "pure domain functions", "testable business logic"],
+      "examples": ["CLI validates, domain computes", "Integration layer pattern"]
+    }
+  },
+  "paper_families": {
+    "imrad": {
+      "name": "IMRaD (Introduction, Method, Results, Discussion)",
+      "description": "Scientific research paper structure for empirical studies",
+      "target_audience": "Researchers, scientists, technical audiences",
+      "latex_document_class": "article",
+      "sections": {
+        "abstract": {
+          "content_guidance": "Summarize the clap-noun-verb framework's contribution to AI-driven CLI development. Highlight type-safety, noun-verb patterns, and RDF integration. State key findings about performance and agent-readiness.",
+          "suggested_wording": "This paper presents clap-noun-verb, a Rust-based CLI framework designed for autonomous AI agents and machine-grade command-line interfaces. Unlike traditional CLI frameworks that focus solely on human usability, clap-noun-verb employs type-level encoding, semantic ontologies (RDF/SPARQL), and deterministic execution patterns to enable trillion-agent ecosystems. We demonstrate compile-time command validation, zero-cost abstractions through Rust generics, and domain-separated architecture that decouples interface validation from business logic. Empirical evaluation shows negligible execution overhead and comprehensive test coverage with production-grade reliability.",
+          "word_count_target": "150-250",
+          "required_elements": ["Framework name and version", "Core innovation", "Methodology hint", "Key results"]
+        },
+        "introduction": {
+          "content_guidance": "Establish the problem space: CLI tools for AI agents require machine-readability, semantic discovery, and type-safety. Contrast with traditional human-centric CLIs. Introduce clap-noun-verb's unique approach combining Rust's type system with RDF ontologies.",
+          "subsections": [
+            "Background: The Agent-Driven CLI Landscape - Review existing CLI frameworks and their limitations for AI agents",
+            "Problem Statement - CLIs need semantic introspection, compile-time validation, and deterministic execution",
+            "Contributions - Noun-verb pattern, RDF/SPARQL ontology, zero-cost abstractions, domain separation, production examples"
+          ],
+          "word_count_target": "800-1200"
+        },
+        "method": {
+          "content_guidance": "Describe the design and implementation of clap-noun-verb. Detail the macro system, distributed slices, RDF generation, and Tera templating. Explain architectural decisions.",
+          "subsections": [
+            "Architecture Overview - Three-layer separation (CLI, Integration, Domain)",
+            "Macro System - #[noun] and #[verb] procedural macros",
+            "Distributed Registration - linkme distributed slices",
+            "RDF/SPARQL Integration - Semantic CLI schema and oxigraph",
+            "Template System - Tera templating for artifact generation"
+          ],
+          "word_count_target": "1500-2000"
+        },
+        "results": {
+          "content_guidance": "Present empirical evaluation: compilation time, runtime performance, test coverage, code generation metrics. Show comparisons with baseline clap usage.",
+          "word_count_target": "1000-1500"
+        },
+        "discussion": {
+          "content_guidance": "Interpret results in context of agent-driven development. Discuss trade-offs and limitations. Address future work.",
+          "word_count_target": "1200-1800"
+        }
+      },
+      "bibliography_entries": [
+        "@misc{mcp2024, author={Anthropic}, title={Model Context Protocol Specification}, year={2024}, url={https://modelcontextprotocol.io}}",
+        "@article{matsakis2014rust, author={Matsakis, Nicholas D and Klock II, Felix S}, title={The Rust language}, journal={ACM SIGAda Ada Letters}, volume={34}, number={3}, pages={103--104}, year={2014}}",
+        "@inproceedings{hevner2004design, author={Hevner, Alan R and March, Salvatore T and Park, Jinsoo and Ram, Sudha}, title={Design science in information systems research}, booktitle={MIS quarterly}, pages={75--105}, year={2004}}",
+        "@book{evans2004domain, author={Evans, Eric}, title={Domain-driven design: tackling complexity in the heart of software}, publisher={Addison-Wesley}, year={2004}}"
+      ]
+    },
+    "dsr": {
+      "name": "Design Science Research (DSR)",
+      "description": "Problem-artifact-evaluation-theory structure for design science",
+      "sections": {
+        "abstract": {
+          "content_guidance": "Frame as design science: identify problem, present artifact, evaluate utility, contribute theory.",
+          "word_count_target": "150-250"
+        },
+        "problem": {
+          "content_guidance": "Establish the design problem: CLIs for agents require capabilities not addressed by existing frameworks.",
+          "subsections": [
+            "Problem Space Analysis",
+            "Literature Review: Existing CLI Frameworks",
+            "Requirements Definition (Functional & Non-Functional)",
+            "Stakeholder Analysis"
+          ],
+          "word_count_target": "1200-1600"
+        },
+        "artifact": {
+          "content_guidance": "Present clap-noun-verb as the designed artifact. Detail architecture, implementation, and design principles.",
+          "word_count_target": "2000-2500"
+        },
+        "evaluation": {
+          "content_guidance": "Rigorously evaluate the artifact using DSR criteria: efficacy, efficiency, consistency, usability.",
+          "word_count_target": "1500-2000"
+        },
+        "theory": {
+          "content_guidance": "Contribute design principles and theory for semantic CLI frameworks. Generalize findings beyond this artifact.",
+          "word_count_target": "1500-2000"
+        }
+      }
+    },
+    "argument": {
+      "name": "Argument",
+      "description": "Scholarly argument structure with claims, grounds, and proofs",
+      "sections": {
+        "abstract": {
+          "content_guidance": "State central argument: compile-time type safety + semantic ontologies = agent-ready CLIs.",
+          "word_count_target": "150-250"
+        },
+        "claims": {
+          "content_guidance": "State 3-5 central claims clearly. Each claim should be specific, contestable, and significant.",
+          "key_claims": [
+            "Existing CLI frameworks are inadequate for autonomous agents",
+            "Compile-time type validation prevents agent coordination failures",
+            "RDF/SPARQL integration enables machine-grade introspection",
+            "Domain separation maximizes testability and reusability",
+            "Zero-cost abstractions make ergonomics and performance compatible"
+          ],
+          "word_count_target": "1000-1400"
+        },
+        "grounds": {
+          "content_guidance": "Provide evidence supporting each claim: benchmarks, case studies, theoretical analysis, expert testimony.",
+          "word_count_target": "1500-2000"
+        },
+        "proofs": {
+          "content_guidance": "Provide logical proofs connecting claims to grounds. Use formal reasoning, thought experiments, and logical validation.",
+          "word_count_target": "1500-2000"
+        }
+      }
+    },
+    "contribution": {
+      "name": "Contribution",
+      "description": "Gap-design-evaluation-impact structure emphasizing knowledge contribution",
+      "sections": {
+        "gap": {
+          "content_guidance": "Identify the knowledge gap: No existing framework combines compile-time safety, semantic introspection, and domain separation for agent-ready CLIs.",
+          "word_count_target": "800-1200"
+        },
+        "design": {
+          "content_guidance": "Design of the contribution: clap-noun-verb architecture, macros, RDF integration, domain separation pattern.",
+          "word_count_target": "1500-2000"
+        },
+        "evaluation": {
+          "content_guidance": "Evaluation demonstrating the contribution addresses the gap: benchmarks, case studies, production usage.",
+          "word_count_target": "1200-1600"
+        },
+        "impact": {
+          "content_guidance": "Impact and implications: enables trillion-agent ecosystems, sets precedent for semantic CLIs, contributes to agent2028 infrastructure.",
+          "word_count_target": "1000-1400"
+        }
+      }
+    },
+    "monograph": {
+      "name": "Monograph",
+      "description": "Comprehensive scholarly treatment: context, canon, method, analysis",
+      "sections": {
+        "context": {
+          "content_guidance": "Contextual background: evolution of CLI design from Unix to agent-driven systems. Historical development of type systems and semantic web.",
+          "word_count_target": "1200-1600"
+        },
+        "canon": {
+          "content_guidance": "Canonical literature: CLI frameworks (clap, Click, Typer), type theory (Pierce), semantic web (Berners-Lee), domain-driven design (Evans).",
+          "word_count_target": "1500-2000"
+        },
+        "method": {
+          "content_guidance": "Methodological approach: design science research, empirical benchmarking, case study analysis, expert review.",
+          "word_count_target": "1200-1600"
+        },
+        "analysis": {
+          "content_guidance": "In-depth analysis: framework architecture, performance characteristics, usability findings, theoretical contributions.",
+          "word_count_target": "2000-2500"
+        }
+      }
+    },
+    "narrative": {
+      "name": "Narrative",
+      "description": "Interpretive structure: field, voice, pattern, insight",
+      "sections": {
+        "field": {
+          "content_guidance": "Research field description: intersection of programming languages, AI agents, semantic web, software architecture.",
+          "word_count_target": "800-1200"
+        },
+        "voice": {
+          "content_guidance": "Researcher perspective: practitioner-researcher building tools for agent-driven development, informed by Rust community and semantic web research.",
+          "word_count_target": "600-1000"
+        },
+        "pattern": {
+          "content_guidance": "Patterns emerging: type-level encoding as safety mechanism, ontologies as interface contracts, domain separation as architectural principle.",
+          "word_count_target": "1200-1600"
+        },
+        "insight": {
+          "content_guidance": "Insights and implications: shift from human-centric to agent-centric CLI design, compile-time as leverage point, semantic discovery as paradigm.",
+          "word_count_target": "1000-1400"
+        }
+      }
+    },
+    "papers": {
+      "name": "Papers (Three Papers + Synthesis)",
+      "description": "Three standalone papers with synthesis chapter",
+      "sections": {
+        "paper1": {
+          "title": "Type-Safe CLI Frameworks for Autonomous Agents",
+          "content_guidance": "Focus on compile-time validation, Rust type system, zero-cost abstractions. Compare with runtime-validated frameworks.",
+          "word_count_target": "3000-4000"
+        },
+        "paper2": {
+          "title": "Semantic Discovery in Command-Line Interfaces via RDF/SPARQL",
+          "content_guidance": "Focus on RDF ontology design, SPARQL queries, comparison with help text parsing, MCP integration.",
+          "word_count_target": "3000-4000"
+        },
+        "paper3": {
+          "title": "Domain-Separated Architecture for CLI Applications",
+          "content_guidance": "Focus on three-layer pattern, testability benefits, domain-driven design principles, case studies.",
+          "word_count_target": "3000-4000"
+        },
+        "synthesis": {
+          "content_guidance": "Integration of three papers: how type safety + semantic discovery + domain separation create agent-ready CLIs. Unified framework contribution.",
+          "word_count_target": "2000-3000"
+        }
+      }
+    }
+  },
+  "common_elements": {
+    "version_integration": {
+      "description": "All papers should reference Cargo.toml version dynamically",
+      "template_variable": "{{framework_version}}",
+      "source": "/home/user/clap-noun-verb/Cargo.toml version field"
+    },
+    "code_examples": {
+      "basic_command": {
+        "file": "examples/tutorial/basic.rs",
+        "description": "Simplest noun-verb command example"
+      },
+      "domain_separation": {
+        "file": "docs/examples/domain-separation/",
+        "description": "Complete domain-separated architecture examples"
+      },
+      "rdf_integration": {
+        "file": "playground examples using oxigraph",
+        "description": "RDF/SPARQL integration patterns"
+      }
+    },
+    "latex_packages": [
+      "hyperref (clickable references)",
+      "amsmath (mathematical notation)",
+      "graphicx (figures)",
+      "listings (code formatting)",
+      "booktabs (professional tables)",
+      "tikz (diagrams)",
+      "biblatex (bibliography management)"
+    ],
+    "citation_style": "IEEE or ACM for technical papers, APA for narrative papers",
+    "quality_criteria": {
+      "compilability": "LaTeX must compile without errors using pdflatex or xelatex",
+      "completeness": "All sections must have substantive content (>500 words for major sections)",
+      "accuracy": "Code examples must be syntactically valid Rust",
+      "consistency": "Framework version, features, and examples must match codebase",
+      "citations": "Minimum 10 scholarly references, properly formatted"
+    }
+  },
+  "template_enhancements": {
+    "suggested_additions": [
+      "Add \\usepackage{listings} for Rust syntax highlighting",
+      "Add \\lstset{language=Rust, basicstyle=\\ttfamily, breaklines=true} for code formatting",
+      "Add custom macros for framework name: \\newcommand{\\clapnounverb}{\\texttt{clap-noun-verb}}",
+      "Add version macro: \\newcommand{\\frameworkversion}{v{{version}}}",
+      "Add bibliography section using \\bibliography{references} and \\bibliographystyle{plain}",
+      "Add SPARQL listing style for SPARQL code blocks",
+      "Add RDF/Turtle listing style for RDF triples"
+    ],
+    "metadata_variables": [
+      "{{framework_version}} - from Cargo.toml",
+      "{{framework_name}} - clap-noun-verb",
+      "{{repository_url}} - GitHub repository",
+      "{{license}} - MIT OR Apache-2.0",
+      "{{rust_version}} - Minimum Rust version (1.74)",
+      "{{feature_count}} - Number of optional features",
+      "{{example_count}} - Number of examples in repo"
+    ]
+  },
+  "implementation_notes": {
+    "content_generation_strategy": "Use LLM or template system to fill sections with framework-specific content based on this specification",
+    "dynamic_metrics": "Extract real metrics from: cargo make bench, cargo make test --coverage, git log, Cargo.toml",
+    "code_extraction": "Read actual code examples from repository instead of using placeholders",
+    "version_sync": "Always read version from Cargo.toml to ensure papers are version-accurate"
+  }
+}
