@@ -535,8 +535,8 @@ fn count_complexity_in_expr(expr: &syn::Expr, complexity: &mut usize) {
     // Check for decision-making keywords
     // Use simple string matching for portability across syn versions
     let decision_keywords = [
-        "if ", "match ", "while ", "for ",  // keywords
-        "=> ", // match arms
+        "if ", "match ", "while ", "for ", // keywords
+        "=> ",  // match arms
     ];
 
     for keyword in &decision_keywords {

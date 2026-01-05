@@ -82,10 +82,8 @@ impl AgentInfo {
     /// * `required_capabilities` - Required capabilities
     pub fn fitness_score(&self, required_capabilities: &[String]) -> f64 {
         // Capability match score
-        let matches = required_capabilities
-            .iter()
-            .filter(|c| self.capabilities.contains(c))
-            .count();
+        let matches =
+            required_capabilities.iter().filter(|c| self.capabilities.contains(c)).count();
 
         let capability_score = if required_capabilities.is_empty() {
             1.0
@@ -95,11 +93,7 @@ impl AgentInfo {
 
         // Success rate
         let total = self.success_count + self.failure_count;
-        let success_rate = if total == 0 {
-            0.5
-        } else {
-            self.success_count as f64 / total as f64
-        };
+        let success_rate = if total == 0 { 0.5 } else { self.success_count as f64 / total as f64 };
 
         // Combined fitness: 40% capability + 30% trust + 30% success rate
         capability_score * 0.4 + self.trust_score * 0.3 + success_rate * 0.3
@@ -260,9 +254,7 @@ impl GossipProtocol {
     pub fn cleanup(&mut self) {
         let now = SystemTime::now();
         self.seen_messages.retain(|_, timestamp| {
-            now.duration_since(*timestamp)
-                .map(|d| d < self.max_age)
-                .unwrap_or(false)
+            now.duration_since(*timestamp).map(|d| d < self.max_age).unwrap_or(false)
         });
     }
 }
@@ -303,10 +295,7 @@ impl ByzantineDetector {
     /// * `agent_id` - Agent identifier
     /// * `vote` - Vote value (true/false)
     pub fn record_vote(&mut self, agent_id: &str, vote: bool) {
-        self.voting_history
-            .entry(agent_id.to_string())
-            .or_insert_with(Vec::new)
-            .push(vote);
+        self.voting_history.entry(agent_id.to_string()).or_insert_with(Vec::new).push(vote);
     }
 
     /// Detect if agent is Byzantine (malicious)
@@ -381,10 +370,7 @@ impl TrustScore {
     /// * `prior_alpha` - Prior successes (default 1.0)
     /// * `prior_beta` - Prior failures (default 1.0)
     pub fn new(prior_alpha: f64, prior_beta: f64) -> Self {
-        Self {
-            alpha: prior_alpha,
-            beta: prior_beta,
-        }
+        Self { alpha: prior_alpha, beta: prior_beta }
     }
 
     /// Calculate trust score
@@ -441,10 +427,7 @@ pub struct AgentRegistry {
 impl AgentRegistry {
     /// Create new agent registry
     pub fn new() -> Self {
-        Self {
-            agents: HashMap::new(),
-            trust_calculator: TrustScore::default(),
-        }
+        Self { agents: HashMap::new(), trust_calculator: TrustScore::default() }
     }
 
     /// Register agent
@@ -483,9 +466,7 @@ impl AgentRegistry {
         self.agents
             .values()
             .filter(|agent| {
-                required_capabilities
-                    .iter()
-                    .all(|cap| agent.capabilities.contains(cap))
+                required_capabilities.iter().all(|cap| agent.capabilities.contains(cap))
             })
             .collect()
     }
@@ -600,9 +581,7 @@ impl SwarmCoordinator {
             }
             Ok(())
         } else {
-            Err(NounVerbError::ExecutionError {
-                message: format!("agent not found: {}", agent_id),
-            })
+            Err(NounVerbError::ExecutionError { message: format!("agent not found: {}", agent_id) })
         }
     }
 
@@ -631,7 +610,8 @@ impl SwarmCoordinator {
 
         if is_byzantine {
             if let Some(agent) = self.registry.get_agent_mut(agent_id) {
-                agent.byzantine_score = self.byzantine_detector.byzantine_score(agent_id, consensus);
+                agent.byzantine_score =
+                    self.byzantine_detector.byzantine_score(agent_id, consensus);
             }
         }
 
@@ -641,23 +621,15 @@ impl SwarmCoordinator {
     /// Get swarm health metrics
     pub fn health_metrics(&self) -> SwarmHealthMetrics {
         let total_agents = self.registry.agent_count();
-        let trusted_agents = self.registry.agents.values()
-            .filter(|a| a.trust_score >= 0.7)
-            .count();
+        let trusted_agents = self.registry.agents.values().filter(|a| a.trust_score >= 0.7).count();
 
         let avg_trust = if total_agents > 0 {
-            self.registry.agents.values()
-                .map(|a| a.trust_score)
-                .sum::<f64>() / total_agents as f64
+            self.registry.agents.values().map(|a| a.trust_score).sum::<f64>() / total_agents as f64
         } else {
             0.0
         };
 
-        SwarmHealthMetrics {
-            total_agents,
-            trusted_agents,
-            average_trust: avg_trust,
-        }
+        SwarmHealthMetrics { total_agents, trusted_agents, average_trust: avg_trust }
     }
 }
 
@@ -722,8 +694,7 @@ mod tests {
     #[test]
     fn test_task_auction() {
         // Arrange
-        let auction = TaskAuction::new("task-001", vec!["nlp"], 1.0)
-            .with_min_bid(0.6);
+        let auction = TaskAuction::new("task-001", vec!["nlp"], 1.0).with_min_bid(0.6);
 
         // Assert
         assert_eq!(auction.task_id, "task-001");

@@ -4,8 +4,8 @@
 
 #![cfg(feature = "agent2028")]
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use clap_noun_verb::agents::*;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 // =============================================================================
 // State Machine Benchmarks
@@ -81,15 +81,11 @@ fn bench_semantic_query(c: &mut Criterion) {
     for i in 0..100 {
         discovery.register_agent(
             &format!("agent-{}", i),
-            vec![
-                Capability::new(format!("cap-{}", i % 10), "Capability"),
-            ],
+            vec![Capability::new(format!("cap-{}", i % 10), "Capability")],
         );
     }
 
-    let query = SparqlQueryBuilder::new()
-        .select_agents_with_capability("cap-0")
-        .build();
+    let query = SparqlQueryBuilder::new().select_agents_with_capability("cap-0").build();
 
     c.bench_function("semantic_query_100_agents", |b| {
         b.iter(|| {
@@ -101,24 +97,14 @@ fn bench_semantic_query(c: &mut Criterion) {
 
 #[cfg(feature = "rdf")]
 fn bench_semantic_matching(c: &mut Criterion) {
-    let caps1 = vec![
-        Capability::new("nlp", "NLP")
-            .with_tag("text")
-            .with_tag("language"),
-    ];
+    let caps1 = vec![Capability::new("nlp", "NLP").with_tag("text").with_tag("language")];
 
-    let caps2 = vec![
-        Capability::new("vision", "Vision")
-            .with_tag("text")
-            .with_tag("image"),
-    ];
+    let caps2 = vec![Capability::new("vision", "Vision").with_tag("text").with_tag("image")];
 
     c.bench_function("semantic_match_score", |b| {
         b.iter(|| {
-            let score = SemanticDiscovery::semantic_match_score(
-                black_box(&caps1),
-                black_box(&caps2),
-            );
+            let score =
+                SemanticDiscovery::semantic_match_score(black_box(&caps1), black_box(&caps2));
             black_box(score)
         });
     });
@@ -155,10 +141,7 @@ fn bench_task_auction(c: &mut Criterion) {
                 let mut coordinator = SwarmCoordinator::new();
 
                 for i in 0..agent_count {
-                    let mut agent = AgentInfo::new(
-                        format!("agent-{}", i),
-                        vec!["nlp", "vision"],
-                    );
+                    let mut agent = AgentInfo::new(format!("agent-{}", i), vec!["nlp", "vision"]);
                     agent.trust_score = 0.5 + (i as f64 / agent_count as f64) * 0.5;
                     agent.success_count = i as u64 * 10;
                     coordinator.register_agent(agent);
@@ -313,10 +296,7 @@ fn bench_end_to_end_workflow(c: &mut Criterion) {
 
             // Semantic discovery
             let mut discovery = SemanticDiscovery::new();
-            discovery.register_agent(
-                "e2e-agent",
-                vec![Capability::new("nlp", "NLP")],
-            );
+            discovery.register_agent("e2e-agent", vec![Capability::new("nlp", "NLP")]);
 
             // Auction
             let auction = TaskAuction::new("e2e-task", vec!["nlp"], 1.0);
@@ -331,11 +311,7 @@ fn bench_end_to_end_workflow(c: &mut Criterion) {
 // Benchmark Groups
 // =============================================================================
 
-criterion_group!(
-    state_machine_benches,
-    bench_state_transitions,
-    bench_trust_updates,
-);
+criterion_group!(state_machine_benches, bench_state_transitions, bench_trust_updates,);
 
 #[cfg(feature = "rdf")]
 criterion_group!(
@@ -364,10 +340,7 @@ criterion_group!(
 );
 
 #[cfg(all(feature = "rdf", feature = "autonomic"))]
-criterion_group!(
-    integration_benches,
-    bench_end_to_end_workflow,
-);
+criterion_group!(integration_benches, bench_end_to_end_workflow,);
 
 // Main benchmark runner
 #[cfg(all(feature = "rdf", feature = "autonomic"))]
@@ -380,21 +353,10 @@ criterion_main!(
 );
 
 #[cfg(all(feature = "rdf", not(feature = "autonomic")))]
-criterion_main!(
-    state_machine_benches,
-    semantic_benches,
-    swarm_benches,
-);
+criterion_main!(state_machine_benches, semantic_benches, swarm_benches,);
 
 #[cfg(all(not(feature = "rdf"), feature = "autonomic"))]
-criterion_main!(
-    state_machine_benches,
-    swarm_benches,
-    autonomic_benches,
-);
+criterion_main!(state_machine_benches, swarm_benches, autonomic_benches,);
 
 #[cfg(all(not(feature = "rdf"), not(feature = "autonomic")))]
-criterion_main!(
-    state_machine_benches,
-    swarm_benches,
-);
+criterion_main!(state_machine_benches, swarm_benches,);

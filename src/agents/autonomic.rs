@@ -59,11 +59,7 @@ pub struct Metric {
 impl Metric {
     /// Create new metric
     pub fn new(name: impl Into<String>, value: f64) -> Self {
-        Self {
-            name: name.into(),
-            value,
-            timestamp: SystemTime::now(),
-        }
+        Self { name: name.into(), value, timestamp: SystemTime::now() }
     }
 }
 
@@ -161,12 +157,7 @@ impl SelfHealingAction {
         new_value: f64,
         reason: impl Into<String>,
     ) -> Self {
-        Self {
-            action_type,
-            target: target.into(),
-            new_value,
-            reason: reason.into(),
-        }
+        Self { action_type, target: target.into(), new_value, reason: reason.into() }
     }
 }
 
@@ -235,10 +226,8 @@ impl AdaptiveParameter {
 
         // Calculate variance
         let mean = self.history.iter().sum::<f64>() / self.history.len() as f64;
-        let variance = self.history
-            .iter()
-            .map(|v| (v - mean).powi(2))
-            .sum::<f64>() / self.history.len() as f64;
+        let variance = self.history.iter().map(|v| (v - mean).powi(2)).sum::<f64>()
+            / self.history.len() as f64;
 
         variance.sqrt()
     }
@@ -281,9 +270,7 @@ impl AnomalyDetector {
     ///
     /// * `metric` - Metric to record
     pub fn record_metric(&mut self, metric: &Metric) {
-        let history = self.history
-            .entry(metric.name.clone())
-            .or_insert_with(Vec::new);
+        let history = self.history.entry(metric.name.clone()).or_insert_with(Vec::new);
 
         history.push(metric.value);
 
@@ -309,10 +296,8 @@ impl AnomalyDetector {
 
             // Calculate standard deviation
             if history.len() > 1 {
-                let variance = history
-                    .iter()
-                    .map(|v| (v - mean).powi(2))
-                    .sum::<f64>() / (history.len() - 1) as f64;
+                let variance = history.iter().map(|v| (v - mean).powi(2)).sum::<f64>()
+                    / (history.len() - 1) as f64;
 
                 let std_dev = variance.sqrt();
                 self.std_devs.insert(metric_name.to_string(), std_dev);
@@ -330,22 +315,16 @@ impl AnomalyDetector {
     ///
     /// Option containing anomaly if detected
     pub fn detect_anomaly(&self, metric: &Metric) -> Option<Anomaly> {
-        if let (Some(&baseline), Some(&std_dev)) = (
-            self.baselines.get(&metric.name),
-            self.std_devs.get(&metric.name),
-        ) {
+        if let (Some(&baseline), Some(&std_dev)) =
+            (self.baselines.get(&metric.name), self.std_devs.get(&metric.name))
+        {
             if std_dev > 0.0 {
                 let z_score = (metric.value - baseline).abs() / std_dev;
 
                 if z_score > self.threshold {
                     let severity = (z_score / (self.threshold * 2.0)).min(1.0);
 
-                    return Some(Anomaly::new(
-                        &metric.name,
-                        metric.value,
-                        baseline,
-                        severity,
-                    ));
+                    return Some(Anomaly::new(&metric.name, metric.value, baseline, severity));
                 }
             }
         }

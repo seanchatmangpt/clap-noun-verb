@@ -22,6 +22,13 @@ mod rdf_generation;
 mod telemetry_validation;
 mod validation;
 
+// Frontier: Meta-Framework for self-introspection
+// Note: proc-macro crates cannot export modules, only proc_macro functions
+mod meta_framework;
+
+// Frontier: Fractal Pattern macros
+mod macros;
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, parse_macro_input, ItemFn};
@@ -52,6 +59,35 @@ pub fn arg(_args: TokenStream, input: TokenStream) -> TokenStream {
     input
 }
 
+/// Attribute macro for generating self-introspecting meta-framework capabilities
+///
+/// Generates RDF introspection methods, optimization queries, capability discovery,
+/// and type-safe wrappers for structs.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::meta_aware;
+///
+/// #[meta_aware]
+/// struct AgentCapabilities {
+///     name: String,
+///     max_concurrency: usize,
+/// }
+///
+/// let caps = AgentCapabilities { name: "worker".to_string(), max_concurrency: 10 };
+/// let rdf = caps.introspect_capabilities(); // RDF triples
+/// let opts = caps.query_optimizations(); // Optimization hints
+/// ```
+#[proc_macro_attribute]
+pub fn meta_aware(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_parsed = parse_macro_input!(input as syn::DeriveInput);
+
+    match meta_framework::generate_meta_aware(input_parsed) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
 /// Declare a telemetry span for compile-time validation
 ///
 /// This macro creates a span constant and registers it in the distributed slice
@@ -2224,6 +2260,88 @@ fn infer_type_parser(ty: &syn::Type) -> Option<String> {
     }
 }
 
+/// Mark a CLI as participatory in the federated network
+///
+/// This macro generates federation initialization code for CLI discovery,
+/// capability advertisement, and peer authentication.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// #[federated(
+///     discovery_url = "https://cli-federation.example.com",
+///     identity = "my-cli-v1.0",
+///     trust_anchor = "./certs/root.pem"
+/// )]
+/// struct MyCli;
+/// ```
+#[proc_macro_attribute]
+pub fn federated(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args_tokens = proc_macro2::TokenStream::from(args);
+    let input_tokens = proc_macro2::TokenStream::from(input);
+
+    match macros::federated_network::federated_impl(args_tokens, input_tokens) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Advertise a capability to the federated network
+///
+/// This macro generates RDF metadata for a CLI command and publishes it to the
+/// discovery service for remote invocation.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// #[advertise_capability(
+///     capability_id = "process-data",
+///     description = "Process data files",
+///     inputs = ["file:path", "format:string"],
+///     outputs = ["result:json"]
+/// )]
+/// #[verb("process")]
+/// fn process_data(file: PathBuf, format: String) -> Result<ProcessResult> {
+///     // Implementation
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn advertise_capability(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args_tokens = proc_macro2::TokenStream::from(args);
+    let input_tokens = proc_macro2::TokenStream::from(input);
+
+    match macros::federated_network::advertise_capability_impl(args_tokens, input_tokens) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Enable remote invocation of a CLI capability
+///
+/// This macro generates type-safe RPC stubs for calling remote CLI commands
+/// with automatic serialization, authentication, and result validation.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// #[remote_invoke(
+///     target = "remote-cli-v1.0",
+///     capability = "process-data",
+///     timeout_ms = 5000
+/// )]
+/// fn remote_process(file: PathBuf, format: String) -> Result<ProcessResult>;
+/// ```
+#[proc_macro_attribute]
+pub fn remote_invoke(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args_tokens = proc_macro2::TokenStream::from(args);
+    let input_tokens = proc_macro2::TokenStream::from(input);
+
+    match macros::federated_network::remote_invoke_impl(args_tokens, input_tokens) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2278,5 +2396,455 @@ mod tests {
             filename_rel.requires.contains(&"format".to_string()),
             "filename should require 'format'"
         );
+    }
+}
+
+// ============================================================================
+// FRONTIER: Fractal Pattern Macros
+// ============================================================================
+
+/// Attribute macro for defining nouns at different architectural levels
+///
+/// This macro generates `FractalNoun` trait implementations for structs,
+/// enabling type-safe cross-level composition.
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::noun_level;
+///
+/// #[noun_level(Level::CLI)]
+/// struct ServiceCommand {
+///     name: String,
+/// }
+///
+/// #[noun_level(Level::Agent)]
+/// struct ServiceAgent {
+///     capability: String,
+/// }
+///
+/// #[noun_level(Level::Ecosystem)]
+/// struct ServiceCollective {
+///     members: Vec<String>,
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn noun_level(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_struct = parse_macro_input!(input as syn::DeriveInput);
+    let args_tokens = proc_macro2::TokenStream::from(args);
+
+    // Parse level from arguments
+    let level = match macros::fractal_patterns::parse_level_arg(args_tokens) {
+        Ok(level) => level,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    // Generate FractalNoun implementation
+    let impl_code = macros::fractal_patterns::generate_noun_impl(&input_struct, level);
+
+    // Combine original struct with generated implementation
+    let expanded = quote! {
+        #input_struct
+        #impl_code
+    };
+
+    expanded.into()
+}
+
+/// Attribute macro for defining verbs at different architectural levels
+///
+/// This macro generates `FractalVerb` trait implementations for impl blocks,
+/// enabling type-safe verb-noun composition at each level.
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::verb_level;
+///
+/// #[verb_level(Level::CLI)]
+/// impl ServiceCommand {
+///     fn start(&self) -> Result<(), String> {
+///         Ok(())
+///     }
+/// }
+///
+/// #[verb_level(Level::Agent)]
+/// impl ServiceAgent {
+///     fn execute(&self) -> Result<(), String> {
+///         Ok(())
+///     }
+/// }
+///
+/// #[verb_level(Level::Ecosystem)]
+/// impl ServiceCollective {
+///     fn orchestrate(&self) -> Result<(), String> {
+///         Ok(())
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn verb_level(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_impl = parse_macro_input!(input as syn::ItemImpl);
+    let args_tokens = proc_macro2::TokenStream::from(args);
+
+    // Parse level from arguments
+    let level = match macros::fractal_patterns::parse_level_arg(args_tokens) {
+        Ok(level) => level,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    // Generate FractalVerb implementation
+    let impl_code = macros::fractal_patterns::generate_verb_impl(&input_impl, level);
+
+    // Combine original impl with generated code
+    let expanded = quote! {
+        #input_impl
+        #impl_code
+    };
+
+    expanded.into()
+}
+
+/// Mark a function as semantically composable capability
+///
+/// This macro enables semantic discovery, type-safe composition, and MCP protocol
+/// integration for CLI capabilities. It generates:
+/// - RDF metadata for SPARQL-based discovery
+/// - Type-level composition validators
+/// - MCP protocol descriptors for agent communication
+/// - Distributed slice registration for auto-discovery
+///
+/// # Arguments
+///
+/// - `uri` (required): Unique capability URI in IRI format
+/// - `inputs` (optional): RDF type expression for input parameters
+/// - `outputs` (optional): RDF type expression for return type
+/// - `constraints` (optional): SPARQL ASK query for composition constraints
+/// - `mcp_version` (optional): MCP protocol version (default: "2024.1")
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::semantic_composable;
+///
+/// #[semantic_composable(
+///     uri = "urn:example:capability:file-reader",
+///     inputs = "rdf:type fs:Path",
+///     outputs = "rdf:type text:Content",
+///     constraints = "ASK WHERE { ?s rdf:type fs:ReadableFile }"
+/// )]
+/// fn read_file(path: PathBuf) -> Result<String, std::io::Error> {
+///     std::fs::read_to_string(path)
+/// }
+/// ```
+///
+/// # Compile-Time Validation
+///
+/// - Function must return `Result<T, E>` for error handling
+/// - Async functions not yet supported (FUTURE: tokio integration)
+/// - Unsafe functions not allowed (memory safety requirement)
+/// - All parameters must be serializable (for MCP protocol)
+///
+/// # Runtime Integration
+///
+/// Capabilities are registered in `SEMANTIC_CAPABILITIES` distributed slice
+/// and can be discovered at runtime via SPARQL queries on the RDF store.
+///
+/// See `clap_noun_verb::semantic` module for runtime support.
+#[proc_macro_attribute]
+pub fn semantic_composable(args: TokenStream, input: TokenStream) -> TokenStream {
+    let attrs = match syn::parse::<macros::semantic_composition::SemanticAttributes>(args) {
+        Ok(attrs) => attrs,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    let function = match syn::parse::<ItemFn>(input) {
+        Ok(f) => f,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    match macros::semantic_composition::expand_semantic_composable(attrs, function) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+// ============================================================================
+// FRONTIER: Executable Specifications Macros
+// ============================================================================
+
+/// Converts documentation into executable tests with proof generation
+///
+/// This macro extracts specifications from doc comments and generates:
+/// - Property-based tests
+/// - Proof evidence collection
+/// - Audit trail metrics
+/// - Specification versioning
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// /// Calculate sum of two numbers
+/// /// @version 1.0.0
+/// /// @property[correctness] result >= a && result >= b
+/// /// @property[performance] execution_time < 1ms
+/// #[spec]
+/// fn add(a: u32, b: u32) -> u32 {
+///     a + b
+/// }
+/// ```
+///
+/// # Features
+///
+/// - **Type-First**: Specifications encoded at compile time
+/// - **Zero-Cost**: All validation happens at compile time
+/// - **Evidence**: Automatic proof generation for compliance
+#[proc_macro_attribute]
+pub fn spec(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(input as ItemFn);
+
+    match macros::executable_specs::generate_spec(&input_fn.attrs, &input_fn) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Marks achievement targets with criteria tracking
+///
+/// This macro generates compile-time milestone tracking with:
+/// - Target date validation
+/// - Criteria collection
+/// - Status tracking
+/// - Progress metrics
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// /// Feature: User authentication
+/// /// @milestone Phase1-Auth
+/// /// @target 2024-12-31
+/// /// @criteria OAuth2 integration complete
+/// /// @criteria JWT token validation working
+/// #[milestone]
+/// fn auth_milestone() {}
+/// ```
+#[proc_macro_attribute]
+pub fn milestone(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(input as ItemFn);
+
+    match macros::executable_specs::generate_milestone(&input_fn.attrs, &input_fn) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Runtime validation of invariant properties
+///
+/// This macro generates runtime checks that invariants hold:
+/// - Pre-condition validation
+/// - Post-condition validation
+/// - Severity-based handling (error, warning, info)
+/// - Configurable check frequency
+///
+/// # Usage
+///
+/// ```rust,ignore
+/// /// Process user data
+/// /// @invariant[non_negative] value >= 0
+/// /// @severity error
+/// /// @frequency always
+/// #[invariant]
+/// fn process_value() {
+///     // Implementation
+/// }
+/// ```
+///
+/// # Configuration
+///
+/// - Enable panic on failure: `--features invariant_panic`
+/// - Otherwise prints warning to stderr
+#[proc_macro_attribute]
+pub fn invariant(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(input as ItemFn);
+
+    match macros::executable_specs::generate_invariant(&input_fn.attrs, &input_fn) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+// ============================================================================
+// Learning Trajectory Macros (Frontier)
+// ============================================================================
+
+/// Define a competency dimension with multi-dimensional skill tracking
+///
+/// This macro generates CompetencyDimension trait implementation for a struct,
+/// enabling proficiency tracking across multiple skill areas.
+///
+/// # Arguments
+///
+/// - `dimension = "name"` - The name of the competency dimension
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::competency;
+/// use clap_noun_verb_macros::macros::learning_trajectories::ProficiencyLevel;
+///
+/// #[competency(dimension = "CLI Development")]
+/// struct CliSkills {
+///     parsing: ProficiencyLevel,
+///     validation: ProficiencyLevel,
+///     composition: ProficiencyLevel,
+/// }
+///
+/// let skills = CliSkills {
+///     parsing: ProficiencyLevel::new(0.8),
+///     validation: ProficiencyLevel::new(0.7),
+///     composition: ProficiencyLevel::new(0.6),
+/// };
+///
+/// assert_eq!(skills.name(), "CLI Development");
+/// assert!(skills.aggregate_proficiency().value() >= 0.7);
+/// ```
+#[proc_macro_attribute]
+pub fn competency(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_parsed = parse_macro_input!(input as syn::DeriveInput);
+    let args_stream = proc_macro2::TokenStream::from(args);
+
+    match macros::learning_trajectories::parse_competency_args(args_stream) {
+        Ok(dimension) => {
+            let impl_tokens =
+                macros::learning_trajectories::generate_competency_impl(&input_parsed, &dimension);
+            let original = quote! { #input_parsed };
+            quote! {
+                #original
+                #impl_tokens
+            }
+            .into()
+        }
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Define an assessment function with proficiency evaluation
+///
+/// This macro generates AssessmentEngine trait implementation for a function,
+/// enabling learner proficiency evaluation with configurable thresholds.
+///
+/// # Arguments
+///
+/// - `threshold = 0.8` - The passing threshold (default: 0.8)
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::assessment;
+/// use clap_noun_verb_macros::macros::learning_trajectories::AssessmentResult;
+///
+/// #[assessment(threshold = 0.75)]
+/// fn evaluate_proficiency() -> AssessmentResult {
+///     // Evaluation logic
+///     AssessmentResult::new(0.85, "Proficient")
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn assessment(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_parsed = parse_macro_input!(input as syn::ItemFn);
+    let args_stream = proc_macro2::TokenStream::from(args);
+
+    match macros::learning_trajectories::parse_assessment_args(args_stream) {
+        Ok(threshold) => {
+            let impl_tokens =
+                macros::learning_trajectories::generate_assessment_impl(&input_parsed, threshold);
+            let original = quote! { #input_parsed };
+            quote! {
+                #original
+                #impl_tokens
+            }
+            .into()
+        }
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Define a learning path generator with optimal sequence planning
+///
+/// This macro generates PathOptimizer trait implementation for a function,
+/// enabling generation of optimal learning sequences to reach target competency.
+///
+/// # Arguments
+///
+/// - `target = "level"` - Target competency level (foundation, intermediate, advanced, expert)
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::learning_path;
+/// use clap_noun_verb_macros::macros::learning_trajectories::{CompetencyLevel, LearningPath, LearningStep};
+///
+/// #[learning_path(target = "Expert")]
+/// fn generate_cli_path(current: CompetencyLevel, target: CompetencyLevel) -> LearningPath {
+///     let steps = vec![
+///         LearningStep::new(CompetencyLevel::Foundation, "Learn CLI basics"),
+///         LearningStep::new(CompetencyLevel::Intermediate, "Master patterns"),
+///         LearningStep::new(CompetencyLevel::Advanced, "Implement features"),
+///         LearningStep::new(CompetencyLevel::Expert, "Design frameworks"),
+///     ];
+///     LearningPath::new(steps, target)
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn learning_path(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_parsed = parse_macro_input!(input as syn::ItemFn);
+    let args_stream = proc_macro2::TokenStream::from(args);
+
+    match macros::learning_trajectories::parse_learning_path_args(args_stream) {
+        Ok(target) => {
+            let impl_tokens =
+                macros::learning_trajectories::generate_path_impl(&input_parsed, target);
+            let original = quote! { #input_parsed };
+            quote! {
+                #original
+                #impl_tokens
+            }
+            .into()
+        }
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Automatically generate tests from semantic combinations
+///
+/// This macro analyzes the annotated function and generates comprehensive test cases:
+/// - Basic functionality tests
+/// - Property-based tests using proptest
+/// - Edge case and boundary tests
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use clap_noun_verb_macros::auto_test;
+///
+/// #[auto_test]
+/// fn parse_command(input: &str) -> Result<Command, ParseError> {
+///     // Implementation
+///     Ok(Command::default())
+/// }
+///
+/// // Generates:
+/// // - test_parse_command_basic
+/// // - test_parse_command_property
+/// // - test_parse_command_edge_cases
+/// ```
+#[proc_macro_attribute]
+pub fn auto_test(args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_parsed = parse_macro_input!(input as ItemFn);
+    let args_stream = proc_macro2::TokenStream::from(args);
+
+    match macros::reflexive_testing_macro::generate_auto_test(args_stream, input_parsed) {
+        Ok(tokens) => tokens.into(),
+        Err(e) => e.to_compile_error().into(),
     }
 }

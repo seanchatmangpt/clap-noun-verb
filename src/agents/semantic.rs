@@ -60,11 +60,7 @@ impl Capability {
     /// * `id` - Capability identifier
     /// * `description` - Human-readable description
     pub fn new(id: impl Into<String>, description: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            description: description.into(),
-            tags: Vec::new(),
-        }
+        Self { id: id.into(), description: description.into(), tags: Vec::new() }
     }
 
     /// Add semantic tag
@@ -102,11 +98,7 @@ impl RdfTriple {
         predicate: impl Into<String>,
         object: impl Into<String>,
     ) -> Self {
-        Self {
-            subject: subject.into(),
-            predicate: predicate.into(),
-            object: object.into(),
-        }
+        Self { subject: subject.into(), predicate: predicate.into(), object: object.into() }
     }
 }
 
@@ -127,10 +119,7 @@ pub struct SparqlQueryBuilder {
 impl SparqlQueryBuilder {
     /// Create new query builder
     pub fn new() -> Self {
-        Self {
-            patterns: Vec::new(),
-            variables: Vec::new(),
-        }
+        Self { patterns: Vec::new(), variables: Vec::new() }
     }
 
     /// Select agents with specific capability
@@ -140,10 +129,7 @@ impl SparqlQueryBuilder {
     /// * `capability` - Capability to match
     pub fn select_agents_with_capability(mut self, capability: &str) -> Self {
         self.variables.push("agent".to_string());
-        self.patterns.push(format!(
-            "?agent <hasCapability> \"{}\"",
-            capability
-        ));
+        self.patterns.push(format!("?agent <hasCapability> \"{}\"", capability));
         self
     }
 
@@ -154,20 +140,14 @@ impl SparqlQueryBuilder {
     /// * `tag` - Semantic tag to match
     pub fn select_agents_with_tag(mut self, tag: &str) -> Self {
         self.variables.push("agent".to_string());
-        self.patterns.push(format!(
-            "?agent <hasTag> \"{}\"",
-            tag
-        ));
+        self.patterns.push(format!("?agent <hasTag> \"{}\"", tag));
         self
     }
 
     /// Build SPARQL query string
     pub fn build(self) -> String {
-        let vars = if self.variables.is_empty() {
-            "*".to_string()
-        } else {
-            self.variables.join(" ")
-        };
+        let vars =
+            if self.variables.is_empty() { "*".to_string() } else { self.variables.join(" ") };
 
         let patterns = self.patterns.join(" . ");
 
@@ -200,10 +180,7 @@ pub struct SemanticDiscovery {
 impl SemanticDiscovery {
     /// Create new semantic discovery engine
     pub fn new() -> Self {
-        Self {
-            triples: Vec::new(),
-            agent_capabilities: HashMap::new(),
-        }
+        Self { triples: Vec::new(), agent_capabilities: HashMap::new() }
     }
 
     /// Register agent with capabilities
@@ -221,26 +198,14 @@ impl SemanticDiscovery {
         // Generate RDF triples
         for capability in &capabilities {
             // Agent hasCapability capability_id
-            self.triples.push(RdfTriple::new(
-                agent_id,
-                "hasCapability",
-                &capability.id,
-            ));
+            self.triples.push(RdfTriple::new(agent_id, "hasCapability", &capability.id));
 
             // Agent hasDescription description
-            self.triples.push(RdfTriple::new(
-                agent_id,
-                "hasDescription",
-                &capability.description,
-            ));
+            self.triples.push(RdfTriple::new(agent_id, "hasDescription", &capability.description));
 
             // Agent hasTag tag (for each tag)
             for tag in &capability.tags {
-                self.triples.push(RdfTriple::new(
-                    agent_id,
-                    "hasTag",
-                    tag,
-                ));
+                self.triples.push(RdfTriple::new(agent_id, "hasTag", tag));
             }
         }
     }
@@ -313,11 +278,7 @@ impl SemanticDiscovery {
     ///
     /// * `agent_id` - Agent identifier
     pub fn get_agent_triples(&self, agent_id: &str) -> Vec<RdfTriple> {
-        self.triples
-            .iter()
-            .filter(|t| t.subject == agent_id)
-            .cloned()
-            .collect()
+        self.triples.iter().filter(|t| t.subject == agent_id).cloned().collect()
     }
 
     /// Get agent capabilities
@@ -342,24 +303,15 @@ impl SemanticDiscovery {
     ///
     /// Similarity score (0.0 - 1.0)
     pub fn semantic_match_score(caps1: &[Capability], caps2: &[Capability]) -> f64 {
-        let tags1: Vec<String> = caps1
-            .iter()
-            .flat_map(|c| c.tags.clone())
-            .collect();
+        let tags1: Vec<String> = caps1.iter().flat_map(|c| c.tags.clone()).collect();
 
-        let tags2: Vec<String> = caps2
-            .iter()
-            .flat_map(|c| c.tags.clone())
-            .collect();
+        let tags2: Vec<String> = caps2.iter().flat_map(|c| c.tags.clone()).collect();
 
         if tags1.is_empty() && tags2.is_empty() {
             return 1.0;
         }
 
-        let intersection: Vec<_> = tags1
-            .iter()
-            .filter(|t| tags2.contains(t))
-            .collect();
+        let intersection: Vec<_> = tags1.iter().filter(|t| tags2.contains(t)).collect();
 
         let mut union = tags1.clone();
         for tag in tags2 {
@@ -455,18 +407,10 @@ mod tests {
     fn test_semantic_query() {
         // Arrange
         let mut discovery = SemanticDiscovery::new();
-        discovery.register_agent(
-            "agent-001",
-            vec![Capability::new("nlp", "NLP")],
-        );
-        discovery.register_agent(
-            "agent-002",
-            vec![Capability::new("vision", "Vision")],
-        );
+        discovery.register_agent("agent-001", vec![Capability::new("nlp", "NLP")]);
+        discovery.register_agent("agent-002", vec![Capability::new("vision", "Vision")]);
 
-        let query = SparqlQueryBuilder::new()
-            .select_agents_with_capability("nlp")
-            .build();
+        let query = SparqlQueryBuilder::new().select_agents_with_capability("nlp").build();
 
         // Act
         let results = discovery.query(&query);
@@ -481,12 +425,8 @@ mod tests {
     #[test]
     fn test_semantic_match_score() {
         // Arrange
-        let caps1 = vec![
-            Capability::new("nlp", "NLP").with_tag("text").with_tag("language"),
-        ];
-        let caps2 = vec![
-            Capability::new("vision", "Vision").with_tag("text").with_tag("image"),
-        ];
+        let caps1 = vec![Capability::new("nlp", "NLP").with_tag("text").with_tag("language")];
+        let caps2 = vec![Capability::new("vision", "Vision").with_tag("text").with_tag("image")];
 
         // Act
         let score = SemanticDiscovery::semantic_match_score(&caps1, &caps2);
@@ -499,12 +439,8 @@ mod tests {
     #[test]
     fn test_semantic_match_score_identical() {
         // Arrange
-        let caps1 = vec![
-            Capability::new("nlp", "NLP").with_tag("text"),
-        ];
-        let caps2 = vec![
-            Capability::new("nlp", "NLP").with_tag("text"),
-        ];
+        let caps1 = vec![Capability::new("nlp", "NLP").with_tag("text")];
+        let caps2 = vec![Capability::new("nlp", "NLP").with_tag("text")];
 
         // Act
         let score = SemanticDiscovery::semantic_match_score(&caps1, &caps2);
@@ -517,14 +453,10 @@ mod tests {
     fn test_tag_query() {
         // Arrange
         let mut discovery = SemanticDiscovery::new();
-        discovery.register_agent(
-            "agent-001",
-            vec![Capability::new("nlp", "NLP").with_tag("language")],
-        );
+        discovery
+            .register_agent("agent-001", vec![Capability::new("nlp", "NLP").with_tag("language")]);
 
-        let query = SparqlQueryBuilder::new()
-            .select_agents_with_tag("language")
-            .build();
+        let query = SparqlQueryBuilder::new().select_agents_with_tag("language").build();
 
         // Act
         let results = discovery.query(&query);

@@ -8,19 +8,19 @@
 
 #![cfg(feature = "agent2028")]
 
-use clap_noun_verb::agents::*;
 use clap_noun_verb::agents::swarm::{
-    AgentInfo, AgentRegistry, ByzantineDetector, GossipMessage, GossipProtocol,
-    SwarmCoordinator, TaskAuction, TrustScore,
+    AgentInfo, AgentRegistry, ByzantineDetector, GossipMessage, GossipProtocol, SwarmCoordinator,
+    TaskAuction, TrustScore,
 };
+use clap_noun_verb::agents::*;
 
 #[cfg(feature = "autonomic")]
 use clap_noun_verb::agents::autonomic::{
-    ActionType, AdaptiveParameter, Anomaly, AutonomicLoop, AnomalyDetector, Metric, MapekPhase,
+    ActionType, AdaptiveParameter, Anomaly, AnomalyDetector, AutonomicLoop, MapekPhase, Metric,
 };
 
 #[cfg(feature = "rdf")]
-use clap_noun_verb::agents::semantic::{Capability, SparqlQueryBuilder, SemanticDiscovery};
+use clap_noun_verb::agents::semantic::{Capability, SemanticDiscovery, SparqlQueryBuilder};
 
 // =============================================================================
 // Type-State Machine Integration Tests
@@ -97,36 +97,26 @@ fn test_semantic_discovery_workflow() {
     // Act: Register multiple agents with capabilities
     discovery.register_agent(
         "agent-nlp",
-        vec![
-            Capability::new("nlp", "Natural Language Processing")
-                .with_tag("text")
-                .with_tag("language"),
-        ],
+        vec![Capability::new("nlp", "Natural Language Processing")
+            .with_tag("text")
+            .with_tag("language")],
     );
 
     discovery.register_agent(
         "agent-vision",
-        vec![
-            Capability::new("vision", "Computer Vision")
-                .with_tag("image")
-                .with_tag("visual"),
-        ],
+        vec![Capability::new("vision", "Computer Vision").with_tag("image").with_tag("visual")],
     );
 
     discovery.register_agent(
         "agent-hybrid",
         vec![
-            Capability::new("nlp", "NLP")
-                .with_tag("text"),
-            Capability::new("vision", "Vision")
-                .with_tag("image"),
+            Capability::new("nlp", "NLP").with_tag("text"),
+            Capability::new("vision", "Vision").with_tag("image"),
         ],
     );
 
     // Assert: Query by capability
-    let query = SparqlQueryBuilder::new()
-        .select_agents_with_capability("nlp")
-        .build();
+    let query = SparqlQueryBuilder::new().select_agents_with_capability("nlp").build();
 
     let results = discovery.query(&query).unwrap();
     assert_eq!(results.len(), 2); // agent-nlp and agent-hybrid
@@ -138,23 +128,14 @@ fn test_semantic_discovery_workflow() {
 #[test]
 fn test_semantic_matching_algorithm() {
     // Arrange
-    let caps1 = vec![
-        Capability::new("nlp", "NLP")
-            .with_tag("text")
-            .with_tag("language")
-            .with_tag("sentiment"),
-    ];
+    let caps1 = vec![Capability::new("nlp", "NLP")
+        .with_tag("text")
+        .with_tag("language")
+        .with_tag("sentiment")];
 
-    let caps2 = vec![
-        Capability::new("nlp", "NLP")
-            .with_tag("text")
-            .with_tag("language"),
-    ];
+    let caps2 = vec![Capability::new("nlp", "NLP").with_tag("text").with_tag("language")];
 
-    let caps3 = vec![
-        Capability::new("vision", "Vision")
-            .with_tag("image"),
-    ];
+    let caps3 = vec![Capability::new("vision", "Vision").with_tag("image")];
 
     // Act & Assert: High similarity
     let score1 = SemanticDiscovery::semantic_match_score(&caps1, &caps2);
@@ -185,10 +166,8 @@ fn test_rdf_triple_generation() {
     assert_eq!(triples.len(), 6);
 
     // Verify structure
-    let capability_triples: Vec<_> = triples
-        .iter()
-        .filter(|t| t.predicate == "hasCapability")
-        .collect();
+    let capability_triples: Vec<_> =
+        triples.iter().filter(|t| t.predicate == "hasCapability").collect();
     assert_eq!(capability_triples.len(), 2);
 }
 
@@ -454,10 +433,7 @@ fn test_semantic_discovery_with_autonomic_feedback() {
     let mut autonomic = AutonomicLoop::new();
 
     // Register agent
-    discovery.register_agent(
-        "feedback-agent",
-        vec![Capability::new("nlp", "NLP")],
-    );
+    discovery.register_agent("feedback-agent", vec![Capability::new("nlp", "NLP")]);
 
     // Simulate agent performance monitoring
     for _ in 0..20 {
@@ -465,9 +441,7 @@ fn test_semantic_discovery_with_autonomic_feedback() {
     }
 
     // Act: Query agent
-    let query = SparqlQueryBuilder::new()
-        .select_agents_with_capability("nlp")
-        .build();
+    let query = SparqlQueryBuilder::new().select_agents_with_capability("nlp").build();
 
     let agents = discovery.query(&query).unwrap();
 
@@ -541,9 +515,7 @@ fn test_end_to_end_agent_workflow() {
         );
 
         // Query by capability
-        let query = SparqlQueryBuilder::new()
-            .select_agents_with_capability("nlp")
-            .build();
+        let query = SparqlQueryBuilder::new().select_agents_with_capability("nlp").build();
 
         let _results = discovery.query(&query).unwrap();
     }

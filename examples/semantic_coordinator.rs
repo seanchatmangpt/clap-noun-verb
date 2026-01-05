@@ -167,10 +167,7 @@ fn handle_agent_command(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         AgentCommands::Register { agent_id, capabilities } => {
-            let caps: Vec<String> = capabilities
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect();
+            let caps: Vec<String> = capabilities.split(',').map(|s| s.trim().to_string()).collect();
 
             // Create agent with type-state machine
             let agent = AgentState::<Unregistered>::new(agent_id.clone())
@@ -185,10 +182,8 @@ fn handle_agent_command(
             // Register semantically (if RDF feature enabled)
             #[cfg(feature = "rdf")]
             {
-                let semantic_caps: Vec<Capability> = caps
-                    .iter()
-                    .map(|c| Capability::new(c, format!("{} capability", c)))
-                    .collect();
+                let semantic_caps: Vec<Capability> =
+                    caps.iter().map(|c| Capability::new(c, format!("{} capability", c))).collect();
 
                 state.semantic.register_agent(&agent_id, semantic_caps);
             }
@@ -206,9 +201,8 @@ fn handle_agent_command(
         AgentCommands::Discover { capability } => {
             #[cfg(feature = "rdf")]
             {
-                let query = SparqlQueryBuilder::new()
-                    .select_agents_with_capability(&capability)
-                    .build();
+                let query =
+                    SparqlQueryBuilder::new().select_agents_with_capability(&capability).build();
 
                 let results = state.semantic.query(&query)?;
 

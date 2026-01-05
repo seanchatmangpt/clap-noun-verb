@@ -24,16 +24,14 @@ pub mod swarm;
 pub mod autonomic;
 
 // Re-exports for convenience
-pub use state::{
-    AgentState, Escalated, Registered, Trusted, Unregistered, Verified,
-};
+pub use state::{AgentState, Escalated, Registered, Trusted, Unregistered, Verified};
 
 #[cfg(feature = "rdf")]
 pub use semantic::{Capability, SemanticDiscovery, SparqlQueryBuilder};
 
 pub use swarm::{
-    AgentInfo, AgentRegistry, ByzantineDetector, GossipProtocol, SwarmCoordinator,
-    TaskAuction, TrustScore,
+    AgentInfo, AgentRegistry, ByzantineDetector, GossipProtocol, SwarmCoordinator, TaskAuction,
+    TrustScore,
 };
 
 #[cfg(feature = "autonomic")]
