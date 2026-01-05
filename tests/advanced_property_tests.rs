@@ -1,3 +1,5 @@
+#![cfg(feature = "autonomic")]
+
 //! Hyper-Advanced Property-Based Tests for Swarm-Native Runtime
 //!
 //! Uses chicago-tdd-tools advanced capabilities:

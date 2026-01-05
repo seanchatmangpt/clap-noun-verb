@@ -874,11 +874,7 @@ impl CommandRegistry {
     }
 
     /// Execute a root-level verb handler (verbs without a noun)
-    pub fn execute_root_verb(
-        &self,
-        verb_name: &str,
-        input: HandlerInput,
-    ) -> Result<HandlerOutput> {
+    pub fn execute_root_verb(&self, verb_name: &str, input: HandlerInput) -> Result<HandlerOutput> {
         let verb = self
             .root_verbs
             .get(verb_name)

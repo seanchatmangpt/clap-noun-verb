@@ -1,0 +1,116 @@
+%% Semantic Agent Coordinator - Architecture Diagram
+%% Generated for clap-noun-verb reference implementation
+%% View with Mermaid Live Editor: https://mermaid.live/
+
+graph TB
+    subgraph "CLI Layer - User Interface"
+        CLI[CLI Commands<br/>agent • task • swarm<br/>autonomic • receipt • semantic]
+        CLI_OUT[JSON Output<br/>Agent-Friendly Format]
+    end
+
+    subgraph "Semantic Layer - Capability Discovery"
+        RDF[RDF/Turtle Ontology<br/>Agent & Capability Definitions]
+        SPARQL[SPARQL Query Planner<br/>Capability Matching]
+        ML[ML Predictor<br/>XGBoost - Success & Latency]
+        SCORE[Weighted Scoring<br/>0.4·trust + 0.3·success<br/>+ 0.2·specialization + 0.1·speed]
+    end
+
+    subgraph "Coordination Layer - Agent2028 Swarm"
+        GOSSIP[Gossip Protocol<br/>Fanout=3, Interval=100ms<br/>State Propagation]
+        CONSENSUS[Byzantine Consensus<br/>PBFT - f < n/3 Tolerance]
+        TRUST[Trust Scoring<br/>EigenTrust - Decentralized]
+        AUCTION[Task Auction<br/>Vickrey 2nd-Price Sealed-Bid]
+        STIGMERGY[Stigmergic Coordination<br/>Pheromone Trails<br/>Success/Failure Feedback]
+    end
+
+    subgraph "Autonomic Layer - MAPE-K Loop"
+        MONITOR[Monitor<br/>Latency p95 • Error Rate<br/>Consensus Duration • Load]
+        ANALYZE[Analyze<br/>EWMA Anomaly Detection<br/>SPC • CUSUM]
+        PLAN[Plan<br/>Remediation Strategies<br/>Scale • Balance • Circuit-Break]
+        EXECUTE[Execute<br/>Safe Application<br/>Canary • Rollback]
+        KNOWLEDGE[Knowledge<br/>Historical Database<br/>ML Model Training]
+
+        MONITOR --> ANALYZE
+        ANALYZE --> PLAN
+        PLAN --> EXECUTE
+        EXECUTE --> KNOWLEDGE
+        KNOWLEDGE --> MONITOR
+    end
+
+    subgraph "Kernel Layer - Determinism"
+        RECEIPT[Receipt Generation<br/>SHA-256 Hash<br/>< 100ns Latency]
+        REPLAY[Deterministic Replay<br/>Reproduce Execution<br/>Debug & Verify]
+        CAUSAL[Causal DAG<br/>Happens-Before Relationships<br/>Parent Receipt Pointers]
+        AUDIT[Audit Trail<br/>Immutable Log<br/>90-Day Retention]
+    end
+
+    subgraph "Hot-Path Optimizations - Zero-Cost"
+        ARENA[Arena Allocation<br/>Bump Allocator<br/>< 5ns Alloc]
+        LOCKFREE[Lock-Free Registry<br/>DashMap + Epoch GC<br/>< 50ns Lookup]
+        SIMD[SIMD Matching<br/>AVX2 256-bit<br/>< 10ns per Agent]
+    end
+
+    subgraph "Type-State Lifecycle - Compile-Time Safety"
+        UNREG[Agent&lt;Unregistered&gt;<br/>PhantomData&lt;Unregistered&gt;]
+        REG[Agent&lt;Registered&gt;<br/>PhantomData&lt;Registered&gt;]
+        VERIF[Agent&lt;Verified&gt;<br/>PhantomData&lt;Verified&gt;]
+        TRUST_STATE[Agent&lt;Trusted&gt;<br/>PhantomData&lt;Trusted&gt;]
+        ESC[Agent&lt;Escalated&gt;<br/>PhantomData&lt;Escalated&gt;]
+
+        UNREG -->|register| REG
+        REG -->|verify| VERIF
+        VERIF -->|gain_trust| TRUST_STATE
+        VERIF -->|escalate| ESC
+        TRUST_STATE -->|escalate| ESC
+        ESC -->|re_register| UNREG
+    end
+
+    %% Data Flow
+    CLI --> RDF
+    RDF --> SPARQL
+    SPARQL --> ML
+    ML --> SCORE
+    SCORE --> AUCTION
+
+    AUCTION --> GOSSIP
+    GOSSIP --> CONSENSUS
+    CONSENSUS --> TRUST
+    TRUST --> STIGMERGY
+
+    STIGMERGY --> MONITOR
+    MONITOR --> ANALYZE
+
+    EXECUTE --> RECEIPT
+    RECEIPT --> REPLAY
+    REPLAY --> CAUSAL
+    CAUSAL --> AUDIT
+
+    %% Performance Integration
+    SPARQL -.uses.-> SIMD
+    AUCTION -.uses.-> LOCKFREE
+    RECEIPT -.uses.-> ARENA
+
+    %% State Management
+    CLI -.manages.-> UNREG
+    SCORE -.selects.-> TRUST_STATE
+    MONITOR -.observes.-> VERIF
+
+    %% Output
+    AUDIT --> CLI_OUT
+
+    %% Styling
+    classDef cliClass fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef semanticClass fill:#7ED321,stroke:#5FA019,color:#000
+    classDef swarmClass fill:#F5A623,stroke:#C47F1A,color:#000
+    classDef autonomicClass fill:#BD10E0,stroke:#8B0AA8,color:#fff
+    classDef kernelClass fill:#50E3C2,stroke:#3AAA92,color:#000
+    classDef hotpathClass fill:#FF6B6B,stroke:#CC5555,color:#fff
+    classDef stateClass fill:#9013FE,stroke:#6A0DB8,color:#fff
+
+    class CLI,CLI_OUT cliClass
+    class RDF,SPARQL,ML,SCORE semanticClass
+    class GOSSIP,CONSENSUS,TRUST,AUCTION,STIGMERGY swarmClass
+    class MONITOR,ANALYZE,PLAN,EXECUTE,KNOWLEDGE autonomicClass
+    class RECEIPT,REPLAY,CAUSAL,AUDIT kernelClass
+    class ARENA,LOCKFREE,SIMD hotpathClass
+    class UNREG,REG,VERIF,TRUST_STATE,ESC stateClass

@@ -1,3 +1,5 @@
+#![cfg(feature = "autonomic")]
+
 //! Comprehensive tests for proof-carrying command certificates
 //!
 //! Critical 80/20 test coverage:

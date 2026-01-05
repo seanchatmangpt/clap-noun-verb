@@ -1,0 +1,1333 @@
+{
+  "crate_name": "clap-noun-verb-macros-frontier",
+  "version": "0.1.0",
+  "architecture_version": "1.0.0",
+  "description": "Frontier architecture for self-introspecting, semantically-aware CLI framework with quantum-ready abstractions",
+
+  "architecture_overview": {
+    "design_philosophy": "Type-first, zero-cost abstractions with semantic awareness built into the type system itself",
+    "core_principles": [
+      "Types encode semantic invariants at compile-time",
+      "Zero-cost abstractions through monomorphization",
+      "Runtime semantic discovery through RDF ontologies",
+      "Fractal architecture: patterns repeat at CLI, Agent, and Ecosystem scales",
+      "Self-introspection enables continuous optimization"
+    ],
+    "composition_model": {
+      "layered_architecture": [
+        "Layer 0: Type-level semantic foundations (GATs, PhantomData, associated types)",
+        "Layer 1: Macro infrastructure (procedural macros for code generation)",
+        "Layer 2: Runtime semantic layer (RDF ontologies, discovery protocols)",
+        "Layer 3: Coordination layer (agent orchestration, federation)",
+        "Layer 4: Optimization layer (learning trajectories, economic models)",
+        "Layer 5: Future-ready abstractions (quantum interfaces)"
+      ],
+      "cross_cutting_concerns": [
+        "Semantic introspection available at all layers",
+        "Testing generated at all layers through reflexive system",
+        "Economic models inform resource allocation at all layers",
+        "Fractal patterns enable composition at all scales"
+      ]
+    }
+  },
+
+  "features": {
+    "1_meta_framework": {
+      "name": "Meta-Framework Architecture",
+      "description": "Self-introspecting agent coordinator that uses its own semantic layer to optimize itself",
+      "priority": 1,
+      "foundational": true,
+
+      "type_level_design": {
+        "core_trait": "SemanticIntrospector",
+        "associated_types": [
+          "type Ontology: RdfOntology",
+          "type QueryEngine: SparqlEngine",
+          "type OptimizationStrategy: Optimizer"
+        ],
+        "phantom_data_markers": [
+          "PhantomData<SemanticState>",
+          "PhantomData<IntrospectionCapability>"
+        ],
+        "gat_usage": "trait MetaFramework { type Introspect<'query>: Future<Output = QueryResult> + 'query; }"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[meta_framework]",
+        "usage": "Annotate coordinator structs to enable self-introspection",
+        "generated_code": [
+          "impl SemanticIntrospector for CoordinatorType",
+          "RDF ontology queries for self-optimization",
+          "Automatic performance metric collection",
+          "Strategy pattern for optimization algorithms"
+        ],
+        "example": "#[meta_framework(ontology = \"coordinator.ttl\", optimize = \"performance\")]"
+      },
+
+      "runtime_components": {
+        "rdf_ontology_store": {
+          "format": "Turtle/RDF",
+          "query_language": "SPARQL 1.1",
+          "update_protocol": "SPARQL Update",
+          "persistence": "In-memory with optional disk backing"
+        },
+        "optimization_engine": {
+          "metrics": ["latency", "throughput", "memory_usage", "semantic_coherence"],
+          "strategies": ["gradient_descent", "evolutionary", "bayesian_optimization"],
+          "feedback_loop": "Continuous observation → Analysis → Optimization → Application"
+        }
+      },
+
+      "integration_points": [
+        "Provides semantic query interface to all other features",
+        "Consumed by Capability Discovery Engine for self-optimization",
+        "Feeds Learning Trajectories with performance data",
+        "Enables Reflexive Testing to understand system structure"
+      ],
+
+      "critical_paths": [
+        "Ontology loading must complete before any semantic queries",
+        "Query engine initialization is prerequisite for discovery",
+        "Self-optimization runs asynchronously to avoid blocking"
+      ]
+    },
+
+    "2_semantic_cli_composition": {
+      "name": "Semantic CLI Composition",
+      "description": "Runtime capability discovery enabling agents to auto-compose CLIs from RDF ontologies",
+      "priority": 2,
+      "foundational": true,
+
+      "type_level_design": {
+        "core_trait": "SemanticComposable",
+        "associated_types": [
+          "type Capability: CliCapability",
+          "type CompositionRule: Rule",
+          "type DiscoveryProtocol: Protocol"
+        ],
+        "const_generics": "const MAX_COMPOSITION_DEPTH: usize",
+        "type_state_pattern": "Struct<Discovered>, Struct<Composed>, Struct<Validated>"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[semantic_composable]",
+        "usage": "Annotate CLI command structs to enable semantic composition",
+        "generated_code": [
+          "RDF capability declarations",
+          "Runtime discovery protocol implementation",
+          "Auto-composition validators",
+          "Type-safe composition builders"
+        ],
+        "example": "#[semantic_composable(noun = \"Agent\", verb = \"coordinate\", capabilities = [\"spawn\", \"communicate\"])]"
+      },
+
+      "discovery_protocol": {
+        "phases": [
+          "Announce: Broadcast capability declarations via RDF",
+          "Discover: Query ontology for compatible capabilities",
+          "Validate: Check composition rules and constraints",
+          "Compose: Generate runtime CLI structure",
+          "Verify: Type-check composed structure"
+        ],
+        "protocol_format": "JSON-LD over HTTP/QUIC",
+        "caching_strategy": "LRU cache with TTL-based invalidation"
+      },
+
+      "composition_patterns": {
+        "sequential": "Command1 → Command2 → Command3",
+        "parallel": "Command1 || Command2 || Command3",
+        "conditional": "if predicate { Command1 } else { Command2 }",
+        "recursive": "Command<T> where T: SemanticComposable",
+        "fractal": "CLI(Agent(Ecosystem(Command)))"
+      },
+
+      "integration_points": [
+        "Queries Meta-Framework ontologies for available capabilities",
+        "Provides composition patterns to Fractal Patterns feature",
+        "Enables Federated Semantic Network cross-CLI discovery",
+        "Feeds Capability Discovery Engine with composition results"
+      ]
+    },
+
+    "3_executable_specifications": {
+      "name": "Executable Specifications",
+      "description": "Convert strategic roadmap milestones into runnable code specifications and executable tests",
+      "priority": 3,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "ExecutableSpec",
+        "associated_types": [
+          "type Milestone: StrategicGoal",
+          "type Specification: CodeSpec",
+          "type Verification: Test + Executable"
+        ],
+        "phantom_markers": [
+          "PhantomData<SpecificationState>",
+          "PhantomData<VerificationLevel>"
+        ],
+        "gat_usage": "trait Executable { type Run<'env>: Future<Output = VerificationResult> where Self: 'env; }"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[executable_spec]",
+        "usage": "Convert milestone declarations into executable test suites",
+        "generated_code": [
+          "Test generation from specification DSL",
+          "Property-based test scaffolding",
+          "Verification predicates",
+          "CI/CD integration hooks"
+        ],
+        "example": "#[executable_spec(milestone = \"M1: Agent coordination\", verification = \"integration_test\")]"
+      },
+
+      "specification_dsl": {
+        "syntax": "Given-When-Then style with type-level constraints",
+        "features": [
+          "Declarative milestone definitions",
+          "Automatic test case derivation",
+          "Property extraction from specifications",
+          "Mutation testing support"
+        ],
+        "example_spec": "Given Agent<Coordinator> When spawn(10) Then all_respond_within(100ms)"
+      },
+
+      "verification_system": {
+        "levels": [
+          "Type-level: Compile-time verification via trait bounds",
+          "Unit: Chicago TDD with AAA pattern",
+          "Integration: Cross-component interaction tests",
+          "Property: Proptest-based generative testing",
+          "System: End-to-end milestone verification"
+        ],
+        "coverage_target": "90%+ for critical paths",
+        "mutation_testing": "Enabled via cargo-mutants"
+      },
+
+      "integration_points": [
+        "Consumes strategic roadmaps from planning documents",
+        "Generates tests consumed by Reflexive Testing",
+        "Verifies Learning Trajectories achieve milestones",
+        "Validates Economic Simulation equilibria"
+      ]
+    },
+
+    "4_fractal_patterns": {
+      "name": "Fractal Patterns",
+      "description": "Three-tier recursion (CLI → Agent → Ecosystem) where noun-verb patterns operate at multiple scales",
+      "priority": 4,
+      "foundational": true,
+
+      "type_level_design": {
+        "core_trait": "FractalScale",
+        "associated_types": [
+          "type CliScale: Scale",
+          "type AgentScale: Scale",
+          "type EcosystemScale: Scale",
+          "type Pattern<S: Scale>: NounVerbPattern"
+        ],
+        "recursive_bounds": "T: FractalScale where T::Pattern<T::CliScale>: FractalScale",
+        "const_generic_depth": "const FRACTAL_DEPTH: usize = 3"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[fractal_pattern]",
+        "usage": "Define noun-verb patterns that recurse across scales",
+        "generated_code": [
+          "Scale-polymorphic pattern implementations",
+          "Recursive composition functions",
+          "Scale-bridging adapters",
+          "Pattern invariant validators"
+        ],
+        "example": "#[fractal_pattern(scales = [Cli, Agent, Ecosystem], noun = \"Coordinator\", verb = \"orchestrate\")]"
+      },
+
+      "scale_hierarchy": {
+        "cli_scale": {
+          "pattern": "clap noun-verb command structure",
+          "example": "agent coordinate --strategy consensus",
+          "recursion": "Commands can spawn sub-CLIs"
+        },
+        "agent_scale": {
+          "pattern": "Agent capabilities as noun-verb pairs",
+          "example": "CoordinatorAgent.orchestrate(TaskSet)",
+          "recursion": "Agents can coordinate other agents"
+        },
+        "ecosystem_scale": {
+          "pattern": "Ecosystem-wide coordination patterns",
+          "example": "Ecosystem.optimize(ResourceAllocation)",
+          "recursion": "Ecosystems contain ecosystems"
+        }
+      },
+
+      "pattern_composition": {
+        "horizontal": "Patterns at same scale compose sequentially",
+        "vertical": "Patterns bridge scales through adapters",
+        "recursive": "Patterns contain patterns of same type",
+        "invariants": [
+          "Pattern semantics preserved across scales",
+          "Type safety maintained at scale boundaries",
+          "Zero-cost abstraction through monomorphization"
+        ]
+      },
+
+      "integration_points": [
+        "Provides structural patterns to Semantic CLI Composition",
+        "Enables multi-scale Capability Discovery",
+        "Defines hierarchy for Federated Semantic Network",
+        "Structures Learning Trajectories across scales"
+      ]
+    },
+
+    "5_capability_discovery": {
+      "name": "Capability Discovery Engine",
+      "description": "Autonomous capability combination finding and optimization suggestion with intelligent scoring",
+      "priority": 5,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "CapabilityDiscoverable",
+        "associated_types": [
+          "type Capability: Discoverable",
+          "type SearchAlgorithm: Search",
+          "type ScoringFunction: Score",
+          "type OptimizationSuggestion: Suggestion"
+        ],
+        "gat_usage": "trait Discovery { type Search<'cap>: Iterator<Item = CapabilitySet<'cap>>; }",
+        "const_generic_limits": "const MAX_SEARCH_DEPTH: usize, const MAX_COMBINATIONS: usize"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[discoverable_capability]",
+        "usage": "Mark capabilities as discoverable with metadata",
+        "generated_code": [
+          "Capability metadata extraction",
+          "Search index registration",
+          "Scoring function implementations",
+          "Combination validators"
+        ],
+        "example": "#[discoverable_capability(category = \"coordination\", cost = 10, value = 100)]"
+      },
+
+      "search_algorithms": {
+        "breadth_first": {
+          "use_case": "Exhaustive shallow search",
+          "complexity": "O(b^d) where b=branching, d=depth",
+          "scoring": "Immediate scoring at each level"
+        },
+        "depth_first": {
+          "use_case": "Deep capability chains",
+          "complexity": "O(b^m) where m=max depth",
+          "scoring": "Backtracking with pruning"
+        },
+        "a_star": {
+          "use_case": "Optimal path to target capability",
+          "complexity": "O(b^d) with good heuristic",
+          "heuristic": "Semantic similarity + value-to-cost ratio"
+        },
+        "genetic": {
+          "use_case": "Multi-objective optimization",
+          "complexity": "O(g * p * f) where g=generations, p=population, f=fitness",
+          "operators": ["crossover", "mutation", "selection"]
+        }
+      },
+
+      "scoring_system": {
+        "dimensions": [
+          "Semantic coherence (0.0-1.0): How well capabilities compose semantically",
+          "Value-to-cost ratio: Benefit divided by resource cost",
+          "Novelty score: How unique is this combination",
+          "Risk factor: Probability of failure or incompatibility",
+          "Learning potential: Expected improvement from this combination"
+        ],
+        "aggregation": "Weighted sum with configurable weights",
+        "normalization": "Min-max normalization to [0, 1] range"
+      },
+
+      "optimization_suggestions": {
+        "categories": [
+          "Composition: Suggest capability combinations",
+          "Replacement: Suggest better alternatives",
+          "Augmentation: Suggest missing capabilities",
+          "Simplification: Suggest redundancy removal"
+        ],
+        "confidence_levels": ["High (>0.8)", "Medium (0.5-0.8)", "Low (<0.5)"],
+        "application": "Automatic or human-in-the-loop"
+      },
+
+      "integration_points": [
+        "Queries Meta-Framework ontologies for capabilities",
+        "Uses Semantic CLI Composition for validation",
+        "Feeds suggestions to Learning Trajectories",
+        "Informs Economic Simulation resource allocation"
+      ]
+    },
+
+    "6_federated_semantic_network": {
+      "name": "Federated Semantic Network",
+      "description": "Multiple CLIs composing through distributed RDF with federation protocol",
+      "priority": 6,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "FederatedNode",
+        "associated_types": [
+          "type NodeIdentity: Identity + Hash",
+          "type FederationProtocol: Protocol",
+          "type ConsensusAlgorithm: Consensus",
+          "type NetworkTopology: Topology"
+        ],
+        "phantom_markers": [
+          "PhantomData<NetworkState>",
+          "PhantomData<TrustLevel>"
+        ],
+        "async_traits": "All network operations use async/await with timeouts"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[federated_node]",
+        "usage": "Enable CLI to participate in federated semantic network",
+        "generated_code": [
+          "Network protocol implementations",
+          "RDF synchronization logic",
+          "Consensus participation code",
+          "Discovery and advertisement"
+        ],
+        "example": "#[federated_node(node_id = \"coordinator-1\", protocol = \"quic\", consensus = \"raft\")]"
+      },
+
+      "federation_protocol": {
+        "transport": "QUIC for low-latency, reliable communication",
+        "message_format": "JSON-LD for semantic interoperability",
+        "operations": [
+          "ANNOUNCE: Broadcast node capabilities",
+          "DISCOVER: Query network for capabilities",
+          "SYNC: Synchronize RDF ontologies",
+          "COMPOSE: Request cross-node composition",
+          "VERIFY: Validate federated operations"
+        ],
+        "security": "mTLS with certificate pinning, zero-trust architecture"
+      },
+
+      "consensus_mechanisms": {
+        "raft": {
+          "use_case": "Leader-based consensus for coordination",
+          "guarantees": "Strong consistency, linearizability",
+          "performance": "Good for < 100 nodes"
+        },
+        "byzantine_consensus": {
+          "use_case": "Adversarial environments",
+          "guarantees": "Byzantine fault tolerance",
+          "performance": "Requires 3f+1 nodes for f faults"
+        },
+        "crdt": {
+          "use_case": "Eventually consistent semantic merges",
+          "guarantees": "Eventual consistency, partition tolerance",
+          "performance": "Excellent for large-scale distribution"
+        }
+      },
+
+      "topology_patterns": {
+        "mesh": "Full connectivity for small networks",
+        "hub_and_spoke": "Central coordinator with leaf nodes",
+        "hierarchical": "Multi-tier fractal structure",
+        "dynamic": "Topology adapts based on load and latency"
+      },
+
+      "integration_points": [
+        "Extends Semantic CLI Composition across network",
+        "Distributes Capability Discovery across nodes",
+        "Implements fractal Ecosystem scale patterns",
+        "Enables distributed Learning Trajectories"
+      ]
+    },
+
+    "7_learning_trajectories": {
+      "name": "Learning Trajectories",
+      "description": "AI-optimized learning paths using Byzantine consensus on competency assessments",
+      "priority": 7,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "LearningPath",
+        "associated_types": [
+          "type Competency: Measurable",
+          "type Trajectory: Path",
+          "type ConsensusAlgorithm: ByzantineConsensus",
+          "type OptimizationObjective: Objective"
+        ],
+        "gat_usage": "trait Learning { type Progress<'assess>: Stream<Item = CompetencyScore> + 'assess; }",
+        "phantom_markers": ["PhantomData<LearningState>", "PhantomData<CompetencyLevel>"]
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[learning_trajectory]",
+        "usage": "Define learning objectives and assessment criteria",
+        "generated_code": [
+          "Competency measurement instrumentation",
+          "Byzantine consensus participation",
+          "Trajectory optimization algorithms",
+          "Progress tracking and reporting"
+        ],
+        "example": "#[learning_trajectory(objective = \"master_coordination\", assessors = 3, threshold = 0.8)]"
+      },
+
+      "competency_model": {
+        "dimensions": [
+          "Knowledge: Understanding of concepts (0.0-1.0)",
+          "Skill: Ability to execute (0.0-1.0)",
+          "Speed: Time to completion (normalized)",
+          "Quality: Correctness and elegance (0.0-1.0)",
+          "Adaptability: Performance on novel tasks (0.0-1.0)"
+        ],
+        "measurement": "Multi-assessor Byzantine consensus",
+        "progression": "Bloom's taxonomy levels: Remember → Understand → Apply → Analyze → Evaluate → Create"
+      },
+
+      "byzantine_consensus": {
+        "purpose": "Prevent single malicious assessor from biasing competency scores",
+        "algorithm": "Byzantine Agreement with digital signatures",
+        "participants": "Minimum 3f+1 assessors for f Byzantine faults",
+        "rounds": "O(f+1) communication rounds",
+        "guarantee": "Agreement on competency score despite f malicious assessors"
+      },
+
+      "trajectory_optimization": {
+        "objectives": [
+          "Minimize: Time to mastery",
+          "Maximize: Knowledge retention",
+          "Balance: Breadth vs depth",
+          "Adapt: Personalization to learner profile"
+        ],
+        "algorithms": [
+          "Reinforcement learning (Q-learning, A3C)",
+          "Bayesian optimization for hyperparameters",
+          "Multi-armed bandit for exploration-exploitation",
+          "Transfer learning from similar trajectories"
+        ],
+        "constraints": [
+          "Prerequisite dependencies must be respected",
+          "Cognitive load limits",
+          "Available resources and time"
+        ]
+      },
+
+      "integration_points": [
+        "Uses Capability Discovery to find learning opportunities",
+        "Applies Executable Specifications as assessment criteria",
+        "Leverages Federated Network for distributed assessment",
+        "Informs Economic Simulation of skill development costs"
+      ]
+    },
+
+    "8_reflexive_testing": {
+      "name": "Reflexive Testing",
+      "description": "Auto-generate tests from semantic combinations using proptest and introspection",
+      "priority": 8,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "ReflexiveTestable",
+        "associated_types": [
+          "type TestGenerator: Generator",
+          "type PropertyExtractor: Extractor",
+          "type CoverageAnalyzer: Analyzer",
+          "type TestOracle: Oracle"
+        ],
+        "const_generics": "const MAX_TEST_CASES: usize, const PROPTEST_CASES: usize",
+        "gat_usage": "trait Reflexive { type Generate<'sem>: Iterator<Item = Test> + 'sem; }"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[reflexive_test]",
+        "usage": "Enable automatic test generation from semantic annotations",
+        "generated_code": [
+          "Proptest strategy derivation",
+          "Property extraction from types",
+          "Test oracle generation",
+          "Coverage-guided test synthesis"
+        ],
+        "example": "#[reflexive_test(properties = [\"idempotent\", \"commutative\"], strategies = \"arbitrary\")]"
+      },
+
+      "test_generation_pipeline": {
+        "phases": [
+          "1. Introspect: Query semantic layer for component relationships",
+          "2. Extract: Derive properties from type signatures and annotations",
+          "3. Synthesize: Generate proptest strategies for input generation",
+          "4. Generate: Create test cases covering semantic combinations",
+          "5. Execute: Run tests with Chicago TDD verification",
+          "6. Analyze: Coverage analysis and gap identification",
+          "7. Iterate: Generate tests for uncovered combinations"
+        ]
+      },
+
+      "property_extraction": {
+        "sources": [
+          "Type signatures: Extract invariants from function signatures",
+          "Trait bounds: Derive properties from trait implementations",
+          "Semantic annotations: User-specified properties via macros",
+          "RDF ontologies: Logical constraints from ontologies"
+        ],
+        "property_types": [
+          "Algebraic: Commutativity, associativity, idempotence",
+          "Relational: Ordering, equivalence, transitivity",
+          "Behavioral: Preconditions, postconditions, invariants",
+          "Performance: Time complexity, space complexity bounds"
+        ]
+      },
+
+      "proptest_integration": {
+        "strategy_derivation": "Automatic Arbitrary impl generation from type structure",
+        "shrinking": "Custom shrinkers for semantic types",
+        "regression_tracking": "Persist failing cases for regression testing",
+        "fuzzing": "Coverage-guided fuzzing for edge case discovery"
+      },
+
+      "coverage_analysis": {
+        "dimensions": [
+          "Code coverage: Statement, branch, path coverage",
+          "Semantic coverage: All meaningful capability combinations tested",
+          "Property coverage: All extracted properties verified",
+          "Edge case coverage: Boundary conditions and error paths"
+        ],
+        "targets": "90%+ semantic coverage for critical paths",
+        "visualization": "HTML reports with semantic combination matrix"
+      },
+
+      "integration_points": [
+        "Queries Meta-Framework for system structure",
+        "Uses Semantic CLI Composition combinations as test inputs",
+        "Validates Executable Specifications automatically",
+        "Verifies Capability Discovery suggestions are correct"
+      ]
+    },
+
+    "9_economic_simulation": {
+      "name": "Economic Simulation",
+      "description": "Model trillion-agent ecosystems using auction mechanisms and game theory",
+      "priority": 9,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "EconomicAgent",
+        "associated_types": [
+          "type Resource: Tradeable",
+          "type AuctionMechanism: Auction",
+          "type UtilityFunction: Utility",
+          "type EquilibriumSolver: Solver"
+        ],
+        "const_generics": "const AGENT_COUNT: usize, const MARKET_DEPTH: usize",
+        "phantom_markers": ["PhantomData<MarketState>", "PhantomData<ResourceType>"]
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[economic_agent]",
+        "usage": "Define agents participating in economic simulation",
+        "generated_code": [
+          "Utility function implementations",
+          "Bidding strategy code",
+          "Resource accounting",
+          "Equilibrium analysis participation"
+        ],
+        "example": "#[economic_agent(utility = \"maximize_throughput\", budget = 1000, strategy = \"truthful\")]"
+      },
+
+      "auction_mechanisms": {
+        "vickrey_clarke_groves": {
+          "properties": "Truthful, efficient, individual rationality",
+          "use_case": "Mechanism design for capability allocation",
+          "complexity": "O(n * 2^n) for n agents, approximations available"
+        },
+        "combinatorial_auction": {
+          "properties": "Handles complementary goods",
+          "use_case": "Allocating capability bundles",
+          "complexity": "NP-hard, LP relaxations for approximation"
+        },
+        "continuous_double_auction": {
+          "properties": "Dynamic price discovery",
+          "use_case": "Real-time resource markets",
+          "complexity": "O(log n) per operation with order book"
+        },
+        "ascending_clock_auction": {
+          "properties": "Transparent, simple",
+          "use_case": "Resource allocation with homogeneous goods",
+          "complexity": "O(n * rounds)"
+        }
+      },
+
+      "resource_model": {
+        "resource_types": [
+          "Computational: CPU, memory, storage",
+          "Network: Bandwidth, latency budgets",
+          "Temporal: Time slots, deadlines",
+          "Semantic: Capability usage rights",
+          "Information: Data access, query quotas"
+        ],
+        "accounting": "Double-entry bookkeeping with immutable audit log",
+        "scarcity_modeling": "Supply-demand curves with elasticity"
+      },
+
+      "equilibrium_analysis": {
+        "solution_concepts": [
+          "Nash equilibrium: No agent can improve by unilateral deviation",
+          "Competitive equilibrium: Supply equals demand at market prices",
+          "Pareto optimality: No allocation improves one agent without harming another",
+          "Mechanism stability: No coalition has incentive to deviate"
+        ],
+        "solvers": [
+          "Fixed-point iteration for Nash equilibria",
+          "Linear programming for competitive equilibria",
+          "Multi-objective optimization for Pareto frontiers",
+          "Evolutionary algorithms for complex games"
+        ]
+      },
+
+      "scalability": {
+        "trillion_agent_design": [
+          "Hierarchical markets: Fractal market structure across scales",
+          "Representative agents: Aggregate similar agents",
+          "Sampling methods: Statistical approximation of large populations",
+          "Distributed computation: Parallel equilibrium solving"
+        ],
+        "performance_targets": [
+          "Equilibrium solving: < 1 second for 10^6 agents",
+          "Auction clearing: < 100ms for 10^4 bids",
+          "Market simulation: 10^12 agents via hierarchical aggregation"
+        ]
+      },
+
+      "integration_points": [
+        "Models resource allocation for Capability Discovery",
+        "Simulates costs for Learning Trajectories",
+        "Implements economic layer for Federated Network",
+        "Optimizes via Meta-Framework introspection"
+      ]
+    },
+
+    "10_quantum_ready": {
+      "name": "Quantum-Ready Abstractions",
+      "description": "Prepare for quantum-classical hybrid execution with appropriate abstraction layers",
+      "priority": 10,
+      "foundational": false,
+
+      "type_level_design": {
+        "core_trait": "QuantumExecutable",
+        "associated_types": [
+          "type ClassicalState: State",
+          "type QuantumState: Superposition",
+          "type MeasurementBasis: Basis",
+          "type HybridCircuit: Circuit"
+        ],
+        "phantom_markers": [
+          "PhantomData<ExecutionMode>",
+          "PhantomData<Entanglement>"
+        ],
+        "const_generics": "const QUBIT_COUNT: usize, const CIRCUIT_DEPTH: usize"
+      },
+
+      "macro_interface": {
+        "primary_macro": "#[quantum_ready]",
+        "usage": "Mark components as quantum-executable with fallback to classical",
+        "generated_code": [
+          "Quantum circuit representations",
+          "Classical simulation code",
+          "Hybrid execution orchestration",
+          "Measurement and decoherence handling"
+        ],
+        "example": "#[quantum_ready(qubits = 10, fallback = \"classical_sim\", backend = \"ibm_quantum\")]"
+      },
+
+      "abstraction_layers": {
+        "layer_1_quantum_primitives": {
+          "gates": ["Hadamard", "CNOT", "Toffoli", "Phase", "Rotation"],
+          "operations": ["Initialize", "Measure", "Reset"],
+          "representation": "Abstract syntax tree for quantum circuits"
+        },
+        "layer_2_hybrid_interface": {
+          "quantum_classical_boundary": "Explicit measurement and result feedback",
+          "data_encoding": "Classical data → quantum states via amplitude encoding",
+          "result_decoding": "Quantum measurements → classical probabilities"
+        },
+        "layer_3_classical_simulation": {
+          "simulators": ["State vector (exact)", "Density matrix (noisy)", "Clifford (efficient)"],
+          "limits": "Practical limit ~30 qubits for state vector simulation",
+          "approximations": "Tensor network methods for larger systems"
+        },
+        "layer_4_backend_abstraction": {
+          "providers": ["IBM Quantum", "AWS Braket", "Google Cirq", "Local simulator"],
+          "interface": "Provider-agnostic circuit submission and result retrieval",
+          "optimization": "Circuit transpilation for target backend topology"
+        }
+      },
+
+      "quantum_algorithms": {
+        "grover_search": {
+          "use_case": "Quadratic speedup for Capability Discovery search",
+          "speedup": "O(√N) vs O(N) classical",
+          "requirements": "Oracle for target capability, amplitude amplification"
+        },
+        "quantum_annealing": {
+          "use_case": "Combinatorial optimization for Economic Simulation",
+          "speedup": "Heuristic, problem-dependent",
+          "requirements": "Ising model formulation, qubit connectivity"
+        },
+        "variational_quantum_eigensolver": {
+          "use_case": "Optimization in Learning Trajectories",
+          "speedup": "Hybrid classical-quantum, reduces circuit depth",
+          "requirements": "Parameterized circuits, classical optimizer"
+        }
+      },
+
+      "error_mitigation": {
+        "techniques": [
+          "Zero-noise extrapolation: Extrapolate to zero-error limit",
+          "Probabilistic error cancellation: Statistical error correction",
+          "Clifford data regression: Learn noise model from Clifford circuits",
+          "Symmetry verification: Use problem symmetries to detect errors"
+        ],
+        "decoherence_handling": "Circuit depth limits based on T1/T2 times"
+      },
+
+      "integration_points": [
+        "Accelerates Capability Discovery with Grover search",
+        "Optimizes Economic Simulation via quantum annealing",
+        "Enhances Learning Trajectories with VQE",
+        "Provides future execution mode for Meta-Framework"
+      ]
+    }
+  },
+
+  "integration_architecture": {
+    "dependency_graph": {
+      "foundational_layer": [
+        "1_meta_framework (provides semantic introspection to all)",
+        "2_semantic_cli_composition (enables runtime composition)",
+        "4_fractal_patterns (defines multi-scale structure)"
+      ],
+      "capability_layer": [
+        "5_capability_discovery (requires 1, 2)",
+        "6_federated_semantic_network (requires 1, 2, 4)"
+      ],
+      "optimization_layer": [
+        "7_learning_trajectories (requires 1, 5, 6)",
+        "9_economic_simulation (requires 1, 4, 5)"
+      ],
+      "quality_layer": [
+        "3_executable_specifications (requires 1)",
+        "8_reflexive_testing (requires 1, 2, 3)"
+      ],
+      "future_layer": [
+        "10_quantum_ready (requires 1, 5, 9)"
+      ]
+    },
+
+    "composition_patterns": {
+      "vertical_composition": {
+        "description": "Features at different layers compose through well-defined interfaces",
+        "example": "Meta-Framework → Capability Discovery → Learning Trajectories",
+        "mechanism": "Associated types and trait bounds ensure type-safe composition"
+      },
+      "horizontal_composition": {
+        "description": "Features at same layer interact through shared semantic ontologies",
+        "example": "Capability Discovery ↔ Economic Simulation (both query Meta-Framework)",
+        "mechanism": "RDF ontology as shared semantic substrate"
+      },
+      "fractal_composition": {
+        "description": "Patterns repeat at multiple scales (CLI, Agent, Ecosystem)",
+        "example": "Capability Discovery works identically at all three fractal scales",
+        "mechanism": "Generic over Scale associated type"
+      }
+    },
+
+    "data_flow": {
+      "semantic_queries": "All features → Meta-Framework (read RDF ontologies)",
+      "optimization_feedback": "Learning Trajectories, Economic Simulation → Meta-Framework (update strategies)",
+      "test_generation": "Reflexive Testing → Executable Specifications (generate verification)",
+      "capability_discovery": "Semantic CLI Composition, Federated Network → Capability Discovery (find combinations)",
+      "resource_allocation": "All features → Economic Simulation (request resources)",
+      "performance_metrics": "All features → Meta-Framework (report telemetry)"
+    },
+
+    "control_flow": {
+      "initialization": [
+        "1. Initialize Meta-Framework (load RDF ontologies)",
+        "2. Bootstrap Semantic CLI Composition (discover local capabilities)",
+        "3. Setup Fractal Patterns (establish scale hierarchy)",
+        "4. Initialize remaining features in parallel"
+      ],
+      "runtime_loop": [
+        "1. Meta-Framework introspects current state",
+        "2. Capability Discovery finds optimization opportunities",
+        "3. Economic Simulation allocates resources",
+        "4. Features execute with allocated resources",
+        "5. Reflexive Testing validates execution",
+        "6. Learning Trajectories update competency models",
+        "7. Feedback to Meta-Framework for next iteration"
+      ],
+      "shutdown": [
+        "1. Graceful degradation of Federated Network",
+        "2. Persist Meta-Framework state (RDF ontologies, learned optimizations)",
+        "3. Save Economic Simulation equilibria",
+        "4. Archive test results from Reflexive Testing"
+      ]
+    }
+  },
+
+  "type_level_patterns": {
+    "phantom_data_usage": {
+      "description": "Zero-cost compile-time state tracking using PhantomData",
+      "examples": [
+        "PhantomData<SemanticState>: Track whether ontologies are loaded",
+        "PhantomData<Discovered>: Type state for discovery protocol phases",
+        "PhantomData<QuantumMode>: Classical vs quantum execution mode"
+      ],
+      "benefits": [
+        "Compile-time verification of state transitions",
+        "Zero runtime cost",
+        "Self-documenting code through types"
+      ]
+    },
+
+    "associated_types_pattern": {
+      "description": "Express relationships between types within traits",
+      "examples": [
+        "trait SemanticIntrospector { type Ontology: RdfOntology; }",
+        "trait FractalScale { type Pattern<S: Scale>: NounVerbPattern; }",
+        "trait EconomicAgent { type Resource: Tradeable; }"
+      ],
+      "benefits": [
+        "Type-safe polymorphism",
+        "Clear semantic relationships",
+        "Enables complex type-level computations"
+      ]
+    },
+
+    "gat_pattern": {
+      "description": "Generic Associated Types for lifetime-generic abstractions",
+      "examples": [
+        "type Introspect<'query>: Future<Output = QueryResult> + 'query",
+        "type Search<'cap>: Iterator<Item = CapabilitySet<'cap>>",
+        "type Progress<'assess>: Stream<Item = CompetencyScore> + 'assess"
+      ],
+      "benefits": [
+        "Lifetime-polymorphic associated types",
+        "Enables async traits without boxing",
+        "Better ergonomics for complex lifetime scenarios"
+      ]
+    },
+
+    "const_generics_pattern": {
+      "description": "Compile-time constants as type parameters",
+      "examples": [
+        "const MAX_COMPOSITION_DEPTH: usize",
+        "const FRACTAL_DEPTH: usize = 3",
+        "const QUBIT_COUNT: usize"
+      ],
+      "benefits": [
+        "Zero-cost array sizes and limits",
+        "Compile-time validation of constraints",
+        "Type-level arithmetic"
+      ]
+    },
+
+    "type_state_pattern": {
+      "description": "Encode state machines in the type system",
+      "examples": [
+        "Struct<Discovered> → Struct<Composed> → Struct<Validated>",
+        "Agent<Idle> → Agent<Running> → Agent<Completed>",
+        "Market<Open> → Market<Clearing> → Market<Settled>"
+      ],
+      "benefits": [
+        "Invalid state transitions are compilation errors",
+        "Self-documenting state machines",
+        "Zero runtime overhead"
+      ]
+    }
+  },
+
+  "implementation_sequencing": {
+    "phase_1_foundations": {
+      "duration": "4-6 weeks",
+      "features": [
+        "1_meta_framework: Core RDF ontology infrastructure",
+        "4_fractal_patterns: Scale hierarchy and pattern definitions",
+        "2_semantic_cli_composition: Basic discovery protocol"
+      ],
+      "deliverables": [
+        "RDF ontology loading and SPARQL queries working",
+        "Fractal pattern macros generating scale-polymorphic code",
+        "Local capability discovery functional",
+        "Comprehensive unit tests (Chicago TDD)",
+        "Initial documentation and examples"
+      ],
+      "success_criteria": [
+        "Meta-Framework can introspect itself",
+        "Fractal patterns work at all three scales",
+        "Semantic composition composes ≥2 capabilities",
+        "All tests pass with ≥80% coverage"
+      ]
+    },
+
+    "phase_2_distribution": {
+      "duration": "3-4 weeks",
+      "features": [
+        "6_federated_semantic_network: Distributed RDF and consensus",
+        "5_capability_discovery: Search algorithms and scoring"
+      ],
+      "deliverables": [
+        "QUIC-based federation protocol working",
+        "Byzantine consensus on ontology updates",
+        "Capability discovery search algorithms implemented",
+        "Cross-node composition demonstrated",
+        "Integration tests for distributed scenarios"
+      ],
+      "success_criteria": [
+        "≥3 nodes can federate and share capabilities",
+        "Consensus achieves agreement with f=1 Byzantine faults",
+        "Capability discovery finds optimal combinations",
+        "Network latency < 100ms for local discovery"
+      ]
+    },
+
+    "phase_3_intelligence": {
+      "duration": "4-5 weeks",
+      "features": [
+        "7_learning_trajectories: Competency models and optimization",
+        "9_economic_simulation: Auction mechanisms and equilibria"
+      ],
+      "deliverables": [
+        "Byzantine consensus on competency assessments",
+        "RL-based trajectory optimization working",
+        "VCG and combinatorial auctions implemented",
+        "Nash equilibrium solver for resource allocation",
+        "Economic simulation scaling to 10^6 agents"
+      ],
+      "success_criteria": [
+        "Learning trajectories reduce time-to-mastery by ≥20%",
+        "Economic simulation reaches equilibrium in <1s",
+        "Auction mechanisms are provably truthful",
+        "Integration with capability discovery demonstrates value"
+      ]
+    },
+
+    "phase_4_quality": {
+      "duration": "3-4 weeks",
+      "features": [
+        "3_executable_specifications: Spec DSL and verification",
+        "8_reflexive_testing: Auto-test generation"
+      ],
+      "deliverables": [
+        "Executable specification DSL parsing milestones",
+        "Property extraction from semantic annotations",
+        "Proptest integration generating tests",
+        "Coverage-guided test synthesis",
+        "Mutation testing integration"
+      ],
+      "success_criteria": [
+        "Specifications compile to executable tests",
+        "Reflexive testing achieves ≥90% semantic coverage",
+        "Auto-generated tests find ≥3 real bugs",
+        "Mutation score ≥0.8 for critical paths"
+      ]
+    },
+
+    "phase_5_future": {
+      "duration": "2-3 weeks",
+      "features": [
+        "10_quantum_ready: Quantum abstractions and simulation"
+      ],
+      "deliverables": [
+        "Quantum circuit representation DSL",
+        "Classical simulator for ≤20 qubits",
+        "Provider-agnostic backend interface",
+        "Grover search demo for capability discovery",
+        "Documentation on quantum integration"
+      ],
+      "success_criteria": [
+        "Quantum-annotated code runs classically as fallback",
+        "Grover search demonstrates quadratic speedup in simulation",
+        "Integration with ≥1 real quantum backend (IBM/AWS)",
+        "Quantum abstractions don't regress classical performance"
+      ]
+    }
+  },
+
+  "critical_dependencies": {
+    "external_crates": {
+      "rdf_oxigraph": {
+        "purpose": "RDF ontology storage and SPARQL queries",
+        "features_using": ["1_meta_framework", "2_semantic_cli_composition"],
+        "alternatives": ["sophia_api", "custom RDF implementation"]
+      },
+      "quinn": {
+        "purpose": "QUIC protocol for federated networking",
+        "features_using": ["6_federated_semantic_network"],
+        "alternatives": ["s2n-quic", "custom TCP implementation"]
+      },
+      "proptest": {
+        "purpose": "Property-based testing framework",
+        "features_using": ["8_reflexive_testing"],
+        "alternatives": ["quickcheck", "arbitrary"]
+      },
+      "tokio": {
+        "purpose": "Async runtime for all async operations",
+        "features_using": ["All features with async"],
+        "alternatives": ["async-std", "smol"]
+      },
+      "serde_json_ld": {
+        "purpose": "JSON-LD parsing for federated messages",
+        "features_using": ["6_federated_semantic_network"],
+        "alternatives": ["custom JSON-LD parser"]
+      },
+      "rustc_mir": {
+        "purpose": "MIR introspection for reflexive testing",
+        "features_using": ["8_reflexive_testing"],
+        "alternatives": ["syn-based AST analysis"]
+      },
+      "qiskit_rust": {
+        "purpose": "Quantum circuit simulation",
+        "features_using": ["10_quantum_ready"],
+        "alternatives": ["custom quantum simulator", "cirq bindings"]
+      }
+    },
+
+    "internal_dependencies": {
+      "clap_noun_verb_core": {
+        "provides": "Core noun-verb pattern parsing",
+        "consumed_by": ["2_semantic_cli_composition", "4_fractal_patterns"]
+      },
+      "semantic_ontology": {
+        "provides": "RDF ontology schemas and validators",
+        "consumed_by": ["1_meta_framework", "2_semantic_cli_composition", "6_federated_semantic_network"]
+      },
+      "fractal_scales": {
+        "provides": "Scale trait implementations (Cli, Agent, Ecosystem)",
+        "consumed_by": ["4_fractal_patterns", "5_capability_discovery", "6_federated_semantic_network"]
+      }
+    },
+
+    "tooling_requirements": {
+      "cargo_make": "Build system integration (already in use)",
+      "cargo_mutants": "Mutation testing for quality validation",
+      "criterion": "Benchmarking for SLO verification",
+      "flamegraph": "Performance profiling",
+      "cargo_expand": "Debugging macro expansions"
+    }
+  },
+
+  "architectural_decision_records": [
+    {
+      "id": "ADR-001",
+      "title": "Use RDF/OWL for Semantic Layer",
+      "status": "Accepted",
+      "context": "Need standard, expressive format for semantic ontologies that supports reasoning and federation",
+      "decision": "Use RDF with OWL ontologies, SPARQL for queries, JSON-LD for serialization",
+      "consequences": {
+        "positive": [
+          "Standard formats enable interoperability",
+          "Rich expressiveness with OWL reasoning",
+          "Mature tooling ecosystem"
+        ],
+        "negative": [
+          "Learning curve for RDF/SPARQL",
+          "Potential performance overhead vs custom formats",
+          "Limited compile-time verification"
+        ]
+      },
+      "alternatives_considered": [
+        "Custom domain-specific ontology format (rejected: reinventing wheel)",
+        "GraphQL (rejected: less semantic richness)",
+        "Datalog (rejected: less standardized)"
+      ]
+    },
+    {
+      "id": "ADR-002",
+      "title": "QUIC for Federation Protocol",
+      "status": "Accepted",
+      "context": "Need low-latency, reliable transport for federated semantic network",
+      "decision": "Use QUIC protocol with JSON-LD messages over TLS",
+      "consequences": {
+        "positive": [
+          "Lower latency than TCP (0-RTT connection)",
+          "Built-in multiplexing",
+          "Secure by default (TLS 1.3)"
+        ],
+        "negative": [
+          "Newer protocol, less mature tooling",
+          "Potential NAT/firewall traversal issues",
+          "Higher memory usage than plain TCP"
+        ]
+      },
+      "alternatives_considered": [
+        "gRPC (rejected: higher latency)",
+        "WebSockets (rejected: less efficient)",
+        "Raw TCP (rejected: missing features)"
+      ]
+    },
+    {
+      "id": "ADR-003",
+      "title": "Byzantine Consensus for Competency Assessment",
+      "status": "Accepted",
+      "context": "Need tamper-resistant competency assessments in adversarial environments",
+      "decision": "Use Byzantine Agreement algorithm with digital signatures for competency consensus",
+      "consequences": {
+        "positive": [
+          "Resistant to malicious assessors",
+          "Formal guarantees on agreement",
+          "Increases trust in assessments"
+        ],
+        "negative": [
+          "O(n²) message complexity",
+          "Requires 3f+1 participants for f faults",
+          "Slower than simple voting"
+        ]
+      },
+      "alternatives_considered": [
+        "Simple majority voting (rejected: not Byzantine-resistant)",
+        "Proof-of-work consensus (rejected: too slow)",
+        "Raft consensus (rejected: not Byzantine-tolerant)"
+      ]
+    },
+    {
+      "id": "ADR-004",
+      "title": "Type-State Pattern for API Safety",
+      "status": "Accepted",
+      "context": "Need compile-time guarantees on valid state transitions",
+      "decision": "Use type-state pattern extensively with PhantomData markers",
+      "consequences": {
+        "positive": [
+          "Invalid transitions are compile errors",
+          "Zero runtime cost",
+          "Self-documenting APIs"
+        ],
+        "negative": [
+          "More complex type signatures",
+          "Steeper learning curve",
+          "Longer compilation times"
+        ]
+      },
+      "alternatives_considered": [
+        "Runtime state validation (rejected: runtime cost)",
+        "Builder pattern only (rejected: weaker guarantees)",
+        "No state tracking (rejected: error-prone)"
+      ]
+    },
+    {
+      "id": "ADR-005",
+      "title": "Hierarchical Markets for Scalability",
+      "status": "Accepted",
+      "context": "Need to simulate trillion-agent economies efficiently",
+      "decision": "Use fractal hierarchical market structure with representative agents",
+      "consequences": {
+        "positive": [
+          "Scales to 10^12 agents via aggregation",
+          "Aligns with fractal pattern architecture",
+          "Enables parallel computation"
+        ],
+        "negative": [
+          "Approximation introduces error",
+          "Complex market dynamics",
+          "Requires careful calibration"
+        ]
+      },
+      "alternatives_considered": [
+        "Flat market (rejected: doesn't scale)",
+        "Sampling-only (rejected: higher variance)",
+        "Agent-based simulation (rejected: too slow)"
+      ]
+    }
+  ],
+
+  "quality_attributes": {
+    "performance": {
+      "slos": {
+        "ontology_query_latency": "< 10ms p95 for local queries",
+        "capability_discovery_time": "< 100ms for 1000 capabilities",
+        "federation_message_latency": "< 50ms p95 within datacenter",
+        "test_generation_time": "< 5s for 100 test cases",
+        "economic_equilibrium_time": "< 1s for 10^6 agents"
+      },
+      "scalability_targets": {
+        "concurrent_queries": "10,000 SPARQL queries/sec",
+        "federated_nodes": "1,000 nodes in network",
+        "agent_simulation": "10^12 agents via hierarchical aggregation",
+        "test_coverage": "90%+ semantic coverage"
+      }
+    },
+    "security": {
+      "threat_model": [
+        "Malicious federated nodes (mitigated by Byzantine consensus)",
+        "Ontology injection attacks (mitigated by schema validation)",
+        "Resource exhaustion (mitigated by economic simulation limits)",
+        "Information disclosure (mitigated by mTLS)"
+      ],
+      "mitigations": {
+        "authentication": "mTLS with certificate pinning",
+        "authorization": "Capability-based access control",
+        "integrity": "Cryptographic signatures on all messages",
+        "confidentiality": "TLS 1.3 encryption"
+      }
+    },
+    "maintainability": {
+      "code_organization": "Modular crate structure, one feature per module",
+      "documentation": "Rustdoc with examples for all public APIs",
+      "testing": "Chicago TDD with ≥90% coverage, proptest for critical paths",
+      "versioning": "Semantic versioning with stability guarantees"
+    },
+    "reliability": {
+      "error_handling": "Result<T, E> everywhere, no panics in production",
+      "graceful_degradation": "Fallbacks when federated/quantum features unavailable",
+      "observability": "Structured logging, OpenTelemetry tracing",
+      "recovery": "Automatic retry with exponential backoff, circuit breakers"
+    }
+  },
+
+  "implementation_specification": {
+    "crate_structure": {
+      "clap_noun_verb_macros_frontier": {
+        "type": "Workspace root",
+        "members": [
+          "meta_framework",
+          "semantic_composition",
+          "executable_specs",
+          "fractal_patterns",
+          "capability_discovery",
+          "federated_network",
+          "learning_trajectories",
+          "reflexive_testing",
+          "economic_simulation",
+          "quantum_ready",
+          "integration_tests"
+        ]
+      }
+    },
+
+    "macro_definitions": {
+      "procedural_macros": [
+        "#[meta_framework] - Generate SemanticIntrospector impls",
+        "#[semantic_composable] - Generate discovery protocol code",
+        "#[executable_spec] - Convert specs to tests",
+        "#[fractal_pattern] - Generate scale-polymorphic patterns",
+        "#[discoverable_capability] - Register with discovery engine",
+        "#[federated_node] - Generate federation protocol",
+        "#[learning_trajectory] - Instrument competency measurement",
+        "#[reflexive_test] - Auto-generate property tests",
+        "#[economic_agent] - Generate auction participation code",
+        "#[quantum_ready] - Generate quantum circuit + classical fallback"
+      ],
+      "derive_macros": [
+        "#[derive(SemanticType)] - RDF type registration",
+        "#[derive(Capability)] - Capability metadata",
+        "#[derive(Scale)] - Fractal scale marker"
+      ]
+    },
+
+    "runtime_coordination": {
+      "initialization_sequence": "See control_flow.initialization",
+      "event_loop": "Tokio async runtime with work-stealing scheduler",
+      "shutdown_protocol": "Graceful shutdown with configurable timeout",
+      "error_propagation": "Structured errors with context, no error loss"
+    }
+  }
+}

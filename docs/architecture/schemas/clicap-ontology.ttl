@@ -1,0 +1,349 @@
+# CLICAP - CLI Capability Ontology
+# A formal RDF/OWL ontology for describing CLI tool capabilities in a federated semantic network
+
+@prefix clicap: <https://clicap.org/ontology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix foaf: <http://www.foaf.org/0.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+# ============================================================================
+# Ontology Metadata
+# ============================================================================
+
+<https://clicap.org/ontology> a owl:Ontology ;
+    dcterms:title "CLI Capability Ontology (CLICAP)"@en ;
+    dcterms:description "Formal ontology for describing command-line interface capabilities, type signatures, and invocation protocols in federated systems."@en ;
+    dcterms:creator "clap-noun-verb Project"@en ;
+    dcterms:created "2026-01-05"^^xsd:date ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "1.0.0" .
+
+# ============================================================================
+# Core Classes
+# ============================================================================
+
+clicap:CLI a owl:Class ;
+    rdfs:label "Command-Line Interface"@en ;
+    rdfs:comment "A command-line interface tool that can be discovered and invoked in the federated network."@en ;
+    rdfs:subClassOf dcat:DataService .
+
+clicap:Command a owl:Class ;
+    rdfs:label "Command"@en ;
+    rdfs:comment "A specific command exposed by a CLI tool (e.g., 'convert', 'process', 'analyze')."@en .
+
+clicap:Capability a owl:Class ;
+    rdfs:label "Capability"@en ;
+    rdfs:comment "A permission or ability that can be granted via capability tokens."@en .
+
+clicap:Argument a owl:Class ;
+    rdfs:label "Argument"@en ;
+    rdfs:comment "An input argument to a CLI command."@en .
+
+clicap:Option a owl:Class ;
+    rdfs:label "Option"@en ;
+    rdfs:comment "A named option/flag for a CLI command (e.g., --format, --verbose)."@en ;
+    rdfs:subClassOf clicap:Argument .
+
+clicap:PositionalArg a owl:Class ;
+    rdfs:label "Positional Argument"@en ;
+    rdfs:comment "A positional argument (not named) to a CLI command."@en ;
+    rdfs:subClassOf clicap:Argument .
+
+# ============================================================================
+# Type System Classes
+# ============================================================================
+
+clicap:Type a owl:Class ;
+    rdfs:label "Type"@en ;
+    rdfs:comment "A type in the CLI type system (analogous to types in programming languages)."@en .
+
+clicap:PrimitiveType a owl:Class ;
+    rdfs:label "Primitive Type"@en ;
+    rdfs:comment "Basic types: String, Integer, Float, Boolean, File, etc."@en ;
+    rdfs:subClassOf clicap:Type .
+
+clicap:CompositeType a owl:Class ;
+    rdfs:label "Composite Type"@en ;
+    rdfs:comment "Types constructed from other types (Sum types, Product types, Collections)."@en ;
+    rdfs:subClassOf clicap:Type .
+
+clicap:SumType a owl:Class ;
+    rdfs:label "Sum Type (Union)"@en ;
+    rdfs:comment "A type that can be one of several alternatives (e.g., ImageFile | VideoFile)."@en ;
+    rdfs:subClassOf clicap:CompositeType .
+
+clicap:ProductType a owl:Class ;
+    rdfs:label "Product Type (Record)"@en ;
+    rdfs:comment "A type that contains multiple named fields (e.g., {name: String, size: Integer})."@en ;
+    rdfs:subClassOf clicap:CompositeType .
+
+clicap:CollectionType a owl:Class ;
+    rdfs:label "Collection Type"@en ;
+    rdfs:comment "A type representing a collection of values (e.g., List<String>, Set<Integer>)."@en ;
+    rdfs:subClassOf clicap:CompositeType .
+
+# ============================================================================
+# File Type Hierarchy (Example Domain Types)
+# ============================================================================
+
+clicap:File a owl:Class ;
+    rdfs:label "File"@en ;
+    rdfs:comment "A file on the filesystem."@en ;
+    rdfs:subClassOf clicap:PrimitiveType .
+
+clicap:ImageFile a owl:Class ;
+    rdfs:label "Image File"@en ;
+    rdfs:comment "A file containing image data."@en ;
+    rdfs:subClassOf clicap:File .
+
+clicap:PNGFile a owl:Class ;
+    rdfs:label "PNG Image File"@en ;
+    rdfs:comment "An image file in PNG format."@en ;
+    rdfs:subClassOf clicap:ImageFile .
+
+clicap:JPEGFile a owl:Class ;
+    rdfs:label "JPEG Image File"@en ;
+    rdfs:comment "An image file in JPEG format."@en ;
+    rdfs:subClassOf clicap:ImageFile .
+
+clicap:VideoFile a owl:Class ;
+    rdfs:label "Video File"@en ;
+    rdfs:comment "A file containing video data."@en ;
+    rdfs:subClassOf clicap:File .
+
+clicap:TextFile a owl:Class ;
+    rdfs:label "Text File"@en ;
+    rdfs:comment "A file containing plain text."@en ;
+    rdfs:subClassOf clicap:File .
+
+clicap:StructuredData a owl:Class ;
+    rdfs:label "Structured Data"@en ;
+    rdfs:comment "Data with a defined schema or structure."@en ;
+    rdfs:subClassOf clicap:PrimitiveType .
+
+clicap:JSONData a owl:Class ;
+    rdfs:label "JSON Data"@en ;
+    rdfs:comment "Data serialized in JSON format."@en ;
+    rdfs:subClassOf clicap:StructuredData .
+
+clicap:XMLData a owl:Class ;
+    rdfs:label "XML Data"@en ;
+    rdfs:comment "Data serialized in XML format."@en ;
+    rdfs:subClassOf clicap:StructuredData .
+
+# ============================================================================
+# Properties: CLI Metadata
+# ============================================================================
+
+clicap:hasCommand a owl:ObjectProperty ;
+    rdfs:label "has command"@en ;
+    rdfs:comment "Associates a CLI with one of its commands."@en ;
+    rdfs:domain clicap:CLI ;
+    rdfs:range clicap:Command .
+
+clicap:hasCapability a owl:ObjectProperty ;
+    rdfs:label "has capability"@en ;
+    rdfs:comment "Associates a CLI or Command with a capability it provides."@en ;
+    rdfs:range clicap:Capability .
+
+clicap:requiresCapability a owl:ObjectProperty ;
+    rdfs:label "requires capability"@en ;
+    rdfs:comment "Indicates a capability required to invoke a command."@en ;
+    rdfs:range clicap:Capability .
+
+clicap:version a owl:DatatypeProperty ;
+    rdfs:label "version"@en ;
+    rdfs:comment "Semantic version of the CLI tool."@en ;
+    rdfs:domain clicap:CLI ;
+    rdfs:range xsd:string .
+
+clicap:endpoint a owl:DatatypeProperty ;
+    rdfs:label "endpoint"@en ;
+    rdfs:comment "Network endpoint where the CLI's gRPC service is accessible."@en ;
+    rdfs:domain clicap:CLI ;
+    rdfs:range xsd:anyURI .
+
+clicap:sparqlEndpoint a owl:DatatypeProperty ;
+    rdfs:label "SPARQL endpoint"@en ;
+    rdfs:comment "URL of the SPARQL endpoint for querying this CLI's capabilities."@en ;
+    rdfs:domain clicap:CLI ;
+    rdfs:range xsd:anyURI .
+
+clicap:publicKey a owl:DatatypeProperty ;
+    rdfs:label "public key"@en ;
+    rdfs:comment "Ed25519 public key for verifying capability tokens signed by this CLI."@en ;
+    rdfs:domain clicap:CLI ;
+    rdfs:range xsd:string .
+
+# ============================================================================
+# Properties: Command Metadata
+# ============================================================================
+
+clicap:commandName a owl:DatatypeProperty ;
+    rdfs:label "command name"@en ;
+    rdfs:comment "The name of the command (e.g., 'convert', 'analyze')."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range xsd:string .
+
+clicap:hasArgument a owl:ObjectProperty ;
+    rdfs:label "has argument"@en ;
+    rdfs:comment "Associates a command with one of its arguments."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range clicap:Argument .
+
+clicap:typeSignature a owl:DatatypeProperty ;
+    rdfs:label "type signature"@en ;
+    rdfs:comment "Formal type signature of the command (e.g., 'ImageFile -> JSONData')."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range xsd:string .
+
+clicap:accepts a owl:ObjectProperty ;
+    rdfs:label "accepts"@en ;
+    rdfs:comment "Type of input the command accepts."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range clicap:Type .
+
+clicap:produces a owl:ObjectProperty ;
+    rdfs:label "produces"@en ;
+    rdfs:comment "Type of output the command produces."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range clicap:Type .
+
+clicap:sideEffect a owl:DatatypeProperty ;
+    rdfs:label "side effect"@en ;
+    rdfs:comment "Description of side effects (file writes, network calls, etc.)."@en ;
+    rdfs:domain clicap:Command ;
+    rdfs:range xsd:string .
+
+# ============================================================================
+# Properties: Argument Metadata
+# ============================================================================
+
+clicap:argumentName a owl:DatatypeProperty ;
+    rdfs:label "argument name"@en ;
+    rdfs:comment "Name of the argument (for options, e.g., 'format'; empty for positional)."@en ;
+    rdfs:domain clicap:Argument ;
+    rdfs:range xsd:string .
+
+clicap:argumentType a owl:ObjectProperty ;
+    rdfs:label "argument type"@en ;
+    rdfs:comment "Type of the argument value."@en ;
+    rdfs:domain clicap:Argument ;
+    rdfs:range clicap:Type .
+
+clicap:required a owl:DatatypeProperty ;
+    rdfs:label "required"@en ;
+    rdfs:comment "Whether the argument is required (true/false)."@en ;
+    rdfs:domain clicap:Argument ;
+    rdfs:range xsd:boolean .
+
+clicap:defaultValue a owl:DatatypeProperty ;
+    rdfs:label "default value"@en ;
+    rdfs:comment "Default value for optional arguments."@en ;
+    rdfs:domain clicap:Argument .
+
+clicap:position a owl:DatatypeProperty ;
+    rdfs:label "position"@en ;
+    rdfs:comment "Position index for positional arguments (0-based)."@en ;
+    rdfs:domain clicap:PositionalArg ;
+    rdfs:range xsd:integer .
+
+# ============================================================================
+# Properties: Type System
+# ============================================================================
+
+clicap:elementType a owl:ObjectProperty ;
+    rdfs:label "element type"@en ;
+    rdfs:comment "For collection types, the type of elements contained."@en ;
+    rdfs:domain clicap:CollectionType ;
+    rdfs:range clicap:Type .
+
+clicap:alternatives a owl:ObjectProperty ;
+    rdfs:label "alternatives"@en ;
+    rdfs:comment "For sum types, the list of alternative types."@en ;
+    rdfs:domain clicap:SumType ;
+    rdfs:range clicap:Type .
+
+clicap:fieldName a owl:DatatypeProperty ;
+    rdfs:label "field name"@en ;
+    rdfs:comment "Name of a field in a product type."@en ;
+    rdfs:range xsd:string .
+
+clicap:fieldType a owl:ObjectProperty ;
+    rdfs:label "field type"@en ;
+    rdfs:comment "Type of a field in a product type."@en ;
+    rdfs:range clicap:Type .
+
+# ============================================================================
+# Properties: Security & Capabilities
+# ============================================================================
+
+clicap:grants a owl:ObjectProperty ;
+    rdfs:label "grants"@en ;
+    rdfs:comment "Permission that this capability grants."@en ;
+    rdfs:domain clicap:Capability .
+
+clicap:requiredSignature a owl:ObjectProperty ;
+    rdfs:label "required signature"@en ;
+    rdfs:comment "Public key required to sign capability tokens for this capability."@en ;
+    rdfs:domain clicap:Capability .
+
+clicap:constrainedBy a owl:ObjectProperty ;
+    rdfs:label "constrained by"@en ;
+    rdfs:comment "SHACL shape constraining this capability."@en ;
+    rdfs:domain clicap:Capability ;
+    rdfs:range sh:NodeShape .
+
+# ============================================================================
+# Example Instance: Image Conversion CLI
+# ============================================================================
+
+<https://example.com/tools/image-converter> a clicap:CLI ;
+    dcterms:title "Image Converter CLI"@en ;
+    dcterms:description "Converts images between formats (PNG, JPEG, WebP)."@en ;
+    clicap:version "1.2.3" ;
+    clicap:endpoint <grpc://image-converter.example.com:50051> ;
+    clicap:sparqlEndpoint <https://image-converter.example.com/sparql> ;
+    clicap:publicKey "ed25519:A1B2C3D4..." ;
+    clicap:hasCommand <https://example.com/tools/image-converter/commands/convert> .
+
+<https://example.com/tools/image-converter/commands/convert> a clicap:Command ;
+    clicap:commandName "convert" ;
+    clicap:typeSignature "ImageFile -> ImageFile" ;
+    clicap:accepts clicap:ImageFile ;
+    clicap:produces clicap:ImageFile ;
+    clicap:requiresCapability <https://example.com/capabilities/execute-convert> ;
+    clicap:hasArgument [
+        a clicap:PositionalArg ;
+        clicap:position 0 ;
+        clicap:argumentType clicap:ImageFile ;
+        clicap:required true ;
+        rdfs:comment "Input image file to convert"@en
+    ] ;
+    clicap:hasArgument [
+        a clicap:Option ;
+        clicap:argumentName "format" ;
+        clicap:argumentType [
+            a clicap:SumType ;
+            clicap:alternatives (clicap:PNGFile clicap:JPEGFile)
+        ] ;
+        clicap:required true ;
+        rdfs:comment "Target output format"@en
+    ] .
+
+<https://example.com/capabilities/execute-convert> a clicap:Capability ;
+    rdfs:label "Execute Image Conversion"@en ;
+    clicap:grants <https://clicap.org/permissions/execute> ;
+    clicap:requiredSignature <https://example.com/keys/admin-key> ;
+    clicap:constrainedBy [
+        a sh:NodeShape ;
+        sh:property [
+            sh:path clicap:maxFileSize ;
+            sh:maxInclusive 10000000 # 10MB
+        ]
+    ] .

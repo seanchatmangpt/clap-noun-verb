@@ -21,10 +21,7 @@ pub struct SyncOutput {
 /// This command appears directly under the CLI binary without a noun prefix.
 #[verb("sync", "root")]
 fn sync() -> clap_noun_verb::Result<SyncOutput> {
-    Ok(SyncOutput {
-        status: "success".to_string(),
-        files_synced: 42,
-    })
+    Ok(SyncOutput { status: "success".to_string(), files_synced: 42 })
 }
 
 fn main() {

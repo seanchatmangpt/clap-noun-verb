@@ -1,0 +1,287 @@
+# CLICAP SHACL Shapes - Validation Constraints
+# SHACL shapes for validating CLI capability ontology instances
+
+@prefix clicap: <https://clicap.org/ontology#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ============================================================================
+# CLI Shape - Validates CLI Tool Declarations
+# ============================================================================
+
+clicap:CLIShape a sh:NodeShape ;
+    sh:targetClass clicap:CLI ;
+    sh:property [
+        sh:path clicap:version ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^\\d+\\.\\d+\\.\\d+$" ; # Semantic versioning
+        sh:message "CLI version must be a valid semantic version (e.g., 1.2.3)"@en
+    ] ;
+    sh:property [
+        sh:path clicap:endpoint ;
+        sh:datatype xsd:anyURI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^grpc://" ;
+        sh:message "CLI endpoint must be a valid gRPC URI (grpc://...)"@en
+    ] ;
+    sh:property [
+        sh:path clicap:sparqlEndpoint ;
+        sh:datatype xsd:anyURI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^https?://" ;
+        sh:message "SPARQL endpoint must be a valid HTTP(S) URI"@en
+    ] ;
+    sh:property [
+        sh:path clicap:publicKey ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^ed25519:[A-Za-z0-9+/=]+$" ;
+        sh:message "Public key must be Ed25519 format (ed25519:base64data)"@en
+    ] ;
+    sh:property [
+        sh:path clicap:hasCommand ;
+        sh:class clicap:Command ;
+        sh:minCount 1 ; # CLI must have at least one command
+        sh:message "CLI must expose at least one command"@en
+    ] .
+
+# ============================================================================
+# Command Shape - Validates Command Declarations
+# ============================================================================
+
+clicap:CommandShape a sh:NodeShape ;
+    sh:targetClass clicap:Command ;
+    sh:property [
+        sh:path clicap:commandName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[a-z][a-z0-9-]*$" ; # Kebab-case command names
+        sh:message "Command name must be lowercase kebab-case (e.g., 'convert-image')"@en
+    ] ;
+    sh:property [
+        sh:path clicap:typeSignature ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Command must have a type signature"@en
+    ] ;
+    sh:property [
+        sh:path clicap:accepts ;
+        sh:class clicap:Type ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Command must declare exactly one input type"@en
+    ] ;
+    sh:property [
+        sh:path clicap:produces ;
+        sh:class clicap:Type ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Command must declare exactly one output type"@en
+    ] ;
+    sh:property [
+        sh:path clicap:requiresCapability ;
+        sh:class clicap:Capability ;
+        sh:minCount 1 ; # Must require at least one capability (security)
+        sh:message "Command must require at least one capability for authorization"@en
+    ] .
+
+# ============================================================================
+# Argument Shape - Validates Argument Declarations
+# ============================================================================
+
+clicap:ArgumentShape a sh:NodeShape ;
+    sh:targetClass clicap:Argument ;
+    sh:property [
+        sh:path clicap:argumentType ;
+        sh:class clicap:Type ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Argument must have exactly one type"@en
+    ] ;
+    sh:property [
+        sh:path clicap:required ;
+        sh:datatype xsd:boolean ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Argument must specify whether it is required"@en
+    ] .
+
+clicap:OptionShape a sh:NodeShape ;
+    sh:targetClass clicap:Option ;
+    sh:property [
+        sh:path clicap:argumentName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[a-z][a-z0-9-]*$" ; # Kebab-case option names
+        sh:message "Option name must be lowercase kebab-case (e.g., 'output-format')"@en
+    ] .
+
+clicap:PositionalArgShape a sh:NodeShape ;
+    sh:targetClass clicap:PositionalArg ;
+    sh:property [
+        sh:path clicap:position ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minInclusive 0 ;
+        sh:message "Positional argument must have a non-negative position index"@en
+    ] .
+
+# ============================================================================
+# Capability Shape - Validates Capability Declarations
+# ============================================================================
+
+clicap:CapabilityShape a sh:NodeShape ;
+    sh:targetClass clicap:Capability ;
+    sh:property [
+        sh:path clicap:grants ;
+        sh:minCount 1 ;
+        sh:message "Capability must grant at least one permission"@en
+    ] ;
+    sh:property [
+        sh:path clicap:requiredSignature ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Capability must specify required signature authority"@en
+    ] .
+
+# ============================================================================
+# Type System Shapes - Validates Type Declarations
+# ============================================================================
+
+clicap:CollectionTypeShape a sh:NodeShape ;
+    sh:targetClass clicap:CollectionType ;
+    sh:property [
+        sh:path clicap:elementType ;
+        sh:class clicap:Type ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "Collection type must specify element type"@en
+    ] .
+
+clicap:SumTypeShape a sh:NodeShape ;
+    sh:targetClass clicap:SumType ;
+    sh:property [
+        sh:path clicap:alternatives ;
+        sh:class clicap:Type ;
+        sh:minCount 2 ; # Sum type must have at least 2 alternatives
+        sh:message "Sum type must have at least two alternative types"@en
+    ] .
+
+# ============================================================================
+# Security Constraints - Capability Token Validation
+# ============================================================================
+
+clicap:CapabilityTokenShape a sh:NodeShape ;
+    rdfs:comment "Validates capability tokens (applied to JWT claims)"@en ;
+    sh:property [
+        sh:path clicap:maxFileSize ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 100000000 ; # 100MB maximum
+        sh:message "File size constraint must be between 0 and 100MB"@en
+    ] ;
+    sh:property [
+        sh:path clicap:allowedFormats ;
+        sh:datatype xsd:string ;
+        sh:in ("PNG" "JPEG" "WebP" "GIF" "BMP") ;
+        sh:message "Allowed formats must be one of: PNG, JPEG, WebP, GIF, BMP"@en
+    ] ;
+    sh:property [
+        sh:path clicap:rateLimit ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 10000 ; # 10K requests/hour maximum
+        sh:message "Rate limit must be between 1 and 10,000 requests per hour"@en
+    ] .
+
+# ============================================================================
+# Network Constraints - Endpoint Validation
+# ============================================================================
+
+clicap:EndpointSecurityShape a sh:NodeShape ;
+    rdfs:comment "Validates that endpoints use secure protocols"@en ;
+    sh:targetObjectsOf clicap:endpoint ;
+    sh:pattern "^grpc(s)?://" ; # Allow grpc or grpcs (TLS)
+    sh:message "Endpoint must use gRPC protocol (grpc:// or grpcs://)"@en .
+
+clicap:SPARQLEndpointSecurityShape a sh:NodeShape ;
+    rdfs:comment "Validates that SPARQL endpoints use HTTPS"@en ;
+    sh:targetObjectsOf clicap:sparqlEndpoint ;
+    sh:pattern "^https://" ; # Require HTTPS (not HTTP)
+    sh:message "SPARQL endpoint must use HTTPS for security"@en .
+
+# ============================================================================
+# Cross-Property Constraints - Type Signature Consistency
+# ============================================================================
+
+clicap:TypeSignatureConsistencyShape a sh:NodeShape ;
+    sh:targetClass clicap:Command ;
+    sh:sparql [
+        sh:message "Type signature must match accepts -> produces types"@en ;
+        sh:select """
+            PREFIX clicap: <https://clicap.org/ontology#>
+            SELECT $this
+            WHERE {
+                $this clicap:accepts ?inputType ;
+                      clicap:produces ?outputType ;
+                      clicap:typeSignature ?signature .
+
+                # Extract type names
+                ?inputType rdfs:label ?inputLabel .
+                ?outputType rdfs:label ?outputLabel .
+
+                # Construct expected signature
+                BIND(CONCAT(?inputLabel, " -> ", ?outputLabel) AS ?expectedSignature)
+
+                # Validate signature matches
+                FILTER(?signature != ?expectedSignature)
+            }
+        """
+    ] .
+
+# ============================================================================
+# Version Compatibility Constraints
+# ============================================================================
+
+clicap:SemanticVersioningShape a sh:NodeShape ;
+    rdfs:comment "Ensures CLI versions follow semantic versioning and compatibility rules"@en ;
+    sh:targetClass clicap:CLI ;
+    sh:sparql [
+        sh:message "Major version change indicates breaking changes; must update dependents"@en ;
+        sh:select """
+            PREFIX clicap: <https://clicap.org/ontology#>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            SELECT $this
+            WHERE {
+                $this clicap:version ?currentVersion .
+
+                # Query for previous version (from version history)
+                OPTIONAL {
+                    $this clicap:previousVersion ?previousVersion .
+                }
+
+                # If major version increased, must have breaking change documentation
+                FILTER(BOUND(?previousVersion))
+                BIND(STRBEFORE(?currentVersion, ".") AS ?currentMajor)
+                BIND(STRBEFORE(?previousVersion, ".") AS ?previousMajor)
+
+                FILTER(xsd:integer(?currentMajor) > xsd:integer(?previousMajor))
+
+                # Must have breaking change documentation
+                FILTER NOT EXISTS {
+                    $this clicap:hasBreakingChange ?change .
+                }
+            }
+        """
+    ] .

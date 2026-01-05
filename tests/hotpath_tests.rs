@@ -1,3 +1,5 @@
+#![cfg(feature = "autonomic")]
+
 //! Comprehensive tests for zero-allocation hot path
 //!
 //! Critical 80/20 test coverage:

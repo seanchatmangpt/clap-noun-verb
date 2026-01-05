@@ -1,3 +1,5 @@
+#![cfg(feature = "autonomic")]
+
 //! Documentation Examples Test Harness
 //!
 //! This module contains all code examples from documentation, ensuring they compile

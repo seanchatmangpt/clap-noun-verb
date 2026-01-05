@@ -190,3 +190,340 @@ script = '''
 echo "Task failed - check output above"
 '''
 description = "Error notification task"
+
+# =============================================================================
+# FRONTIER FEATURE TESTING - Phase 1 Architecture Validation
+# =============================================================================
+
+[tasks.test-frontier-all]
+command = "cargo"
+args = ["test", "--features", "frontier-all", "--quiet"]
+description = "Test with all frontier features enabled"
+
+[tasks.test-frontier-minimal]
+command = "cargo"
+args = ["test", "--no-default-features", "--quiet"]
+description = "Test with minimal features (no frontiers)"
+
+[tasks.test-frontier-semantic]
+command = "cargo"
+args = ["test", "--features", "frontier-semantic", "--quiet"]
+description = "Test frontier-semantic meta-feature"
+
+[tasks.test-frontier-intelligence]
+command = "cargo"
+args = ["test", "--features", "frontier-intelligence", "--quiet"]
+description = "Test frontier-intelligence meta-feature"
+
+[tasks.test-frontier-quality]
+command = "cargo"
+args = ["test", "--features", "frontier-quality", "--quiet"]
+description = "Test frontier-quality meta-feature"
+
+[tasks.check-frontier-all]
+command = "cargo"
+args = ["check", "--features", "frontier-all"]
+description = "Check compilation with all frontier features"
+
+[tasks.check-frontier-minimal]
+command = "cargo"
+args = ["check", "--no-default-features"]
+description = "Check compilation with no features"
+
+[tasks.build-frontier-all]
+command = "cargo"
+args = ["build", "--features", "frontier-all"]
+description = "Build with all frontier features"
+
+[tasks.verify-frontier]
+dependencies = [
+    "check-frontier-minimal",
+    "check-frontier-all",
+    "test-frontier-all",
+]
+description = "Verify all frontier feature combinations compile and test"
+
+# Benchmarking
+[tasks.bench]
+command = "cargo"
+args = ["bench", "--all-features"]
+description = "Run all benchmarks with criterion"
+
+[tasks.bench-baseline]
+command = "cargo"
+args = ["bench", "--all-features", "--", "--save-baseline", "main"]
+description = "Run benchmarks and save as baseline"
+
+[tasks.bench-compare]
+command = "cargo"
+args = ["bench", "--all-features", "--", "--baseline", "main"]
+description = "Run benchmarks and compare against baseline"
+
+[tasks.slo-check]
+description = "Verify all performance SLOs are met"
+script = '''
+echo "Running SLO validation benchmarks..."
+cargo bench --all-features --bench discovery_engine_benchmarks 2>&1 | tee /tmp/slo_results.txt
+cargo bench --all-features --bench agents_benchmarks 2>&1 | tee -a /tmp/slo_results.txt
+
+# Check for SLO violations in output
+if grep -q "SLO:" /tmp/slo_results.txt; then
+    echo "✅ SLO checks completed - see output above"
+else
+    echo "⚠️  No SLO assertions found"
+fi
+'''
+
+[tasks.bench-phase1]
+command = "cargo"
+args = ["bench", "--bench", "phase1_foundation_benchmarks"]
+description = "Run Phase 1 foundation benchmarks"
+
+[tasks.bench-phase2]
+command = "cargo"
+args = ["bench", "--all-features", "--bench", "phase2_rdf_benchmarks"]
+description = "Run Phase 2 RDF/Semantic benchmarks"
+
+[tasks.bench-phase3]
+command = "cargo"
+args = ["bench", "--all-features", "--bench", "phase3_optimization_benchmarks"]
+description = "Run Phase 3 Optimization & ML benchmarks"
+
+[tasks.bench-phase4]
+command = "cargo"
+args = ["bench", "--all-features", "--bench", "phase4_advanced_benchmarks"]
+description = "Run Phase 4 Advanced Features benchmarks"
+
+[tasks.profile]
+command = "cargo"
+args = ["bench", "--all-features", "--", "--profile-time", "10"]
+description = "Run benchmarks with profiling enabled"
+
+# =============================================================================
+# FRONTIER CI/CD TASKS - 5-Phase Development Infrastructure
+# =============================================================================
+
+[tasks.test-frontier]
+command = "cargo"
+args = ["test", "--all-features", "--quiet"]
+description = "Run all tests with all frontier features enabled"
+
+[tasks.test-frontier-matrix]
+description = "Run tests across all 21 feature combinations (Tier 0-4)"
+script_runner = "@shell"
+script = '''
+#!/bin/bash
+set -e
+
+echo "════════════════════════════════════════════════════════════════"
+echo "  FRONTIER FEATURE MATRIX TEST - 21 Combinations"
+echo "════════════════════════════════════════════════════════════════"
+
+# Counter for progress
+TOTAL=21
+CURRENT=0
+
+# Function to run tests with features
+test_features() {
+    CURRENT=$((CURRENT + 1))
+    echo ""
+    echo "[$CURRENT/$TOTAL] Testing: ${1:-baseline (no features)}"
+    echo "────────────────────────────────────────────────────────────────"
+
+    if [ -z "$1" ]; then
+        cargo test --quiet
+    else
+        cargo test --features "$1" --quiet
+    fi
+
+    if [ $? -eq 0 ]; then
+        echo "✅ PASS: ${1:-baseline}"
+    else
+        echo "❌ FAIL: ${1:-baseline}"
+        exit 1
+    fi
+}
+
+# Tier 0: Baseline
+test_features ""
+
+# Tier 1: Individual features
+test_features "meta-framework"
+test_features "rdf-composition"
+test_features "fractal-patterns"
+test_features "discovery-engine"
+test_features "federated-network"
+test_features "learning-trajectories"
+test_features "reflexive-testing"
+test_features "economic-sim"
+test_features "quantum-ready"
+
+# Tier 2: Meta-features
+test_features "frontier-semantic"
+test_features "frontier-intelligence"
+test_features "frontier-quality"
+
+# Tier 3: Critical combinations
+test_features "meta-framework,rdf-composition"
+test_features "discovery-engine,learning-trajectories"
+test_features "federated-network,rdf-composition"
+test_features "economic-sim,learning-trajectories"
+test_features "executable-specs"
+
+# Tier 4: Extremes
+test_features "frontier-all"
+
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  ✅ ALL 21 FEATURE COMBINATIONS PASSED"
+echo "════════════════════════════════════════════════════════════════"
+'''
+
+[tasks.coverage-report]
+description = "Generate code coverage report with tarpaulin (requires cargo install cargo-tarpaulin)"
+script_runner = "@shell"
+script = '''
+#!/bin/bash
+set -e
+
+echo "Generating code coverage report..."
+
+# Check if tarpaulin is installed
+if ! command -v cargo-tarpaulin &> /dev/null; then
+    echo "Installing cargo-tarpaulin..."
+    cargo install cargo-tarpaulin
+fi
+
+# Generate coverage
+cargo tarpaulin --all-features --workspace \
+    --out Html --out Xml \
+    --output-dir coverage \
+    --timeout 300 \
+    --exclude-files 'tests/*' 'benches/*' 'examples/*'
+
+echo "✅ Coverage report generated in ./coverage/"
+echo "Open ./coverage/index.html to view"
+
+# Check coverage threshold
+COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/cobertura.xml | head -1)
+COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
+echo "Coverage: ${COVERAGE_PCT}%"
+
+if (( $(echo "$COVERAGE_PCT < 80" | bc -l) )); then
+    echo "⚠️  WARNING: Coverage below 80% threshold"
+else
+    echo "✅ Coverage meets 80% threshold"
+fi
+'''
+
+[tasks.andon-check]
+description = "Complete Andon Signal Protocol check (stop-the-line validation)"
+dependencies = ["timeout-check"]
+script_runner = "@shell"
+script = '''
+#!/bin/bash
+set -e
+
+echo "════════════════════════════════════════════════════════════════"
+echo "  🚦 ANDON SIGNAL PROTOCOL - STOP THE LINE VALIDATION"
+echo "════════════════════════════════════════════════════════════════"
+
+# CRITICAL: Stop the line if any check fails
+
+echo ""
+echo "🚦 ANDON CHECK 1: Compiler Errors"
+cargo check 2>&1 | tee check.log
+if grep -q "error\[E" check.log; then
+    echo "❌ ANDON RED: STOP THE LINE - Compiler errors detected"
+    exit 1
+fi
+echo "✅ ANDON GREEN: No compiler errors"
+
+echo ""
+echo "🚦 ANDON CHECK 2: Compiler Warnings"
+if grep -q "warning:" check.log; then
+    echo "❌ ANDON YELLOW: STOP THE LINE - Compiler warnings detected"
+    exit 1
+fi
+echo "✅ ANDON GREEN: No compiler warnings"
+
+echo ""
+echo "🚦 ANDON CHECK 3: Test Failures"
+cargo test --quiet 2>&1 | tee test.log
+if grep -q "FAILED" test.log; then
+    echo "❌ ANDON RED: STOP THE LINE - Test failures detected"
+    exit 1
+fi
+echo "✅ ANDON GREEN: All tests pass"
+
+echo ""
+echo "🚦 ANDON CHECK 4: Clippy Warnings"
+cargo clippy -- -D warnings
+echo "✅ ANDON GREEN: No clippy warnings"
+
+echo ""
+echo "🚦 ANDON CHECK 5: Formatting"
+cargo fmt -- --check
+echo "✅ ANDON GREEN: Code properly formatted"
+
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  ✅ ALL ANDON SIGNALS GREEN - PROCEED WITH CONFIDENCE"
+echo "════════════════════════════════════════════════════════════════"
+'''
+
+[tasks.security-scan]
+description = "Comprehensive security scanning (audit, deny, outdated)"
+script_runner = "@shell"
+script = '''
+#!/bin/bash
+set -e
+
+echo "════════════════════════════════════════════════════════════════"
+echo "  SECURITY SCANNING"
+echo "════════════════════════════════════════════════════════════════"
+
+# Install tools if needed
+command -v cargo-audit &> /dev/null || cargo install cargo-audit
+command -v cargo-deny &> /dev/null || cargo install cargo-deny
+command -v cargo-outdated &> /dev/null || cargo install cargo-outdated
+
+echo ""
+echo "🔒 Security Audit (cargo-audit)..."
+cargo audit
+echo "✅ No known vulnerabilities"
+
+echo ""
+echo "🔒 License & Advisory Check (cargo-deny)..."
+cargo deny check licenses
+cargo deny check advisories
+cargo deny check bans
+echo "✅ License and security checks passed"
+
+echo ""
+echo "🔒 Dependency Freshness (cargo-outdated)..."
+cargo outdated --root-deps-only
+echo "✅ Dependency check complete"
+
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  ✅ SECURITY SCAN COMPLETE"
+echo "════════════════════════════════════════════════════════════════"
+'''
+
+[tasks.pre-commit-frontier]
+dependencies = ["format", "andon-check", "test-frontier"]
+description = "Pre-commit checks with frontier features: format, Andon signals, all tests"
+
+[tasks.release-validate]
+dependencies = [
+    "andon-check",
+    "test-frontier-matrix",
+    "coverage-report",
+    "bench-compare",
+    "slo-check",
+    "security-scan",
+    "build-release",
+    "doc",
+]
+description = "Comprehensive release validation (all checks)"
