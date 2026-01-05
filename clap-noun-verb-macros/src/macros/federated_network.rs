@@ -272,25 +272,25 @@ pub fn remote_invoke_impl(args: TokenStream, input: TokenStream) -> syn::Result<
 }
 
 /// Configuration for #[federated] macro
-struct FederatedConfig {
-    discovery_url: String,
-    identity: String,
-    trust_anchor: String,
+pub(crate) struct FederatedConfig {
+    pub(crate) discovery_url: String,
+    pub(crate) identity: String,
+    pub(crate) trust_anchor: String,
 }
 
 /// Configuration for #[advertise_capability] macro
-struct CapabilityConfig {
-    capability_id: String,
-    description: String,
-    inputs: Vec<String>,
-    outputs: Vec<String>,
+pub(crate) struct CapabilityConfig {
+    pub(crate) capability_id: String,
+    pub(crate) description: String,
+    pub(crate) inputs: Vec<String>,
+    pub(crate) outputs: Vec<String>,
 }
 
 /// Configuration for #[remote_invoke] macro
-struct RemoteInvokeConfig {
-    target: String,
-    capability: String,
-    timeout_ms: u64,
+pub(crate) struct RemoteInvokeConfig {
+    pub(crate) target: String,
+    pub(crate) capability: String,
+    pub(crate) timeout_ms: u64,
 }
 
 /// Parse #[federated(...)] arguments
