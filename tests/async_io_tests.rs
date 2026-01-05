@@ -1,3 +1,5 @@
+#![cfg(feature = "io")]
+
 //! Async I/O Integration Tests
 //!
 //! Comprehensive tests for Tokio-based async I/O capabilities

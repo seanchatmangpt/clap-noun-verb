@@ -1,3 +1,5 @@
+#![cfg(feature = "rdf")]
+
 //! MCP Integration Validation - 80/20 Consolidated Test Suite
 //!
 //! Tests the critical 20% of functionality that validates 80% of the system:

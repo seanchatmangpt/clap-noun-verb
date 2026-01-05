@@ -1,3 +1,5 @@
+#![cfg(feature = "autonomic")]
+
 //! Tests for autonomic CLI features
 
 use clap_noun_verb::autonomic::*;

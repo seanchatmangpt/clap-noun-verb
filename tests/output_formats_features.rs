@@ -1,3 +1,5 @@
+#![cfg(feature = "config-formats")]
+
 //! OutputFormat feature tests
 //!
 //! Validates the output formatting system including:

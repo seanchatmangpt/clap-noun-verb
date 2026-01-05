@@ -1,3 +1,5 @@
+#![cfg(feature = "meta-framework")]
+
 //! Chicago TDD Tests for Meta-Framework
 //!
 //! These tests follow Chicago TDD principles:

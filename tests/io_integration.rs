@@ -1,3 +1,5 @@
+#![cfg(feature = "io")]
+
 //! Integration tests for I/O module
 //!
 //! Tests basic and advanced I/O functionality with clio integration.

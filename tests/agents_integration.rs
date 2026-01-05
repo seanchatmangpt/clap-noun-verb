@@ -1,3 +1,5 @@
+#![cfg(feature = "agent2028")]
+
 //! Integration tests for Semantic Agent Coordinator
 //!
 //! Tests the complete integration of:
@@ -5,8 +7,6 @@
 //! - Semantic discovery with RDF/SPARQL
 //! - Swarm coordination
 //! - MAPE-K autonomic loops
-
-#![cfg(feature = "agent2028")]
 
 use clap_noun_verb::agents::swarm::{
     AgentInfo, AgentRegistry, ByzantineDetector, GossipMessage, GossipProtocol, SwarmCoordinator,
