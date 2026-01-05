@@ -153,6 +153,22 @@ pub mod agents;
 #[cfg(feature = "rdf")]
 pub mod semantic;
 
+// Frontier Packages - 10 Advanced Agent-Grade Packages (v5.4+)
+// Requires any frontier feature (meta-framework, rdf-composition, etc.)
+#[cfg(any(
+    feature = "meta-framework",
+    feature = "rdf-composition",
+    feature = "executable-specs",
+    feature = "fractal-patterns",
+    feature = "discovery-engine",
+    feature = "federated-network",
+    feature = "learning-trajectories",
+    feature = "reflexive-testing",
+    feature = "economic-sim",
+    feature = "quantum-ready"
+))]
+pub mod frontier;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
