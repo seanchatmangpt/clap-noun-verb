@@ -141,6 +141,10 @@ pub mod agent2028;
 #[cfg(feature = "rdf")]
 pub mod rdf;
 
+// Semantic Agent Coordinator (requires "agent2028" feature + optional "rdf", "autonomic")
+#[cfg(feature = "agent2028")]
+pub mod agents;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
