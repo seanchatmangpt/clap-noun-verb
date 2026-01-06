@@ -19,11 +19,15 @@
 pub mod config;
 pub mod executor;
 pub mod exporters;
+#[cfg(feature = "ggen")]
+pub mod ggen;
 pub mod middlewares;
 
 pub use config::{PluginDependencyGraph, PluginManifestLoader};
 pub use executor::{CommandExecutor, ExecutionContext, ExecutionPhase};
 pub use exporters::{DatadogExporter, ElasticsearchExporter};
+#[cfg(feature = "ggen")]
+pub use ggen::{GgenConfig, GgenGenerator, GgenGraph, GgenPipeline, GenerationReceipt};
 pub use middlewares::{
     DistributedTracingMiddleware, DynamicCachingMiddleware, ObservabilityMiddleware,
     SecurityMiddleware, SmartRetryMiddleware,
