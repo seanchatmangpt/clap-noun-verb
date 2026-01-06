@@ -570,3 +570,12 @@ required-features = ["rdf-composition"]
 name = "mcp_workflow_bench"
 harness = false
 required-features = ["rdf-composition"]
+
+# Agent CLI Benchmarks
+[[bench]]
+name = "agent_cli_jtbd"
+harness = false
+
+[[bench]]
+name = "agent_cli_generation"
+harness = false
