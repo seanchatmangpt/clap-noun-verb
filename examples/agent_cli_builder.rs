@@ -9,7 +9,7 @@
 //! 3. CLI is built and ready for execution
 //! 4. Agents can execute commands and get structured results
 
-use clap_noun_verb::semantic::{
+use clap_noun_verb::agent_cli::{
     AgentCliBuilder, CommandArgs, CommandHandler, CommandMetadata, AgentResult,
 };
 use std::sync::Arc;

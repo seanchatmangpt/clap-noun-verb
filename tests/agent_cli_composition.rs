@@ -337,3 +337,79 @@ fn test_agent_cli_can_chain_commands() {
     // Assert: Chaining works - the echo handler echoes back the input provided
     assert_eq!(process_result["output"], "data");
 }
+
+// ============================================================================
+// Error Handling Tests
+// ============================================================================
+
+#[test]
+fn test_register_duplicate_command_error() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test", "Test");
+    let handler = EchoHandler::new("test");
+    builder.register_command("echo", "Echo", handler.clone()).ok();
+
+    // Act
+    let result = builder.register_command("echo", "Echo again", handler);
+
+    // Assert
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)));
+}
+
+#[test]
+fn test_register_empty_command_name_error() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test", "Test");
+    let handler = EchoHandler::new("test");
+
+    // Act
+    let result = builder.register_command("", "Empty name", handler);
+
+    // Assert
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::InvalidCommandName(_)));
+}
+
+#[test]
+fn test_build_without_commands_error() {
+    // Arrange
+    let builder = AgentCliBuilder::new("test", "Test");
+
+    // Act
+    let result = builder.build();
+
+    // Assert
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::NoCommands));
+}
+
+#[test]
+fn test_execute_nonexistent_command_error() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test", "Test");
+    builder.register_command("echo", "Echo", EchoHandler::new("test")).ok();
+    let cli = builder.build().unwrap();
+
+    // Act
+    let result = cli.execute("missing", CommandArgs::new());
+
+    // Assert
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::HandlerFailed(_)));
+}
+
+#[test]
+fn test_run_with_args_no_command_error() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test", "Test");
+    builder.register_command("echo", "Echo", EchoHandler::new("test")).ok();
+    let cli = builder.build().unwrap();
+
+    // Act: No command specified in args
+    let result = cli.run_with_args(vec!["test-cli".to_string()]);
+
+    // Assert
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::ValidationFailed(_)));
+}

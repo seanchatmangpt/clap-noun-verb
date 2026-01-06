@@ -158,7 +158,17 @@ pub mod agent_builder {
         handler: Arc<dyn CommandHandler>,
     }
 
+    impl std::fmt::Debug for DynamicCommand {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("DynamicCommand")
+                .field("metadata", &self.metadata)
+                .field("handler", &"<trait object>")
+                .finish()
+        }
+    }
+
     /// Agent-optimized CLI builder
+    #[derive(Debug)]
     pub struct AgentCliBuilder {
         /// Application name
         name: String,
@@ -251,6 +261,7 @@ pub mod agent_builder {
     }
 
     /// Built agent CLI application
+    #[derive(Debug)]
     pub struct AgentCli {
         /// Application name
         name: String,
