@@ -1,0 +1,239 @@
+\chapter{Implementation Details}
+
+\section{Zero-Cost Abstraction Techniques}
+
+\subsection{Generics Monomorphization}
+
+Handlers are trait objects, but agent code path is monomorphized:
+
+\begin{lstlisting}[language=Rust]
+impl AgentCli {
+    // Monomorphized - no generic parameter
+    pub fn execute(&self, name: &str, args: CommandArgs)
+        -> AgentResult<serde_json::Value> {
+        let command = self.commands.get(name)?;
+        command.handler.execute(&args)
+    }
+}
+\end{lstlisting}
+
+\textbf{Performance Implication}:
+\begin{itemize}
+    \item Single code path for all command types
+    \item No template code explosion
+    \item Branch prediction friendly
+\end{itemize}
+
+\subsection{Arc for Shared Ownership}
+
+\begin{lstlisting}[language=Rust]
+type HandlerRef = Arc<dyn CommandHandler>;
+\end{lstlisting}
+
+Enables:
+\begin{itemize}
+    \item Cloning handlers without deep copy
+    \item Thread-safe reference counting
+    \item Zero-copy command registration
+\end{itemize}
+
+\textbf{Cost}: Single atomic increment per registration (nanoseconds).
+
+\subsection{HashMap vs. BTreeMap Trade-off}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+Operation & HashMap & BTreeMap \\
+\midrule
+Insert & O(1) avg & O(log n) \\
+Lookup & O(1) avg & O(log n) \\
+Iteration & O(n) random & O(n) sorted \\
+Memory & Higher & Lower \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Choice: HashMap}. Rationale: lookup speed critical, iteration order irrelevant for agents.
+
+\section{String Lifetime Management}
+
+\subsection{Box::leak Pattern}
+
+Original clap integration required \texttt{'static} strings:
+
+\begin{lstlisting}[language=Rust]
+let name: &'static str = Box::leak(
+    self.name.clone().into_boxed_str()
+);
+\end{lstlisting}
+
+\textbf{Design Decision}:
+\begin{itemize}
+    \item CLI construction happens once per agent
+    \item Leak is bounded (64 commands $\approx$ 2KB)
+    \item Alternative: reference counting (Arc<str>) with trait object
+\end{itemize}
+
+\textbf{Impact}: Negligible for agent workloads.
+
+\section{Batch Registration}
+
+\subsection{Iterator-Based API}
+
+\begin{lstlisting}[language=Rust]
+pub fn register_commands<I>(&mut self, commands: I)
+    -> AgentResult<&mut Self>
+where
+    I: IntoIterator<Item = (String, String, Arc<dyn CommandHandler>)>,
+{
+    for (name, desc, handler) in commands {
+        self.register_command(name, desc, handler)?;
+    }
+    Ok(self)
+}
+\end{lstlisting}
+
+\textbf{Benefits}:
+\begin{itemize}
+    \item Generic over any iterable
+    \item Short-circuit on first error
+    \item No intermediate allocation
+\end{itemize}
+
+\section{Error Propagation Strategy}
+
+\subsection{Result-Based Error Handling}
+
+\begin{lstlisting}[language=Rust]
+pub type AgentResult<T> = Result<T, AgentBuilderError>;
+
+impl AgentCliBuilder {
+    pub fn register_command(
+        &mut self,
+        name: impl Into<String>,
+        description: impl Into<String>,
+        handler: Arc<dyn CommandHandler>,
+    ) -> AgentResult<&mut Self> {
+        let name_str = name.into();
+
+        if name_str.is_empty() {
+            return Err(AgentBuilderError::InvalidCommandName(name_str));
+        }
+
+        if self.commands.contains_key(&name_str) {
+            return Err(AgentBuilderError::DuplicateCommand(name_str));
+        }
+
+        // ... registration logic
+
+        Ok(self)
+    }
+}
+\end{lstlisting}
+
+\textbf{Properties}:
+\begin{itemize}
+    \item Eager validation on registration
+    \item Errors prevent partial state
+    \item Builder pattern stops on error
+\end{itemize}
+
+\section{Metadata Introspection}
+
+\subsection{CommandMetadata Structure}
+
+\begin{lstlisting}[language=Rust]
+#[derive(Debug, Clone)]
+pub struct CommandMetadata {
+    pub name: String,
+    pub description: String,
+    pub arguments: Vec<ArgumentSpec>,
+    pub requires_args: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArgumentSpec {
+    pub name: String,
+    pub description: String,
+    pub required: bool,
+    pub default: Option<String>,
+}
+\end{lstlisting}
+
+Enables agents to:
+\begin{itemize}
+    \item Discover command structure
+    \item Validate arguments before execution
+    \item Generate help text dynamically
+    \item Negotiate schemas with other agents
+\end{itemize}
+
+\section{JSON Serialization}
+
+\subsection{serde_json Integration}
+
+Handlers return JSON for universal agent compatibility:
+
+\begin{lstlisting}[language=Rust]
+fn execute(&self, args: &CommandArgs)
+    -> AgentResult<serde_json::Value> {
+    Ok(json!({
+        "noun": self.noun,
+        "verb": self.verb,
+        "status": "executed",
+        "args": args.values
+    }))
+}
+\end{lstlisting}
+
+\textbf{Advantages}:
+\begin{itemize}
+    \item Language-agnostic interchange format
+    \item Direct streaming to agents
+    \item Standard parsing libraries everywhere
+\end{itemize}
+
+\section{Thread Safety}
+
+\subsection{Send + Sync Constraints}
+
+\begin{lstlisting}[language=Rust]
+pub trait CommandHandler: Send + Sync {
+    // ...
+}
+
+pub struct AgentCli {
+    commands: HashMap<String, DynamicCommand>,
+}
+
+// Automatically Send/Sync if all fields are
+\end{lstlisting}
+
+Enables:
+\begin{itemize}
+    \item Multi-threaded agent execution
+    \item Safe sharing between agent threads
+    \item No data races (verified by compiler)
+\end{itemize}
+
+\section{Implementation Invariants}
+
+\subsection{Enforced at Compile Time}
+
+\begin{enumerate}
+    \item Handlers must be \texttt{Send + Sync}
+    \item Builders must consume on build (\texttt{self} not \texttt{\&mut self})
+    \item No pub mutation after build (immutable \texttt{AgentCli})
+    \item All errors must be handled (\texttt{Result<T>} not \texttt{T})
+\end{enumerate}
+
+\subsection{Enforced at Runtime}
+
+\begin{enumerate}
+    \item No duplicate command names
+    \item Non-empty command names
+    \item At least one command before build
+    \item JSON serialization never fails (guaranteed by serde)
+\end{enumerate}
