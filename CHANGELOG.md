@@ -5,6 +5,50 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.4.0] - 2026-01-06
+
+### Added
+
+- **ggen Integration & 10-Agent Swarm Phase 1-4 Deliverables**
+  - Complete integration of ggen (generation framework) for ontology-driven code generation
+  - 10-agent swarm coordination system for CLI code generation from Turtle specifications
+  - Phase 1-4 deliverables for ggen-clap-noun-verb integration
+  - Enhanced generated examples demonstrating end-to-end turtle → CLI generation
+
+- **Frontier Package Integration Foundation (v5.4+)**
+  - 10 advanced agent-grade frontier packages with three-tier feature system:
+    - **Meta-framework**: Self-modifying agent frameworks with type-erased interfaces
+    - **RDF Composition**: Semantic ontology composition with SPARQL
+    - **Executable Specs**: Behavior-driven specifications (BDD)
+    - **Fractal Patterns**: Self-similar command hierarchies with arbitrary depth
+    - **Discovery Engine**: Dynamic capability discovery
+    - **Federated Network**: Multi-host agent coordination (libp2p)
+    - **Learning Trajectories**: ReasoningBank learning integration
+    - **Reflexive Testing**: Self-testing systems
+    - **Economic Simulation**: Agent economy simulations
+    - **Quantum-Ready**: Post-quantum cryptography support
+  - Convenience meta-features for bundled capability combinations
+  - Foundation infrastructure for distributed agent systems
+
+- **Root-Level Verbs Support**
+  - New capability to define root-level verbs without noun prefix
+  - Enhanced command hierarchy flexibility for CLI design patterns
+
+### Fixed
+
+- **Andon Signal Resolution**
+  - Resolved all compiler errors preventing clean builds
+  - Fixed lint violations and clippy warnings
+  - Improved code quality and removed complexity issues
+  - Enhanced production-readiness validation
+
+### Technical Details
+
+- **No breaking changes** - Full backward compatibility with v5.3.x
+- **Feature-gated frontier packages** - All new frontier features are opt-in via `frontier-*` feature flags
+- **Production-ready**: All Andon signals cleared, comprehensive validation completed
+- **Agent-grade quality**: Enhanced for trillion-agent ecosystem support
+
 ## [5.3.2] - 2025-12-03
 
 ### Fixed
