@@ -41,6 +41,9 @@
 // FEATURE-GATED MODULE EXPORTS
 // =============================================================================
 
+// Error module - used by frontier features
+pub mod error;
+
 #[cfg(feature = "meta-framework")]
 pub mod meta_framework;
 

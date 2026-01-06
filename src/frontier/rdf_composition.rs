@@ -41,7 +41,7 @@ use std::collections::HashMap;
 use oxigraph::store::Store;
 
 #[cfg(feature = "rdf-composition")]
-use oxrdf::{Literal, NamedNode, Quad, Triple};
+use oxigraph::model::{Literal, NamedNode, Quad};
 
 /// Query result from SPARQL execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,28 +92,31 @@ impl SemanticDiscoveryOxigraph {
         let cap_type = NamedNode::new(&cap.capability_type)?;
 
         // Type triple
-        self.store.insert(&Quad::new(
+        let type_quad = Quad::new(
             subject.clone(),
             rdf_type,
             cap_type,
             self.graph.clone(),
-        ))?;
+        );
+        self.store.insert(&type_quad)?;
 
         // Label triple
-        self.store.insert(&Quad::new(
+        let label_quad = Quad::new(
             subject.clone(),
             rdfs_label,
             Literal::new_simple_literal(&cap.name),
             self.graph.clone(),
-        ))?;
+        );
+        self.store.insert(&label_quad)?;
 
         // Description triple
-        self.store.insert(&Quad::new(
+        let desc_quad = Quad::new(
             subject,
             rdfs_comment,
             Literal::new_simple_literal(&cap.description),
             self.graph.clone(),
-        ))?;
+        );
+        self.store.insert(&desc_quad)?;
 
         Ok(())
     }
@@ -128,16 +131,22 @@ impl SemanticDiscoveryOxigraph {
     /// - Aggregation (COUNT, etc.)
     pub fn query_sparql(&self, query: &str) -> Result<Vec<QueryResult>> {
         use oxigraph::sparql::QueryResults;
+        use oxigraph::sparql::EvaluationError;
 
-        let parsed = oxigraph::sparql::Query::parse(query, None)?;
-        let results = self.store.query(parsed)?;
+        let parsed = oxigraph::sparql::Query::parse(query, None)
+            .map_err(|e| FrontierError::Sparql(format!("Parse error: {}", e)))?;
+
+        // Use SparqlEvaluator interface instead of deprecated Store::query
+        let results = self.store.query(parsed)
+            .map_err(|e| FrontierError::Sparql(format!("Query error: {}", e)))?;
 
         let mut result_vec = Vec::new();
 
         match results {
             QueryResults::Solutions(solutions) => {
                 for solution in solutions {
-                    let solution = solution?;
+                    let solution = solution
+                        .map_err(|e| FrontierError::Sparql(format!("Solution error: {}", e)))?;
                     let mut bindings = HashMap::new();
 
                     for (var, term) in solution.iter() {
@@ -162,11 +171,15 @@ impl SemanticDiscoveryOxigraph {
     ///
     /// Serializes the RDF graph to JSON-LD format for MCP protocol.
     pub fn export_json_ld(&self) -> Result<String> {
+        use oxigraph::model::GraphName;
         let mut triples = Vec::new();
+
+        let target_graph = GraphName::from(self.graph.clone());
 
         for quad in self.store.iter() {
             let quad = quad?;
-            if quad.graph_name == self.graph.clone().into() {
+            // Compare graph names - both should be named nodes
+            if quad.graph_name == target_graph {
                 let triple_json = serde_json::json!({
                     "subject": quad.subject.to_string(),
                     "predicate": quad.predicate.to_string(),

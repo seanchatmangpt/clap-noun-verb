@@ -13,6 +13,7 @@
 
 pub mod blake3_hash;
 pub mod builder;
+pub mod code_generator;
 pub mod guard_validation;
 pub mod invocation;
 pub mod kgc_integration;
@@ -24,11 +25,15 @@ pub mod ontology;
 pub mod receipt;
 pub mod rmcp_handler;
 pub mod sparql;
+pub mod sparql_executor_oxigraph;
+pub mod turtle_parser;
+pub mod turtle_tools;
 pub mod types;
 pub mod validation;
 
 pub use blake3_hash::Blake3Hash;
 pub use builder::OntologyBuilder;
+pub use code_generator::{CliCodeGenerator, CliConfig, CodeGenError, GeneratedCli, NounDefinition, VerbDefinition};
 pub use guard_validation::{recover_from_error, GuardValidationMiddleware};
 pub use invocation::{InvocationError, InvocationParser, ParsedInvocation};
 pub use kgc_integration::{AuditEntry, KgcMetadata, KgcPackage, KgcShard};
@@ -40,6 +45,13 @@ pub use ontology::{ClnvOntology, Ontology};
 pub use receipt::{Receipt, ReceiptGenerator};
 pub use rmcp_handler::RdfMcpHandler;
 pub use sparql::SparqlPlanner;
+pub use sparql_executor_oxigraph::{Binding as OxigraphBinding, QueryResult, SparqlError, SparqlExecutor};
+pub use turtle_parser::{ParsedTurtle, TurtleError, TurtleParser};
+pub use turtle_tools::{
+    DiagnosticMessage, ExportToTurtle, ExportToTurtleInput, ExportToTurtleOutput,
+    GenerateCliFromTurtle, GenerateCliInput, GenerateCliOutput, QueryCapabilities,
+    QueryCapabilitiesInput, QueryCapabilitiesOutput, QueryOperation, TurtleToolError,
+};
 pub use types::{Invocation, RdfTriple, RdfValue};
 pub use validation::ShapeValidator;
 
