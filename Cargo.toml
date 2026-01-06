@@ -1,6 +1,6 @@
 [workspace]
-# Exclude standalone playground CLI (uses published crates.io version)
-exclude = ["playground"]
+# Exclude standalone playground CLI (uses published crates.io version) and vendors directory
+exclude = ["playground", "vendors"]
 
 [package]
 name = "clap-noun-verb"
@@ -48,7 +48,8 @@ validators = ["dep:regex", "dep:url"]
 agent2028 = ["async", "crypto", "dep:chrono", "dep:uuid", "dep:rand"]
 
 # RDF/Ontology Control Layer with MCP
-rdf = ["crypto", "dep:rmcp", "dep:schemars"]
+# Now includes ggen integration for Turtle/RDF parsing and CLI code generation
+rdf = ["crypto", "dep:rmcp", "dep:schemars", "dep:oxrdf", "dep:oxigraph"]
 
 # Kernel capabilities (deterministic execution, receipts)
 kernel = ["crypto", "async", "dep:uuid", "dep:parking_lot"]
@@ -279,6 +280,11 @@ bevy_ecs = { version = "0.14", default-features = false, optional = true }
 pqcrypto-traits = { version = "0.3", optional = true }
 pqcrypto-kyber = { version = "0.8", optional = true }
 
+# ggen Integration dependencies (ontology-driven code generation)
+# FUTURE: Enable when creating ggen feature that depends on these crates
+# ggen-core = { path = "vendors/ggen/crates/ggen-core", version = "5.0.0", optional = true }
+# ggen-domain = { path = "vendors/ggen/crates/ggen-domain", version = "5.0.0", optional = true, default-features = false }
+
 # =============================================================================
 # DEV DEPENDENCIES - For tests, examples, and benchmarks
 # =============================================================================
@@ -384,6 +390,27 @@ path = "examples/reference/context.rs"
 [[example]]
 name = "ref_root_verb"
 path = "examples/reference/root_verb.rs"
+
+# =============================================================================
+# GENERATED EXAMPLES - CLI code generated from Turtle specifications
+# =============================================================================
+# These examples demonstrate end-to-end turtle → CLI generation using ggen integration
+
+[[example]]
+name = "calculator_cli"
+path = "examples/generated-from-turtle/calculator-cli.rs"
+
+[[example]]
+name = "file_manager_cli"
+path = "examples/generated-from-turtle/file-manager-cli.rs"
+
+[[example]]
+name = "user_api_cli"
+path = "examples/generated-from-turtle/user-api-cli.rs"
+
+[[example]]
+name = "web_server_cli"
+path = "examples/generated-from-turtle/web-server-cli.rs"
 
 # =============================================================================
 # ADVANCED EXAMPLES - Expert-level production patterns (require --all-features)

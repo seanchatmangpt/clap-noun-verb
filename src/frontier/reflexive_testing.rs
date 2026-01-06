@@ -161,11 +161,8 @@ pub struct CoverageStats {
 impl CoverageStats {
     /// Create new coverage stats
     pub fn new(lines_covered: usize, lines_total: usize) -> Self {
-        let coverage_percent = if lines_total > 0 {
-            (lines_covered as f64 / lines_total as f64) * 100.0
-        } else {
-            0.0
-        };
+        let coverage_percent =
+            if lines_total > 0 { (lines_covered as f64 / lines_total as f64) * 100.0 } else { 0.0 };
 
         Self { lines_covered, lines_total, coverage_percent }
     }
@@ -428,10 +425,7 @@ mod tests {
     #[test]
     fn test_property_generator_code_generation() {
         let mut generator = PropertyGenerator::new();
-        generator.add_strategy(
-            PropertyStrategy::new("test_property")
-                .with_input_type("i32")
-        );
+        generator.add_strategy(PropertyStrategy::new("test_property").with_input_type("i32"));
 
         let code = generator.generate_proptest_code();
         assert_eq!(code.len(), 1);

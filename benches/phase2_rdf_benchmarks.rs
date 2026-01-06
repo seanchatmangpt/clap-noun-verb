@@ -48,8 +48,7 @@ fn bench_triple_creation_batch(c: &mut Criterion) {
                 let triples: Vec<_> = (0..count)
                     .map(|i| {
                         let subject = NamedNode::new(format!("http://example.org/s{}", i)).unwrap();
-                        let predicate =
-                            NamedNode::new("http://example.org/predicate").unwrap();
+                        let predicate = NamedNode::new("http://example.org/predicate").unwrap();
                         let object = Literal::new_simple_literal(format!("object{}", i));
                         Triple::new(subject, predicate, object)
                     })
@@ -76,17 +75,16 @@ fn bench_sparql_simple_query(c: &mut Criterion) {
         let subject = NamedNodeRef::new(&format!("http://example.org/agent{}", i)).unwrap();
         let predicate = NamedNodeRef::new("http://example.org/hasCapability").unwrap();
         let object = LiteralRef::new_simple_literal(&format!("capability{}", i % 10));
-        store.insert(&QuadRef::new(subject, predicate, object, GraphNameRef::DefaultGraph)).unwrap();
+        store
+            .insert(&QuadRef::new(subject, predicate, object, GraphNameRef::DefaultGraph))
+            .unwrap();
     }
 
     let query = "SELECT ?agent WHERE { ?agent <http://example.org/hasCapability> ?cap }";
 
     group.bench_function("select_100_triples", |b| {
         b.iter(|| {
-            let results: Vec<_> = store
-                .query(black_box(query))
-                .unwrap()
-                .collect();
+            let results: Vec<_> = store.query(black_box(query)).unwrap().collect();
             black_box(results)
         });
     });
@@ -113,7 +111,8 @@ fn bench_sparql_complex_join(c: &mut Criterion) {
     for i in 0..20 {
         let cap = NamedNodeRef::new(&format!("http://example.org/cap{}", i)).unwrap();
         let requires = NamedNodeRef::new("http://example.org/requires").unwrap();
-        let req_cap = NamedNodeRef::new(&format!("http://example.org/cap{}", (i + 1) % 20)).unwrap();
+        let req_cap =
+            NamedNodeRef::new(&format!("http://example.org/cap{}", (i + 1) % 20)).unwrap();
         store.insert(&QuadRef::new(cap, requires, req_cap, GraphNameRef::DefaultGraph)).unwrap();
     }
 
@@ -134,10 +133,7 @@ fn bench_sparql_complex_join(c: &mut Criterion) {
 
     group.bench_function("join_1000_triples", |b| {
         b.iter(|| {
-            let results: Vec<_> = store
-                .query(black_box(query))
-                .unwrap()
-                .collect();
+            let results: Vec<_> = store.query(black_box(query)).unwrap().collect();
             black_box(results)
         });
     });
@@ -158,7 +154,9 @@ fn bench_jsonld_serialization(c: &mut Criterion) {
         let subject = NamedNodeRef::new(&format!("http://example.org/agent{}", i)).unwrap();
         let predicate = NamedNodeRef::new("http://example.org/hasCapability").unwrap();
         let object = LiteralRef::new_simple_literal(&format!("capability{}", i));
-        store.insert(&QuadRef::new(subject, predicate, object, GraphNameRef::DefaultGraph)).unwrap();
+        store
+            .insert(&QuadRef::new(subject, predicate, object, GraphNameRef::DefaultGraph))
+            .unwrap();
     }
 
     group.bench_function("serialize_100_triples", |b| {
@@ -188,11 +186,7 @@ fn bench_custom_vs_library(c: &mut Criterion) {
     // Custom implementation (simulated - would be actual custom code)
     fn custom_triple_storage() -> Vec<(String, String, String)> {
         (0..100)
-            .map(|i| (
-                format!("subject{}", i),
-                "predicate".to_string(),
-                format!("object{}", i),
-            ))
+            .map(|i| (format!("subject{}", i), "predicate".to_string(), format!("object{}", i)))
             .collect()
     }
 
@@ -312,31 +306,12 @@ mod slo_tests {
 // Benchmark Groups
 // =============================================================================
 
-criterion_group!(
-    triple_benches,
-    bench_triple_creation,
-    bench_triple_creation_batch,
-);
+criterion_group!(triple_benches, bench_triple_creation, bench_triple_creation_batch,);
 
-criterion_group!(
-    sparql_benches,
-    bench_sparql_simple_query,
-    bench_sparql_complex_join,
-);
+criterion_group!(sparql_benches, bench_sparql_simple_query, bench_sparql_complex_join,);
 
-criterion_group!(
-    serialization_benches,
-    bench_jsonld_serialization,
-);
+criterion_group!(serialization_benches, bench_jsonld_serialization,);
 
-criterion_group!(
-    comparison_benches,
-    bench_custom_vs_library,
-);
+criterion_group!(comparison_benches, bench_custom_vs_library,);
 
-criterion_main!(
-    triple_benches,
-    sparql_benches,
-    serialization_benches,
-    comparison_benches,
-);
+criterion_main!(triple_benches, sparql_benches, serialization_benches, comparison_benches,);

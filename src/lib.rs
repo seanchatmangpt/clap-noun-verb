@@ -169,6 +169,11 @@ pub mod semantic;
 ))]
 pub mod frontier;
 
+// ggen Integration - RDF/Turtle to CLI code generation (requires "rdf" feature)
+// Provides parser, AST, and code generator for ggen specifications
+#[cfg(feature = "rdf")]
+pub mod ggen_integration;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 

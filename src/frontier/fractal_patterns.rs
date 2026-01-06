@@ -34,7 +34,7 @@ pub type Result<T> = std::result::Result<T, FractalError>;
 pub enum FractalError {
     #[error("Invalid level: {0}")]
     InvalidLevel(String),
-    
+
     #[error("Composition failed: {0}")]
     CompositionFailed(String),
 }
@@ -45,13 +45,13 @@ pub enum FractalError {
 pub trait FractalLevel {
     /// Depth of this level (0 = root)
     type Depth: Copy + Clone;
-    
+
     /// Parent level (None for root)
     type Parent: FractalLevel;
-    
+
     /// Get depth as runtime value
     fn depth() -> usize;
-    
+
     /// Get level name
     fn name() -> &'static str;
 }
@@ -63,11 +63,11 @@ pub struct RootLevel;
 impl FractalLevel for RootLevel {
     type Depth = u8; // typenum::U0 in real implementation
     type Parent = RootLevel; // Self-referential for root
-    
+
     fn depth() -> usize {
         0
     }
-    
+
     fn name() -> &'static str {
         "Root"
     }
@@ -80,11 +80,11 @@ pub struct DomainLevel;
 impl FractalLevel for DomainLevel {
     type Depth = u8; // typenum::U1 in real implementation
     type Parent = RootLevel;
-    
+
     fn depth() -> usize {
         1
     }
-    
+
     fn name() -> &'static str {
         "Domain"
     }
@@ -97,11 +97,11 @@ pub struct NounLevel;
 impl FractalLevel for NounLevel {
     type Depth = u8; // typenum::U2 in real implementation
     type Parent = DomainLevel;
-    
+
     fn depth() -> usize {
         2
     }
-    
+
     fn name() -> &'static str {
         "Noun"
     }
@@ -114,11 +114,11 @@ pub struct VerbLevel;
 impl FractalLevel for VerbLevel {
     type Depth = u8; // typenum::U3 in real implementation
     type Parent = NounLevel;
-    
+
     fn depth() -> usize {
         3
     }
-    
+
     fn name() -> &'static str {
         "Verb"
     }
@@ -145,7 +145,7 @@ impl FractalLevel for VerbLevel {
 pub struct FractalNoun<Level: FractalLevel, T> {
     /// Level marker (zero-cost)
     _level: PhantomData<Level>,
-    
+
     /// Actual data
     pub data: T,
 }
@@ -153,22 +153,19 @@ pub struct FractalNoun<Level: FractalLevel, T> {
 impl<Level: FractalLevel, T> FractalNoun<Level, T> {
     /// Create new fractal noun at specific level
     pub fn new(data: T) -> Self {
-        Self {
-            _level: PhantomData,
-            data,
-        }
+        Self { _level: PhantomData, data }
     }
-    
+
     /// Get depth of this fractal
     pub fn depth(&self) -> usize {
         Level::depth()
     }
-    
+
     /// Get level name
     pub fn level_name(&self) -> &'static str {
         Level::name()
     }
-    
+
     /// Compose with child-level fractal
     ///
     /// Type-safe: Can only compose if Child::Parent == Self::Level
@@ -181,17 +178,16 @@ impl<Level: FractalLevel, T> FractalNoun<Level, T> {
     {
         // In real implementation with typenum:
         // static_assert!(ChildLevel::Depth == Level::Depth + 1);
-        
+
         if child.depth() != self.depth() + 1 {
-            return Err(FractalError::CompositionFailed(
-                format!("Invalid composition: {} -> {}", self.depth(), child.depth())
-            ));
+            return Err(FractalError::CompositionFailed(format!(
+                "Invalid composition: {} -> {}",
+                self.depth(),
+                child.depth()
+            )));
         }
-        
-        Ok(FractalNoun {
-            _level: PhantomData,
-            data: (self.data, child.data),
-        })
+
+        Ok(FractalNoun { _level: PhantomData, data: (self.data, child.data) })
     }
 }
 
@@ -206,21 +202,19 @@ pub struct CompositionChain<T> {
 impl<T> CompositionChain<T> {
     /// Create new composition chain
     pub fn new() -> Self {
-        Self {
-            elements: Vec::new(),
-        }
+        Self { elements: Vec::new() }
     }
-    
+
     /// Add element to chain
     pub fn push(&mut self, element: T) {
         self.elements.push(element);
     }
-    
+
     /// Get chain length
     pub fn len(&self) -> usize {
         self.elements.len()
     }
-    
+
     /// Check if chain is empty
     pub fn is_empty(&self) -> bool {
         self.elements.is_empty()
@@ -236,7 +230,7 @@ impl<T> Default for CompositionChain<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_level_depths() {
         assert_eq!(RootLevel::depth(), 0);
@@ -244,40 +238,40 @@ mod tests {
         assert_eq!(NounLevel::depth(), 2);
         assert_eq!(VerbLevel::depth(), 3);
     }
-    
+
     #[test]
     fn test_fractal_creation() {
         let domain = FractalNoun::<DomainLevel, String>::new("auth".to_string());
         assert_eq!(domain.depth(), 1);
         assert_eq!(domain.level_name(), "Domain");
     }
-    
+
     #[test]
     fn test_fractal_composition() {
         let domain = FractalNoun::<DomainLevel, String>::new("auth".to_string());
         let noun = FractalNoun::<NounLevel, String>::new("user".to_string());
-        
+
         let composed = domain.compose(noun).expect("Composition failed");
         assert_eq!(composed.depth(), 2);
     }
-    
+
     #[test]
     fn test_invalid_composition() {
         let domain = FractalNoun::<DomainLevel, String>::new("auth".to_string());
         let verb = FractalNoun::<VerbLevel, String>::new("create".to_string());
-        
+
         // Can't compose domain (1) directly with verb (3)
         let result = domain.compose(verb);
         assert!(result.is_err());
     }
-    
+
     #[test]
     fn test_composition_chain() {
         let mut chain = CompositionChain::new();
         chain.push("auth");
         chain.push("user");
         chain.push("create");
-        
+
         assert_eq!(chain.len(), 3);
         assert!(!chain.is_empty());
     }

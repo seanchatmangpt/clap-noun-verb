@@ -10,7 +10,11 @@
 //! - Feature 7: Learning Trajectories
 //! - Feature 8: Reflexive Testing
 
-#![cfg(any(feature = "discovery-engine", feature = "learning-trajectories", feature = "reflexive-testing"))]
+#![cfg(any(
+    feature = "discovery-engine",
+    feature = "learning-trajectories",
+    feature = "reflexive-testing"
+))]
 
 #[cfg(feature = "discovery-engine")]
 mod discovery_engine_tests {
@@ -94,7 +98,10 @@ mod discovery_engine_tests {
         for result in &results {
             let has_sync = result.capabilities.contains(&"sync".to_string());
             let has_async = result.capabilities.contains(&"async".to_string());
-            assert!(!(has_sync && has_async), "Results should not contain conflicting capabilities");
+            assert!(
+                !(has_sync && has_async),
+                "Results should not contain conflicting capabilities"
+            );
         }
     }
 
@@ -328,7 +335,7 @@ mod reflexive_testing_tests {
             PropertyStrategy::new("numeric_test")
                 .with_input_type("i32")
                 .with_constraint("range(0..100)")
-                .with_property("non_negative")
+                .with_property("non_negative"),
         );
 
         // Act: Generate proptest code

@@ -1,3 +1,6 @@
+#![allow(clippy::needless_borrows_for_generic_args)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Semantic CLI Composition - Type-safe capability discovery and composition
 //!
 //! This module provides procedural macros and runtime infrastructure for:
@@ -232,12 +235,12 @@ pub fn expand_semantic_composable(
         &inputs_rdf,
         &outputs_rdf,
         &constraints_sparql,
-        &fn_name.to_string(),
+        fn_name.to_string(),
     );
 
     // Generate MCP protocol descriptor
     let mcp_descriptor =
-        generate_mcp_descriptor(capability_uri.value(), &mcp_version, &fn_name.to_string());
+        generate_mcp_descriptor(capability_uri.value(), &mcp_version, &mcp_version);
 
     Ok(quote! {
         // Original function (unchanged)

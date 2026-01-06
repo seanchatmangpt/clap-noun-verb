@@ -37,13 +37,13 @@ pub type Result<T> = std::result::Result<T, EconomicError>;
 pub enum EconomicError {
     #[error("Agent not found: {0}")]
     AgentNotFound(u64),
-    
+
     #[error("Task not found: {0}")]
     TaskNotFound(u64),
-    
+
     #[error("Auction mechanism failure: {0}")]
     AuctionFailed(String),
-    
+
     #[error("Invalid bid: {0}")]
     InvalidBid(String),
 }
@@ -120,11 +120,9 @@ pub struct VickreyAuction {
 impl VickreyAuction {
     /// Create new Vickrey auction
     pub fn new() -> Self {
-        Self {
-            history: Vec::new(),
-        }
+        Self { history: Vec::new() }
     }
-    
+
     /// Run second-price sealed-bid auction
     ///
     /// # Algorithm
@@ -140,34 +138,30 @@ impl VickreyAuction {
         if bids.is_empty() {
             return Err(EconomicError::AuctionFailed("No bids received".to_string()));
         }
-        
+
         // Find task_id (assume all bids for same task)
         let task_id = bids[0].task_id;
-        
+
         // Sort bids by value (descending)
         let mut sorted_bids = bids.to_vec();
         sorted_bids.sort_by(|a, b| b.bid_value.partial_cmp(&a.bid_value).unwrap());
-        
+
         // Winner is highest bidder
         let winner = sorted_bids[0].agent_id;
-        
+
         // Payment is second-highest price (Vickrey mechanism)
         let payment = if sorted_bids.len() > 1 {
             sorted_bids[1].bid_value
         } else {
             0.0 // Reserve price if single bidder
         };
-        
-        let outcome = AuctionOutcome {
-            task_id,
-            winner,
-            payment,
-        };
-        
+
+        let outcome = AuctionOutcome { task_id, winner, payment };
+
         self.history.push(outcome.clone());
         Ok(outcome)
     }
-    
+
     /// Verify truthfulness property via property-based testing
     ///
     /// Property: Bidding true valuation v_i is weakly dominant strategy
@@ -224,13 +218,13 @@ impl Default for VickreyAuction {
 pub struct EconomicSimulation {
     /// Agents (in real implementation, this would be Bevy ECS World)
     pub agents: HashMap<AgentId, Agent>,
-    
+
     /// Tasks to be allocated
     pub tasks: HashMap<TaskId, Task>,
-    
+
     /// Auction mechanism
     pub auction: VickreyAuction,
-    
+
     /// Simulation time
     pub time: f64,
 }
@@ -245,7 +239,7 @@ impl EconomicSimulation {
             time: 0.0,
         }
     }
-    
+
     /// Add agent to simulation
     ///
     /// # Errors
@@ -258,7 +252,7 @@ impl EconomicSimulation {
         self.agents.insert(agent.id, agent);
         Ok(())
     }
-    
+
     /// Add task to simulation
     ///
     /// # Errors
@@ -271,7 +265,7 @@ impl EconomicSimulation {
         self.tasks.insert(task.id, task);
         Ok(())
     }
-    
+
     /// Run simulation step
     ///
     /// 1. Match agents to tasks by capability
@@ -286,7 +280,7 @@ impl EconomicSimulation {
         // For each task, collect bids from capable agents
         for (task_id, task) in &self.tasks {
             let mut bids = Vec::new();
-            
+
             for (agent_id, agent) in &self.agents {
                 // Check if agent has required capability
                 if agent.capabilities.contains(&task.required_capability) {
@@ -297,18 +291,18 @@ impl EconomicSimulation {
                     });
                 }
             }
-            
+
             // Run auction if we have bids
             if !bids.is_empty() {
                 let _outcome = self.auction.run_auction(&bids)?;
                 // TODO: Allocate task to winner, update states
             }
         }
-        
+
         self.time += 1.0;
         Ok(())
     }
-    
+
     /// Get agent count (for benchmarking)
     pub fn agent_count(&self) -> usize {
         self.agents.len()
@@ -324,7 +318,7 @@ impl Default for EconomicSimulation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_vickrey_auction_basic() {
         let mut auction = VickreyAuction::new();
@@ -333,13 +327,13 @@ mod tests {
             Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
             Bid { agent_id: AgentId(3), task_id: TaskId(1), bid_value: 90.0 },
         ];
-        
+
         let outcome = auction.run_auction(&bids).expect("Auction failed");
-        
+
         assert_eq!(outcome.winner, AgentId(1), "Highest bidder should win");
         assert_eq!(outcome.payment, 90.0, "Winner pays second-highest price");
     }
-    
+
     #[test]
     fn test_vickrey_truthfulness() {
         let mut auction = VickreyAuction::new();
@@ -347,14 +341,14 @@ mod tests {
             Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
             Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
         ];
-        
+
         let outcome = auction.run_auction(&bids).expect("Auction failed");
-        
+
         // Verify truthfulness: winner's utility is non-negative
         let agent_valuation = 100.0;
         assert!(auction.verify_truthfulness(agent_valuation, &outcome));
     }
-    
+
     #[test]
     fn test_simulation_add_agent() {
         let mut sim = EconomicSimulation::new();
@@ -364,28 +358,30 @@ mod tests {
             trust_score: 0.9,
             valuation: 100.0,
         };
-        
+
         sim.add_agent(agent).expect("Failed to add agent");
         assert_eq!(sim.agent_count(), 1);
     }
-    
+
     #[test]
     fn test_simulation_step() {
         let mut sim = EconomicSimulation::new();
-        
+
         sim.add_agent(Agent {
             id: AgentId(1),
             capabilities: vec!["compute".to_string()],
             trust_score: 0.9,
             valuation: 100.0,
-        }).expect("Failed to add agent");
-        
+        })
+        .expect("Failed to add agent");
+
         sim.add_task(Task {
             id: TaskId(1),
             required_capability: "compute".to_string(),
             value: 150.0,
-        }).expect("Failed to add task");
-        
+        })
+        .expect("Failed to add task");
+
         sim.step().expect("Simulation step failed");
         assert_eq!(sim.time, 1.0);
     }

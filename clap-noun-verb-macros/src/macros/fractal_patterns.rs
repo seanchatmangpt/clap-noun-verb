@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Fractal Pattern Macros for clap-noun-verb-macros-frontier
 //!
 //! This module provides procedural macros for defining nouns and verbs at different
@@ -23,12 +26,12 @@
 //! use clap_noun_verb_macros::fractal_patterns::{noun_level, verb_level, Level};
 //!
 //! // CLI Level
-//! #[noun_level(Level::CLI)]
+//! #[noun_level(Level::Cli)]
 //! struct ServiceCommand {
 //!     name: String,
 //! }
 //!
-//! #[verb_level(Level::CLI)]
+//! #[verb_level(Level::Cli)]
 //! impl ServiceCommand {
 //!     fn start(&self) -> Result<(), String> {
 //!         Ok(())
@@ -66,6 +69,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{parse::Parser, DeriveInput, ItemImpl};
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Fractal abstraction levels
 ///
 /// Represents the three architectural levels where nouns and verbs can be defined.
@@ -74,7 +79,7 @@ use syn::{parse::Parser, DeriveInput, ItemImpl};
 pub enum Level {
     /// CLI Level: Command groups and actions
     /// Semantics: User-facing commands and subcommands
-    CLI,
+    Cli,
 
     /// Agent Level: Capabilities and operations
     /// Semantics: Autonomous agent behaviors and skills
@@ -90,12 +95,12 @@ impl Level {
     pub fn from_path(path: &syn::Path) -> Result<Self, syn::Error> {
         if let Some(segment) = path.segments.last() {
             match segment.ident.to_string().as_str() {
-                "CLI" => Ok(Level::CLI),
+                "CLI" | "Cli" => Ok(Level::Cli),
                 "Agent" => Ok(Level::Agent),
                 "Ecosystem" => Ok(Level::Ecosystem),
                 other => Err(syn::Error::new_spanned(
                     path,
-                    format!("Invalid level '{}'. Expected CLI, Agent, or Ecosystem", other),
+                    format!("Invalid level '{}'. Expected CLI/Cli, Agent, or Ecosystem", other),
                 )),
             }
         } else {
@@ -106,7 +111,7 @@ impl Level {
     /// Get the Rust type name for this level
     pub fn type_name(&self) -> &'static str {
         match self {
-            Level::CLI => "CliLevel",
+            Level::Cli => "CliLevel",
             Level::Agent => "AgentLevel",
             Level::Ecosystem => "EcosystemLevel",
         }
@@ -115,7 +120,7 @@ impl Level {
     /// Get the trait name for nouns at this level
     pub fn noun_trait_name(&self) -> &'static str {
         match self {
-            Level::CLI => "CliNoun",
+            Level::Cli => "CliNoun",
             Level::Agent => "AgentNoun",
             Level::Ecosystem => "EcosystemNoun",
         }
@@ -124,7 +129,7 @@ impl Level {
     /// Get the trait name for verbs at this level
     pub fn verb_trait_name(&self) -> &'static str {
         match self {
-            Level::CLI => "CliVerb",
+            Level::Cli => "CliVerb",
             Level::Agent => "AgentVerb",
             Level::Ecosystem => "EcosystemVerb",
         }
@@ -270,7 +275,7 @@ pub fn generate_verb_impl(input: &ItemImpl, level: Level) -> TokenStream {
 /// - Agent → CLI: Project capability to command
 fn generate_bridge_methods(level: Level, _struct_name: &syn::Ident) -> TokenStream {
     match level {
-        Level::CLI => {
+        Level::Cli => {
             // CLI can lift to Agent
             quote! {
                 /// Lift CLI command to Agent capability
@@ -324,19 +329,19 @@ pub fn parse_level_arg(args: TokenStream) -> Result<Level, syn::Error> {
     // Extract level from first argument
     match &args[0] {
         syn::Expr::Path(path) => {
-            // Handle Level::CLI, Level::Agent, Level::Ecosystem
+            // Handle Level::Cli, Level::Agent, Level::Ecosystem
             if let Some(_segment) = path.path.segments.last() {
                 Level::from_path(&path.path)
             } else {
                 Err(syn::Error::new_spanned(
                     path,
-                    "Invalid level path - expected Level::CLI, Level::Agent, or Level::Ecosystem",
+                    "Invalid level path - expected Level::Cli, Level::Agent, or Level::Ecosystem",
                 ))
             }
         }
         other => Err(syn::Error::new_spanned(
             other,
-            "Expected level path (Level::CLI, Level::Agent, or Level::Ecosystem)",
+            "Expected level path (Level::Cli, Level::Agent, or Level::Ecosystem)",
         )),
     }
 }
@@ -345,6 +350,8 @@ pub fn parse_level_arg(args: TokenStream) -> Result<Level, syn::Error> {
 // Trait Definitions (to be used by generated code)
 // ============================================================================
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Core trait for all fractal nouns
 ///
 /// Nouns represent entities at different architectural levels. This trait
@@ -360,6 +367,8 @@ pub trait FractalNoun {
     fn name(&self) -> &str;
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Core trait for all fractal verbs
 ///
 /// Verbs represent operations on nouns at different architectural levels.
@@ -381,6 +390,8 @@ pub trait FractalVerb {
     fn validate_composition(&self, noun: &Self::Noun) -> Result<(), String>;
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Marker trait for architectural levels
 ///
 /// This trait is implemented by type-level markers (CliLevel, AgentLevel, EcosystemLevel)
@@ -390,6 +401,8 @@ pub trait LevelMarker: 'static {
     fn name() -> &'static str;
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Type-level marker for CLI level
 pub struct CliLevel;
 
@@ -399,6 +412,8 @@ impl LevelMarker for CliLevel {
     }
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Type-level marker for Agent level
 pub struct AgentLevel;
 
@@ -408,6 +423,8 @@ impl LevelMarker for AgentLevel {
     }
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Type-level marker for Ecosystem level
 pub struct EcosystemLevel;
 
@@ -417,6 +434,8 @@ impl LevelMarker for EcosystemLevel {
     }
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Trait for composable fractal elements
 ///
 /// This trait provides compile-time proof that two elements can be composed.
@@ -429,21 +448,33 @@ pub trait Composable {
     fn can_compose_with<T: FractalNoun>(&self, other: &T) -> bool;
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific noun trait for CLI
 pub trait CliNoun: FractalNoun<Level = CliLevel> {}
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific noun trait for Agent
 pub trait AgentNoun: FractalNoun<Level = AgentLevel> {}
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific noun trait for Ecosystem
 pub trait EcosystemNoun: FractalNoun<Level = EcosystemLevel> {}
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific verb trait for CLI
 pub trait CliVerb: FractalVerb<Level = CliLevel> {}
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific verb trait for Agent
 pub trait AgentVerb: FractalVerb<Level = AgentLevel> {}
 
+#[allow(dead_code)]
+// FUTURE: Implement recursive command hierarchy patterns
 /// Level-specific verb trait for Ecosystem
 pub trait EcosystemVerb: FractalVerb<Level = EcosystemLevel> {}
 
@@ -457,21 +488,21 @@ mod tests {
 
     #[test]
     fn test_level_type_names() {
-        assert_eq!(Level::CLI.type_name(), "CliLevel");
+        assert_eq!(Level::Cli.type_name(), "CliLevel");
         assert_eq!(Level::Agent.type_name(), "AgentLevel");
         assert_eq!(Level::Ecosystem.type_name(), "EcosystemLevel");
     }
 
     #[test]
     fn test_level_noun_trait_names() {
-        assert_eq!(Level::CLI.noun_trait_name(), "CliNoun");
+        assert_eq!(Level::Cli.noun_trait_name(), "CliNoun");
         assert_eq!(Level::Agent.noun_trait_name(), "AgentNoun");
         assert_eq!(Level::Ecosystem.noun_trait_name(), "EcosystemNoun");
     }
 
     #[test]
     fn test_level_verb_trait_names() {
-        assert_eq!(Level::CLI.verb_trait_name(), "CliVerb");
+        assert_eq!(Level::Cli.verb_trait_name(), "CliVerb");
         assert_eq!(Level::Agent.verb_trait_name(), "AgentVerb");
         assert_eq!(Level::Ecosystem.verb_trait_name(), "EcosystemVerb");
     }
@@ -487,8 +518,8 @@ mod tests {
     #[test]
     fn test_level_equality() {
         // Arrange
-        let cli1 = Level::CLI;
-        let cli2 = Level::CLI;
+        let cli1 = Level::Cli;
+        let cli2 = Level::Cli;
         let agent = Level::Agent;
 
         // Act & Assert
@@ -500,14 +531,14 @@ mod tests {
     #[test]
     fn test_parse_level_arg_cli() {
         // Arrange
-        let input: TokenStream = quote! { Level::CLI };
+        let input: TokenStream = quote! { Level::Cli };
 
         // Act
         let result = parse_level_arg(input);
 
         // Assert
         assert!(result.is_ok(), "Should parse CLI level successfully");
-        assert_eq!(result.unwrap(), Level::CLI, "Should return CLI level");
+        assert_eq!(result.unwrap(), Level::Cli, "Should return CLI level");
     }
 
     #[test]

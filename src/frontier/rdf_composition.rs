@@ -92,12 +92,7 @@ impl SemanticDiscoveryOxigraph {
         let cap_type = NamedNode::new(&cap.capability_type)?;
 
         // Type triple
-        self.store.insert(&Quad::new(
-            subject.clone(),
-            rdf_type,
-            cap_type,
-            self.graph.clone(),
-        ))?;
+        self.store.insert(&Quad::new(subject.clone(), rdf_type, cap_type, self.graph.clone()))?;
 
         // Label triple
         self.store.insert(&Quad::new(
@@ -272,12 +267,14 @@ mod tests {
     fn test_sparql_filter_query() {
         // Arrange: Create discovery with multiple capabilities
         let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
-        discovery.register_capability(&Capability {
-            uri: "https://cnv.dev/capability#Reader".to_string(),
-            name: "Reader".to_string(),
-            description: "Read files".to_string(),
-            capability_type: "https://cnv.dev/capability#Capability".to_string(),
-        }).unwrap();
+        discovery
+            .register_capability(&Capability {
+                uri: "https://cnv.dev/capability#Reader".to_string(),
+                name: "Reader".to_string(),
+                description: "Read files".to_string(),
+                capability_type: "https://cnv.dev/capability#Capability".to_string(),
+            })
+            .unwrap();
 
         // Act: Execute SPARQL query with FILTER
         let query = r#"
@@ -296,12 +293,14 @@ mod tests {
     fn test_export_json_ld() {
         // Arrange: Create discovery with capability
         let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
-        discovery.register_capability(&Capability {
-            uri: "https://cnv.dev/capability#Test".to_string(),
-            name: "Test".to_string(),
-            description: "Test".to_string(),
-            capability_type: "https://cnv.dev/capability#Capability".to_string(),
-        }).unwrap();
+        discovery
+            .register_capability(&Capability {
+                uri: "https://cnv.dev/capability#Test".to_string(),
+                name: "Test".to_string(),
+                description: "Test".to_string(),
+                capability_type: "https://cnv.dev/capability#Capability".to_string(),
+            })
+            .unwrap();
 
         // Act: Export as JSON-LD
         let json_ld = discovery.export_json_ld();
@@ -322,12 +321,14 @@ mod tests {
         let initial_count = discovery.triple_count().unwrap();
 
         // Register capability
-        discovery.register_capability(&Capability {
-            uri: "https://cnv.dev/capability#Counter".to_string(),
-            name: "Counter".to_string(),
-            description: "Test counter".to_string(),
-            capability_type: "https://cnv.dev/capability#Capability".to_string(),
-        }).unwrap();
+        discovery
+            .register_capability(&Capability {
+                uri: "https://cnv.dev/capability#Counter".to_string(),
+                name: "Counter".to_string(),
+                description: "Test counter".to_string(),
+                capability_type: "https://cnv.dev/capability#Capability".to_string(),
+            })
+            .unwrap();
 
         let final_count = discovery.triple_count().unwrap();
 
@@ -340,12 +341,14 @@ mod tests {
     fn test_clear_store() {
         // Arrange: Create discovery with capability
         let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
-        discovery.register_capability(&Capability {
-            uri: "https://cnv.dev/capability#Temp".to_string(),
-            name: "Temp".to_string(),
-            description: "Temporary".to_string(),
-            capability_type: "https://cnv.dev/capability#Capability".to_string(),
-        }).unwrap();
+        discovery
+            .register_capability(&Capability {
+                uri: "https://cnv.dev/capability#Temp".to_string(),
+                name: "Temp".to_string(),
+                description: "Temporary".to_string(),
+                capability_type: "https://cnv.dev/capability#Capability".to_string(),
+            })
+            .unwrap();
 
         // Act: Clear store
         let result = discovery.clear();
@@ -367,7 +370,7 @@ mod tests {
         // Assert: Error returned (no panic)
         assert!(result.is_err());
         match result {
-            Err(FrontierError::Sparql(_)) => {},
+            Err(FrontierError::Sparql(_)) => {}
             _ => panic!("Expected Sparql error"),
         }
     }
@@ -389,7 +392,7 @@ mod tests {
         // Assert: Error returned (no panic)
         assert!(result.is_err());
         match result {
-            Err(FrontierError::InvalidIri(_)) => {},
+            Err(FrontierError::InvalidIri(_)) => {}
             _ => panic!("Expected InvalidIri error"),
         }
     }

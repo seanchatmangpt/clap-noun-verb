@@ -28,13 +28,8 @@ struct SearchSpace {
 
 impl SearchSpace {
     fn new(dimensions: usize, size: usize) -> Self {
-        let combinations = (0..size)
-            .map(|_| {
-                (0..dimensions)
-                    .map(|_| rand::random::<f64>())
-                    .collect()
-            })
-            .collect();
+        let combinations =
+            (0..size).map(|_| (0..dimensions).map(|_| rand::random::<f64>()).collect()).collect();
 
         Self { dimensions, combinations }
     }
@@ -353,8 +348,8 @@ fn bench_path_finding(c: &mut Criterion) {
         }
 
         fn shortest_path(&self, start: usize, end: usize) -> Option<(Vec<usize>, f64)> {
-            use std::collections::BinaryHeap;
             use std::cmp::Ordering;
+            use std::collections::BinaryHeap;
 
             #[derive(Copy, Clone, PartialEq)]
             struct State {
@@ -366,10 +361,7 @@ fn bench_path_finding(c: &mut Criterion) {
 
             impl Ord for State {
                 fn cmp(&self, other: &Self) -> Ordering {
-                    other
-                        .cost
-                        .partial_cmp(&self.cost)
-                        .unwrap_or(Ordering::Equal)
+                    other.cost.partial_cmp(&self.cost).unwrap_or(Ordering::Equal)
                 }
             }
 
@@ -383,10 +375,7 @@ fn bench_path_finding(c: &mut Criterion) {
             let mut heap = BinaryHeap::new();
 
             dist[start] = 0.0;
-            heap.push(State {
-                cost: 0.0,
-                position: start,
-            });
+            heap.push(State { cost: 0.0, position: start });
 
             while let Some(State { cost, position }) = heap.pop() {
                 if position == end {
@@ -401,10 +390,7 @@ fn bench_path_finding(c: &mut Criterion) {
                     let next_cost = cost + edge_cost;
                     if next_cost < dist[next] {
                         dist[next] = next_cost;
-                        heap.push(State {
-                            cost: next_cost,
-                            position: next,
-                        });
+                        heap.push(State { cost: next_cost, position: next });
                     }
                 }
             }
@@ -416,18 +402,14 @@ fn bench_path_finding(c: &mut Criterion) {
     let mut group = c.benchmark_group("path_finding");
 
     for node_count in [50, 100, 200].iter() {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(node_count),
-            node_count,
-            |b, &nodes| {
-                let graph = Graph::new(nodes);
+        group.bench_with_input(BenchmarkId::from_parameter(node_count), node_count, |b, &nodes| {
+            let graph = Graph::new(nodes);
 
-                b.iter(|| {
-                    let path = graph.shortest_path(0, nodes - 1);
-                    black_box(path)
-                });
-            },
-        );
+            b.iter(|| {
+                let path = graph.shortest_path(0, nodes - 1);
+                black_box(path)
+            });
+        });
     }
 
     group.finish();
@@ -551,13 +533,6 @@ criterion_group!(
     bench_path_finding,
 );
 
-criterion_group!(
-    test_gen_benches,
-    bench_test_generation,
-);
+criterion_group!(test_gen_benches, bench_test_generation,);
 
-criterion_main!(
-    discovery_benches,
-    learning_benches,
-    test_gen_benches,
-);
+criterion_main!(discovery_benches, learning_benches, test_gen_benches,);
