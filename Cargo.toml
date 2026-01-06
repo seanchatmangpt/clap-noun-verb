@@ -134,6 +134,15 @@ economic-sim = ["dep:priority-queue", "dep:ordered-float", "dep:petgraph"]
 # 10. Quantum-Ready: Post-quantum cryptography
 quantum-ready = ["crypto", "dep:pqcrypto-traits", "dep:pqcrypto-kyber"]
 
+# Experimental: Unstable/nightly features for testing (not for production)
+experimental = []
+
+# ggen Integration: Code generation from Turtle specifications (future)
+ggen = []
+
+# tokio-specific: For code that explicitly targets tokio (maps to async feature)
+tokio = ["async"]
+
 # =============================================================================
 # CORE DEPENDENCIES - Always required (MINIMAL for basic noun-verb CLI)
 # =============================================================================
