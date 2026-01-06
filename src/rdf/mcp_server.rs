@@ -178,6 +178,61 @@ impl RdfMcpServer {
                         },
                         "required": ["receipt"]
                     }
+                },
+                {
+                    "name": "generate_cli_from_turtle",
+                    "description": "Generate Rust CLI code from RDF Turtle ontology definition",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "turtle_definition": {
+                                "type": "string",
+                                "description": "Turtle ontology definition with verbs and nouns"
+                            },
+                            "ontology_iri": {
+                                "type": "string",
+                                "description": "Ontology IRI/namespace (e.g., https://cnv.dev/ontology#)"
+                            }
+                        },
+                        "required": ["turtle_definition", "ontology_iri"]
+                    }
+                },
+                {
+                    "name": "query_capabilities",
+                    "description": "Query ontology capabilities using SPARQL for command discovery",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "sparql_query": {
+                                "type": "string",
+                                "description": "SPARQL query to execute"
+                            },
+                            "operation": {
+                                "type": "string",
+                                "enum": ["list_commands", "find_verb", "describe"],
+                                "description": "Type of query operation"
+                            }
+                        },
+                        "required": ["sparql_query", "operation"]
+                    }
+                },
+                {
+                    "name": "export_to_turtle",
+                    "description": "Export Rust CLI source code to RDF Turtle ontology (FUTURE: not yet implemented)",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "cli_source_code": {
+                                "type": "string",
+                                "description": "Rust CLI source code to parse"
+                            },
+                            "cli_name": {
+                                "type": "string",
+                                "description": "Name of the CLI application"
+                            }
+                        },
+                        "required": ["cli_source_code", "cli_name"]
+                    }
                 }
             ]
         }))
@@ -232,6 +287,89 @@ impl RdfMcpServer {
                 Ok(json!({
                     "recorded": true,
                     "chainHash": chain_hash.to_hex()
+                }))
+            }
+            "generate_cli_from_turtle" => {
+                use crate::rdf::{GenerateCliFromTurtle, GenerateCliInput};
+
+                let turtle_definition = args["turtle_definition"]
+                    .as_str()
+                    .context("Missing turtle_definition parameter")?
+                    .to_string();
+                let ontology_iri = args["ontology_iri"]
+                    .as_str()
+                    .context("Missing ontology_iri parameter")?
+                    .to_string();
+
+                let input = GenerateCliInput {
+                    turtle_definition,
+                    ontology_iri,
+                };
+
+                let output = GenerateCliFromTurtle::execute(input)
+                    .map_err(|e| anyhow::anyhow!("CLI generation failed: {}", e))?;
+
+                Ok(json!({
+                    "rust_code": output.rust_code,
+                    "diagnostics": output.diagnostics
+                }))
+            }
+            "query_capabilities" => {
+                use crate::rdf::{QueryCapabilities, QueryCapabilitiesInput, QueryOperation};
+
+                let sparql_query = args["sparql_query"]
+                    .as_str()
+                    .context("Missing sparql_query parameter")?
+                    .to_string();
+
+                let operation_str = args["operation"]
+                    .as_str()
+                    .context("Missing operation parameter")?;
+
+                let operation = match operation_str {
+                    "list_commands" => QueryOperation::ListCommands,
+                    "find_verb" => QueryOperation::FindVerb,
+                    "describe" => QueryOperation::Describe,
+                    _ => anyhow::bail!("Unknown operation: {}", operation_str),
+                };
+
+                let input = QueryCapabilitiesInput {
+                    sparql_query,
+                    operation,
+                };
+
+                let tool = QueryCapabilities::new((*self.ontology).clone());
+                let output = tool
+                    .execute(input)
+                    .map_err(|e| anyhow::anyhow!("Query capabilities failed: {}", e))?;
+
+                Ok(json!({
+                    "results": output.results,
+                    "found": output.found
+                }))
+            }
+            "export_to_turtle" => {
+                use crate::rdf::{ExportToTurtle, ExportToTurtleInput};
+
+                let cli_source_code = args["cli_source_code"]
+                    .as_str()
+                    .context("Missing cli_source_code parameter")?
+                    .to_string();
+                let cli_name = args["cli_name"]
+                    .as_str()
+                    .context("Missing cli_name parameter")?
+                    .to_string();
+
+                let input = ExportToTurtleInput {
+                    cli_source_code,
+                    cli_name: cli_name.clone(),
+                };
+
+                let output = ExportToTurtle::execute(input)
+                    .map_err(|e| anyhow::anyhow!("Export to turtle failed: {}", e))?;
+
+                Ok(json!({
+                    "turtle_ontology": output.turtle_ontology
                 }))
             }
             _ => anyhow::bail!("Unknown tool: {}", tool_name),

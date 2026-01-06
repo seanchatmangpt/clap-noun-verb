@@ -108,7 +108,7 @@ frontier-quality = ["executable-specs", "reflexive-testing"]
 meta-framework = ["dep:erased-serde", "dep:typetag", "dep:inventory", "dep:paste"]
 
 # 2. RDF Composition: Semantic ontology composition with SPARQL
-rdf-composition = ["rdf", "dep:oxrdf", "dep:oxigraph", "dep:json-ld", "dep:sophia_api"]
+rdf-composition = ["rdf", "dep:oxrdf", "dep:oxigraph", "dep:json-ld", "dep:sophia_api", "dep:proc-macro2", "dep:quote"]
 
 # 3. Executable Specs: Behavior-driven specifications (BDD)
 executable-specs = ["dep:cucumber", "dep:gherkin", "dep:libtest-mimic"]
@@ -243,6 +243,8 @@ oxrdf = { version = "0.2", optional = true }
 oxigraph = { version = "0.5.1", optional = true }
 json-ld = { version = "0.18", optional = true }
 sophia_api = { version = "0.8", optional = true }
+proc-macro2 = { version = "1.0", optional = true }
+quote = { version = "1.0", optional = true }
 
 # Executable Specs dependencies (BDD testing)
 cucumber = { version = "0.21", optional = true }
@@ -547,3 +549,24 @@ required-features = ["agent2028"]
 name = "phase4_advanced_benchmarks"
 harness = false
 required-features = ["agent2028"]
+
+# RDF/Turtle CLI Generation Benchmarks
+[[bench]]
+name = "turtle_parser_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "sparql_executor_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "code_generator_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "mcp_workflow_bench"
+harness = false
+required-features = ["rdf-composition"]
