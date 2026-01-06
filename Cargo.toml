@@ -513,3 +513,24 @@ required-features = ["agent2028"]
 name = "phase4_advanced_benchmarks"
 harness = false
 required-features = ["agent2028"]
+
+# RDF/Turtle CLI Generation Benchmarks
+[[bench]]
+name = "turtle_parser_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "sparql_executor_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "code_generator_bench"
+harness = false
+required-features = ["rdf-composition"]
+
+[[bench]]
+name = "mcp_workflow_bench"
+harness = false
+required-features = ["rdf-composition"]
