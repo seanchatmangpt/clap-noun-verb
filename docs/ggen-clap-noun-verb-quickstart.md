@@ -653,10 +653,404 @@ cargo make pre-commit
 
 ---
 
+---
+
+## Examples
+
+### Example 1: Calculator CLI
+
+See a complete working example in:
+- **Turtle Spec**: `/home/user/clap-noun-verb/examples/turtle-specs/calculator.ttl`
+- **Generated Code**: `/home/user/clap-noun-verb/examples/generated-from-turtle/calculator-cli/`
+
+**Key Features**:
+- Simple arithmetic operations (add, subtract, multiply, divide)
+- Integer type handling
+- Division by zero validation
+- Clear error messages
+
+**Try it**:
+```bash
+cd /home/user/clap-noun-verb/examples/generated-from-turtle/calculator-cli
+cargo make check
+cargo make test
+cargo run -- calc add --left 5 --right 3
+```
+
+### Example 2: File Manager CLI
+
+See a complete working example in:
+- **Turtle Spec**: `/home/user/clap-noun-verb/examples/turtle-specs/file-manager.ttl`
+- **Generated Code**: `/home/user/clap-noun-verb/examples/generated-from-turtle/file-manager-cli/`
+
+**Key Features**:
+- File and directory operations
+- PathBuf type handling
+- Boolean flags (--force, --verbose, --recursive)
+- Path validation
+- Confirmation prompts
+
+**Try it**:
+```bash
+cd /home/user/clap-noun-verb/examples/generated-from-turtle/file-manager-cli
+cargo make check
+cargo run -- file create --path /tmp/test.txt --verbose
+cargo run -- dir create --path /tmp/testdir --recursive
+```
+
+### Example 3: User API CLI
+
+See a complete working example in:
+- **Turtle Spec**: `/home/user/clap-noun-verb/examples/turtle-specs/user-api.ttl`
+- **Generated Code**: `/home/user/clap-noun-verb/examples/generated-from-turtle/user-api-cli/`
+
+**Key Features**:
+- CRUD operations for multiple resources (user, post, comment)
+- Email validation with regex
+- Pagination with limit/offset
+- Global flags with environment variables
+- Complex return types
+
+**Try it**:
+```bash
+cd /home/user/clap-noun-verb/examples/generated-from-turtle/user-api-cli
+cargo make check
+export API_KEY=test123
+cargo run -- user create --name "John Doe" --email "john@example.com" --age 30
+cargo run -- user list --limit 10
+```
+
+### Example 4: Web Server CLI
+
+See a complete working example in:
+- **Turtle Spec**: `/home/user/clap-noun-verb/examples/turtle-specs/web-server.ttl`
+- **Generated Code**: `/home/user/clap-noun-verb/examples/generated-from-turtle/web-server-cli/`
+
+**Key Features**:
+- Server lifecycle management
+- Configuration validation
+- Port range validation
+- Daemon mode
+- Multiple output formats (JSON, YAML, TOML)
+- Route management
+
+**Try it**:
+```bash
+cd /home/user/clap-noun-verb/examples/generated-from-turtle/web-server-cli
+cargo make check
+cargo run -- server start --port 8080 --host 0.0.0.0
+cargo run -- server status --verbose
+cargo run -- config show --format json
+```
+
+### Additional Examples
+
+For more examples and detailed explanations, see:
+- [Turtle Specifications README](/home/user/clap-noun-verb/examples/turtle-specs/README.md)
+- [Generated CLI Examples](/home/user/clap-noun-verb/examples/generated-from-turtle/README.md)
+- [Examples Showcase](/home/user/clap-noun-verb/docs/EXAMPLES_SHOWCASE.md)
+
+---
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Issue 1: Compiler Errors After Generation
+
+**Symptom**:
+```
+error[E0425]: cannot find value `validate_email` in scope
+```
+
+**Solution**:
+- Ensure all validators referenced in Turtle spec are implemented in `src/validators.rs`
+- Check that validator names match between spec and implementation
+- Verify imports are correct
+
+**Fix**:
+```bash
+# Check generated validators
+cat src/validators.rs
+
+# Implement missing validator
+# Add to src/validators.rs:
+pub fn validate_email(email: &str) -> Result<(), ValidationError> {
+    // Implementation
+}
+```
+
+#### Issue 2: Turtle Syntax Errors
+
+**Symptom**:
+```
+Parsing error at line 42: Expected '.' after triple
+```
+
+**Solution**:
+- Every RDF triple must end with a period (`.`)
+- Lists must use parentheses: `(item1 item2)`
+- Semicolons (`;`) separate properties for the same subject
+- Check for missing quotes around strings
+
+**Fix**:
+```turtle
+# ❌ Incorrect
+my:Noun a clap:Noun ;
+    clap:name "noun"      # Missing period!
+
+# ✅ Correct
+my:Noun a clap:Noun ;
+    clap:name "noun" .    # Period at end
+```
+
+#### Issue 3: Missing Dependencies
+
+**Symptom**:
+```
+error: no matching package named `reqwest` found
+```
+
+**Solution**:
+- Add missing dependencies to `Cargo.toml`
+- Common dependencies for generated CLIs:
+  - `clap` (CLI parsing)
+  - `thiserror` (error types)
+  - `reqwest` (HTTP clients)
+  - `tokio` (async runtime)
+  - `serde`/`serde_json` (serialization)
+
+**Fix**:
+```toml
+# Add to Cargo.toml
+[dependencies]
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+tokio = { version = "1.0", features = ["full"] }
+```
+
+#### Issue 4: Test Failures
+
+**Symptom**:
+```
+test test_create_user ... FAILED
+```
+
+**Solution**:
+- Read the test failure output carefully
+- Check that business logic is implemented
+- Verify test assertions match expected behavior
+- Use `cargo test -- --nocapture` to see print statements
+
+**Fix**:
+```bash
+# Run specific test with output
+cargo test test_create_user -- --nocapture
+
+# Debug with logging
+RUST_LOG=debug cargo test test_create_user -- --nocapture
+```
+
+#### Issue 5: Validation Not Working
+
+**Symptom**:
+Invalid input passes through without error.
+
+**Solution**:
+- Verify validation is referenced in verb definition
+- Check validator implementation
+- Ensure validator is called in execute() method
+
+**Fix**:
+```turtle
+# In Turtle spec - ensure validation is referenced
+my:CreateVerb a clap:Verb ;
+    clap:validation my:ValidEmail .  # Must reference validator
+
+# In Rust code - ensure validator is called
+impl CreateUserArgs {
+    pub fn execute(&self) -> Result<UserResponse, CliError> {
+        validate_email(&self.email)?;  // Must call validator
+        // ... rest of implementation
+    }
+}
+```
+
+#### Issue 6: Cargo Make Commands Not Found
+
+**Symptom**:
+```
+cargo make: command not found
+```
+
+**Solution**:
+Install cargo-make:
+```bash
+cargo install cargo-make
+```
+
+Verify installation:
+```bash
+cargo make --version
+```
+
+#### Issue 7: ggen Not Found
+
+**Symptom**:
+```
+ggen: command not found
+```
+
+**Solution**:
+Build ggen from vendors directory:
+```bash
+cd /home/user/clap-noun-verb/vendors/ggen
+cargo build --release
+export PATH=$PATH:/home/user/clap-noun-verb/vendors/ggen/target/release
+```
+
+Or use from crate directory:
+```bash
+cd /home/user/clap-noun-verb/crates/ggen-clap-noun-verb
+cargo run -- generate --input ../../examples/turtle-specs/spec.ttl --output ../../output
+```
+
+#### Issue 8: Type Mismatch Errors
+
+**Symptom**:
+```
+error[E0308]: mismatched types
+expected `i32`, found `i64`
+```
+
+**Solution**:
+- Check Turtle spec uses correct XSD types
+- Ensure Rust type matches spec
+- Use appropriate type conversions
+
+**Fix**:
+```turtle
+# Use correct XSD type
+# For i32:
+clap:valueType xsd:integer .
+
+# For i64:
+clap:valueType xsd:long .
+
+# For u16 (ports):
+clap:valueType xsd:unsignedShort .
+```
+
+#### Issue 9: Andon Signals (Warnings)
+
+**Symptom**:
+```
+warning: unused variable: `verbose`
+```
+
+**Solution**:
+- Fix all clippy warnings immediately (Stop the Line)
+- Never proceed with warnings present
+- Use variables or prefix with underscore if intentionally unused
+
+**Fix**:
+```bash
+# Check for warnings
+cargo make lint
+
+# Fix unused variables
+# If intentionally unused:
+fn execute(&self, _verbose: bool) { ... }
+
+# If should be used:
+fn execute(&self, verbose: bool) {
+    if verbose {
+        println!("Verbose output");
+    }
+}
+```
+
+#### Issue 10: Performance Issues
+
+**Symptom**:
+CLI takes > 100ms to execute simple commands.
+
+**Solution**:
+- Check for unnecessary allocations
+- Profile with `cargo make profile`
+- Verify SLOs with `cargo make slo-check`
+- Use release builds for benchmarking
+
+**Fix**:
+```bash
+# Profile execution
+cargo make profile
+
+# Check SLOs
+cargo make slo-check
+
+# Use release build
+cargo build --release
+./target/release/my-cli <command>
+```
+
+---
+
+## Getting Help
+
+### Documentation Resources
+
+1. **Complete Usage Guide**: [USAGE_GUIDE.md](/home/user/clap-noun-verb/docs/USAGE_GUIDE.md)
+2. **Turtle Syntax Reference**: [TURTLE_SPECIFICATION_GUIDE.md](/home/user/clap-noun-verb/docs/TURTLE_SPECIFICATION_GUIDE.md)
+3. **Examples Showcase**: [EXAMPLES_SHOWCASE.md](/home/user/clap-noun-verb/docs/EXAMPLES_SHOWCASE.md)
+4. **Example Specifications**: [examples/turtle-specs/README.md](/home/user/clap-noun-verb/examples/turtle-specs/README.md)
+5. **Generated CLIs**: [examples/generated-from-turtle/README.md](/home/user/clap-noun-verb/examples/generated-from-turtle/README.md)
+
+### Debug Checklist
+
+When encountering issues:
+
+- [ ] Run `cargo make check` - Any compiler errors?
+- [ ] Run `cargo make test` - All tests passing?
+- [ ] Run `cargo make lint` - Any clippy warnings?
+- [ ] Check Turtle syntax with `rapper -i turtle spec.ttl`
+- [ ] Verify all dependencies in Cargo.toml
+- [ ] Check that all validators are implemented
+- [ ] Review generated code structure
+- [ ] Enable debug logging: `RUST_LOG=debug cargo run`
+- [ ] Check timeout command exists: `cargo make timeout-check`
+- [ ] Verify all Andon signals cleared
+
+### Common Patterns
+
+**Pattern 1: Add New Verb**
+1. Add verb to Turtle spec
+2. Regenerate code
+3. Implement execute() method
+4. Add tests
+5. Verify with `cargo make test`
+
+**Pattern 2: Add Validation**
+1. Define validation in Turtle spec
+2. Reference in verb definition
+3. Implement validator in validators.rs
+4. Call in execute() method
+5. Add test for validation
+
+**Pattern 3: Add Optional Argument**
+1. Define argument with `clap:required false`
+2. Add `clap:defaultValue` if appropriate
+3. Use `Option<T>` in Rust code
+4. Handle None case in execute()
+
+---
+
 ## Reference Documents
 
 - **Full Architecture**: `/home/user/clap-noun-verb/docs/ggen-clap-noun-verb-architecture.md`
 - **ADR Summary**: `/home/user/clap-noun-verb/docs/ggen-clap-noun-verb-adr-summary.md`
+- **Usage Guide**: `/home/user/clap-noun-verb/docs/USAGE_GUIDE.md`
+- **Turtle Specification Guide**: `/home/user/clap-noun-verb/docs/TURTLE_SPECIFICATION_GUIDE.md`
+- **Examples Showcase**: `/home/user/clap-noun-verb/docs/EXAMPLES_SHOWCASE.md`
 - **This Guide**: `/home/user/clap-noun-verb/docs/ggen-clap-noun-verb-quickstart.md`
 
 ---

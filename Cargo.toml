@@ -392,6 +392,27 @@ name = "ref_root_verb"
 path = "examples/reference/root_verb.rs"
 
 # =============================================================================
+# GENERATED EXAMPLES - CLI code generated from Turtle specifications
+# =============================================================================
+# These examples demonstrate end-to-end turtle → CLI generation using ggen integration
+
+[[example]]
+name = "calculator_cli"
+path = "examples/generated-from-turtle/calculator-cli.rs"
+
+[[example]]
+name = "file_manager_cli"
+path = "examples/generated-from-turtle/file-manager-cli.rs"
+
+[[example]]
+name = "user_api_cli"
+path = "examples/generated-from-turtle/user-api-cli.rs"
+
+[[example]]
+name = "web_server_cli"
+path = "examples/generated-from-turtle/web-server-cli.rs"
+
+# =============================================================================
 # ADVANCED EXAMPLES - Expert-level production patterns (require --all-features)
 # =============================================================================
 # Advanced examples disabled in default build due to feature dependencies.
