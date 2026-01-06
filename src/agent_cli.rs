@@ -128,9 +128,29 @@ pub mod agent_builder {
             self.values.get(name).map(|s| s.as_str())
         }
 
+        /// Check if a named argument exists
+        pub fn contains(&self, name: &str) -> bool {
+            self.values.contains_key(name)
+        }
+
         /// Get first positional argument
         pub fn first_positional(&self) -> Option<&str> {
             self.positional.first().map(|s| s.as_str())
+        }
+
+        /// Get all positional arguments
+        pub fn get_all_positional(&self) -> &[String] {
+            &self.positional
+        }
+
+        /// Get total count of all arguments (named + positional)
+        pub fn len(&self) -> usize {
+            self.values.len() + self.positional.len()
+        }
+
+        /// Check if no arguments are present
+        pub fn is_empty(&self) -> bool {
+            self.values.is_empty() && self.positional.is_empty()
         }
 
         /// Add named argument
@@ -232,6 +252,28 @@ pub mod agent_builder {
                 },
             );
 
+            Ok(self)
+        }
+
+        /// Register multiple command handlers in batch
+        ///
+        /// # Arguments
+        ///
+        /// Takes an iterator of tuples: (name, description, handler)
+        ///
+        /// # Returns
+        ///
+        /// Returns error on the first duplicate or invalid name encountered
+        pub fn register_commands<I>(
+            &mut self,
+            commands: I,
+        ) -> AgentResult<&mut Self>
+        where
+            I: IntoIterator<Item = (String, String, Arc<dyn CommandHandler>)>,
+        {
+            for (name, description, handler) in commands {
+                self.register_command(name, description, handler)?;
+            }
             Ok(self)
         }
 

@@ -413,3 +413,155 @@ fn test_run_with_args_no_command_error() {
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::ValidationFailed(_)));
 }
+
+// ============================================================================
+// Convenience Method Tests
+// ============================================================================
+
+#[test]
+fn test_command_args_contains() {
+    // Arrange
+    let args = CommandArgs::new()
+        .with_arg("key1", "value1")
+        .with_arg("key2", "value2");
+
+    // Assert
+    assert!(args.contains("key1"));
+    assert!(args.contains("key2"));
+    assert!(!args.contains("key3"));
+}
+
+#[test]
+fn test_command_args_get_all_positional() {
+    // Arrange
+    let args = CommandArgs::new()
+        .with_positional("arg1")
+        .with_positional("arg2")
+        .with_positional("arg3");
+
+    // Act
+    let all = args.get_all_positional();
+
+    // Assert
+    assert_eq!(all.len(), 3);
+    assert_eq!(all[0], "arg1");
+    assert_eq!(all[1], "arg2");
+    assert_eq!(all[2], "arg3");
+}
+
+#[test]
+fn test_command_args_len() {
+    // Arrange
+    let args = CommandArgs::new()
+        .with_arg("named1", "value1")
+        .with_arg("named2", "value2")
+        .with_positional("pos1")
+        .with_positional("pos2");
+
+    // Act
+    let len = args.len();
+
+    // Assert
+    assert_eq!(len, 4); // 2 named + 2 positional
+}
+
+#[test]
+fn test_command_args_is_empty() {
+    // Arrange
+    let empty_args = CommandArgs::new();
+    let args_with_named = CommandArgs::new().with_arg("key", "value");
+    let args_with_positional = CommandArgs::new().with_positional("arg");
+
+    // Assert
+    assert!(empty_args.is_empty());
+    assert!(!args_with_named.is_empty());
+    assert!(!args_with_positional.is_empty());
+}
+
+#[test]
+fn test_command_args_len_empty() {
+    // Arrange
+    let args = CommandArgs::new();
+
+    // Act
+    let len = args.len();
+
+    // Assert
+    assert_eq!(len, 0);
+}
+
+// ============================================================================
+// Batch Registration Tests
+// ============================================================================
+
+#[test]
+fn test_batch_command_registration() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test-cli", "Test CLI");
+    let h1 = EchoHandler::new("handler1");
+    let h2 = EchoHandler::new("handler2");
+    let h3 = CounterHandler;
+
+    let commands = vec![
+        ("cmd1".to_string(), "Command 1".to_string(), h1 as Arc<dyn CommandHandler>),
+        ("cmd2".to_string(), "Command 2".to_string(), h2 as Arc<dyn CommandHandler>),
+        ("cmd3".to_string(), "Command 3".to_string(), Arc::new(h3) as Arc<dyn CommandHandler>),
+    ];
+
+    // Act
+    let result = builder.register_commands(commands);
+
+    // Assert
+    assert!(result.is_ok());
+    assert_eq!(builder.command_count(), 3);
+    assert_eq!(builder.list_commands().len(), 3);
+}
+
+#[test]
+fn test_batch_registration_stops_on_error() {
+    // Arrange
+    let mut builder = AgentCliBuilder::new("test-cli", "Test CLI");
+    builder.register_command("cmd1", "Command 1", EchoHandler::new("test")).ok();
+
+    let h1 = EchoHandler::new("test");
+    let h2 = CounterHandler;
+
+    let commands = vec![
+        ("cmd1".to_string(), "Duplicate".to_string(), h1 as Arc<dyn CommandHandler>),
+        ("cmd2".to_string(), "Command 2".to_string(), Arc::new(h2) as Arc<dyn CommandHandler>),
+    ];
+
+    // Act
+    let result = builder.register_commands(commands);
+
+    // Assert - should fail on first duplicate
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)));
+    // Only the first command (cmd1) was registered before failure
+    assert_eq!(builder.command_count(), 1);
+}
+
+#[test]
+fn test_batch_registration_mixed_workflow() {
+    // Arrange: Register some commands individually, then batch
+    let mut builder = AgentCliBuilder::new("test-cli", "Test CLI");
+    builder.register_command("echo", "Echo", EchoHandler::new("test")).ok();
+
+    let h1 = CounterHandler;
+    let h2 = EchoHandler::new("batch1");
+
+    let batch_commands = vec![
+        ("count".to_string(), "Count".to_string(), Arc::new(h1) as Arc<dyn CommandHandler>),
+        ("batch".to_string(), "Batch".to_string(), h2 as Arc<dyn CommandHandler>),
+    ];
+
+    // Act
+    let result = builder.register_commands(batch_commands);
+    assert!(result.is_ok()); // Check result first before moving builder
+
+    let cli = builder.build();
+
+    // Assert
+    assert!(cli.is_ok());
+    assert_eq!(cli.unwrap().commands().len(), 3);
+}
