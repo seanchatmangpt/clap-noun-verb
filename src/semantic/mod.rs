@@ -35,7 +35,6 @@
 //!     .build()?;
 //! ```
 
-mod agent_builder;
 mod capability;
 mod composition;
 mod protocol;
@@ -43,10 +42,6 @@ mod registry;
 mod runtime;
 mod sparql;
 
-pub use agent_builder::{
-    AgentCli, AgentCliBuilder, AgentBuilderError, AgentResult, ArgumentSpec, CommandArgs,
-    CommandHandler, CommandMetadata,
-};
 pub use capability::{CapabilityMetadata, SEMANTIC_CAPABILITIES};
 pub use composition::{CompositionError, CompositionValidator, ValidationResult};
 pub use protocol::{McpAdapter, ProtocolAdapter, ProtocolError};
