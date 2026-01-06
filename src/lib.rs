@@ -50,6 +50,7 @@
 // CORE MODULES - Always available (no feature flags)
 // =============================================================================
 
+pub mod agent_cli;
 pub mod builder;
 pub mod cli;
 pub mod error;
