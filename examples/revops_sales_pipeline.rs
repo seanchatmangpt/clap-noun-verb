@@ -25,11 +25,11 @@ fn main() {
     // Pipeline Value
     println!("💰 PIPELINE VALUE");
     println!("─────────────────────────────────────────────────────────");
-    println!("Prospect Stage ($):       ${:,.0}", pipeline.value_by_stage("Prospect"));
-    println!("Interested Stage ($):     ${:,.0}", pipeline.value_by_stage("Interested"));
-    println!("Proposal Stage ($):       ${:,.0}", pipeline.value_by_stage("Proposal"));
-    println!("Total Open Pipeline:      ${:,.0}", pipeline.open_value());
-    println!("Expected 30-day Close:    ${:,.0}\n", pipeline.expected_close_30d());
+    println!("Prospect Stage ($):       ${:.0}", pipeline.value_by_stage("Prospect"));
+    println!("Interested Stage ($):     ${:.0}", pipeline.value_by_stage("Interested"));
+    println!("Proposal Stage ($):       ${:.0}", pipeline.value_by_stage("Proposal"));
+    println!("Total Open Pipeline:      ${:.0}", pipeline.open_value());
+    println!("Expected 30-day Close:    ${:.0}\n", pipeline.expected_close_30d());
 
     // By Stream
     println!("🎯 REVENUE BY STREAM");
@@ -38,14 +38,14 @@ fn main() {
         let value = pipeline.value_by_stream(stream);
         let count = pipeline.count_by_stream(stream);
         if count > 0 {
-            println!("{:<15} ${:>10,.0}  ({} deals)", stream, value, count);
+            println!("{:<15} ${:>10.0}  ({} deals)", stream, value, count);
         }
     }
 
     println!("\n🔥 TOP 5 DEALS");
     println!("─────────────────────────────────────────────────────────");
     for deal in pipeline.top_deals(5) {
-        println!("{:<20} ${:>10,.0}  {}  ({}%)",
+        println!("{:<20} ${:>10.0}  {}  ({}%)",
                  deal.company, deal.amount, deal.stage, deal.probability);
     }
 

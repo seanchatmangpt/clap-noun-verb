@@ -14,18 +14,18 @@ fn main() {
     // MRR Summary
     println!("💰 MONTHLY RECURRING REVENUE (MRR)");
     println!("─────────────────────────────────────────────────────────");
-    println!("Current MRR:              ${:,.0}", revenue.current_mrr());
-    println!("New this month:           ${:,.0}", revenue.new_mrr());
-    println!("Expansion revenue:        ${:,.0}", revenue.expansion_revenue());
-    println!("Churn:                    -${:,.0}", revenue.churn());
+    println!("Current MRR:              ${:.0}", revenue.current_mrr());
+    println!("New this month:           ${:.0}", revenue.new_mrr());
+    println!("Expansion revenue:        ${:.0}", revenue.expansion_revenue());
+    println!("Churn:                    -${:.0}", revenue.churn());
     println!("Growth:                   {:.1}% MoM\n", revenue.growth_rate());
 
     // Annual Projections
     println!("📈 ANNUAL PROJECTIONS");
     println!("─────────────────────────────────────────────────────────");
-    println!("Current ARR:              ${:,.0}", revenue.current_mrr() * 12.0);
-    println!("Projected Year-End ARR:   ${:,.0}", revenue.projected_year_end_arr());
-    println!("Year 1 Total Revenue:     ${:,.0}\n", revenue.projected_year1_total());
+    println!("Current ARR:              ${:.0}", revenue.current_mrr() * 12.0);
+    println!("Projected Year-End ARR:   ${:.0}", revenue.projected_year_end_arr());
+    println!("Year 1 Total Revenue:     ${:.0}\n", revenue.projected_year1_total());
 
     // By Stream
     println!("🎯 REVENUE BY STREAM");
@@ -42,7 +42,7 @@ fn main() {
 
     for (stream, mrr) in streams {
         let pct = (mrr / revenue.current_mrr()) * 100.0;
-        println!("{:<18} ${:>10,.0}  ({:>5.1}%)", stream, mrr, pct);
+        println!("{:<18} ${:.0}  ({:>5.1}%)", stream, mrr, pct);
     }
 
     println!("\n👥 CUSTOMER METRICS");
@@ -55,8 +55,8 @@ fn main() {
 
     println!("\n💹 UNIT ECONOMICS");
     println!("─────────────────────────────────────────────────────────");
-    println!("CAC (acquisition cost):   ${:,.0}", revenue.cac());
-    println!("LTV (lifetime value):     ${:,.0}", revenue.ltv());
+    println!("CAC (acquisition cost):   ${:.0}", revenue.cac());
+    println!("LTV (lifetime value):     ${:.0}", revenue.ltv());
     println!("Payback period:           {:.1} months", revenue.payback_period());
     println!("LTV:CAC ratio:            {:.1}:1 {}", revenue.ltv_cac_ratio(),
              if revenue.ltv_cac_ratio() > 3.0 { "✓" } else { "⚠" });
@@ -65,7 +65,7 @@ fn main() {
     println!("─────────────────────────────────────────────────────────");
     for month in 1..=6 {
         let projected = revenue.forecast_month(month);
-        println!("Month {}: ${:>10,.0}  ({:>+6.1}% growth)", month, projected,
+        println!("Month {}: ${:.0}  ({:>+6.1}% growth)", month, projected,
                  revenue.forecast_growth(month));
     }
 

@@ -13,7 +13,7 @@ fn main() {
 
     println!("📊 MONTHLY PROJECTION\n");
     println!("{:<6} {:>10} {:>10} {:>10} {:>12}", "Month", "Revenue", "Costs", "Profit", "Cumulative");
-    println!("─".repeat(60));
+    println!("{}", "─".repeat(60));
 
     let mut cumulative = 0.0;
     for month in 1..=12 {
@@ -21,17 +21,17 @@ fn main() {
         let profit = revenue - costs;
         cumulative += profit;
 
-        println!("{:<6} ${:>9,.0} ${:>9,.0} ${:>9,.0} ${:>11,.0}",
+        println!("{:<6} ${:>9.0} ${:>9.0} ${:>9.0} ${:>11.0}",
                  month, revenue, costs, profit, cumulative);
     }
 
     println!("\n💰 KEY METRICS\n");
     let (year1_revenue, year1_costs) = forecast.year_totals();
-    println!("Year 1 Total Revenue:        ${:,.0}", year1_revenue);
-    println!("Year 1 Total Costs:          ${:,.0}", year1_costs);
-    println!("Year 1 Net Profit:           ${:,.0}", year1_revenue - year1_costs);
-    println!("Average Monthly Revenue:     ${:,.0}", year1_revenue / 12.0);
-    println!("Average Monthly Profit:      ${:,.0}", (year1_revenue - year1_costs) / 12.0);
+    println!("Year 1 Total Revenue:        ${:.0}", year1_revenue);
+    println!("Year 1 Total Costs:          ${:.0}", year1_costs);
+    println!("Year 1 Net Profit:           ${:.0}", year1_revenue - year1_costs);
+    println!("Average Monthly Revenue:     ${:.0}", year1_revenue / 12.0);
+    println!("Average Monthly Profit:      ${:.0}", (year1_revenue - year1_costs) / 12.0);
     println!("Profit Margin:               {:.1}%", ((year1_revenue - year1_costs) / year1_revenue) * 100.0);
 
     println!("\n📈 STREAM BREAKDOWN (Year End)\n");
@@ -47,7 +47,7 @@ fn main() {
 
     for (stream, revenue) in streams {
         let pct = (revenue / year1_revenue) * 100.0;
-        println!("{:<20} ${:>10,.0}  ({:>5.1}%)", stream, revenue as i64, pct);
+        println!("{:<20} ${:.0}  ({:>5.1}%)", stream, revenue as i64, pct);
     }
 
     println!("\n🚀 UNIT ECONOMICS\n");
@@ -60,9 +60,9 @@ fn main() {
 
     println!("\n💡 CASH FLOW ANALYSIS\n");
     let (cash_in, cash_out, net) = forecast.cash_flow();
-    println!("Total Cash Inflow:                  ${:,.0}", cash_in);
-    println!("Total Cash Outflow:                 ${:,.0}", cash_out);
-    println!("Net Cash Flow:                      ${:,.0}", net);
+    println!("Total Cash Inflow:                  ${:.0}", cash_in);
+    println!("Total Cash Outflow:                 ${:.0}", cash_out);
+    println!("Net Cash Flow:                      ${:.0}", net);
     println!("Monthly Runway:                     Positive (infinite)");
 
     println!("\n📊 GROWTH TRAJECTORY\n");
@@ -79,7 +79,7 @@ fn main() {
         let adjusted_rev = rev * sensitivity.1;
         let profit = adjusted_rev - costs;
         let runway = if profit > 0.0 { "∞".to_string() } else { "6+ mo".to_string() };
-        println!("{:<20} ${:>10,.0} ${:>10,.0} {:>6}", sensitivity.0, adjusted_rev as i64, profit as i64, runway);
+        println!("{:<20} ${:>10.0} ${:>10.0} {:>6}", sensitivity.0, adjusted_rev, profit, runway);
     }
 
     println!("\n✓ KEY ASSUMPTIONS\n");

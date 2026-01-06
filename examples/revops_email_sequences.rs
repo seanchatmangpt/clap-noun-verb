@@ -17,7 +17,7 @@ fn main() {
     println!("═══ SUPPORT & SLA COLD SEQUENCE ═══");
     for (i, email) in email.support_cold_sequence().iter().enumerate() {
         println!("\n📧 EMAIL {} (Send {}):", i+1,
-                 ["Immediately", "Day 3", "Day 5"][i].min(i+1));
+                 ["Immediately", "Day 3", "Day 5"][i]);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }
@@ -26,7 +26,7 @@ fn main() {
     println!("═══ CONSULTING COLD SEQUENCE ═══");
     for (i, email) in email.consulting_cold_sequence().iter().enumerate() {
         println!("\n📧 EMAIL {} (Send {}):", i+1,
-                 ["Immediately", "Day 4", "Day 6"][i].min(i+1));
+                 ["Immediately", "Day 4", "Day 6"][i]);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }

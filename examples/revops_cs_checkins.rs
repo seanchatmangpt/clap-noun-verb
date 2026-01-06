@@ -4,8 +4,6 @@
 //! Build: cargo build --example revops_cs_checkins --features examples
 //! Run: ./target/debug/examples/revops_cs_checkins
 
-use std::collections::HashMap;
-
 fn main() {
     let cs = CSCheckInSystem::new();
 
@@ -25,7 +23,7 @@ fn main() {
     println!("📋 CUSTOMER STATUS DASHBOARD\n");
     println!("{:<20} {:<15} {:<8} {:<8} {:<8} {:<12}",
              "Company", "Stream", "Days In", "Usage %", "Days Idle", "Status");
-    println!("─".repeat(75));
+    println!("{}", "─".repeat(75));
 
     for (company, stream, days_in, usage, days_idle) in &customers {
         let status = if *days_idle > 7 {
@@ -90,7 +88,7 @@ fn main() {
     println!("\n\n🚀 EXPANSION OPPORTUNITIES\n");
     let upsells = cs.upsell_opportunities();
     for (customer, current, upsell, potential_arr) in upsells {
-        println!("{:<20} {} → {}  (${:,.0} ARR potential)",
+        println!("{:<20} {} → {}  (${:.0} ARR potential)",
                  customer, current, upsell, potential_arr);
     }
 
