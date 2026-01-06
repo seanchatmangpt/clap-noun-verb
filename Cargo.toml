@@ -4,7 +4,7 @@ exclude = ["playground", "vendors"]
 
 [package]
 name = "clap-noun-verb"
-version = "5.3.4"
+version = "5.4.0"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -134,6 +134,15 @@ economic-sim = ["dep:priority-queue", "dep:ordered-float", "dep:petgraph"]
 # 10. Quantum-Ready: Post-quantum cryptography
 quantum-ready = ["crypto", "dep:pqcrypto-traits", "dep:pqcrypto-kyber"]
 
+# Experimental: Unstable/nightly features for testing (not for production)
+experimental = []
+
+# ggen Integration: Code generation from Turtle specifications (future)
+ggen = []
+
+# tokio-specific: For code that explicitly targets tokio (maps to async feature)
+tokio = ["async"]
+
 # =============================================================================
 # CORE DEPENDENCIES - Always required (MINIMAL for basic noun-verb CLI)
 # =============================================================================
@@ -141,7 +150,7 @@ quantum-ready = ["crypto", "dep:pqcrypto-traits", "dep:pqcrypto-kyber"]
 [dependencies]
 # CLI Framework (REQUIRED - this is what we wrap)
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb-macros = { version = "5.3.4", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "5.4.0", path = "clap-noun-verb-macros" }
 
 # Auto-discovery (REQUIRED - distributed slices for #[noun]/#[verb])
 linkme = "0.3"
