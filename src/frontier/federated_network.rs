@@ -43,16 +43,16 @@ pub type Result<T> = std::result::Result<T, FederatedError>;
 pub enum FederatedError {
     #[error("Peer discovery failed: {0}")]
     DiscoveryFailed(String),
-    
+
     #[error("SPARQL federation query failed: {0}")]
     QueryFailed(String),
-    
+
     #[error("Byzantine consensus failed: {0}")]
     ConsensusFailed(String),
-    
+
     #[error("Cryptographic signature verification failed")]
     SignatureVerification,
-    
+
     #[error("Network I/O error: {0}")]
     IoError(String),
 }
@@ -88,14 +88,14 @@ pub struct ConsensusVote {
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let network = FederatedNetwork::new("local-node")?;
-/// 
+///
 /// // Discover peers via mDNS
 /// let peers = network.discover_peers().await?;
-/// 
+///
 /// // Execute federated SPARQL query
 /// let query = "SELECT ?cap WHERE { ?cap a cli:Capability }";
 /// let results = network.query_federated_sparql(query).await?;
-/// 
+///
 /// // Byzantine consensus on capability trust
 /// let votes = network.consensus_vote(&peers, |peer| {
 ///     peer.trust_score > 0.8
@@ -106,10 +106,10 @@ pub struct ConsensusVote {
 pub struct FederatedNetwork {
     /// Local node identifier
     pub local_node: String,
-    
+
     /// Known peers (peer_id -> capabilities)
     pub peers: HashMap<PeerId, Vec<Capability>>,
-    
+
     /// RDF/SPARQL store (oxigraph in real implementation)
     _phantom_store: PhantomData<()>,
 }
@@ -124,17 +124,13 @@ impl FederatedNetwork {
         let local_node = local_node.into();
         if local_node.is_empty() {
             return Err(FederatedError::DiscoveryFailed(
-                "Local node ID cannot be empty".to_string()
+                "Local node ID cannot be empty".to_string(),
             ));
         }
-        
-        Ok(Self {
-            local_node,
-            peers: HashMap::new(),
-            _phantom_store: PhantomData,
-        })
+
+        Ok(Self { local_node, peers: HashMap::new(), _phantom_store: PhantomData })
     }
-    
+
     /// Discover peers via mDNS and Kademlia DHT
     ///
     /// Performance SLO: <100ms for mDNS local discovery
@@ -150,14 +146,11 @@ impl FederatedNetwork {
         //     .with_kademlia()
         //     .build();
         // swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse().unwrap())?;
-        
+
         // Placeholder: simulate peer discovery
-        Ok(vec![
-            PeerId("peer1".to_string()),
-            PeerId("peer2".to_string()),
-        ])
+        Ok(vec![PeerId("peer1".to_string()), PeerId("peer2".to_string())])
     }
-    
+
     /// Execute federated SPARQL query across peers
     ///
     /// Uses SPARQL 1.1 SERVICE keyword for federation:
@@ -174,19 +167,22 @@ impl FederatedNetwork {
     ///
     /// Returns error if query execution fails
     #[cfg(feature = "async")]
-    pub async fn query_federated_sparql(&self, query: &str) -> Result<Vec<HashMap<String, String>>> {
+    pub async fn query_federated_sparql(
+        &self,
+        query: &str,
+    ) -> Result<Vec<HashMap<String, String>>> {
         if query.is_empty() {
             return Err(FederatedError::QueryFailed("Empty query".to_string()));
         }
-        
+
         // TODO: Real oxigraph implementation
         // let store = oxigraph::Store::new()?;
         // let results = store.query(query)?;
-        
+
         // Placeholder: simulate query results
         Ok(vec![HashMap::new()])
     }
-    
+
     /// Advertise capability to network
     ///
     /// Uses libp2p Gossipsub for capability advertisement
@@ -198,13 +194,13 @@ impl FederatedNetwork {
     pub async fn advertise_capability(&mut self, cap: &Capability) -> Result<()> {
         // TODO: Real libp2p Gossipsub implementation
         // swarm.behaviour_mut().gossipsub.publish(topic, cap.to_json())?;
-        
+
         // Placeholder: add to local capabilities
         let self_peer = PeerId(self.local_node.clone());
         self.peers.entry(self_peer).or_default().push(cap.clone());
         Ok(())
     }
-    
+
     /// Byzantine consensus vote (2f+1 threshold)
     ///
     /// Implements Byzantine fault tolerance with Ed25519 signatures.
@@ -228,31 +224,32 @@ impl FederatedNetwork {
     {
         if peers.is_empty() {
             return Err(FederatedError::ConsensusFailed(
-                "No peers available for consensus".to_string()
+                "No peers available for consensus".to_string(),
             ));
         }
-        
+
         // Byzantine fault tolerance: need 2f+1 out of 3f+1 nodes
         let total_nodes = peers.len();
         let f = (total_nodes.saturating_sub(1)) / 3; // Max Byzantine nodes
         let required_votes = 2 * f + 1;
-        
+
         // Collect votes
         let votes: Vec<bool> = peers.iter().map(predicate).collect();
         let true_votes = votes.iter().filter(|&&v| v).count();
-        
+
         // Check if we have 2f+1 consensus
         if true_votes >= required_votes {
             Ok(true)
         } else if (total_nodes - true_votes) >= required_votes {
             Ok(false)
         } else {
-            Err(FederatedError::ConsensusFailed(
-                format!("Insufficient votes: {}/{} (need {})", true_votes, total_nodes, required_votes)
-            ))
+            Err(FederatedError::ConsensusFailed(format!(
+                "Insufficient votes: {}/{} (need {})",
+                true_votes, total_nodes, required_votes
+            )))
         }
     }
-    
+
     /// Verify Ed25519 signature on consensus vote
     ///
     /// # Errors
@@ -264,7 +261,7 @@ impl FederatedNetwork {
         // let public_key = PublicKey::from_bytes(&vote.peer_id.0)?;
         // let signature = Signature::from_bytes(&vote.signature)?;
         // public_key.verify(message, &signature)?;
-        
+
         if vote.signature.is_empty() {
             return Err(FederatedError::SignatureVerification);
         }
@@ -275,20 +272,20 @@ impl FederatedNetwork {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_network_creation() {
         let network = FederatedNetwork::new("node1").expect("Failed to create network");
         assert_eq!(network.local_node, "node1");
         assert!(network.peers.is_empty());
     }
-    
+
     #[test]
     fn test_empty_node_id_fails() {
         let result = FederatedNetwork::new("");
         assert!(result.is_err());
     }
-    
+
     #[cfg(feature = "async")]
     #[tokio::test]
     async fn test_peer_discovery() {
@@ -296,7 +293,7 @@ mod tests {
         let peers = network.discover_peers().await.expect("Discovery failed");
         assert!(!peers.is_empty());
     }
-    
+
     #[cfg(feature = "async")]
     #[tokio::test]
     async fn test_byzantine_consensus_majority() {
@@ -307,15 +304,18 @@ mod tests {
             PeerId("peer3".to_string()),
             PeerId("peer4".to_string()),
         ];
-        
+
         // 3 out of 4 vote true (2f+1 = 3, f=1)
-        let result = network.consensus_vote(&peers, |peer| {
-            peer.0 != "peer4" // 3 true votes
-        }).await.expect("Consensus failed");
-        
+        let result = network
+            .consensus_vote(&peers, |peer| {
+                peer.0 != "peer4" // 3 true votes
+            })
+            .await
+            .expect("Consensus failed");
+
         assert!(result, "Consensus should be true with 3/4 votes");
     }
-    
+
     #[cfg(feature = "async")]
     #[tokio::test]
     async fn test_byzantine_consensus_insufficient_votes() {
@@ -326,12 +326,14 @@ mod tests {
             PeerId("peer3".to_string()),
             PeerId("peer4".to_string()),
         ];
-        
+
         // 2 out of 4 vote true (insufficient for 2f+1=3)
-        let result = network.consensus_vote(&peers, |peer| {
-            peer.0 == "peer1" || peer.0 == "peer2" // 2 true votes
-        }).await;
-        
+        let result = network
+            .consensus_vote(&peers, |peer| {
+                peer.0 == "peer1" || peer.0 == "peer2" // 2 true votes
+            })
+            .await;
+
         assert!(result.is_err(), "Should fail with insufficient votes");
     }
 }

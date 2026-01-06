@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Learning Trajectory Macros for clap-noun-verb-macros-frontier
 //!
 //! This module provides procedural macros for defining competency dimensions,
@@ -143,6 +146,8 @@ impl CompetencyLevel {
 
 /// Proficiency level for individual skills (0.0 to 1.0)
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct ProficiencyLevel(f64);
 
 impl ProficiencyLevel {
@@ -157,7 +162,7 @@ impl ProficiencyLevel {
     }
 
     /// Convert to competency level
-    pub fn to_competency_level(&self) -> CompetencyLevel {
+    pub fn to_competency_level(self) -> CompetencyLevel {
         if self.0 < 0.25 {
             CompetencyLevel::Foundation
         } else if self.0 < 0.5 {
@@ -177,6 +182,8 @@ impl ProficiencyLevel {
 /// Competency dimension trait
 ///
 /// Defines a measurable skill dimension with proficiency tracking.
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub trait CompetencyDimension {
     /// Get dimension name
     fn name(&self) -> &str;
@@ -253,12 +260,15 @@ pub fn generate_competency_impl(input: &DeriveInput, dimension: &str) -> TokenSt
 
 /// Assessment result with score and feedback
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct AssessmentResult {
     pub score: f64,
     pub feedback: String,
     pub passed: bool,
 }
 
+#[allow(dead_code)]
 impl AssessmentResult {
     /// Create new assessment result
     pub fn new(score: f64, feedback: impl Into<String>) -> Self {
@@ -280,6 +290,8 @@ impl AssessmentResult {
 }
 
 /// Assessment engine trait
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub trait AssessmentEngine {
     /// Evaluate learner proficiency
     fn evaluate(&self) -> AssessmentResult;
@@ -313,12 +325,15 @@ pub fn generate_assessment_impl(input: &ItemFn, threshold: f64) -> TokenStream {
 
 /// Learning step in a path
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct LearningStep {
     pub level: CompetencyLevel,
     pub description: String,
     pub prerequisites: Vec<CompetencyLevel>,
 }
 
+#[allow(dead_code)]
 impl LearningStep {
     /// Create new learning step
     pub fn new(level: CompetencyLevel, description: impl Into<String>) -> Self {
@@ -340,11 +355,14 @@ impl LearningStep {
 
 /// Learning path with ordered steps
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct LearningPath {
     pub steps: Vec<LearningStep>,
     pub target_level: CompetencyLevel,
 }
 
+#[allow(dead_code)]
 impl LearningPath {
     /// Create new learning path
     pub fn new(steps: Vec<LearningStep>, target_level: CompetencyLevel) -> Self {
@@ -383,6 +401,8 @@ impl LearningPath {
 }
 
 /// Path optimizer trait
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub trait PathOptimizer {
     /// Generate optimal learning path
     fn generate_path(&self, current: CompetencyLevel, target: CompetencyLevel) -> LearningPath;
@@ -435,12 +455,15 @@ pub fn generate_path_impl(input: &ItemFn, target: CompetencyLevel) -> TokenStrea
 
 /// Assessment vote from a validator
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct AssessmentVote {
     pub validator_id: String,
     pub score: f64,
     pub timestamp: u64,
 }
 
+#[allow(dead_code)]
 impl AssessmentVote {
     /// Create new vote
     pub fn new(validator_id: impl Into<String>, score: f64, timestamp: u64) -> Self {
@@ -454,6 +477,8 @@ impl AssessmentVote {
 
 /// Consensus result with Byzantine fault tolerance
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct ConsensusResult {
     pub consensus_score: f64,
     pub valid_votes: usize,
@@ -461,6 +486,7 @@ pub struct ConsensusResult {
     pub passed: bool,
 }
 
+#[allow(dead_code)]
 impl ConsensusResult {
     /// Create new consensus result
     pub fn new(
@@ -482,10 +508,13 @@ impl ConsensusResult {
 ///
 /// Tolerates up to 33% (f = n/3) Byzantine (malicious/faulty) validators.
 /// Requires at least 2f+1 honest validators for correct consensus.
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct ConsensusValidator {
     fault_tolerance: f64,
 }
 
+#[allow(dead_code)]
 impl ConsensusValidator {
     /// Create new consensus validator (default 33% fault tolerance)
     pub fn new() -> Self {
@@ -571,12 +600,15 @@ impl Default for ConsensusValidator {
 
 /// Performance metrics for adaptivity
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct PerformanceMetrics {
     pub success_rate: f64,
     pub avg_completion_time: f64,
     pub attempts: usize,
 }
 
+#[allow(dead_code)]
 impl PerformanceMetrics {
     /// Create new performance metrics
     pub fn new(success_rate: f64, avg_completion_time: f64, attempts: usize) -> Self {
@@ -590,6 +622,8 @@ impl PerformanceMetrics {
 
 /// Difficulty adjustment
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub enum DifficultyAdjustment {
     Decrease(f64), // Decrease by percentage
     Maintain,
@@ -597,11 +631,14 @@ pub enum DifficultyAdjustment {
 }
 
 /// Adaptivity controller for performance-based difficulty scaling
+#[allow(dead_code)]
+// FUTURE: Integrate learning trajectory optimization
 pub struct AdaptivityController {
     target_success_rate: f64,
     adjustment_factor: f64,
 }
 
+#[allow(dead_code)]
 impl AdaptivityController {
     /// Create new adaptivity controller (target 70% success rate)
     pub fn new() -> Self {
@@ -677,7 +714,7 @@ pub fn parse_assessment_args(args: TokenStream) -> Result<f64, syn::Error> {
         if let syn::Meta::NameValue(nv) = meta {
             if nv.path.is_ident("threshold") {
                 if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Float(f), .. }) = &nv.value {
-                    return Ok(f.base10_parse()?);
+                    return f.base10_parse();
                 }
             }
         }

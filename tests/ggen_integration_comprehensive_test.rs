@@ -344,10 +344,7 @@ fn test_parser_file_not_found_error() {
     // Assert
     assert!(result.is_err());
     let error = result.unwrap_err();
-    assert!(matches!(
-        error,
-        clap_noun_verb::error::NounVerbError::NotFound(_)
-    ));
+    assert!(matches!(error, clap_noun_verb::error::NounVerbError::NotFound(_)));
 }
 
 // =============================================================================
@@ -358,15 +355,10 @@ fn test_parser_file_not_found_error() {
 fn test_ggen_error_display_formats() {
     // Arrange
     let empty_error = GgenError::EmptyInput("test input".to_string());
-    let syntax_error = GgenError::InvalidSyntax {
-        line: 42,
-        column: 10,
-        message: "Unexpected token".to_string(),
-    };
-    let missing_prop = GgenError::MissingProperty {
-        property: "name".to_string(),
-        entity: "Command".to_string(),
-    };
+    let syntax_error =
+        GgenError::InvalidSyntax { line: 42, column: 10, message: "Unexpected token".to_string() };
+    let missing_prop =
+        GgenError::MissingProperty { property: "name".to_string(), entity: "Command".to_string() };
 
     // Act
     let empty_msg = empty_error.to_string();

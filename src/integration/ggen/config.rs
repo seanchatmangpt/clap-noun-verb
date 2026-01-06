@@ -100,13 +100,11 @@ impl GgenConfigBuilder {
     ///
     /// Returns an error if required fields are missing
     pub fn build(self) -> GgenResult<GgenConfig> {
-        let template_path = self
-            .template_path
-            .ok_or_else(|| GgenError::config("Template path is required"))?;
+        let template_path =
+            self.template_path.ok_or_else(|| GgenError::config("Template path is required"))?;
 
-        let output_path = self
-            .output_path
-            .ok_or_else(|| GgenError::config("Output path is required"))?;
+        let output_path =
+            self.output_path.ok_or_else(|| GgenError::config("Output path is required"))?;
 
         // Validate paths are not empty
         if template_path.as_os_str().is_empty() {
@@ -158,10 +156,7 @@ mod tests {
 
         // Assert
         assert_eq!(config.variables().get("name"), Some(&"test".to_string()));
-        assert_eq!(
-            config.variables().get("version"),
-            Some(&"1.0.0".to_string())
-        );
+        assert_eq!(config.variables().get("version"), Some(&"1.0.0".to_string()));
     }
 
     #[test]

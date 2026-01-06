@@ -14,11 +14,11 @@
 use clap_noun_verb::ggen_integration::{
     ast::{Argument, ArgumentKind, Command, Flag, TypeAnnotation},
     codegen::CodeGenerator,
-    parse_turtle, generate_cli_code,
+    generate_cli_code, parse_turtle,
 };
+use std::io::Write;
 use std::path::Path;
 use tempfile::NamedTempFile;
-use std::io::Write;
 
 #[test]
 fn test_parse_turtle_file_not_found() {
@@ -50,10 +50,7 @@ fn test_generate_empty_commands() {
 #[test]
 fn test_generate_simple_command() {
     // Arrange
-    let commands = vec![Command::new(
-        "user".to_string(),
-        "User management commands".to_string(),
-    )];
+    let commands = vec![Command::new("user".to_string(), "User management commands".to_string())];
 
     // Act
     let result = generate_cli_code(&commands);

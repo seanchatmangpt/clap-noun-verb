@@ -7,8 +7,8 @@
 //! - Macro expansion performance
 //! - Type-state transitions
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use clap_noun_verb::*;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 // =============================================================================
 // Macro Expansion Benchmarks
@@ -141,11 +141,7 @@ fn bench_json_output_large(c: &mut Criterion) {
 
     let output = LargeOutput {
         items: (0..1000)
-            .map(|i| Item {
-                id: i,
-                name: format!("item_{}", i),
-                value: i as f64 * 1.5,
-            })
+            .map(|i| Item { id: i, name: format!("item_{}", i), value: i as f64 * 1.5 })
             .collect(),
     };
 
@@ -189,11 +185,7 @@ fn bench_result_error_handling(c: &mut Criterion) {
 // Benchmark Groups
 // =============================================================================
 
-criterion_group!(
-    macro_benches,
-    bench_macro_expansion,
-    bench_auto_discovery,
-);
+criterion_group!(macro_benches, bench_macro_expansion, bench_auto_discovery,);
 
 #[cfg(feature = "kernel")]
 criterion_group!(type_state_benches, bench_type_state_transitions,);
@@ -207,16 +199,9 @@ criterion_group!(
     bench_crypto_overhead,
 );
 
-criterion_group!(
-    json_benches,
-    bench_json_output,
-    bench_json_output_large,
-);
+criterion_group!(json_benches, bench_json_output, bench_json_output_large,);
 
-criterion_group!(
-    error_benches,
-    bench_result_error_handling,
-);
+criterion_group!(error_benches, bench_result_error_handling,);
 
 // Main benchmark runner
 #[cfg(feature = "kernel")]
@@ -229,9 +214,4 @@ criterion_main!(
 );
 
 #[cfg(not(feature = "kernel"))]
-criterion_main!(
-    macro_benches,
-    feature_overhead_benches,
-    json_benches,
-    error_benches,
-);
+criterion_main!(macro_benches, feature_overhead_benches, json_benches, error_benches,);

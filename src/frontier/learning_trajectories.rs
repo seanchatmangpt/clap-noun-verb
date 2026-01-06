@@ -36,9 +36,9 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 #[cfg(feature = "learning-trajectories")]
-use petgraph::graph::{DiGraph, NodeIndex};
-#[cfg(feature = "learning-trajectories")]
 use petgraph::algo::dijkstra;
+#[cfg(feature = "learning-trajectories")]
+use petgraph::graph::{DiGraph, NodeIndex};
 #[cfg(feature = "learning-trajectories")]
 use petgraph::visit::EdgeRef;
 
@@ -145,7 +145,8 @@ impl ByzantineDetector {
 
         let mean = values.iter().sum::<f64>() / values.len() as f64;
         let std_dev = {
-            let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
+            let variance =
+                values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
             variance.sqrt()
         };
 
@@ -162,7 +163,8 @@ impl ByzantineDetector {
 
     /// Filter outliers from consensus (returns filtered values)
     pub fn filter_outliers(&self, values: &[f64]) -> Vec<f64> {
-        let outlier_indices: std::collections::HashSet<_> = self.detect_outliers(values).into_iter().collect();
+        let outlier_indices: std::collections::HashSet<_> =
+            self.detect_outliers(values).into_iter().collect();
         values
             .iter()
             .enumerate()
@@ -214,18 +216,33 @@ impl LearningTrajectoryML {
     }
 
     /// Add prerequisite relationship (skill1 requires skill2)
-    pub fn add_prerequisite(&mut self, skill1: &str, skill2: &str, difficulty: f64) -> Result<(), String> {
-        let node1 = self.node_map.get(skill1).ok_or_else(|| format!("Skill {} not found", skill1))?;
-        let node2 = self.node_map.get(skill2).ok_or_else(|| format!("Skill {} not found", skill2))?;
+    pub fn add_prerequisite(
+        &mut self,
+        skill1: &str,
+        skill2: &str,
+        difficulty: f64,
+    ) -> Result<(), String> {
+        let node1 =
+            self.node_map.get(skill1).ok_or_else(|| format!("Skill {} not found", skill1))?;
+        let node2 =
+            self.node_map.get(skill2).ok_or_else(|| format!("Skill {} not found", skill2))?;
 
         self.graph.add_edge(*node2, *node1, difficulty);
         Ok(())
     }
 
     /// Recommend learning path from current to target skill
-    pub fn recommend_path(&self, current: &CompetencyLevel, target: &CompetencyLevel) -> Result<TrajectoryPath, String> {
-        let current_node = self.node_map.get(&current.skill).ok_or_else(|| "Current skill not found".to_string())?;
-        let target_node = self.node_map.get(&target.skill).ok_or_else(|| "Target skill not found".to_string())?;
+    pub fn recommend_path(
+        &self,
+        current: &CompetencyLevel,
+        target: &CompetencyLevel,
+    ) -> Result<TrajectoryPath, String> {
+        let current_node = self
+            .node_map
+            .get(&current.skill)
+            .ok_or_else(|| "Current skill not found".to_string())?;
+        let target_node =
+            self.node_map.get(&target.skill).ok_or_else(|| "Target skill not found".to_string())?;
 
         let distances = dijkstra(&self.graph, *current_node, Some(*target_node), |e| *e.weight());
 
@@ -270,7 +287,10 @@ impl LearningTrajectoryML {
     }
 
     /// Train ML model on trajectory data
-    pub fn train(&mut self, _training_data: &[(CompetencyLevel, CompetencyLevel, TrajectoryPath)]) -> Result<(), String> {
+    pub fn train(
+        &mut self,
+        _training_data: &[(CompetencyLevel, CompetencyLevel, TrajectoryPath)],
+    ) -> Result<(), String> {
         Ok(())
     }
 

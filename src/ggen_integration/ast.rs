@@ -195,7 +195,11 @@ impl Command {
 impl Argument {
     /// Create a new positional argument
     pub fn positional(
-        name: String, index: usize, type_annotation: TypeAnnotation, required: bool, help: String,
+        name: String,
+        index: usize,
+        type_annotation: TypeAnnotation,
+        required: bool,
+        help: String,
     ) -> Self {
         Self {
             name,
@@ -209,8 +213,12 @@ impl Argument {
 
     /// Create a new named argument
     pub fn named(
-        name: String, long: String, short: Option<char>, type_annotation: TypeAnnotation,
-        required: bool, help: String,
+        name: String,
+        long: String,
+        short: Option<char>,
+        type_annotation: TypeAnnotation,
+        required: bool,
+        help: String,
     ) -> Self {
         Self {
             name,
@@ -236,13 +244,7 @@ impl Argument {
 impl Flag {
     /// Create a new flag
     pub fn new(name: String, long: String, short: Option<char>, help: String) -> Self {
-        Self {
-            name,
-            long,
-            short,
-            help,
-            default: false,
-        }
+        Self { name, long, short, help, default: false }
     }
 }
 
@@ -272,8 +274,7 @@ mod tests {
         assert!(!cmd.has_subcommands());
 
         // Arrange - add subcommand
-        cmd.subcommands
-            .push(Command::new("sub".to_string(), "Subcommand".to_string()));
+        cmd.subcommands.push(Command::new("sub".to_string(), "Subcommand".to_string()));
 
         // Act & Assert - now has subcommands
         assert!(cmd.has_subcommands());
@@ -325,10 +326,7 @@ mod tests {
         assert_eq!(TypeAnnotation::Float.to_rust_type(), "f64");
         assert_eq!(TypeAnnotation::Boolean.to_rust_type(), "bool");
         assert_eq!(TypeAnnotation::Path.to_rust_type(), "std::path::PathBuf");
-        assert_eq!(
-            TypeAnnotation::Custom("MyType".to_string()).to_rust_type(),
-            "MyType"
-        );
+        assert_eq!(TypeAnnotation::Custom("MyType".to_string()).to_rust_type(), "MyType");
     }
 
     #[test]

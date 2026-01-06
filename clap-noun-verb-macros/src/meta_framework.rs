@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Meta-Framework: Self-Introspecting Procedural Macros
 //!
 //! This module provides the `#[meta_aware]` procedural macro that generates
@@ -593,15 +596,8 @@ fn map_rust_type_to_xsd_const(rust_type: &str) -> &'static str {
         "i8" | "i16" | "i32" | "i64" | "isize" => "xsd:integer",
         "f32" | "f64" => "xsd:decimal",
         _ => {
-            // Handle generic types
-            if normalized.starts_with("Option<") {
-                // Extract inner type and recurse
-                "xsd:string" // Simplified for now
-            } else if normalized.starts_with("Vec<") {
-                "xsd:string" // Simplified for now
-            } else {
-                "xsd:string" // Default fallback
-            }
+            // Handle generic types (Option, Vec, or any other)
+            "xsd:string" // Simplified fallback for generic types
         }
     }
 }
@@ -610,6 +606,8 @@ fn map_rust_type_to_xsd_const(rust_type: &str) -> &'static str {
 // Supporting Types - These are generated alongside the macro
 // ============================================================================
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Optimization hint returned by query_optimizations
 #[derive(Debug, Clone)]
 pub struct OptimizationHint {
@@ -625,6 +623,8 @@ pub struct OptimizationHint {
     pub confidence: f64,
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Discovered capability
 #[derive(Debug, Clone)]
 pub struct Capability {
@@ -636,6 +636,8 @@ pub struct Capability {
     pub fields: Vec<String>,
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Type of capability
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CapabilityType {
@@ -647,6 +649,8 @@ pub enum CapabilityType {
     Method,
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Proof that a capability is supported
 #[derive(Debug, Clone)]
 pub struct CapabilityProof {
@@ -658,6 +662,8 @@ pub struct CapabilityProof {
     pub timestamp: std::time::SystemTime,
 }
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Capability verification error
 #[derive(Debug, Clone)]
 pub enum CapabilityError {
@@ -682,6 +688,8 @@ impl std::fmt::Display for CapabilityError {
 
 impl std::error::Error for CapabilityError {}
 
+#[allow(dead_code)]
+// FUTURE: Implement capability system integration in meta_framework
 /// Modification error when using type-safe wrapper
 #[derive(Debug, Clone)]
 pub enum ModificationError {

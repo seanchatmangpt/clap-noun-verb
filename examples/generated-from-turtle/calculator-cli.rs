@@ -57,30 +57,15 @@ pub struct CalculationResult {
 // ============================================================================
 
 fn add_numbers(left: f64, right: f64) -> CalculationResult {
-    CalculationResult {
-        operation: "addition".to_string(),
-        left,
-        right,
-        result: left + right,
-    }
+    CalculationResult { operation: "addition".to_string(), left, right, result: left + right }
 }
 
 fn subtract_numbers(left: f64, right: f64) -> CalculationResult {
-    CalculationResult {
-        operation: "subtraction".to_string(),
-        left,
-        right,
-        result: left - right,
-    }
+    CalculationResult { operation: "subtraction".to_string(), left, right, result: left - right }
 }
 
 fn multiply_numbers(left: f64, right: f64) -> CalculationResult {
-    CalculationResult {
-        operation: "multiplication".to_string(),
-        left,
-        right,
-        result: left * right,
-    }
+    CalculationResult { operation: "multiplication".to_string(), left, right, result: left * right }
 }
 
 fn divide_numbers(left: f64, right: f64) -> Result<CalculationResult> {
@@ -90,12 +75,7 @@ fn divide_numbers(left: f64, right: f64) -> Result<CalculationResult> {
         ));
     }
 
-    Ok(CalculationResult {
-        operation: "division".to_string(),
-        left,
-        right,
-        result: left / right,
-    })
+    Ok(CalculationResult { operation: "division".to_string(), left, right, result: left / right })
 }
 
 // ============================================================================

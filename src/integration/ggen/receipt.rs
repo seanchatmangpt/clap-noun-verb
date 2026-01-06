@@ -78,11 +78,7 @@ impl GenerationReceipt {
 
     /// Get a compact summary of the receipt
     pub fn summary(&self) -> String {
-        format!(
-            "Generated {} from {}",
-            self.output_path.display(),
-            self.template_path.display()
-        )
+        format!("Generated {} from {}", self.output_path.display(), self.template_path.display())
     }
 }
 

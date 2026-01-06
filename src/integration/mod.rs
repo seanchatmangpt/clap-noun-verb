@@ -27,7 +27,7 @@ pub use config::{PluginDependencyGraph, PluginManifestLoader};
 pub use executor::{CommandExecutor, ExecutionContext, ExecutionPhase};
 pub use exporters::{DatadogExporter, ElasticsearchExporter};
 #[cfg(feature = "ggen")]
-pub use ggen::{GgenConfig, GgenGenerator, GgenGraph, GgenPipeline, GenerationReceipt};
+pub use ggen::{GenerationReceipt, GgenConfig, GgenGenerator, GgenGraph, GgenPipeline};
 pub use middlewares::{
     DistributedTracingMiddleware, DynamicCachingMiddleware, ObservabilityMiddleware,
     SecurityMiddleware, SmartRetryMiddleware,

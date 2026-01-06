@@ -41,7 +41,7 @@ impl QuantumSafeKey {
         // In production, this would use actual post-quantum algorithms
         Self {
             id: format!("key-{}", 0),
-            public_key: vec![0u8; 32], // Placeholder
+            public_key: vec![0u8; 32],  // Placeholder
             private_key: vec![0u8; 32], // Placeholder
             algorithm: "Kyber1024".to_string(),
         }
@@ -129,10 +129,7 @@ pub struct QuantumKeyManager {
 impl QuantumKeyManager {
     /// Create a new key manager
     pub fn new() -> Self {
-        Self {
-            keys: HashMap::new(),
-            next_id: 0,
-        }
+        Self { keys: HashMap::new(), next_id: 0 }
     }
 
     /// Generate and store a new keypair

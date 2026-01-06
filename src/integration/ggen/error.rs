@@ -115,10 +115,7 @@ mod tests {
         let error = GgenError::template_not_found("/path/to/template.tera");
 
         // Assert
-        assert_eq!(
-            error.to_string(),
-            "Template not found: /path/to/template.tera"
-        );
+        assert_eq!(error.to_string(), "Template not found: /path/to/template.tera");
     }
 
     #[test]

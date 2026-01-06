@@ -44,17 +44,10 @@ pub struct UserList {
 
 fn create_user(username: String, email: String) -> Result<User> {
     if !email.contains('@') {
-        return Err(clap_noun_verb::NounVerbError::argument_error(
-            "Invalid email format",
-        ));
+        return Err(clap_noun_verb::NounVerbError::argument_error("Invalid email format"));
     }
 
-    Ok(User {
-        id: 1,
-        username,
-        email,
-        created_at: "2026-01-06T00:00:00Z".to_string(),
-    })
+    Ok(User { id: 1, username, email, created_at: "2026-01-06T00:00:00Z".to_string() })
 }
 
 fn get_user(username: String) -> User {

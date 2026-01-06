@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Executable Specifications Macros
 //!
 //! This module provides procedural macros for converting documentation into
@@ -21,6 +24,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, Expr, ItemFn, Lit, Meta};
 
+#[allow(dead_code)]
+// FUTURE: Integrate with behavior-driven testing framework
 /// Specification metadata extracted from doc comments
 #[derive(Debug, Clone)]
 pub struct SpecMetadata {
@@ -36,6 +41,8 @@ pub struct SpecMetadata {
     pub spec_id: String,
 }
 
+#[allow(dead_code)]
+// FUTURE: Integrate with behavior-driven testing framework
 /// Property specification for testing
 #[derive(Debug, Clone)]
 pub struct PropertySpec {
@@ -47,6 +54,8 @@ pub struct PropertySpec {
     pub category: String,
 }
 
+#[allow(dead_code)]
+// FUTURE: Integrate with behavior-driven testing framework
 /// Milestone metadata for achievement tracking
 #[derive(Debug, Clone)]
 pub struct MilestoneMetadata {
@@ -60,6 +69,8 @@ pub struct MilestoneMetadata {
     pub status: String,
 }
 
+#[allow(dead_code)]
+// FUTURE: Integrate with behavior-driven testing framework
 /// Invariant metadata for runtime validation
 #[derive(Debug, Clone)]
 pub struct InvariantMetadata {

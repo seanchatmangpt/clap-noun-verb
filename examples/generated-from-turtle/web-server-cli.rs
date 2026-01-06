@@ -36,11 +36,7 @@ pub struct ServerConfig {
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self {
-            host: "127.0.0.1".to_string(),
-            port: 3000,
-            workers: 4,
-        }
+        Self { host: "127.0.0.1".to_string(), port: 3000, workers: 4 }
     }
 }
 
@@ -87,11 +83,7 @@ fn restart_server() -> OperationResult {
 }
 
 fn get_server_status() -> ServerStatus {
-    ServerStatus {
-        running: true,
-        uptime_seconds: 3600,
-        active_connections: 42,
-    }
+    ServerStatus { running: true, uptime_seconds: 3600, active_connections: 42 }
 }
 
 // ============================================================================
