@@ -79,11 +79,7 @@ pub trait MetaCapability: Send + Sync {
         let mut triples = Vec::with_capacity(3);
 
         // Type triple
-        triples.push(Triple::new(
-            subject.clone(),
-            type_pred,
-            capability_type,
-        ));
+        triples.push(Triple::new(subject.clone(), type_pred, capability_type));
 
         // Label triple
         triples.push(Triple::new(
@@ -161,9 +157,7 @@ pub struct MetaFramework {
 impl MetaFramework {
     /// Create new meta-framework instance
     pub fn new() -> Self {
-        Self {
-            capabilities: Vec::new(),
-        }
+        Self { capabilities: Vec::new() }
     }
 
     /// Register a capability
@@ -203,10 +197,7 @@ impl Default for MetaFramework {
 pub fn discover_capabilities_typetag() -> Vec<String> {
     // In a real implementation, this would use typetag's registry
     // For now, return capability type names
-    vec![
-        "FileReaderCapability".to_string(),
-        "FileWriterCapability".to_string(),
-    ]
+    vec!["FileReaderCapability".to_string(), "FileWriterCapability".to_string()]
 }
 
 /// Serialize capability using erased-serde
@@ -341,7 +332,7 @@ mod tests {
         // Assert: Error returned (no panic)
         assert!(result.is_err());
         match result {
-            Err(FrontierError::InvalidIri(_)) => {},
+            Err(FrontierError::InvalidIri(_)) => {}
             _ => panic!("Expected InvalidIri error"),
         }
     }

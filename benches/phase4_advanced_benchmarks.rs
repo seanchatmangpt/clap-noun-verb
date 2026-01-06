@@ -47,11 +47,7 @@ struct EconomicSimulation {
 impl EconomicSimulation {
     fn new(agent_count: usize, task_count: usize) -> Self {
         let agents = (0..agent_count)
-            .map(|id| Agent {
-                id,
-                wealth: 100.0,
-                utility: |task| task.reward / task.difficulty,
-            })
+            .map(|id| Agent { id, wealth: 100.0, utility: |task| task.reward / task.difficulty })
             .collect();
 
         let tasks = (0..task_count)
@@ -62,11 +58,7 @@ impl EconomicSimulation {
             })
             .collect();
 
-        Self {
-            agents,
-            tasks,
-            time_step: 0,
-        }
+        Self { agents, tasks, time_step: 0 }
     }
 
     fn step(&mut self) {
@@ -158,21 +150,17 @@ fn bench_vickrey_auction(c: &mut Criterion) {
 
     for bid_count in [10, 100, 1000].iter() {
         group.throughput(Throughput::Elements(*bid_count as u64));
-        group.bench_with_input(
-            BenchmarkId::from_parameter(bid_count),
-            bid_count,
-            |b, &count| {
-                let mut auction = VickreyAuction::new();
-                for i in 0..count {
-                    auction.submit_bid(i, rand::random::<f64>() * 100.0);
-                }
+        group.bench_with_input(BenchmarkId::from_parameter(bid_count), bid_count, |b, &count| {
+            let mut auction = VickreyAuction::new();
+            for i in 0..count {
+                auction.submit_bid(i, rand::random::<f64>() * 100.0);
+            }
 
-                b.iter(|| {
-                    let result = auction.clear();
-                    black_box(result)
-                });
-            },
-        );
+            b.iter(|| {
+                let result = auction.clear();
+                black_box(result)
+            });
+        });
     }
 
     group.finish();
@@ -187,10 +175,7 @@ fn bench_combinatorial_auction(c: &mut Criterion) {
 
     impl CombinatorialAuction {
         fn new(task_count: usize) -> Self {
-            Self {
-                tasks: (0..task_count).collect(),
-                bids: Vec::new(),
-            }
+            Self { tasks: (0..task_count).collect(), bids: Vec::new() }
         }
 
         fn submit_bid(&mut self, agent_id: usize, tasks: Vec<usize>, amount: f64) {
@@ -221,27 +206,22 @@ fn bench_combinatorial_auction(c: &mut Criterion) {
     let mut group = c.benchmark_group("combinatorial_auction");
 
     for task_count in [10, 50, 100].iter() {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(task_count),
-            task_count,
-            |b, &count| {
-                let mut auction = CombinatorialAuction::new(count);
+        group.bench_with_input(BenchmarkId::from_parameter(task_count), task_count, |b, &count| {
+            let mut auction = CombinatorialAuction::new(count);
 
-                // Generate random bids
-                for agent_id in 0..100 {
-                    let bundle_size = (rand::random::<usize>() % 5) + 1;
-                    let bundle: Vec<usize> = (0..bundle_size)
-                        .map(|_| rand::random::<usize>() % count)
-                        .collect();
-                    auction.submit_bid(agent_id, bundle, rand::random::<f64>() * 100.0);
-                }
+            // Generate random bids
+            for agent_id in 0..100 {
+                let bundle_size = (rand::random::<usize>() % 5) + 1;
+                let bundle: Vec<usize> =
+                    (0..bundle_size).map(|_| rand::random::<usize>() % count).collect();
+                auction.submit_bid(agent_id, bundle, rand::random::<f64>() * 100.0);
+            }
 
-                b.iter(|| {
-                    let allocation = auction.clear();
-                    black_box(allocation)
-                });
-            },
-        );
+            b.iter(|| {
+                let allocation = auction.clear();
+                black_box(allocation)
+            });
+        });
     }
 
     group.finish();
@@ -272,9 +252,8 @@ impl FederatedNetwork {
                 }
 
                 // Random neighbor connections
-                let neighbors: Vec<usize> = (0..peer_count)
-                    .filter(|&n| n != id && rand::random::<f64>() < 0.3)
-                    .collect();
+                let neighbors: Vec<usize> =
+                    (0..peer_count).filter(|&n| n != id && rand::random::<f64>() < 0.3).collect();
 
                 NetworkPeer { id, data, neighbors }
             })
@@ -321,18 +300,14 @@ fn bench_dht_lookup(c: &mut Criterion) {
     let mut group = c.benchmark_group("dht_lookup");
 
     for peer_count in [10, 50, 100].iter() {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(peer_count),
-            peer_count,
-            |b, &count| {
-                let network = FederatedNetwork::new(count);
+        group.bench_with_input(BenchmarkId::from_parameter(peer_count), peer_count, |b, &count| {
+            let network = FederatedNetwork::new(count);
 
-                b.iter(|| {
-                    let result = network.dht_lookup(black_box("key_5"), black_box(0));
-                    black_box(result)
-                });
-            },
-        );
+            b.iter(|| {
+                let result = network.dht_lookup(black_box("key_5"), black_box(0));
+                black_box(result)
+            });
+        });
     }
 
     group.finish();
@@ -410,16 +385,10 @@ fn bench_byzantine_consensus(c: &mut Criterion) {
         fn new(node_count: usize, byzantine_count: usize) -> Self {
             let mut nodes = Vec::new();
             for i in 0..node_count {
-                nodes.push(ConsensusNode {
-                    id: i,
-                    is_byzantine: i < byzantine_count,
-                });
+                nodes.push(ConsensusNode { id: i, is_byzantine: i < byzantine_count });
             }
 
-            Self {
-                nodes,
-                proposal: "transaction_data".to_string(),
-            }
+            Self { nodes, proposal: "transaction_data".to_string() }
         }
 
         fn execute(&self) -> bool {
@@ -584,7 +553,4 @@ criterion_group!(
     bench_byzantine_consensus,
 );
 
-criterion_main!(
-    economic_benches,
-    network_benches,
-);
+criterion_main!(economic_benches, network_benches,);

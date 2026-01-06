@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+// FUTURE: These types are part of the frontier feature set and will be integrated in future phases
+
 //! Reflexive Test Generation Macros
 //!
 //! Automatically generates tests from semantic combinations using RDF ontology metadata.
@@ -29,6 +32,8 @@ use std::collections::{HashMap, HashSet};
 /// Encodes the capability combination and expected behavior at the type level.
 /// Generic parameter T represents the return type constraint.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct TestCase<T> {
     /// Unique identifier for the test case
     pub id: String,
@@ -40,6 +45,7 @@ pub struct TestCase<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
+#[allow(dead_code)]
 impl<T> TestCase<T> {
     /// Create a new test case with type-safe constraints
     pub fn new(id: String, capabilities: Vec<String>, assertion: Assertion) -> Self {
@@ -59,6 +65,8 @@ impl<T> TestCase<T> {
 
 /// Type-safe assertion representation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub enum Assertion {
     /// Assert the result equals a value
     Equals(String),
@@ -76,6 +84,8 @@ pub enum Assertion {
 ///
 /// Uses const generics for zero-cost coverage tracking at compile time.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct CoverageMask<const N: usize> {
     /// Bitset of covered capability combinations
     covered: [bool; N],
@@ -83,6 +93,7 @@ pub struct CoverageMask<const N: usize> {
     combination_map: HashMap<Vec<String>, usize>,
 }
 
+#[allow(dead_code)]
 impl<const N: usize> CoverageMask<N> {
     /// Create a new coverage mask with N combinations
     pub fn new() -> Self {
@@ -138,6 +149,8 @@ impl<const N: usize> Default for CoverageMask<N> {
 ///
 /// Tracks performance over time with zero-cost abstraction using compile-time size.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct RegressionBaseline<const N: usize> {
     /// Baseline measurements (capability -> duration in ns)
     baselines: HashMap<String, u64>,
@@ -145,6 +158,7 @@ pub struct RegressionBaseline<const N: usize> {
     max_regression_percent: f64,
 }
 
+#[allow(dead_code)]
 impl<const N: usize> RegressionBaseline<N> {
     /// Create a new regression detector with max allowed regression
     pub fn new(max_regression_percent: f64) -> Self {
@@ -177,6 +191,8 @@ impl<const N: usize> RegressionBaseline<N> {
 
 /// Performance regression report
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct RegressionReport {
     pub capability: String,
     pub baseline_ns: u64,
@@ -191,6 +207,8 @@ pub struct RegressionReport {
 /// Extracts test cases from RDF ontology metadata
 ///
 /// Parses RDF triples to discover capability combinations and generate test cases.
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct SemanticTestGenerator {
     /// RDF ontology data (Turtle format)
     ontology: String,
@@ -198,6 +216,7 @@ pub struct SemanticTestGenerator {
     combinations_cache: Option<Vec<Vec<String>>>,
 }
 
+#[allow(dead_code)]
 impl SemanticTestGenerator {
     /// Create a new semantic test generator from RDF ontology
     pub fn new(ontology: String) -> Self {
@@ -283,11 +302,14 @@ impl SemanticTestGenerator {
 /// Integrates with proptest for property-based testing
 ///
 /// Generates proptest strategies from type information and capability metadata.
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct PropTestIntegrator {
     /// Type strategies mapping (type -> strategy code)
     type_strategies: HashMap<String, String>,
 }
 
+#[allow(dead_code)]
 impl PropTestIntegrator {
     /// Create a new proptest integrator
     pub fn new() -> Self {
@@ -346,6 +368,8 @@ impl Default for PropTestIntegrator {
 /// Finds all semantic capability combinations
 ///
 /// Enumerates valid capability combinations based on semantic rules.
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct CombinatorGatherer {
     /// All available capabilities
     capabilities: Vec<String>,
@@ -353,6 +377,7 @@ pub struct CombinatorGatherer {
     exclusions: HashMap<String, HashSet<String>>,
 }
 
+#[allow(dead_code)]
 impl CombinatorGatherer {
     /// Create a new combinator gatherer
     pub fn new(capabilities: Vec<String>) -> Self {
@@ -433,6 +458,8 @@ impl CombinatorGatherer {
 /// Detects untested capability combinations
 ///
 /// Analyzes test coverage and identifies gaps in capability coverage.
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct CoverageAnalyzer {
     /// All possible combinations
     all_combinations: Vec<Vec<String>>,
@@ -440,6 +467,7 @@ pub struct CoverageAnalyzer {
     tested_combinations: HashSet<Vec<String>>,
 }
 
+#[allow(dead_code)]
 impl CoverageAnalyzer {
     /// Create a new coverage analyzer
     pub fn new(all_combinations: Vec<Vec<String>>) -> Self {
@@ -481,6 +509,8 @@ impl CoverageAnalyzer {
 
 /// Coverage analysis report
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
+// FUTURE: Implement reflexive testing framework
 pub struct CoverageReport {
     pub total_combinations: usize,
     pub tested_combinations: usize,

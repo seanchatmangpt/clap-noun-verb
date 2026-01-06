@@ -73,6 +73,17 @@ struct VerbosityOutput {
     description: String,
 }
 
+/// Get verbosity description from level
+fn verbosity_description(verbose: usize) -> String {
+    match verbose {
+        0 => "quiet",
+        1 => "normal",
+        2 => "verbose",
+        _ => "debug",
+    }
+    .to_string()
+}
+
 /// Run with configurable verbosity
 ///
 /// # Arguments
@@ -80,14 +91,7 @@ struct VerbosityOutput {
 #[noun("runner", "Task runner commands")]
 #[verb("execute")]
 fn runner_execute(verbose: usize) -> Result<VerbosityOutput> {
-    let description = match verbose {
-        0 => "quiet",
-        1 => "normal",
-        2 => "verbose",
-        _ => "debug",
-    }
-    .to_string();
-
+    let description = verbosity_description(verbose);
     Ok(VerbosityOutput { level: verbose, description })
 }
 

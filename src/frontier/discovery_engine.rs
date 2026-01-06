@@ -116,7 +116,8 @@ impl CapabilitySpace {
     /// Add capability to search space
     pub fn add_capability(&mut self, id: impl Into<String>, category: impl Into<String>) {
         let id = id.into();
-        let cap = Capability { id: id.clone(), category: category.into(), metadata: HashMap::new() };
+        let cap =
+            Capability { id: id.clone(), category: category.into(), metadata: HashMap::new() };
         self.capabilities.insert(id, cap);
     }
 
@@ -276,7 +277,9 @@ impl CapabilityOptimizer for PsoOptimizer {
             }
         }
 
-        results.sort_by(|a, b| b.score.total().partial_cmp(&a.score.total()).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score.total().partial_cmp(&a.score.total()).unwrap_or(std::cmp::Ordering::Equal)
+        });
         results.truncate(5);
         results
     }
