@@ -35,6 +35,7 @@ use serde::Serialize;
 // Domain imports - pure business logic
 use domain::{
     Paper, PaperFamily, ThesisStructure, ThesisFamily, ThesisSchedule, Config,
+    ResearchThesis, DefenseOutline, ThesisValidation,
     // v5 features
     build_playground_ontology, IntrospectionResponse, OutputFormat, format_output,
     ShellType, generate_completion_script, MiddlewareConfig, MiddlewareStats,
@@ -264,6 +265,108 @@ fn main() -> Result<()> {
             }, args: [
                 clap::Arg::new("family").help("Thesis family").default_value("IMRaD"),
                 clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("validate", "Validate research thesis against Q-Invariants", |args: &VerbArgs| {
+                let format = get_format(args);
+                let thesis = ResearchThesis::clap_noun_verb_v550();
+                let validation = ThesisValidation::validate(&thesis);
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", "✓ Research Thesis Validation Results".bright_cyan().bold());
+                    println!("\n{}", "  Q-Invariants:".bright_green());
+                    println!("    {} Coherence: {}/1.0", if validation.coherence.passed { "✅" } else { "❌" }, validation.coherence.score);
+                    println!("    {} Completeness: {}/1.0", if validation.completeness.passed { "✅" } else { "❌" }, validation.completeness.score);
+                    println!("    {} Evidence: {}/1.0", if validation.evidence.passed { "✅" } else { "❌" }, validation.evidence.score);
+                    println!("    {} Logicality: {}/1.0", if validation.logicality.passed { "✅" } else { "❌" }, validation.logicality.score);
+                    println!("    {} Novelty: {}/1.0", if validation.novelty.passed { "✅" } else { "❌" }, validation.novelty.score);
+                    println!("    {} Clarity: {}/1.0", if validation.clarity.passed { "✅" } else { "❌" }, validation.clarity.score);
+                    println!("    {} Integration: {}/1.0", if validation.integration.passed { "✅" } else { "❌" }, validation.integration.score);
+                    println!("\n  {}", format!("Overall Quality: {}/1.0", validation.overall_score()).bright_yellow());
+                    println!("  {}", if validation.ready_for_defense() {
+                        "Status: READY FOR DEFENSE ✓".bright_green()
+                    } else {
+                        "Status: NOT READY (issues found)".bright_red()
+                    });
+                } else {
+                    println!("{}", format_output(&validation, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("defense", "Generate defense outline with timing", |args: &VerbArgs| {
+                let format = get_format(args);
+                let thesis = ResearchThesis::clap_noun_verb_v550();
+                let defense_outline = thesis.defense_outline();
+
+                if format == OutputFormat::Plain {
+                    println!("\n{}", defense_outline.title.bright_cyan().bold());
+                    println!("\n{}", "Opening:".bright_green());
+                    println!("  {}", defense_outline.opening_statement);
+
+                    println!("\n{}", "Chapters:".bright_green());
+                    for chapter in &defense_outline.chapters {
+                        println!("  {} ({}m): {}",
+                            format!("Ch{}", chapter.chapter_number).bright_yellow(),
+                            chapter.estimated_minutes,
+                            chapter.title
+                        );
+                    }
+
+                    println!("\n{}", "Closing:".bright_green());
+                    println!("  {}", defense_outline.closing_statement);
+
+                    println!("\n{} {} minutes", "Total Duration:".bright_yellow(), defense_outline.total_minutes);
+                } else {
+                    println!("{}", format_output(&defense_outline, format).map_err(to_cli_error)?);
+                }
+                Ok(())
+            }, args: [
+                clap::Arg::new("format").short('f').long("format").help("Output format"),
+            ]),
+
+            verb!("generate", "Generate defense presentation (LaTeX or Markdown)", |args: &VerbArgs| {
+                let format_type = args.get_one_str_opt("type").unwrap_or_else(|| "tex".to_string());
+                let output_path = args.get_one_str_opt("output");
+
+                let thesis = ResearchThesis::clap_noun_verb_v550();
+                let defense_outline = thesis.defense_outline();
+
+                eprintln!("{}", format!("Generating {} defense presentation...", format_type).bright_yellow());
+
+                let tera = get_template_engine().map_err(to_cli_error)?;
+
+                let (template_name, default_path, rendered) = match format_type.as_str() {
+                    "tex" => {
+                        let mut context = tera::Context::new();
+                        context.insert("thesis", &thesis);
+                        context.insert("defense_outline", &defense_outline);
+                        let rendered = tera.render("presentation.tex.tera", &context)
+                            .map_err(|e| to_cli_error(format!("LaTeX template error: {}", e)))?;
+                        ("presentation.tex.tera", "output/defense-presentation.tex", rendered)
+                    },
+                    "md" => {
+                        let mut context = tera::Context::new();
+                        context.insert("thesis", &thesis);
+                        context.insert("defense_outline", &defense_outline);
+                        let rendered = tera.render("defense_outline.md.tera", &context)
+                            .map_err(|e| to_cli_error(format!("Markdown template error: {}", e)))?;
+                        ("defense_outline.md.tera", "output/defense-outline.md", rendered)
+                    },
+                    _ => return Err(to_cli_error(format!("Unknown format: {}. Use 'tex' or 'md'", format_type)))
+                };
+
+                let path = output_path.unwrap_or_else(|| default_path.to_string());
+                ensure_output_dir("output").map_err(to_cli_error)?;
+                write_paper(&path, &rendered).map_err(to_cli_error)?;
+
+                println!("{} {} {}", "✅ Generated:".bright_green(), template_name.bright_yellow(), path.bright_cyan());
+                Ok(())
+            }, args: [
+                clap::Arg::new("type").help("Output type (tex or md)").default_value("tex"),
+                clap::Arg::new("output").short('o').long("output").help("Output file path"),
             ]),
         ]))
 
