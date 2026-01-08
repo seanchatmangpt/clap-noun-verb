@@ -14,16 +14,10 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 /// Stub generation module
-pub mod generation {
-    
-}
+pub mod generation {}
 
 /// Stub project module
-pub mod project {
-    
-}
+pub mod project {}
 
 /// Stub template module
-pub mod template {
-    
-}
+pub mod template {}

@@ -252,6 +252,7 @@ impl Default for CodeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ggen_integration::ast::TypeAnnotation;
 
     #[test]
     fn test_generator_new() {

@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-
 /// A receipt for a code generation operation
 ///
 /// Receipts provide cryptographic proof that generation was deterministic.

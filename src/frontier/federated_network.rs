@@ -31,7 +31,6 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use thiserror::Error;
 
-
 /// Result type for federated network operations
 pub type Result<T> = std::result::Result<T, FederatedError>;
 

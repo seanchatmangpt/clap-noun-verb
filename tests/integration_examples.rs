@@ -11,7 +11,7 @@ use std::process::{Command, Stdio};
 
 /// Helper function to run an example and capture output
 fn run_example(example_name: &str, args: Vec<&str>) -> Result<(String, i32)> {
-    let mut cmd = Command::new("cargo")
+    let cmd = Command::new("cargo")
         .args(&["run", "--example", example_name, "--"])
         .args(&args)
         .stdout(Stdio::piped())
@@ -41,7 +41,7 @@ fn run_example(example_name: &str, args: Vec<&str>) -> Result<(String, i32)> {
 #[test]
 fn test_basic_example_help() -> Result<()> {
     // Test that the basic example compiles and shows help
-    let (output, _code) = run_example("basic", vec!["--help"])?;
+    let (output, _code) = run_example("tutorial_basic", vec!["--help"])?;
 
     // Should show help (exit code 0) or error gracefully
     assert!(
@@ -56,7 +56,7 @@ fn test_basic_example_help() -> Result<()> {
 #[test]
 fn test_basic_example_services_status() -> Result<()> {
     // Test that basic example can execute a command
-    let (output, _code) = run_example("basic", vec!["services", "status"])?;
+    let (output, _code) = run_example("tutorial_basic", vec!["services", "status"])?;
 
     // Should produce JSON output
     assert!(
@@ -71,7 +71,7 @@ fn test_basic_example_services_status() -> Result<()> {
 #[test]
 fn test_services_example() -> Result<()> {
     // Test services example
-    let (output, _code) = run_example("services", vec!["services", "status"])?;
+    let (output, _code) = run_example("tutorial_services", vec!["services", "status"])?;
 
     // Should produce JSON output
     assert!(
@@ -86,7 +86,7 @@ fn test_services_example() -> Result<()> {
 #[test]
 fn test_services_example_logs() -> Result<()> {
     // Test services example with arguments
-    let (output, _code) = run_example("services", vec!["services", "logs", "--service", "web"])?;
+    let (output, _code) = run_example("tutorial_services", vec!["services", "logs", "--service", "web"])?;
 
     // Should produce JSON output
     assert!(
@@ -101,7 +101,7 @@ fn test_services_example_logs() -> Result<()> {
 #[test]
 fn test_collector_example() -> Result<()> {
     // Test collector example
-    let (output, _code) = run_example("collector", vec!["collector", "status"])?;
+    let (output, _code) = run_example("ref_collector", vec!["collector", "status"])?;
 
     // Should produce JSON output
     assert!(
@@ -117,7 +117,7 @@ fn test_collector_example() -> Result<()> {
 fn test_arguments_example() -> Result<()> {
     // Test arguments example with required and optional args
     let (output, _code) =
-        run_example("arguments", vec!["services", "logs", "--service", "api", "--lines", "10"])?;
+        run_example("tutorial_arguments", vec!["services", "logs", "--service", "api", "--lines", "10"])?;
 
     // Should produce JSON output
     assert!(
@@ -133,7 +133,7 @@ fn test_arguments_example() -> Result<()> {
 fn test_arguments_example_with_flag() -> Result<()> {
     // Test arguments example with boolean flag
     let (output, _code) =
-        run_example("arguments", vec!["services", "restart", "--service", "api", "--force"])?;
+        run_example("tutorial_arguments", vec!["services", "restart", "--service", "api", "--force"])?;
 
     // Should produce JSON output
     assert!(
@@ -166,7 +166,7 @@ fn test_validation_example() -> Result<()> {
 #[test]
 fn test_nested_example() -> Result<()> {
     // Test nested example
-    let (output, _code) = run_example("nested", vec!["test", "run"])?;
+    let (output, _code) = run_example("ref_nested", vec!["test", "run"])?;
 
     // Should produce JSON output
     assert!(
@@ -181,7 +181,7 @@ fn test_nested_example() -> Result<()> {
 #[test]
 fn test_framework_example() -> Result<()> {
     // Test framework example
-    let (output, _code) = run_example("framework", vec!["services", "status"])?;
+    let (output, _code) = run_example("ref_framework", vec!["services", "status"])?;
 
     // Should produce JSON output
     assert!(
@@ -196,7 +196,7 @@ fn test_framework_example() -> Result<()> {
 #[test]
 fn test_attribute_macro_example() -> Result<()> {
     // Test attribute_macro example
-    let (output, _code) = run_example("attribute_macro", vec!["services", "status"])?;
+    let (output, _code) = run_example("ref_attribute_macro", vec!["services", "status"])?;
 
     // Should produce JSON output
     assert!(

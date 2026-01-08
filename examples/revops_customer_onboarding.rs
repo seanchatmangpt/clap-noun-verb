@@ -4,8 +4,6 @@
 //! Build: cargo build --example revops_customer_onboarding --features examples
 //! Run: ./target/debug/examples/revops_customer_onboarding
 
-use std::collections::HashMap;
-
 fn main() {
     let onboarding = CustomerOnboarding::new();
 

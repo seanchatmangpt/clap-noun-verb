@@ -3,7 +3,6 @@
 //! Demonstrates how to use AppContext<T> to share state across all commands.
 //! This is useful for sharing database connections, configuration, loggers, etc.
 
-use clap_noun_verb::AppContext;
 use clap_noun_verb::Result;
 use clap_noun_verb_macros::{noun, verb};
 use serde::Serialize;

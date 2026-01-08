@@ -344,7 +344,7 @@ fn test_parser_file_not_found_error() {
     // Assert
     assert!(result.is_err());
     let error = result.unwrap_err();
-    assert!(matches!(error, clap_noun_verb::error::NounVerbError::NotFound(_)));
+    assert!(matches!(error, clap_noun_verb::error::NounVerbError::CommandNotFound { .. }));
 }
 
 // =============================================================================

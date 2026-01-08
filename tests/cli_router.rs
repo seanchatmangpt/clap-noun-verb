@@ -4,7 +4,7 @@ use clap::Command;
 use clap_noun_verb::cli::router::CommandRouter;
 use clap_noun_verb::error::{NounVerbError, Result};
 use clap_noun_verb::noun::NounCommand;
-use clap_noun_verb::verb::{VerbArgs, VerbCommand, VerbContext};
+use clap_noun_verb::verb::{VerbArgs, VerbCommand};
 
 #[test]
 fn test_router_new() {

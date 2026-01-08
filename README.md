@@ -6,7 +6,7 @@
 [![Documentation](https://docs.rs/clap-noun-verb/badge.svg)](https://docs.rs/clap-noun-verb)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE.md)
 
-**Current Version**: v6.0.0 | [Changelog](CHANGELOG.md) | [Release Notes](docs/v6_0_0_RELEASE_NOTES.md) | [Upgrade Guide](docs/v6_0_0_MIGRATION_GUIDE.md)
+**Current Version**: v6.0.1 | [Changelog](CHANGELOG.md) | [Release Notes](docs/v6_0_1_RELEASE_NOTES.md) | [Patch Summary](docs/v6_0_1_PATCH_SUMMARY.md)
 
 > **Architecture First:** CLI is interface, not application. Separate domain logic from CLI.
 

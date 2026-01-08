@@ -203,7 +203,7 @@ impl<T> TestOptionExt<T> for Option<T> {
     #[track_caller]
     fn test_none(self, msg: &str) {
         match self {
-            Some(v) => panic!(
+            Some(_v) => panic!(
                 "[TEST ASSERTION FAILED] {}: Option was Some({:?})",
                 msg,
                 std::any::type_name::<T>()
@@ -290,6 +290,7 @@ macro_rules! test_none {
 /// ```rust
 /// use tests::common::test_prelude::*;
 /// ```
+#[allow(unused_imports)]
 pub mod prelude {
     pub use super::{TestOptionExt, TestResultExt};
     pub use crate::{test_none, test_ok, test_some};

@@ -26,7 +26,9 @@ impl fmt::Display for CompositionError {
                     source, source_type, target, target_type
                 )
             }
-            CompositionError::ConstraintViolation(msg) => write!(f, "Constraint violation: {}", msg),
+            CompositionError::ConstraintViolation(msg) => {
+                write!(f, "Constraint violation: {}", msg)
+            }
             CompositionError::EmptyComposition => {
                 write!(f, "Cannot compose empty capability list")
             }

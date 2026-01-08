@@ -16,8 +16,8 @@ fn __test_opt_wrapper(input: HandlerInput) -> Result<HandlerOutput> {
 }
 
 #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__VERB_REGISTRY)]
-static __init_test_opt: fn() = || {
-    let (noun_name_static, noun_about_static, verb_name_final) = {
+static __INIT_TEST_OPT: fn() = || {
+    let (noun_name_static, _noun_about_static, verb_name_final) = {
         let inferred_name = "exact_macro_output".to_string();
         let final_verb_name = "test".to_string();
         let noun_about = String::new();
@@ -72,6 +72,6 @@ static __init_test_opt: fn() = || {
 #[test]
 fn it_compiles() {
     // If this compiles, the macro output is correct
-    test_opt(Some("test".to_string()));
-    test_opt(None);
+    let _ = test_opt(Some("test".to_string()));
+    let _ = test_opt(None);
 }

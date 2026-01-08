@@ -40,7 +40,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
-
 #[cfg(feature = "agent2028")]
 use rand;
 

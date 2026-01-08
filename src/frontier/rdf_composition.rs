@@ -124,7 +124,6 @@ impl SemanticDiscoveryOxigraph {
     /// - UNION queries
     /// - Aggregation (COUNT, etc.)
     pub fn query_sparql(&self, query: &str) -> Result<Vec<QueryResult>> {
-        
         use oxigraph::sparql::QueryResults;
 
         let parsed = oxigraph::sparql::Query::parse(query, None)

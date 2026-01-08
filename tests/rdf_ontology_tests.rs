@@ -209,7 +209,7 @@ mod sparql_validation_tests {
     // Helper functions for test setup
 
     /// Load RDF ontology from Turtle file
-    fn load_rdf_ontology_from_file(path: &str) -> RDFOntology {
+    fn load_rdf_ontology_from_file(_path: &str) -> RDFOntology {
         // This would use an RDF library like sophia or oxigraph
         // For now, placeholder implementation
         unimplemented!("RDF ontology loading - implement with sophia or oxigraph")

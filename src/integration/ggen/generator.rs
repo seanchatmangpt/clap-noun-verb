@@ -11,7 +11,7 @@ use crate::integration::ggen::{
 };
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// High-level code generator with type-state pattern
 ///
