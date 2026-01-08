@@ -28,7 +28,7 @@
 #[cfg(feature = "rdf-composition")]
 use oxigraph::io::{RdfFormat, RdfParser};
 #[cfg(feature = "rdf-composition")]
-use oxigraph::model::{BlankNode, Literal, NamedNode, Quad, Subject, Term};
+use oxigraph::model::{Literal, NamedNode, Quad, Subject, Term};
 
 use crate::rdf::ontology::Ontology;
 use crate::rdf::types::{RdfTriple, RdfValue};
@@ -74,13 +74,13 @@ pub struct ParsedTurtle {
 
 impl ParsedTurtle {
     /// Create a new ParsedTurtle from components
-    pub fn new(ontology: Ontology, prefixes: HashMap<String, String>, triple_count: usize, document_size: usize) -> Self {
-        Self {
-            ontology,
-            prefixes,
-            triple_count,
-            document_size,
-        }
+    pub fn new(
+        ontology: Ontology,
+        prefixes: HashMap<String, String>,
+        triple_count: usize,
+        document_size: usize,
+    ) -> Self {
+        Self { ontology, prefixes, triple_count, document_size }
     }
 
     /// Get the parsed ontology
@@ -188,13 +188,11 @@ impl TurtleParser {
 
         // Parse using oxigraph's RdfParser
         // In oxigraph 0.5.x, we use for_reader to create an iterator
-        let parse_result = RdfParser::from_format(RdfFormat::Turtle)
-            .for_reader(input.as_bytes());
+        let parse_result = RdfParser::from_format(RdfFormat::Turtle).for_reader(input.as_bytes());
 
         for result in parse_result {
-            let quad = result.map_err(|e| TurtleError::ParseError {
-                message: format!("Parse error: {}", e),
-            })?;
+            let quad = result
+                .map_err(|e| TurtleError::ParseError { message: format!("Parse error: {}", e) })?;
 
             // Convert oxigraph Quad to our RdfTriple (ignoring graph name)
             let rdf_triple = self.convert_quad(&quad)?;

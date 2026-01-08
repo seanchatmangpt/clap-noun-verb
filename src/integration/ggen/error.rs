@@ -5,6 +5,8 @@
 //! - Provide Result type alias
 //! - No panic or unwrap in production code
 
+use crate::ggen_core;
+use crate::ggen_domain;
 use std::path::PathBuf;
 use thiserror::Error;
 

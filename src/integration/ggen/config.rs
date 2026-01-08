@@ -3,6 +3,7 @@
 //! Provides builder pattern for ergonomic configuration with compile-time guarantees.
 
 use crate::integration::ggen::error::{GgenError, GgenResult};
+use crate::ggen_core;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

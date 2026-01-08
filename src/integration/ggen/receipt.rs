@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-#[cfg(feature = "crypto")]
-use blake3::Hash as Blake3Hash;
 
 /// A receipt for a code generation operation
 ///

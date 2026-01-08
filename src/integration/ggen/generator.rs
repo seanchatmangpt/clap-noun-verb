@@ -2,6 +2,7 @@
 //!
 //! Provides an ergonomic interface for code generation with compile-time guarantees.
 
+use crate::ggen_core;
 use crate::integration::ggen::{
     config::{GgenConfig, GgenConfigBuilder},
     error::{GgenError, GgenResult},
@@ -10,7 +11,7 @@ use crate::integration::ggen::{
 };
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// High-level code generator with type-state pattern
 ///

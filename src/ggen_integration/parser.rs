@@ -33,7 +33,7 @@
 //! # }
 //! ```
 
-use crate::ggen_integration::ast::{Argument, ArgumentKind, Command, Flag, TypeAnnotation};
+use crate::ggen_integration::ast::{Argument, Command, Flag, TypeAnnotation};
 use crate::ggen_integration::error::{GgenError, GgenResult as Result};
 use std::path::Path;
 

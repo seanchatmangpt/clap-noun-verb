@@ -1,26 +1,43 @@
 //! Type-safe composition validation
 
 use super::capability::CapabilityMetadata;
-use thiserror::Error;
+use std::fmt;
 
 /// Errors from composition validation
-#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum CompositionError {
     /// Type mismatch between capabilities
-    #[error("Type mismatch: {source} outputs {source_type}, but {target} expects {target_type}")]
     TypeMismatch { source: String, source_type: String, target: String, target_type: String },
 
     /// SPARQL constraint violation
-    #[error("Constraint violation: {0}")]
     ConstraintViolation(String),
 
     /// Empty capability list
-    #[error("Cannot compose empty capability list")]
     EmptyComposition,
 }
 
+impl fmt::Display for CompositionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CompositionError::TypeMismatch { source, source_type, target, target_type } => {
+                write!(
+                    f,
+                    "Type mismatch: {} outputs {}, but {} expects {}",
+                    source, source_type, target, target_type
+                )
+            }
+            CompositionError::ConstraintViolation(msg) => write!(f, "Constraint violation: {}", msg),
+            CompositionError::EmptyComposition => {
+                write!(f, "Cannot compose empty capability list")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CompositionError {}
+
 /// Result of composition validation
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct ValidationResult {
     /// Validation succeeded
     pub valid: bool,

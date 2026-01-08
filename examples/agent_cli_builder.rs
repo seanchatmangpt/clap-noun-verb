@@ -10,7 +10,7 @@
 //! 4. Agents can execute commands and get structured results
 
 use clap_noun_verb::agent_cli::{
-    AgentCliBuilder, CommandArgs, CommandHandler, CommandMetadata, AgentResult,
+    AgentCliBuilder, AgentResult, CommandArgs, CommandHandler, CommandMetadata,
 };
 use std::sync::Arc;
 
@@ -161,29 +161,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("PHASE 2: Register Command Handlers");
     println!("──────────────────────────────────\n");
 
-    cli_builder.register_command(
-        "list",
-        "List all items",
-        Arc::new(ListHandler),
-    )?;
+    cli_builder.register_command("list", "List all items", Arc::new(ListHandler))?;
 
-    cli_builder.register_command(
-        "show",
-        "Show item details",
-        Arc::new(ShowHandler),
-    )?;
+    cli_builder.register_command("show", "Show item details", Arc::new(ShowHandler))?;
 
-    cli_builder.register_command(
-        "create",
-        "Create new item",
-        Arc::new(CreateHandler),
-    )?;
+    cli_builder.register_command("create", "Create new item", Arc::new(CreateHandler))?;
 
-    cli_builder.register_command(
-        "status",
-        "Check system status",
-        Arc::new(StatusHandler),
-    )?;
+    cli_builder.register_command("status", "Check system status", Arc::new(StatusHandler))?;
 
     println!("  [AGENT] Registering command handlers...");
     println!("    ✓ list   - List all items");

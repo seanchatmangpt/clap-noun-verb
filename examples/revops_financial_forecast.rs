@@ -12,7 +12,10 @@ fn main() {
     println!("╚════════════════════════════════════════════════════════╝\n");
 
     println!("📊 MONTHLY PROJECTION\n");
-    println!("{:<6} {:>10} {:>10} {:>10} {:>12}", "Month", "Revenue", "Costs", "Profit", "Cumulative");
+    println!(
+        "{:<6} {:>10} {:>10} {:>10} {:>12}",
+        "Month", "Revenue", "Costs", "Profit", "Cumulative"
+    );
     println!("{}", "─".repeat(60));
 
     let mut cumulative = 0.0;
@@ -21,8 +24,10 @@ fn main() {
         let profit = revenue - costs;
         cumulative += profit;
 
-        println!("{:<6} ${:>9.0} ${:>9.0} ${:>9.0} ${:>11.0}",
-                 month, revenue, costs, profit, cumulative);
+        println!(
+            "{:<6} ${:>9.0} ${:>9.0} ${:>9.0} ${:>11.0}",
+            month, revenue, costs, profit, cumulative
+        );
     }
 
     println!("\n💰 KEY METRICS\n");
@@ -32,7 +37,10 @@ fn main() {
     println!("Year 1 Net Profit:           ${:.0}", year1_revenue - year1_costs);
     println!("Average Monthly Revenue:     ${:.0}", year1_revenue / 12.0);
     println!("Average Monthly Profit:      ${:.0}", (year1_revenue - year1_costs) / 12.0);
-    println!("Profit Margin:               {:.1}%", ((year1_revenue - year1_costs) / year1_revenue) * 100.0);
+    println!(
+        "Profit Margin:               {:.1}%",
+        ((year1_revenue - year1_costs) / year1_revenue) * 100.0
+    );
 
     println!("\n📈 STREAM BREAKDOWN (Year End)\n");
     let streams = vec![
@@ -74,7 +82,9 @@ fn main() {
     println!("\n⚠️  SENSITIVITY ANALYSIS\n");
     println!("Scenario | Yr1 Revenue | Yr1 Profit | Runway");
     println!("─────────────────────────────────────────────");
-    for sensitivity in [("Conservative (-20%)", 0.8), ("Base Case", 1.0), ("Optimistic (+20%)", 1.2)].iter() {
+    for sensitivity in
+        [("Conservative (-20%)", 0.8), ("Base Case", 1.0), ("Optimistic (+20%)", 1.2)].iter()
+    {
         let (rev, costs) = forecast.year_totals();
         let adjusted_rev = rev * sensitivity.1;
         let profit = adjusted_rev - costs;

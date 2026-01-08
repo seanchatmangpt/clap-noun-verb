@@ -7,7 +7,7 @@
 //! - Discover and introspect CLI capabilities
 
 use clap_noun_verb::agent_cli::{
-    AgentCliBuilder, CommandArgs, CommandHandler, CommandMetadata, AgentResult,
+    AgentCliBuilder, AgentResult, CommandArgs, CommandHandler, CommandMetadata,
 };
 use std::sync::Arc;
 
@@ -202,8 +202,7 @@ fn test_agent_cli_command_metadata() {
 #[test]
 fn test_agent_cli_version() {
     // Arrange
-    let builder = AgentCliBuilder::new("test-cli", "Test")
-        .version("2.0.0");
+    let builder = AgentCliBuilder::new("test-cli", "Test").version("2.0.0");
 
     // Assert - version is set internally
     assert!(builder.version.is_some());
@@ -331,7 +330,8 @@ fn test_agent_cli_can_chain_commands() {
     assert_eq!(produce_result["output"], "data");
 
     // Pass output from first command as input to second command
-    let process_args = CommandArgs::new().with_arg("input", produce_result["output"].as_str().unwrap());
+    let process_args =
+        CommandArgs::new().with_arg("input", produce_result["output"].as_str().unwrap());
     let process_result = cli.execute("process", process_args).unwrap();
 
     // Assert: Chaining works - the echo handler echoes back the input provided
@@ -354,7 +354,10 @@ fn test_register_duplicate_command_error() {
 
     // Assert
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)
+    ));
 }
 
 #[test]
@@ -368,7 +371,10 @@ fn test_register_empty_command_name_error() {
 
     // Assert
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::InvalidCommandName(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::InvalidCommandName(_)
+    ));
 }
 
 #[test]
@@ -381,7 +387,10 @@ fn test_build_without_commands_error() {
 
     // Assert
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::NoCommands));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::NoCommands
+    ));
 }
 
 #[test]
@@ -396,7 +405,10 @@ fn test_execute_nonexistent_command_error() {
 
     // Assert
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::HandlerFailed(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::HandlerFailed(_)
+    ));
 }
 
 #[test]
@@ -411,7 +423,10 @@ fn test_run_with_args_no_command_error() {
 
     // Assert
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::ValidationFailed(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::ValidationFailed(_)
+    ));
 }
 
 // ============================================================================
@@ -421,9 +436,7 @@ fn test_run_with_args_no_command_error() {
 #[test]
 fn test_command_args_contains() {
     // Arrange
-    let args = CommandArgs::new()
-        .with_arg("key1", "value1")
-        .with_arg("key2", "value2");
+    let args = CommandArgs::new().with_arg("key1", "value1").with_arg("key2", "value2");
 
     // Assert
     assert!(args.contains("key1"));
@@ -434,10 +447,8 @@ fn test_command_args_contains() {
 #[test]
 fn test_command_args_get_all_positional() {
     // Arrange
-    let args = CommandArgs::new()
-        .with_positional("arg1")
-        .with_positional("arg2")
-        .with_positional("arg3");
+    let args =
+        CommandArgs::new().with_positional("arg1").with_positional("arg2").with_positional("arg3");
 
     // Act
     let all = args.get_all_positional();
@@ -536,7 +547,10 @@ fn test_batch_registration_stops_on_error() {
 
     // Assert - should fail on first duplicate
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        clap_noun_verb::agent_cli::AgentBuilderError::DuplicateCommand(_)
+    ));
     // Only the first command (cmd1) was registered before failure
     assert_eq!(builder.command_count(), 1);
 }

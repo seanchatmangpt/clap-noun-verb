@@ -170,6 +170,14 @@ pub mod semantic;
 ))]
 pub mod frontier;
 
+// ggen Stub Modules - Placeholder types for ggen-core and ggen-domain
+// (Future dependencies when ggen integration is fully available)
+#[cfg(feature = "ggen")]
+pub(crate) mod ggen_core;
+
+#[cfg(feature = "ggen")]
+pub(crate) mod ggen_domain;
+
 // ggen Integration - RDF/Turtle to CLI code generation (requires "rdf" feature)
 // Provides parser, AST, and code generator for ggen specifications
 #[cfg(feature = "rdf")]

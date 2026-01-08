@@ -31,7 +31,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{NounVerbError, Result};
+use crate::error::Result;
 
 // =============================================================================
 // Capability - Semantic capability descriptor

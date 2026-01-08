@@ -3,13 +3,13 @@
 //! Measures actual time from empty state to fully built and tested CLI
 //! Parameters: noun_count, verb_count (e.g., 8 nouns × 8 verbs = 64 commands)
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use clap_noun_verb::agent_cli::{
-    AgentCliBuilder, CommandArgs, CommandHandler, CommandMetadata, AgentResult,
+    AgentCliBuilder, AgentResult, CommandArgs, CommandHandler, CommandMetadata,
 };
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use serde_json::json;
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 // ============================================================================
 // Dynamic Handler Factory
@@ -21,10 +21,7 @@ struct HandlerFactory;
 impl HandlerFactory {
     /// Create a new handler for a noun-verb pair
     fn create(noun: &str, verb: &str) -> Arc<dyn CommandHandler> {
-        Arc::new(DynamicHandler {
-            noun: noun.to_string(),
-            verb: verb.to_string(),
-        })
+        Arc::new(DynamicHandler { noun: noun.to_string(), verb: verb.to_string() })
     }
 }
 
@@ -69,14 +66,17 @@ fn agent_generates_noun_verb_cli(c: &mut Criterion) {
     let verb_count = black_box(8);
 
     group.bench_with_input(
-        BenchmarkId::new("generate_build_execute", format!("{}x{}_commands", noun_count, verb_count)),
+        BenchmarkId::new(
+            "generate_build_execute",
+            format!("{}x{}_commands", noun_count, verb_count),
+        ),
         &(noun_count, verb_count),
         |b, &(nouns, verbs)| {
             b.iter(|| {
                 // 1. Agent creates builder
                 let mut builder = AgentCliBuilder::new(
                     "agent-generated-cli",
-                    "CLI generated dynamically by agent"
+                    "CLI generated dynamically by agent",
                 );
 
                 // 2. Agent generates and registers commands
@@ -85,15 +85,10 @@ fn agent_generates_noun_verb_cli(c: &mut Criterion) {
                         let noun_name = format!("noun{}", n);
                         let verb_name = format!("verb{}", v);
                         let cmd_name = format!("{}-{}", noun_name, verb_name);
-                        let description = format!(
-                            "Action: {} on {}",
-                            verb_name, noun_name
-                        );
+                        let description = format!("Action: {} on {}", verb_name, noun_name);
 
                         let handler = HandlerFactory::create(&noun_name, &verb_name);
-                        builder
-                            .register_command(&cmd_name, &description, handler)
-                            .ok();
+                        builder.register_command(&cmd_name, &description, handler).ok();
                     }
                 }
 
@@ -132,9 +127,9 @@ fn agent_cli_scaling(c: &mut Criterion) {
 
     // Test multiple configurations
     let configs = vec![
-        (2, 2), // 4 commands
-        (4, 4), // 16 commands
-        (8, 8), // 64 commands (target scenario)
+        (2, 2),   // 4 commands
+        (4, 4),   // 16 commands
+        (8, 8),   // 64 commands (target scenario)
         (10, 10), // 100 commands
     ];
 
@@ -144,10 +139,8 @@ fn agent_cli_scaling(c: &mut Criterion) {
             &(noun_count, verb_count),
             |b, &(nouns, verbs)| {
                 b.iter(|| {
-                    let mut builder = AgentCliBuilder::new(
-                        "scaling-test-cli",
-                        "CLI for scaling tests"
-                    );
+                    let mut builder =
+                        AgentCliBuilder::new("scaling-test-cli", "CLI for scaling tests");
 
                     for n in 0..nouns {
                         for v in 0..verbs {
@@ -157,7 +150,11 @@ fn agent_cli_scaling(c: &mut Criterion) {
 
                             let handler = HandlerFactory::create(&noun_name, &verb_name);
                             builder
-                                .register_command(&cmd_name, &format!("{} {}", verb_name, noun_name), handler)
+                                .register_command(
+                                    &cmd_name,
+                                    &format!("{} {}", verb_name, noun_name),
+                                    handler,
+                                )
                                 .ok();
                         }
                     }
@@ -194,7 +191,7 @@ fn agent_batch_cli_generation(c: &mut Criterion) {
             for cli_num in 0..10 {
                 let mut builder = AgentCliBuilder::new(
                     &format!("cli-{}", cli_num),
-                    &format!("Generated CLI #{}", cli_num)
+                    &format!("Generated CLI #{}", cli_num),
                 );
 
                 // Each CLI gets 8×8 commands
@@ -206,7 +203,11 @@ fn agent_batch_cli_generation(c: &mut Criterion) {
 
                         let handler = HandlerFactory::create(&noun_name, &verb_name);
                         builder
-                            .register_command(&cmd_name, &format!("{} {}", verb_name, noun_name), handler)
+                            .register_command(
+                                &cmd_name,
+                                &format!("{} {}", verb_name, noun_name),
+                                handler,
+                            )
                             .ok();
                     }
                 }
@@ -237,7 +238,7 @@ fn agent_realistic_workflow(c: &mut Criterion) {
             // Phase 1: CLI Generation
             let mut builder = AgentCliBuilder::new(
                 "realistic-cli",
-                "CLI built by agent following realistic workflow"
+                "CLI built by agent following realistic workflow",
             );
 
             let mut command_map: HashMap<String, String> = HashMap::new();
@@ -250,7 +251,11 @@ fn agent_realistic_workflow(c: &mut Criterion) {
 
                     let handler = HandlerFactory::create(&noun_name, &verb_name);
                     builder
-                        .register_command(&cmd_name, &format!("{} on {}", verb_name, noun_name), handler)
+                        .register_command(
+                            &cmd_name,
+                            &format!("{} on {}", verb_name, noun_name),
+                            handler,
+                        )
                         .ok();
 
                     command_map.insert(cmd_name, format!("{}:{}", n, v));
@@ -293,10 +298,8 @@ fn agent_realistic_workflow(c: &mut Criterion) {
 fn agent_incremental_cli_growth(c: &mut Criterion) {
     c.bench_function("incremental_growth_8x8_total", |b| {
         b.iter(|| {
-            let mut builder = AgentCliBuilder::new(
-                "incremental-cli",
-                "CLI built incrementally by agent"
-            );
+            let mut builder =
+                AgentCliBuilder::new("incremental-cli", "CLI built incrementally by agent");
 
             // Simulate agent adding 1 noun at a time
             for n in 0..8 {
@@ -308,7 +311,11 @@ fn agent_incremental_cli_growth(c: &mut Criterion) {
 
                     let handler = HandlerFactory::create(&noun_name, &verb_name);
                     builder
-                        .register_command(&cmd_name, &format!("{} {}", verb_name, noun_name), handler)
+                        .register_command(
+                            &cmd_name,
+                            &format!("{} {}", verb_name, noun_name),
+                            handler,
+                        )
                         .ok();
                 }
 

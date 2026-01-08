@@ -34,7 +34,7 @@
 //! # }
 //! ```
 
-use crate::ggen_integration::ast::{Argument, ArgumentKind, Command, Flag, TypeAnnotation};
+use crate::ggen_integration::ast::{Argument, ArgumentKind, Command, Flag};
 use crate::ggen_integration::error::GgenResult as Result;
 
 /// Code generator for clap-noun-verb

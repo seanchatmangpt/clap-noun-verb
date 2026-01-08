@@ -71,19 +71,21 @@ impl From<oxigraph::store::StorageError> for FrontierError {
     }
 }
 
-#[cfg(feature = "rdf-composition")]
-impl From<oxigraph::sparql::QueryParseError> for FrontierError {
-    fn from(err: oxigraph::sparql::QueryParseError) -> Self {
-        FrontierError::Sparql(err.to_string())
-    }
-}
+// Note: QueryParseError is not available in current oxigraph version
+// #[cfg(feature = "rdf-composition")]
+// impl From<oxigraph::sparql::QueryParseError> for FrontierError {
+//     fn from(err: oxigraph::sparql::QueryParseError) -> Self {
+//         FrontierError::Sparql(err.to_string())
+//     }
+// }
 
-#[cfg(feature = "rdf-composition")]
-impl From<oxigraph::sparql::EvaluationError> for FrontierError {
-    fn from(err: oxigraph::sparql::EvaluationError) -> Self {
-        FrontierError::Sparql(err.to_string())
-    }
-}
+// Note: EvaluationError is deprecated, use QueryEvaluationError instead
+// #[cfg(feature = "rdf-composition")]
+// impl From<oxigraph::sparql::EvaluationError> for FrontierError {
+//     fn from(err: oxigraph::sparql::EvaluationError) -> Self {
+//         FrontierError::Sparql(err.to_string())
+//     }
+// }
 
 // =============================================================================
 // Unit Tests - Chicago TDD
