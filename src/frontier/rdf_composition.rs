@@ -124,14 +124,16 @@ impl SemanticDiscoveryOxigraph {
     /// - UNION queries
     /// - Aggregation (COUNT, etc.)
     pub fn query_sparql(&self, query: &str) -> Result<Vec<QueryResult>> {
-        use oxigraph::sparql::QueryResults;
         use oxigraph::sparql::EvaluationError;
+        use oxigraph::sparql::QueryResults;
 
         let parsed = oxigraph::sparql::Query::parse(query, None)
             .map_err(|e| FrontierError::Sparql(format!("Parse error: {}", e)))?;
 
         // Use SparqlEvaluator interface instead of deprecated Store::query
-        let results = self.store.query(parsed)
+        let results = self
+            .store
+            .query(parsed)
             .map_err(|e| FrontierError::Sparql(format!("Query error: {}", e)))?;
 
         let mut result_vec = Vec::new();

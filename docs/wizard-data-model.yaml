@@ -1,0 +1,897 @@
+# Wizard Package - Data Model Specification
+# Type-first data model with zero-cost abstractions
+# Project: clap-noun-verb
+# Version: 0.1.0
+
+data_model:
+  version: 0.1.0
+  methodology: Type-first thinking with zero-cost abstractions
+  principles:
+    - Types encode invariants
+    - Invalid states unrepresentable
+    - Zero-cost abstractions preferred
+    - Memory safety through ownership
+
+# Core Domain Types
+entities:
+  Session:
+    description: "Wizard session with AI model"
+    module: wizard::session
+    type_definition: |
+      pub struct Session {
+          id: SessionId,
+          state: SessionState,
+          context: ConversationContext,
+          config: WizardConfig,
+          created_at: Timestamp,
+          last_activity: Timestamp,
+      }
+
+    fields:
+      - name: id
+        type: SessionId
+        description: Unique session identifier
+        invariants:
+          - "Never changes after creation"
+          - "Globally unique (UUID v4)"
+
+      - name: state
+        type: SessionState
+        description: Current session state
+        invariants:
+          - "Valid state at all times"
+          - "State transitions follow state machine rules"
+
+      - name: context
+        type: ConversationContext
+        description: Conversation history and metadata
+        invariants:
+          - "Token count accurate"
+          - "Messages ordered by timestamp"
+          - "Context size bounded by max_tokens"
+
+      - name: config
+        type: WizardConfig
+        description: Session configuration
+        invariants:
+          - "Configuration immutable after creation"
+          - "All values within valid ranges"
+
+      - name: created_at
+        type: Timestamp
+        description: Session creation time
+        invariants:
+          - "Never changes after creation"
+          - "≤ last_activity"
+
+      - name: last_activity
+        type: Timestamp
+        description: Last activity time
+        invariants:
+          - "≥ created_at"
+          - "Updated on every operation"
+
+    methods:
+      - signature: "pub fn new(config: WizardConfig) -> Self"
+        description: "Create new session"
+        invariants:
+          - "State = Uninitialized"
+          - "Context empty"
+          - "ID unique"
+
+      - signature: "pub async fn initialize(self) -> Result<Session<Active>, InitError>"
+        description: "Initialize session with AI model"
+        state_transition: "Uninitialized → Initializing → Active"
+        invariants:
+          - "API connection established"
+          - "Model configuration validated"
+
+      - signature: "pub async fn chat(&mut self, prompt: &str) -> Result<Response, ChatError>"
+        description: "Send chat message"
+        preconditions:
+          - "State = Active"
+          - "Prompt length ≤ 10,000 chars"
+        postconditions:
+          - "Context updated with user + assistant messages"
+          - "Token count updated"
+          - "last_activity updated"
+
+      - signature: "pub fn pause(self: Session<Active>) -> Session<Paused>"
+        description: "Pause session"
+        state_transition: "Active → Paused"
+        invariants:
+          - "Context preserved"
+          - "No state loss"
+
+      - signature: "pub fn resume(self: Session<Paused>) -> Result<Session<Active>, ResumeError>"
+        description: "Resume paused session"
+        state_transition: "Paused → Active"
+
+      - signature: "pub fn terminate(self) -> ()"
+        description: "Terminate session"
+        state_transition: "* → Terminated"
+        postconditions:
+          - "All resources cleaned up"
+          - "Context cleared"
+
+    zero_cost_abstractions:
+      - "State encoded in type system (no runtime overhead)"
+      - "SessionId is newtype wrapper (zero-cost)"
+      - "Timestamps are i64 (zero-cost)"
+
+  SessionState:
+    description: "Type-safe session state machine"
+    module: wizard::session
+    type_definition: |
+      pub enum SessionState {
+          Uninitialized,
+          Initializing,
+          Active { context: ConversationContext },
+          Paused,
+          Terminated,
+          Error { reason: ErrorReason },
+      }
+
+    variants:
+      - name: Uninitialized
+        description: "Session created but not initialized"
+        allowed_transitions: [Initializing, Error]
+
+      - name: Initializing
+        description: "Session initializing with AI model"
+        allowed_transitions: [Active, Error]
+
+      - name: Active
+        description: "Session active and ready for chat"
+        data: "ConversationContext"
+        allowed_transitions: [Paused, Terminated, Error]
+
+      - name: Paused
+        description: "Session paused"
+        allowed_transitions: [Active, Terminated, Error]
+
+      - name: Terminated
+        description: "Session terminated (final state)"
+        allowed_transitions: []
+
+      - name: Error
+        description: "Session in error state"
+        data: "ErrorReason"
+        allowed_transitions: [Terminated]
+
+    state_machine_properties:
+      - "All transitions explicit"
+      - "Invalid transitions impossible (type system)"
+      - "Deterministic state changes"
+      - "No hidden state"
+
+    type_safety:
+      example: |
+        // Type system prevents invalid operations
+        let session: Session<Uninitialized> = Session::new(config);
+
+        // ✅ Valid: can initialize
+        let active_session = session.initialize().await?;
+
+        // ❌ Invalid: cannot chat on uninitialized session (compile error)
+        // session.chat("hello").await?; // Does not compile!
+
+        // ✅ Valid: can chat on active session
+        active_session.chat("hello").await?;
+
+  ConversationContext:
+    description: "Conversation history and metadata"
+    module: wizard::context
+    type_definition: |
+      pub struct ConversationContext {
+          messages: Vec<Message>,
+          token_count: TokenCount,
+          created_at: Timestamp,
+          last_activity: Timestamp,
+      }
+
+    fields:
+      - name: messages
+        type: Vec<Message>
+        description: Conversation messages
+        invariants:
+          - "Ordered by timestamp (ascending)"
+          - "No duplicate timestamps"
+          - "Length ≤ 100 messages"
+          - "Total tokens ≤ model max_tokens"
+
+      - name: token_count
+        type: TokenCount
+        description: Total token count
+        invariants:
+          - "Sum of all message tokens"
+          - "Updated on every message add"
+          - "≤ model max_tokens"
+
+      - name: created_at
+        type: Timestamp
+        description: Context creation time
+
+      - name: last_activity
+        type: Timestamp
+        description: Last message timestamp
+
+    methods:
+      - signature: "pub fn new() -> Self"
+        description: "Create empty context"
+
+      - signature: "pub fn add_message(&mut self, message: Message) -> Result<(), ContextError>"
+        description: "Add message to context"
+        preconditions:
+          - "Total tokens + message.tokens ≤ max_tokens"
+        postconditions:
+          - "Message appended"
+          - "token_count updated"
+          - "last_activity updated"
+
+      - signature: "pub fn prune(&mut self, target_tokens: u32)"
+        description: "Prune oldest messages to fit target"
+        invariants:
+          - "System messages preserved"
+          - "Recent messages preserved"
+          - "Token count ≤ target_tokens after pruning"
+
+      - signature: "pub fn token_count(&self) -> u32"
+        description: "Get total token count"
+
+      - signature: "pub fn message_count(&self) -> usize"
+        description: "Get message count"
+
+    serialization:
+      formats: [json, yaml]
+      example_json: |
+        {
+          "messages": [
+            {
+              "role": "user",
+              "content": "How do I list files?",
+              "tokens": 10,
+              "timestamp": 1704844800
+            },
+            {
+              "role": "assistant",
+              "content": "Use: ls -la",
+              "tokens": 15,
+              "timestamp": 1704844802
+            }
+          ],
+          "token_count": 25,
+          "created_at": 1704844800,
+          "last_activity": 1704844802
+        }
+
+  Message:
+    description: "Single conversation message"
+    module: wizard::context
+    type_definition: |
+      pub struct Message {
+          role: Role,
+          content: String,
+          tokens: u32,
+          timestamp: Timestamp,
+      }
+
+    fields:
+      - name: role
+        type: Role
+        description: Message role
+        values: [User, Assistant, System]
+
+      - name: content
+        type: String
+        description: Message content
+        invariants:
+          - "Non-empty"
+          - "Valid UTF-8"
+          - "Length ≤ 100,000 chars"
+
+      - name: tokens
+        type: u32
+        description: Token count
+        invariants:
+          - "> 0"
+          - "Calculated by tokenizer"
+
+      - name: timestamp
+        type: Timestamp
+        description: Message timestamp
+        invariants:
+          - "Monotonically increasing in conversation"
+
+    zero_cost_abstractions:
+      - "Role is enum (single byte)"
+      - "Tokens is u32 (4 bytes)"
+      - "Timestamp is i64 (8 bytes)"
+      - "Content is String (heap-allocated)"
+
+  Role:
+    description: "Message role in conversation"
+    module: wizard::context
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+      pub enum Role {
+          User,
+          Assistant,
+          System,
+      }
+
+    variants:
+      - name: User
+        description: "Message from user"
+
+      - name: Assistant
+        description: "Message from AI assistant"
+
+      - name: System
+        description: "System message (prompts, instructions)"
+
+    representation:
+      size: "1 byte"
+      discriminant: "Explicit"
+
+  WizardConfig:
+    description: "Wizard configuration"
+    module: wizard::config
+    type_definition: |
+      pub struct WizardConfig {
+          model: ModelIden,
+          temperature: Temperature,
+          max_tokens: MaxTokens,
+          api_key: SecretString,
+          api_endpoint: Url,
+          timeout: Duration,
+      }
+
+    fields:
+      - name: model
+        type: ModelIden
+        description: AI model identifier
+        invariants:
+          - "Valid model identifier"
+          - "Model exists and is accessible"
+
+      - name: temperature
+        type: Temperature
+        description: Response randomness
+        invariants:
+          - "Range: [0.0, 2.0]"
+          - "f32 value"
+
+      - name: max_tokens
+        type: MaxTokens
+        description: Maximum tokens per response
+        invariants:
+          - "> 0"
+          - "≤ model max context"
+
+      - name: api_key
+        type: SecretString
+        description: API key (sensitive)
+        security:
+          - "Never logged"
+          - "Redacted in Debug"
+          - "Cleared on drop"
+          - "Stored in OS keyring"
+
+      - name: api_endpoint
+        type: Url
+        description: API endpoint URL
+        invariants:
+          - "Valid URL"
+          - "HTTPS required"
+
+      - name: timeout
+        type: Duration
+        description: Request timeout
+        invariants:
+          - "> 0"
+          - "Reasonable upper bound (e.g., 5 minutes)"
+
+    builder_pattern:
+      example: |
+        let config = WizardConfig::builder()
+            .model("gpt-4")
+            .temperature(0.7)
+            .max_tokens(2048)
+            .timeout(Duration::from_secs(30))
+            .build()?;
+
+    validation:
+      - "Builder validates all fields"
+      - "Invalid configurations rejected at build time"
+      - "No partial configurations"
+
+  GeneratedCommand:
+    description: "Generated command suggestion"
+    module: wizard::generate
+    type_definition: |
+      pub struct GeneratedCommand {
+          command: String,
+          explanation: String,
+          confidence: Confidence,
+          safety_level: SafetyLevel,
+          dry_run_suggested: bool,
+          warnings: Vec<String>,
+      }
+
+    fields:
+      - name: command
+        type: String
+        description: Shell command
+        invariants:
+          - "Non-empty"
+          - "Valid shell syntax"
+
+      - name: explanation
+        type: String
+        description: Human-readable explanation
+        invariants:
+          - "Non-empty"
+          - "Clear and concise"
+
+      - name: confidence
+        type: Confidence
+        description: Confidence score
+        invariants:
+          - "Range: [0.0, 1.0]"
+          - "Newtype wrapper for type safety"
+
+      - name: safety_level
+        type: SafetyLevel
+        description: Safety classification
+        values: [Safe, Moderate, Dangerous]
+
+      - name: dry_run_suggested
+        type: bool
+        description: Whether dry-run recommended
+
+      - name: warnings
+        type: Vec<String>
+        description: Safety warnings
+        invariants:
+          - "Non-empty if safety_level = Dangerous"
+
+    formatting:
+      text_format: |
+        Command: {command}
+        Confidence: {confidence}
+        Safety: {safety_level}
+
+        {explanation}
+
+        Warnings:
+        {warnings}
+
+      json_format: |
+        {
+          "command": "...",
+          "explanation": "...",
+          "confidence": 0.95,
+          "safety_level": "safe",
+          "dry_run_suggested": false,
+          "warnings": []
+        }
+
+  SafetyLevel:
+    description: "Command safety classification"
+    module: wizard::safety
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+      pub enum SafetyLevel {
+          Safe,
+          Moderate,
+          Dangerous,
+      }
+
+    variants:
+      - name: Safe
+        description: "Read-only operations"
+        examples: [ls, cat, grep, find]
+
+      - name: Moderate
+        description: "Write operations with limited scope"
+        examples: [mkdir, touch, cp, mv]
+
+      - name: Dangerous
+        description: "Destructive operations"
+        examples: [rm -rf, dd, mkfs, shutdown]
+
+    ordering:
+      description: "SafetyLevel is ordered: Safe < Moderate < Dangerous"
+      usage: |
+        if cmd.safety_level >= SafetyLevel::Dangerous {
+            println!("⚠️  WARNING: DANGEROUS COMMAND");
+        }
+
+# Newtypes for Type Safety
+newtypes:
+  SessionId:
+    description: "Unique session identifier"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+      pub struct SessionId(Uuid);
+
+    invariants:
+      - "Globally unique (UUID v4)"
+      - "Never reused"
+
+    zero_cost: true
+    methods:
+      - "pub fn new() -> Self"
+      - "pub fn as_uuid(&self) -> &Uuid"
+
+  Confidence:
+    description: "Confidence score [0.0, 1.0]"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+      pub struct Confidence(f32);
+
+    invariants:
+      - "Range: [0.0, 1.0]"
+      - "Enforced by constructor"
+
+    zero_cost: true
+    methods:
+      - "pub fn new(value: f32) -> Result<Self, ValueError>"
+      - "pub fn as_f32(&self) -> f32"
+
+  Temperature:
+    description: "Model temperature [0.0, 2.0]"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+      pub struct Temperature(f32);
+
+    invariants:
+      - "Range: [0.0, 2.0]"
+      - "Enforced by constructor"
+
+    zero_cost: true
+
+  MaxTokens:
+    description: "Maximum tokens (positive)"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+      pub struct MaxTokens(u32);
+
+    invariants:
+      - "> 0"
+      - "Enforced by constructor"
+
+    zero_cost: true
+
+  TokenCount:
+    description: "Token count"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+      pub struct TokenCount(u32);
+
+    invariants:
+      - "≥ 0"
+
+    zero_cost: true
+    operations:
+      - "Addition: TokenCount + TokenCount"
+      - "Subtraction: TokenCount - TokenCount (checked)"
+
+  Timestamp:
+    description: "Unix timestamp (seconds)"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+      pub struct Timestamp(i64);
+
+    zero_cost: true
+    methods:
+      - "pub fn now() -> Self"
+      - "pub fn as_secs(&self) -> i64"
+
+  SecretString:
+    description: "Sensitive string (API key)"
+    type_definition: |
+      pub struct SecretString(String);
+
+    security:
+      - "Never logged"
+      - "Redacted in Debug impl"
+      - "Zeroed on drop"
+      - "Never cloned"
+
+    methods:
+      - "pub fn new(secret: String) -> Self"
+      - "pub fn expose_secret(&self) -> &str"
+
+    debug_impl: |
+      impl Debug for SecretString {
+          fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+              f.write_str("SecretString(***redacted***)")
+          }
+      }
+
+# Error Types
+errors:
+  WizardError:
+    description: "Top-level error type"
+    type_definition: |
+      #[derive(Debug, thiserror::Error)]
+      pub enum WizardError {
+          #[error("Session initialization failed: {0}")]
+          InitializationError(String),
+
+          #[error("API error: {0}")]
+          ApiError(#[from] genai::Error),
+
+          #[error("Configuration error: {0}")]
+          ConfigError(String),
+
+          #[error("Invalid input: {0}")]
+          ValidationError(String),
+
+          #[error("Timeout after {0:?}")]
+          TimeoutError(Duration),
+
+          #[error("Network error: {0}")]
+          NetworkError(#[from] reqwest::Error),
+
+          #[error("Session not found: {0}")]
+          SessionNotFoundError(SessionId),
+
+          #[error("Invalid state transition: {from:?} -> {to:?}")]
+          InvalidStateTransition {
+              from: SessionState,
+              to: SessionState,
+          },
+      }
+
+    variants:
+      - name: InitializationError
+        description: "Session initialization failed"
+        recovery: "Check configuration and API key"
+
+      - name: ApiError
+        description: "Error from AI API"
+        recovery: "Retry with backoff"
+
+      - name: ConfigError
+        description: "Invalid configuration"
+        recovery: "Fix configuration"
+
+      - name: ValidationError
+        description: "Input validation failed"
+        recovery: "Fix input"
+
+      - name: TimeoutError
+        description: "Request timeout"
+        recovery: "Retry or increase timeout"
+
+      - name: NetworkError
+        description: "Network error"
+        recovery: "Check connectivity"
+
+      - name: SessionNotFoundError
+        description: "Session not found"
+        recovery: "Create new session"
+
+      - name: InvalidStateTransition
+        description: "Invalid state transition attempted"
+        recovery: "Verify session state"
+
+  ChatError:
+    description: "Chat-specific errors"
+    variants:
+      - SessionInactive
+      - PromptTooLong
+      - ContextFull
+      - ApiError
+
+  GenerateError:
+    description: "Command generation errors"
+    variants:
+      - DescriptionTooLong
+      - NoCommandsGenerated
+      - ValidationFailed
+      - ApiError
+
+  ConfigError:
+    description: "Configuration errors"
+    variants:
+      - InvalidKey
+      - InvalidValue
+      - KeyringAccessDenied
+      - FileNotFound
+
+# Value Objects
+value_objects:
+  TokenUsage:
+    description: "Token usage statistics"
+    type_definition: |
+      #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+      pub struct TokenUsage {
+          pub prompt_tokens: u32,
+          pub completion_tokens: u32,
+          pub total_tokens: u32,
+      }
+
+    invariants:
+      - "total_tokens = prompt_tokens + completion_tokens"
+
+    methods:
+      - "pub fn new(prompt: u32, completion: u32) -> Self"
+
+  ResponseMetadata:
+    description: "Response metadata"
+    type_definition: |
+      #[derive(Debug, Clone)]
+      pub struct ResponseMetadata {
+          pub token_usage: TokenUsage,
+          pub latency: Duration,
+          pub model: String,
+      }
+
+# Type Safety Examples
+type_safety_examples:
+  example_1:
+    title: "State Machine Type Safety"
+    code: |
+      // Type system prevents invalid operations
+      let session = Session::new(config);
+
+      // ❌ Cannot chat before initialization (compile error)
+      // session.chat("hello").await?;
+
+      // ✅ Must initialize first
+      let active = session.initialize().await?;
+
+      // ✅ Now can chat
+      active.chat("hello").await?;
+
+  example_2:
+    title: "Newtype Prevents Invalid Values"
+    code: |
+      // ❌ Cannot create invalid temperature (compile error)
+      // let temp = Temperature(3.0); // private constructor
+
+      // ✅ Must use validated constructor
+      let temp = Temperature::new(0.7)?; // Returns Result
+
+      // ❌ This fails at runtime
+      let invalid = Temperature::new(5.0); // Err(ValueError)
+
+  example_3:
+    title: "Zero-Cost Abstractions"
+    code: |
+      // SessionId is zero-cost wrapper
+      assert_eq!(
+          std::mem::size_of::<SessionId>(),
+          std::mem::size_of::<Uuid>()
+      );
+
+      // Confidence is zero-cost wrapper
+      assert_eq!(
+          std::mem::size_of::<Confidence>(),
+          std::mem::size_of::<f32>()
+      );
+
+# Serialization
+serialization:
+  format: JSON and YAML
+  library: serde
+  traits: [Serialize, Deserialize]
+
+  example_session_json: |
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "state": "Active",
+      "context": {
+        "messages": [
+          {
+            "role": "User",
+            "content": "How do I list files?",
+            "tokens": 10,
+            "timestamp": 1704844800
+          },
+          {
+            "role": "Assistant",
+            "content": "Use: ls -la",
+            "tokens": 15,
+            "timestamp": 1704844802
+          }
+        ],
+        "token_count": 25,
+        "created_at": 1704844800,
+        "last_activity": 1704844802
+      },
+      "config": {
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "api_key": "***redacted***",
+        "api_endpoint": "https://api.openai.com/v1",
+        "timeout_secs": 30
+      },
+      "created_at": 1704844800,
+      "last_activity": 1704844802
+    }
+
+# Memory Layout
+memory_layout:
+  Session:
+    size_estimate: "~1KB base + context"
+    components:
+      - id: "16 bytes (UUID)"
+      - state: "1 byte (enum discriminant) + data"
+      - context: "~variable (messages)"
+      - config: "~200 bytes"
+      - timestamps: "16 bytes (2 × i64)"
+
+  ConversationContext:
+    size_estimate: "~variable (depends on messages)"
+    components:
+      - messages: "Vec capacity × Message size"
+      - token_count: "4 bytes"
+      - timestamps: "16 bytes"
+
+  Message:
+    size_estimate: "~variable (depends on content)"
+    components:
+      - role: "1 byte"
+      - content: "String (24 bytes + heap)"
+      - tokens: "4 bytes"
+      - timestamp: "8 bytes"
+    total_fixed: "37 bytes + content length"
+
+  optimization_notes:
+    - "Messages stored in Vec (contiguous memory)"
+    - "String interning for repeated content"
+    - "Message pruning when context full"
+    - "No unnecessary allocations"
+
+# Database Schema (Future: v0.2.0+)
+database_schema:
+  note: "Persistent storage not in v0.1.0"
+  future_tables:
+    sessions:
+      columns:
+        - id: UUID (primary key)
+        - user_id: UUID (foreign key)
+        - state: VARCHAR
+        - config: JSONB
+        - created_at: TIMESTAMP
+        - last_activity: TIMESTAMP
+      indexes:
+        - user_id
+        - created_at
+
+    messages:
+      columns:
+        - id: BIGSERIAL (primary key)
+        - session_id: UUID (foreign key)
+        - role: VARCHAR
+        - content: TEXT
+        - tokens: INTEGER
+        - timestamp: TIMESTAMP
+      indexes:
+        - session_id
+        - timestamp
+
+    commands:
+      columns:
+        - id: BIGSERIAL (primary key)
+        - session_id: UUID (foreign key)
+        - description: TEXT
+        - command: TEXT
+        - confidence: REAL
+        - safety_level: VARCHAR
+        - executed: BOOLEAN
+        - created_at: TIMESTAMP
+      indexes:
+        - session_id
+        - created_at
+
+revision_history:
+  - version: 0.1.0
+    date: 2026-01-09
+    changes: Initial data model specification

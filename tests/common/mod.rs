@@ -1,14 +1,8 @@
 //! Common test utilities for clap-noun-verb tests
-
 pub mod test_prelude;
-
-use clap_noun_verb::cli::registry::CommandRegistry;
-use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
-
 /// Assertion helpers for command structure verification
 pub mod command_assertions {
     use clap::Command;
-
     /// Assert command has a specific subcommand
     pub fn assert_has_subcommand(cmd: &Command, name: &str) {
         assert!(
@@ -17,7 +11,6 @@ pub mod command_assertions {
             name
         );
     }
-
     /// Assert command does NOT have a specific subcommand
     pub fn assert_no_subcommand(cmd: &Command, name: &str) {
         assert!(
@@ -26,14 +19,12 @@ pub mod command_assertions {
             name
         );
     }
-
     /// Assert subcommand has specific verb
     pub fn assert_subcommand_has_verb(cmd: &Command, subcommand: &str, verb: &str) {
         let sub = cmd
             .get_subcommands()
             .find(|s| s.get_name() == subcommand)
             .expect(&format!("Subcommand '{}' not found", subcommand));
-
         assert!(
             sub.get_subcommands().any(|v| v.get_name() == verb),
             "Subcommand '{}' should have verb '{}'",
@@ -41,7 +32,6 @@ pub mod command_assertions {
             verb
         );
     }
-
     /// Assert command has version set
     pub fn assert_has_version(cmd: &Command, expected_version: Option<&str>) {
         match (cmd.get_version(), expected_version) {
@@ -57,12 +47,10 @@ pub mod command_assertions {
             (None, None) => {}
         }
     }
-
     /// Get all subcommand names as a Vec
     pub fn get_subcommand_names(cmd: &Command) -> Vec<&str> {
         cmd.get_subcommands().map(|s| s.get_name()).collect()
     }
-
     /// Get all verb names under a subcommand (with lifetime bound to command)
     pub fn get_verb_names<'a>(cmd: &'a Command, subcommand: &str) -> Vec<&'a str> {
         cmd.get_subcommands()
@@ -70,7 +58,6 @@ pub mod command_assertions {
             .map(|s| s.get_subcommands().map(|v| v.get_name()).collect())
             .unwrap_or_default()
     }
-
     /// Assert help text contains expected content
     pub fn assert_help_contains(cmd: &mut Command, expected: &str) {
         let mut help_output = Vec::new();
@@ -84,11 +71,9 @@ pub mod command_assertions {
         );
     }
 }
-
 /// Context helpers for handler testing
 pub mod handler_context {
     use clap_noun_verb::logic::HandlerContext;
-
     /// Create a handler context with verb and noun
     pub fn create_context(verb: &str, noun: Option<&str>) -> HandlerContext {
         let mut ctx = HandlerContext::new(verb);
@@ -97,7 +82,6 @@ pub mod handler_context {
         }
         ctx
     }
-
     /// Create a handler context with additional data
     pub fn create_context_with_data(
         verb: &str,
@@ -111,17 +95,14 @@ pub mod handler_context {
         ctx
     }
 }
-
 /// Capture stdout for testing
 pub struct OutputCapture {
     // Will implement stdout capture for JSON output testing
 }
-
 impl OutputCapture {
     pub fn new() -> Self {
         Self {}
     }
-
     pub fn capture<F>(f: F) -> String
     where
         F: FnOnce() -> (),
@@ -131,13 +112,11 @@ impl OutputCapture {
         String::new()
     }
 }
-
 impl Default for OutputCapture {
     fn default() -> Self {
         Self::new()
     }
 }
-
 /// Assert JSON output matches expected value
 pub fn assert_json_eq<T>(actual: &T, expected: &T)
 where

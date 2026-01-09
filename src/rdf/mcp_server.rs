@@ -301,10 +301,7 @@ impl RdfMcpServer {
                     .context("Missing ontology_iri parameter")?
                     .to_string();
 
-                let input = GenerateCliInput {
-                    turtle_definition,
-                    ontology_iri,
-                };
+                let input = GenerateCliInput { turtle_definition, ontology_iri };
 
                 let output = GenerateCliFromTurtle::execute(input)
                     .map_err(|e| anyhow::anyhow!("CLI generation failed: {}", e))?;
@@ -322,9 +319,8 @@ impl RdfMcpServer {
                     .context("Missing sparql_query parameter")?
                     .to_string();
 
-                let operation_str = args["operation"]
-                    .as_str()
-                    .context("Missing operation parameter")?;
+                let operation_str =
+                    args["operation"].as_str().context("Missing operation parameter")?;
 
                 let operation = match operation_str {
                     "list_commands" => QueryOperation::ListCommands,
@@ -333,10 +329,7 @@ impl RdfMcpServer {
                     _ => anyhow::bail!("Unknown operation: {}", operation_str),
                 };
 
-                let input = QueryCapabilitiesInput {
-                    sparql_query,
-                    operation,
-                };
+                let input = QueryCapabilitiesInput { sparql_query, operation };
 
                 let tool = QueryCapabilities::new((*self.ontology).clone());
                 let output = tool
@@ -355,15 +348,10 @@ impl RdfMcpServer {
                     .as_str()
                     .context("Missing cli_source_code parameter")?
                     .to_string();
-                let cli_name = args["cli_name"]
-                    .as_str()
-                    .context("Missing cli_name parameter")?
-                    .to_string();
+                let cli_name =
+                    args["cli_name"].as_str().context("Missing cli_name parameter")?.to_string();
 
-                let input = ExportToTurtleInput {
-                    cli_source_code,
-                    cli_name: cli_name.clone(),
-                };
+                let input = ExportToTurtleInput { cli_source_code, cli_name: cli_name.clone() };
 
                 let output = ExportToTurtle::execute(input)
                     .map_err(|e| anyhow::anyhow!("Export to turtle failed: {}", e))?;

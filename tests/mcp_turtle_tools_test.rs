@@ -57,38 +57,19 @@ cnv:MigrateVerb rdf:type cnv:Verb ;
     let result = GenerateCliFromTurtle::execute(input);
 
     // Assert - Verify successful code generation
-    assert!(
-        result.is_ok(),
-        "Code generation failed: {:?}",
-        result.err()
-    );
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     let output = result.unwrap();
 
     // Verify Rust code contains expected elements
     assert!(!output.rust_code.is_empty(), "Generated code is empty");
-    assert!(
-        output.rust_code.contains("Services"),
-        "Generated code missing Services noun"
-    );
-    assert!(
-        output.rust_code.contains("Database"),
-        "Generated code missing Database noun"
-    );
-    assert!(
-        output.rust_code.contains("status"),
-        "Generated code missing status verb"
-    );
-    assert!(
-        output.rust_code.contains("migrate"),
-        "Generated code missing migrate verb"
-    );
+    assert!(output.rust_code.contains("Services"), "Generated code missing Services noun");
+    assert!(output.rust_code.contains("Database"), "Generated code missing Database noun");
+    assert!(output.rust_code.contains("status"), "Generated code missing status verb");
+    assert!(output.rust_code.contains("migrate"), "Generated code missing migrate verb");
 
     // Verify diagnostics present
-    assert!(
-        !output.diagnostics.is_empty(),
-        "No diagnostics generated"
-    );
+    assert!(!output.diagnostics.is_empty(), "No diagnostics generated");
 }
 
 /// Test GenerateCliFromTurtle with minimal ontology
@@ -301,10 +282,7 @@ fn test_export_to_turtle_stub() {
     // Assert
     assert!(turtle.contains("@prefix cnv:"), "Missing CNV prefix");
     assert!(turtle.contains("myapp"), "Missing CLI name");
-    assert!(
-        turtle.contains("cnv:GeneratedCli"),
-        "Missing GeneratedCli resource"
-    );
+    assert!(turtle.contains("cnv:GeneratedCli"), "Missing GeneratedCli resource");
     assert!(turtle.contains("rdf:type"), "Missing rdf:type property");
 }
 
@@ -382,10 +360,7 @@ cnv:TestVerb rdf:type cnv:Verb ;
     assert!(code.contains("test"));
 
     // Verify Rust syntax elements
-    assert!(
-        code.contains("pub") || code.contains("fn"),
-        "Missing Rust syntax"
-    );
+    assert!(code.contains("pub") || code.contains("fn"), "Missing Rust syntax");
 
     // Verify diagnostics
     assert!(!output.diagnostics.is_empty());

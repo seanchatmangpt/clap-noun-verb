@@ -179,18 +179,9 @@ cnv:BuildVerb rdf:type cnv:Verb .
     let classes = executor.list_classes().expect("Failed to list classes");
 
     // Assert
-    assert!(
-        classes.iter().any(|c| c.contains("Verb")),
-        "Verb class not found"
-    );
-    assert!(
-        classes.iter().any(|c| c.contains("Noun")),
-        "Noun class not found"
-    );
-    assert!(
-        classes.iter().any(|c| c.contains("Command")),
-        "Command class not found"
-    );
+    assert!(classes.iter().any(|c| c.contains("Verb")), "Verb class not found");
+    assert!(classes.iter().any(|c| c.contains("Noun")), "Noun class not found");
+    assert!(classes.iter().any(|c| c.contains("Command")), "Command class not found");
 }
 
 /// Integration test: List all properties in parsed ontology
@@ -214,18 +205,9 @@ cnv:SomeVerb cnv:customProperty "value" .
     let properties = executor.list_properties().expect("Failed to list properties");
 
     // Assert
-    assert!(
-        properties.iter().any(|p| p.contains("name")),
-        "name property not found"
-    );
-    assert!(
-        properties.iter().any(|p| p.contains("description")),
-        "description property not found"
-    );
-    assert!(
-        properties.iter().any(|p| p.contains("customProperty")),
-        "customProperty not found"
-    );
+    assert!(properties.iter().any(|p| p.contains("name")), "name property not found");
+    assert!(properties.iter().any(|p| p.contains("description")), "description property not found");
+    assert!(properties.iter().any(|p| p.contains("customProperty")), "customProperty not found");
 }
 
 /// Integration test: Parse and validate ontology constraints
@@ -246,10 +228,7 @@ cnv:ValidVerb rdf:type cnv:Verb ;
     let validation = parsed.validate_ontology();
 
     // Assert
-    assert!(
-        validation.is_ok(),
-        "Validation should pass for valid ontology"
-    );
+    assert!(validation.is_ok(), "Validation should pass for valid ontology");
 }
 
 /// Integration test: ASK query to check existence
@@ -346,14 +325,8 @@ custom:MyVerb <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> cnv:Verb .
     let prefixes = parsed.resolve_prefixes().expect("Failed to resolve");
 
     // Assert
-    assert_eq!(
-        prefixes.get("cnv"),
-        Some(&"https://cnv.dev/ontology#".to_string())
-    );
-    assert_eq!(
-        prefixes.get("custom"),
-        Some(&"http://example.org/custom#".to_string())
-    );
+    assert_eq!(prefixes.get("cnv"), Some(&"https://cnv.dev/ontology#".to_string()));
+    assert_eq!(prefixes.get("custom"), Some(&"http://example.org/custom#".to_string()));
 
     // Verify ontology was populated correctly
     let ontology = parsed.ontology();

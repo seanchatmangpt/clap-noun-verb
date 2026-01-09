@@ -140,6 +140,10 @@ experimental = []
 # ggen Integration: Code generation from Turtle specifications (future)
 ggen = []
 
+# Wizard: AI integration with rust-genai for multi-provider LLM support
+# v2 features require caching (lru) and retry jitter (rand)
+wizard = ["async", "caching", "dep:genai", "dep:genai-types", "dep:rand"]
+
 # tokio-specific: For code that explicitly targets tokio (maps to async feature)
 tokio = ["async"]
 
@@ -295,6 +299,10 @@ pqcrypto-kyber = { version = "0.8", optional = true }
 # FUTURE: Enable when creating ggen feature that depends on these crates
 # ggen-core = { path = "vendors/ggen/crates/ggen-core", version = "5.0.0", optional = true }
 # ggen-domain = { path = "vendors/ggen/crates/ggen-domain", version = "5.0.0", optional = true, default-features = false }
+
+# Wizard: AI integration dependencies (rust-genai for multi-provider LLM support)
+genai = { version = "0.3", optional = true }
+genai-types = { version = "0.3", optional = true }
 
 # =============================================================================
 # DEV DEPENDENCIES - For tests, examples, and benchmarks
@@ -578,4 +586,14 @@ harness = false
 
 [[bench]]
 name = "agent_cli_generation"
+harness = false
+
+# Wizard Package Benchmarks (Agent CLI Builder Performance)
+[[bench]]
+name = "wizard_benchmarks"
+harness = false
+
+# Wizard v2 Micro-benchmarks (Performance Optimization)
+[[bench]]
+name = "wizard_v2_micro_benchmarks"
 harness = false
