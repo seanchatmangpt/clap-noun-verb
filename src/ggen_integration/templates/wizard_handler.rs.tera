@@ -1,0 +1,216 @@
+# Generated Wizard Handler Template
+# Template: wizard_handler.rs.tera
+# Generated from: wizard-specs.ttl
+
+use clap_noun_verb::wizard::{
+    WizardBuilder, WizardConfig, Prompt, Message, Role,
+    FallbackConfig, RetryConfig, CacheConfig, streaming::*
+};
+use std::io::{self, Write};
+
+/// Generated wizard for: {{ verb_name }}
+/// Description: {{ verb_description }}
+/// System Prompt: {{ system_prompt }}
+/// Model: {{ primary_model }}
+/// Fallback: {{ fallback_models | join(", ") }}
+#[verb(name = "{{ verb_name }}", noun = "{{ noun_name }}")]
+async fn {{ handler_function_name }}(ctx: AppContext) -> Result<(), Box<dyn std::error::Error>> {
+    println!("🧙 {{ verb_title }}\n");
+
+    // Load configuration from environment
+    let mut config = WizardConfig::from_env()?;
+
+    // Apply generated configuration
+    config = config
+        .with_temperature({{ temperature }})
+        .with_timeout(Duration::from_secs({{ timeout }}));
+
+    // Configure fallback chain
+    let fallback = FallbackConfig::new(ModelConfig::{{ primary_model }})
+    {%- for model in fallback_models %}
+        .with_fallback(ModelConfig::{{ model }})
+    {%- endfor %}
+        .with_strategy(SelectionStrategy::{{ fallback_strategy }});
+
+    // Configure retry behavior
+    let retry = RetryConfig::new({{ max_retries }}, {{ initial_delay_ms }})
+        .with_multiplier(2.0)
+        .with_jitter({{ jitter_factor }})
+        .with_max_delay(60000);
+
+    {%- if cache_enabled %}
+    // Configure response caching
+    let cache = CacheConfig::new({{ cache_size }}, {{ cache_ttl }});
+    {%- endif %}
+
+    // Build wizard with generated configuration
+    let mut wizard = WizardBuilder::new()
+        .with_config(config)
+        .with_fallback(fallback)
+        .with_retry(retry)
+    {%- if cache_enabled %}
+        .with_cache(cache)
+    {%- endif %}
+        .build()
+        .await?;
+
+    // System prompt for all interactions
+    let system_prompt = "{{ system_prompt }}";
+
+    // Conversation history
+    let mut history = vec![];
+    let mut responses = std::collections::HashMap::new();
+
+    {%- for step in prompt_sequence %}
+    // ========================================================================
+    // Step {{ step.step_number }}: {{ step.description }}
+    // ========================================================================
+
+    println!("\n📝 Step {{ step.step_number }}: {{ step.description }}\n");
+
+    loop {
+        // Display prompt
+        print!(">> ");
+        io::stdout().flush()?;
+
+        // Read user input
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim();
+
+        {%- if step.validator %}
+        // Validate input
+        match validate_{{ step.validator | lower }}("{{ step.validator }}", input) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("❌ {{ step.validator_error_message | default('Invalid input') }}");
+                println!("   Details: {}", e);
+                continue;
+            }
+        }
+        {%- endif %}
+
+        // Store response
+        responses.insert("{{ step.stores_variable }}", input.to_string());
+
+        {%- if step.use_history %}
+        // Add to history
+        history.push(Message {
+            role: Role::User,
+            content: input.to_string(),
+        });
+        {%- endif %}
+
+        // Build prompt with history
+        let mut prompt = Prompt::new("{{ step.prompt }}")
+            .with_system(system_prompt);
+
+        {%- if step.use_history %}
+        if !history.is_empty() {
+            prompt = prompt.with_history(history.clone());
+        }
+        {%- endif %}
+
+        // Generate response from wizard
+        {%- if streaming_enabled %}
+        print!("\n🧙 ");
+        io::stdout().flush()?;
+
+        let mut stream = wizard.generate_stream(prompt).await?;
+        let mut full_response = String::new();
+
+        while let Some(chunk) = stream.next().await {
+            match chunk {
+                Ok(chunk) => {
+                    print!("{}", chunk.text);
+                    io::stdout().flush()?;
+                    full_response.push_str(&chunk.text);
+                }
+                Err(e) => {
+                    println!("\n❌ Error: {}", e);
+                    continue;
+                }
+            }
+        }
+
+        {%- if step.use_history %}
+        history.push(Message {
+            role: Role::Assistant,
+            content: full_response,
+        });
+        {%- endif %}
+
+        {%- else %}
+        match wizard.generate(prompt).await {
+            Ok(response) => {
+                println!("\n🧙 {}\n", response.text);
+
+                {%- if step.use_history %}
+                history.push(Message {
+                    role: Role::Assistant,
+                    content: response.text,
+                });
+                {%- endif %}
+            }
+            Err(e) => {
+                println!("❌ Error: {}", e);
+                continue;
+            }
+        }
+        {%- endif %}
+
+        break; // Move to next step
+    }
+    {%- endfor %}
+
+    // ========================================================================
+    // Summary and Completion
+    // ========================================================================
+
+    println!("\n✨ Wizard Complete!\n");
+    println!("📋 Captured Information:");
+    for (key, value) in responses.iter() {
+        println!("   {}: {}", key, value);
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// Validation Functions (Generated)
+// ============================================================================
+
+{%- for validator in validators %}
+fn validate_{{ validator.name | lower }}(validator: &str, input: &str) -> Result<(), String> {
+    {%- if validator.name == "NonEmpty" %}
+    if input.trim().is_empty() {
+        return Err("Input cannot be empty".to_string());
+    }
+    Ok(())
+    {%- endif %}
+
+    {%- if validator.name == "MinLength" %}
+    let min = {{ validator.param }};
+    if input.len() < min {
+        return Err(format!("Input must be at least {} characters", min));
+    }
+    Ok(())
+    {%- endif %}
+
+    {%- if validator.name == "Choice" %}
+    let allowed = vec![{{ validator.options | join(", ") }}];
+    if !allowed.contains(&input) {
+        return Err(format!("Please choose one of: {}", allowed.join(", ")));
+    }
+    Ok(())
+    {%- endif %}
+
+    {%- if validator.name == "Boolean" %}
+    match input.to_lowercase().as_str() {
+        "yes" | "y" | "true" | "1" => Ok(()),
+        "no" | "n" | "false" | "0" => Ok(()),
+        _ => Err("Please enter yes/no or true/false".to_string()),
+    }
+    {%- endif %}
+}
+{%- endfor %}
