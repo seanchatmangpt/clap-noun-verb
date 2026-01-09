@@ -1,5 +1,6 @@
 //! Template processing pipeline integration
 
+use crate::ggen_core;
 use crate::integration::ggen::error::{GgenError, GgenResult};
 
 /// Wrapper around ggen-core Pipeline for template processing

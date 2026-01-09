@@ -73,7 +73,7 @@ fn test_executor_with_noop_interceptor() -> Result<()> {
     let mut executor = Executor::new();
     executor.add_interceptor(Box::new(NoOpInterceptor));
 
-    let handler = |input: HandlerInput| -> Result<HandlerOutput> {
+    let handler = |_input: HandlerInput| -> Result<HandlerOutput> {
         HandlerOutput::from_data("Success".to_string())
     };
 

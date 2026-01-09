@@ -7,7 +7,9 @@
 //!
 //! These tools enable agents to introspect, generate, and export CLI definitions.
 
-use crate::rdf::{CliCodeGenerator, CodeGenError, Ontology, ParsedTurtle, SparqlExecutor, TurtleParser};
+use crate::rdf::{
+    CliCodeGenerator, CodeGenError, Ontology, ParsedTurtle, SparqlExecutor, TurtleParser,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -147,10 +149,7 @@ impl GenerateCliFromTurtle {
             iri: None,
         }];
 
-        Ok(GenerateCliOutput {
-            rust_code: result.rust_code().to_string(),
-            diagnostics,
-        })
+        Ok(GenerateCliOutput { rust_code: result.rust_code().to_string(), diagnostics })
     }
 
     /// Execute (fallback when feature not enabled)
@@ -173,9 +172,13 @@ impl QueryCapabilities {
 
     /// Execute the QueryCapabilities tool
     #[cfg(feature = "rdf-composition")]
-    pub fn execute(&self, input: QueryCapabilitiesInput) -> Result<QueryCapabilitiesOutput, TurtleToolError> {
+    pub fn execute(
+        &self,
+        input: QueryCapabilitiesInput,
+    ) -> Result<QueryCapabilitiesOutput, TurtleToolError> {
         // Create ParsedTurtle from ontology
-        let parsed = ParsedTurtle::new(self.ontology.clone(), HashMap::new(), self.ontology.len(), 0);
+        let parsed =
+            ParsedTurtle::new(self.ontology.clone(), HashMap::new(), self.ontology.len(), 0);
 
         // Create SPARQL executor
         let executor = SparqlExecutor::new(&parsed)
@@ -207,11 +210,8 @@ impl QueryCapabilities {
                 query_result
                     .iter()
                     .map(|binding| {
-                        let pairs: Vec<String> = binding
-                            .bindings
-                            .iter()
-                            .map(|(k, v)| format!("{}: {}", k, v))
-                            .collect();
+                        let pairs: Vec<String> =
+                            binding.bindings.iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
                         pairs.join(", ")
                     })
                     .collect()
@@ -225,7 +225,10 @@ impl QueryCapabilities {
 
     /// Execute (fallback when feature not enabled)
     #[cfg(not(feature = "rdf-composition"))]
-    pub fn execute(&self, _input: QueryCapabilitiesInput) -> Result<QueryCapabilitiesOutput, TurtleToolError> {
+    pub fn execute(
+        &self,
+        _input: QueryCapabilitiesInput,
+    ) -> Result<QueryCapabilitiesOutput, TurtleToolError> {
         Err(TurtleToolError::FeatureNotEnabled)
     }
 }
@@ -357,7 +360,10 @@ cnv:BuildVerb rdf:type cnv:Verb ;
         let output = result.unwrap();
         assert!(output.found);
         assert!(!output.results.is_empty());
-        assert!(output.results.contains(&"test".to_string()) || output.results.contains(&"build".to_string()));
+        assert!(
+            output.results.contains(&"test".to_string())
+                || output.results.contains(&"build".to_string())
+        );
     }
 
     #[test]

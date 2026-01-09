@@ -21,8 +21,10 @@ fn main() {
     ];
 
     println!("📋 CUSTOMER STATUS DASHBOARD\n");
-    println!("{:<20} {:<15} {:<8} {:<8} {:<8} {:<12}",
-             "Company", "Stream", "Days In", "Usage %", "Days Idle", "Status");
+    println!(
+        "{:<20} {:<15} {:<8} {:<8} {:<8} {:<12}",
+        "Company", "Stream", "Days In", "Usage %", "Days Idle", "Status"
+    );
     println!("{}", "─".repeat(75));
 
     for (company, stream, days_in, usage, days_idle) in &customers {
@@ -34,8 +36,10 @@ fn main() {
             "🟢 HEALTHY"
         };
 
-        println!("{:<20} {:<15} {:<8} {:<8}% {:<8} {:<12}",
-                 company, stream, days_in, usage, days_idle, status);
+        println!(
+            "{:<20} {:<15} {:<8} {:<8}% {:<8} {:<12}",
+            company, stream, days_in, usage, days_idle, status
+        );
     }
 
     // Day 7 Check-ins
@@ -88,8 +92,10 @@ fn main() {
     println!("\n\n🚀 EXPANSION OPPORTUNITIES\n");
     let upsells = cs.upsell_opportunities();
     for (customer, current, upsell, potential_arr) in upsells {
-        println!("{:<20} {} → {}  (${:.0} ARR potential)",
-                 customer, current, upsell, potential_arr);
+        println!(
+            "{:<20} {} → {}  (${:.0} ARR potential)",
+            customer, current, upsell, potential_arr
+        );
     }
 
     // Success Plan Template
@@ -108,7 +114,8 @@ impl CSCheckInSystem {
     }
 
     fn day_7_checkin(&self, company: &str, stream: &str) -> String {
-        format!(r#"Subject: Let's define success for {} 🎯
+        format!(
+            r#"Subject: Let's define success for {} 🎯
 
 Hi [Contact],
 
@@ -129,7 +136,9 @@ Questions? Reply here or schedule a call:
 
 Looking forward to your feedback!
 
-[Your Name]"#, company, stream)
+[Your Name]"#,
+            company, stream
+        )
     }
 
     fn thirty_day_review(&self, company: &str, stream: &str) -> Vec<String> {
@@ -171,21 +180,65 @@ Looking forward to your feedback!
 
     fn churn_triggers(&self) -> Vec<(String, String, String)> {
         vec![
-            ("No activity for 7 days".to_string(), "Day 7: Send 'we miss you' email".to_string(), "HIGH".to_string()),
-            ("Support complaint received".to_string(), "Within 30 min: Call customer, own problem".to_string(), "URGENT".to_string()),
-            ("Usage drop 30%+ for 14 days".to_string(), "Personal check-in call scheduled".to_string(), "HIGH".to_string()),
-            ("Didn't complete onboarding (D7)".to_string(), "Call to remove blockers".to_string(), "HIGH".to_string()),
-            ("Budget concerns mentioned".to_string(), "Offer downgrade or payment plan".to_string(), "MEDIUM".to_string()),
-            ("Missed 2 check-in calls".to_string(), "Reach out: everything OK?".to_string(), "MEDIUM".to_string()),
+            (
+                "No activity for 7 days".to_string(),
+                "Day 7: Send 'we miss you' email".to_string(),
+                "HIGH".to_string(),
+            ),
+            (
+                "Support complaint received".to_string(),
+                "Within 30 min: Call customer, own problem".to_string(),
+                "URGENT".to_string(),
+            ),
+            (
+                "Usage drop 30%+ for 14 days".to_string(),
+                "Personal check-in call scheduled".to_string(),
+                "HIGH".to_string(),
+            ),
+            (
+                "Didn't complete onboarding (D7)".to_string(),
+                "Call to remove blockers".to_string(),
+                "HIGH".to_string(),
+            ),
+            (
+                "Budget concerns mentioned".to_string(),
+                "Offer downgrade or payment plan".to_string(),
+                "MEDIUM".to_string(),
+            ),
+            (
+                "Missed 2 check-in calls".to_string(),
+                "Reach out: everything OK?".to_string(),
+                "MEDIUM".to_string(),
+            ),
         ]
     }
 
     fn upsell_opportunities(&self) -> Vec<(String, String, String, f64)> {
         vec![
-            ("Acme Corp".to_string(), "Support Startup".to_string(), "Support Team (3-4x value)".to_string(), 150000.0),
-            ("TechStart".to_string(), "Consulting Project".to_string(), "Training + Frontier Pro".to_string(), 80000.0),
-            ("StartupXYZ".to_string(), "Training".to_string(), "Team Cert Program (5 seats)".to_string(), 50000.0),
-            ("BigTech".to_string(), "ggen Free".to_string(), "ggen Pro + Frontier Premium".to_string(), 200000.0),
+            (
+                "Acme Corp".to_string(),
+                "Support Startup".to_string(),
+                "Support Team (3-4x value)".to_string(),
+                150000.0,
+            ),
+            (
+                "TechStart".to_string(),
+                "Consulting Project".to_string(),
+                "Training + Frontier Pro".to_string(),
+                80000.0,
+            ),
+            (
+                "StartupXYZ".to_string(),
+                "Training".to_string(),
+                "Team Cert Program (5 seats)".to_string(),
+                50000.0,
+            ),
+            (
+                "BigTech".to_string(),
+                "ggen Free".to_string(),
+                "ggen Pro + Frontier Premium".to_string(),
+                200000.0,
+            ),
         ]
     }
 

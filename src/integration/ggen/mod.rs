@@ -55,16 +55,18 @@ pub use pipeline::GgenPipeline;
 pub use receipt::GenerationReceipt;
 
 /// Re-export core ggen types for advanced usage
-pub mod core {
-    pub use ggen_core::{Generator as CoreGenerator, Pipeline as CorePipeline, Template};
-}
+/// Note: ggen_core types not currently available in this workspace
+/// pub mod core {
+///     pub use ggen_core::{Generator as CoreGenerator, Pipeline as CorePipeline, Template};
+/// }
 
 /// Re-export domain ggen types for advanced usage
-pub mod domain {
-    pub use ggen_domain::{
-        generation as domain_generation, project as domain_project, template as domain_template,
-    };
-}
+/// Note: ggen_domain types not currently available in this workspace
+/// pub mod domain {
+///     pub use ggen_domain::{
+///         generation as domain_generation, project as domain_project, template as domain_template,
+///     };
+/// }
 
 /// Type-state marker for GgenGenerator
 pub mod state {

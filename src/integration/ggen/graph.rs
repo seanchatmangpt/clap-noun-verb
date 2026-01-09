@@ -1,5 +1,6 @@
 //! RDF graph integration for ontology-driven code generation
 
+use crate::ggen_core;
 use crate::integration::ggen::error::{GgenError, GgenResult};
 
 /// Wrapper around ggen-core Graph for RDF operations

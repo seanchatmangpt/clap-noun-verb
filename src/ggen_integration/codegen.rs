@@ -34,7 +34,7 @@
 //! # }
 //! ```
 
-use crate::ggen_integration::ast::{Argument, ArgumentKind, Command, Flag, TypeAnnotation};
+use crate::ggen_integration::ast::{Argument, ArgumentKind, Command, Flag};
 use crate::ggen_integration::error::GgenResult as Result;
 
 /// Code generator for clap-noun-verb
@@ -252,6 +252,7 @@ impl Default for CodeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ggen_integration::ast::TypeAnnotation;
 
     #[test]
     fn test_generator_new() {

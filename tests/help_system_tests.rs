@@ -344,9 +344,13 @@ fn test_generate_search_output() {
     assert_eq!(search_output.keyword, "pack");
     assert!(!search_output.results.is_empty(), "Should have results");
 
-    // Invalid search
+    // Invalid search - returns Ok with empty results
     let output = generate_search_output(&discovery, "xyz123nonexistent");
-    assert!(output.is_err(), "Should error for search with no results");
+    assert!(output.is_ok(), "Should return Ok for search with no results");
+
+    let search_output = output.unwrap();
+    assert_eq!(search_output.keyword, "xyz123nonexistent");
+    assert!(search_output.results.is_empty(), "Should have no results for non-existent search");
 }
 
 // ============================================================================

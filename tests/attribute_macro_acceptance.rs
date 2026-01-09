@@ -121,7 +121,7 @@ fn test_type_inference_from_function_signature() -> Result<()> {
         if let Some(logs_cmd) = logs_cmd {
             // Assert: logs command should have arguments
             // Note: Exact argument verification depends on clap API
-            assert!(logs_cmd.get_arguments().count() >= 0, "logs command should exist");
+            assert!(logs_cmd.get_arguments().count() > 0, "logs command should have arguments");
         }
     }
 

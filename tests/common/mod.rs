@@ -2,9 +2,6 @@
 
 pub mod test_prelude;
 
-use clap_noun_verb::cli::registry::CommandRegistry;
-use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
-
 /// Assertion helpers for command structure verification
 pub mod command_assertions {
     use clap::Command;

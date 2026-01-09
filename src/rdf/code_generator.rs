@@ -31,7 +31,6 @@ use crate::rdf::sparql_executor_oxigraph::SparqlExecutor;
 use crate::rdf::turtle_parser::ParsedTurtle;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use std::collections::HashMap;
 use thiserror::Error;
 
 /// Errors that can occur during code generation
@@ -136,10 +135,7 @@ impl CliConfig {
 
     /// Get verbs for a noun
     pub fn get_verbs_for_noun(&self, noun_name: &str) -> Vec<&VerbDefinition> {
-        self.verbs
-            .iter()
-            .filter(|v| v.noun.as_deref() == Some(noun_name))
-            .collect()
+        self.verbs.iter().filter(|v| v.noun.as_deref() == Some(noun_name)).collect()
     }
 }
 
@@ -159,12 +155,7 @@ pub struct GeneratedCli {
 impl GeneratedCli {
     /// Create a new GeneratedCli
     pub fn new(rust_code: String, noun_count: usize, verb_count: usize, config: CliConfig) -> Self {
-        Self {
-            rust_code,
-            noun_count,
-            verb_count,
-            config,
-        }
+        Self { rust_code, noun_count, verb_count, config }
     }
 
     /// Get the generated Rust code
@@ -251,12 +242,7 @@ impl CliCodeGenerator {
         // Generate Rust code
         let rust_code = self.generate_rust_code(&config)?;
 
-        Ok(GeneratedCli::new(
-            rust_code,
-            config.nouns.len(),
-            config.verbs.len(),
-            config,
-        ))
+        Ok(GeneratedCli::new(rust_code, config.nouns.len(), config.verbs.len(), config))
     }
 
     /// Extract CLI configuration from ontology using SPARQL
@@ -279,7 +265,10 @@ impl CliCodeGenerator {
     }
 
     /// Extract noun definitions from ontology
-    fn extract_nouns(&self, executor: &SparqlExecutor) -> Result<Vec<NounDefinition>, CodeGenError> {
+    fn extract_nouns(
+        &self,
+        executor: &SparqlExecutor,
+    ) -> Result<Vec<NounDefinition>, CodeGenError> {
         let query = r#"
             PREFIX cnv: <https://cnv.dev/ontology#>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -312,27 +301,22 @@ impl CliCodeGenerator {
                 })?
                 .to_string();
 
-            let description = binding
-                .get("description")
-                .unwrap_or(&name)
-                .to_string();
+            let description = binding.get("description").unwrap_or(&name).to_string();
 
             // Validate name is a valid Rust identifier
             self.validate_identifier(&name)?;
 
-            nouns.push(NounDefinition {
-                uri,
-                name,
-                description,
-                verbs: Vec::new(),
-            });
+            nouns.push(NounDefinition { uri, name, description, verbs: Vec::new() });
         }
 
         Ok(nouns)
     }
 
     /// Extract verb definitions from ontology
-    fn extract_verbs(&self, executor: &SparqlExecutor) -> Result<Vec<VerbDefinition>, CodeGenError> {
+    fn extract_verbs(
+        &self,
+        executor: &SparqlExecutor,
+    ) -> Result<Vec<VerbDefinition>, CodeGenError> {
         let query = r#"
             PREFIX cnv: <https://cnv.dev/ontology#>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -366,10 +350,7 @@ impl CliCodeGenerator {
                 })?
                 .to_string();
 
-            let description = binding
-                .get("description")
-                .unwrap_or(&name)
-                .to_string();
+            let description = binding.get("description").unwrap_or(&name).to_string();
 
             let noun = binding.get("noun").map(|s| s.to_string());
 
@@ -379,13 +360,7 @@ impl CliCodeGenerator {
             // Generate handler function name
             let handler = format!("{}_handler", name);
 
-            verbs.push(VerbDefinition {
-                uri,
-                name,
-                description,
-                noun,
-                handler,
-            });
+            verbs.push(VerbDefinition { uri, name, description, noun, handler });
         }
 
         Ok(verbs)
@@ -401,17 +376,19 @@ impl CliCodeGenerator {
         }
 
         // Check first character is alphabetic or underscore
-        let first_char = identifier.chars().next().ok_or_else(|| {
-            CodeGenError::InvalidIdentifier {
+        let first_char =
+            identifier.chars().next().ok_or_else(|| CodeGenError::InvalidIdentifier {
                 identifier: identifier.to_string(),
                 reason: "identifier is empty".to_string(),
-            }
-        })?;
+            })?;
 
         if !first_char.is_alphabetic() && first_char != '_' {
             return Err(CodeGenError::InvalidIdentifier {
                 identifier: identifier.to_string(),
-                reason: format!("identifier must start with letter or underscore, found '{}'", first_char),
+                reason: format!(
+                    "identifier must start with letter or underscore, found '{}'",
+                    first_char
+                ),
             });
         }
 
@@ -440,11 +417,43 @@ impl CliCodeGenerator {
     fn is_rust_keyword(&self, s: &str) -> bool {
         matches!(
             s,
-            "as" | "break" | "const" | "continue" | "crate" | "else" | "enum" | "extern"
-                | "false" | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" | "match"
-                | "mod" | "move" | "mut" | "pub" | "ref" | "return" | "self" | "Self"
-                | "static" | "struct" | "super" | "trait" | "true" | "type" | "unsafe"
-                | "use" | "where" | "while" | "async" | "await" | "dyn"
+            "as" | "break"
+                | "const"
+                | "continue"
+                | "crate"
+                | "else"
+                | "enum"
+                | "extern"
+                | "false"
+                | "fn"
+                | "for"
+                | "if"
+                | "impl"
+                | "in"
+                | "let"
+                | "loop"
+                | "match"
+                | "mod"
+                | "move"
+                | "mut"
+                | "pub"
+                | "ref"
+                | "return"
+                | "self"
+                | "Self"
+                | "static"
+                | "struct"
+                | "super"
+                | "trait"
+                | "true"
+                | "type"
+                | "unsafe"
+                | "use"
+                | "where"
+                | "while"
+                | "async"
+                | "await"
+                | "dyn"
         )
     }
 
@@ -486,9 +495,10 @@ impl CliCodeGenerator {
         // Use prettyplease for better formatting (if available)
         #[cfg(feature = "prettyplease")]
         {
-            let syntax_tree = syn::parse_file(&code).map_err(|e| CodeGenError::GenerationError {
-                message: format!("Failed to parse generated code: {}", e),
-            })?;
+            let syntax_tree =
+                syn::parse_file(&code).map_err(|e| CodeGenError::GenerationError {
+                    message: format!("Failed to parse generated code: {}", e),
+                })?;
             Ok(prettyplease::unparse(&syntax_tree))
         }
 
@@ -743,14 +753,8 @@ cnv:MigrateVerb rdf:type cnv:Verb ;
         assert!(nouns.is_ok(), "Failed to extract nouns: {:?}", nouns.err());
         let noun_list = nouns.unwrap();
         assert_eq!(noun_list.len(), 2, "Expected 2 nouns");
-        assert!(
-            noun_list.iter().any(|n| n.name == "services"),
-            "services noun not found"
-        );
-        assert!(
-            noun_list.iter().any(|n| n.name == "database"),
-            "database noun not found"
-        );
+        assert!(noun_list.iter().any(|n| n.name == "services"), "services noun not found");
+        assert!(noun_list.iter().any(|n| n.name == "database"), "database noun not found");
     }
 
     #[test]
@@ -767,18 +771,9 @@ cnv:MigrateVerb rdf:type cnv:Verb ;
         assert!(verbs.is_ok(), "Failed to extract verbs: {:?}", verbs.err());
         let verb_list = verbs.unwrap();
         assert_eq!(verb_list.len(), 3, "Expected 3 verbs");
-        assert!(
-            verb_list.iter().any(|v| v.name == "status"),
-            "status verb not found"
-        );
-        assert!(
-            verb_list.iter().any(|v| v.name == "start"),
-            "start verb not found"
-        );
-        assert!(
-            verb_list.iter().any(|v| v.name == "migrate"),
-            "migrate verb not found"
-        );
+        assert!(verb_list.iter().any(|v| v.name == "status"), "status verb not found");
+        assert!(verb_list.iter().any(|v| v.name == "start"), "start verb not found");
+        assert!(verb_list.iter().any(|v| v.name == "migrate"), "migrate verb not found");
     }
 
     #[test]
@@ -887,14 +882,8 @@ cnv:MigrateVerb rdf:type cnv:Verb ;
             generator.validate_identifier("123start").is_err(),
             "Starting with number should be invalid"
         );
-        assert!(
-            generator.validate_identifier("my-service").is_err(),
-            "Hyphens should be invalid"
-        );
-        assert!(
-            generator.validate_identifier("for").is_err(),
-            "Rust keywords should be invalid"
-        );
+        assert!(generator.validate_identifier("my-service").is_err(), "Hyphens should be invalid");
+        assert!(generator.validate_identifier("for").is_err(), "Rust keywords should be invalid");
     }
 
     #[test]

@@ -2,6 +2,7 @@
 //!
 //! Provides an ergonomic interface for code generation with compile-time guarantees.
 
+use crate::ggen_core;
 use crate::integration::ggen::{
     config::{GgenConfig, GgenConfigBuilder},
     error::{GgenError, GgenResult},

@@ -37,7 +37,7 @@ use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{NounVerbError, Result};
+use crate::error::Result;
 
 // =============================================================================
 // Metric - System metric with timestamp

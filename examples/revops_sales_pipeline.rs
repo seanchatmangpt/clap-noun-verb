@@ -45,8 +45,10 @@ fn main() {
     println!("\n🔥 TOP 5 DEALS");
     println!("─────────────────────────────────────────────────────────");
     for deal in pipeline.top_deals(5) {
-        println!("{:<20} ${:>10.0}  {}  ({}%)",
-                 deal.company, deal.amount, deal.stage, deal.probability);
+        println!(
+            "{:<20} ${:>10.0}  {}  ({}%)",
+            deal.company, deal.amount, deal.stage, deal.probability
+        );
     }
 
     println!("\n⚠️  AT RISK (No activity 7+ days)");
@@ -148,7 +150,9 @@ impl Pipeline {
     }
 
     fn conversion_rate(&self) -> f64 {
-        if self.total_prospects() == 0 { return 0.0; }
+        if self.total_prospects() == 0 {
+            return 0.0;
+        }
         (self.closed_won_count() as f64 / self.total_prospects() as f64) * 100.0
     }
 

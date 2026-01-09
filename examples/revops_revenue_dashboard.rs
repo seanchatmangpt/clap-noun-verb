@@ -58,15 +58,22 @@ fn main() {
     println!("CAC (acquisition cost):   ${:.0}", revenue.cac());
     println!("LTV (lifetime value):     ${:.0}", revenue.ltv());
     println!("Payback period:           {:.1} months", revenue.payback_period());
-    println!("LTV:CAC ratio:            {:.1}:1 {}", revenue.ltv_cac_ratio(),
-             if revenue.ltv_cac_ratio() > 3.0 { "✓" } else { "⚠" });
+    println!(
+        "LTV:CAC ratio:            {:.1}:1 {}",
+        revenue.ltv_cac_ratio(),
+        if revenue.ltv_cac_ratio() > 3.0 { "✓" } else { "⚠" }
+    );
 
     println!("\n🎯 FORECAST (Next 6 Months)");
     println!("─────────────────────────────────────────────────────────");
     for month in 1..=6 {
         let projected = revenue.forecast_month(month);
-        println!("Month {}: ${:.0}  ({:>+6.1}% growth)", month, projected,
-                 revenue.forecast_growth(month));
+        println!(
+            "Month {}: ${:.0}  ({:>+6.1}% growth)",
+            month,
+            projected,
+            revenue.forecast_growth(month)
+        );
     }
 
     println!("\n🚀 KEY METRICS");
@@ -111,8 +118,13 @@ impl RevenueTracker {
     }
 
     fn current_mrr(&self) -> f64 {
-        self.support_mrr + self.training_mrr + self.consulting_mrr +
-        self.ggen_mrr + self.frontier_mrr + self.marketplace_mrr + self.enterprise_mrr
+        self.support_mrr
+            + self.training_mrr
+            + self.consulting_mrr
+            + self.ggen_mrr
+            + self.frontier_mrr
+            + self.marketplace_mrr
+            + self.enterprise_mrr
     }
 
     fn new_mrr(&self) -> f64 {
@@ -189,7 +201,8 @@ impl RevenueTracker {
 
     fn rule_of_40(&self) -> f64 {
         let growth = self.growth_rate();
-        let profit_margin = ((self.current_mrr() - self.monthly_costs) / self.current_mrr()) * 100.0;
+        let profit_margin =
+            ((self.current_mrr() - self.monthly_costs) / self.current_mrr()) * 100.0;
         growth + profit_margin.max(0.0)
     }
 

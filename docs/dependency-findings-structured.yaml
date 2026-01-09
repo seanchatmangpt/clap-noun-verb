@@ -1,0 +1,374 @@
+---
+# Structured Dependency Audit Findings
+# For clap-noun-verb v5.5.0 → v6.0.0 Upgrade
+
+audit_metadata:
+  timestamp: "2026-01-08T00:00:00Z"
+  current_version: "5.5.0"
+  target_version: "6.0.0"
+  current_edition: "2021"
+  current_msrv: "1.74"
+  recommended_msrv: "1.80"
+  methodology: "Toyota Production System (QATIS + Waste Elimination)"
+
+# ============================================================================
+# CRITICAL FINDINGS - BLOCKING ISSUES
+# ============================================================================
+
+critical_issues:
+  supply_chain_risks:
+    - package: "bft-rs"
+      status: "MISSING"
+      reason: "Byzantine Fault Tolerance library not on crates.io"
+      impact: "federated-network feature cannot compile"
+      priority: "P0_BLOCKING"
+      resolution_options:
+        - "Find alternative Byzantine consensus library (e.g., hotstuff)"
+        - "Remove federated-network feature from v6.0.0"
+        - "Implement custom BFT layer"
+      estimated_effort: "2-4 weeks"
+
+    - package: "simrs"
+      status: "MISSING"
+      reason: "Simulation framework not on crates.io"
+      impact: "economic-sim feature cannot compile"
+      priority: "P0_BLOCKING"
+      resolution_options:
+        - "Find alternative simulation crate (e.g., simulate-rs, discrete-event)"
+        - "Remove economic-sim feature from v6.0.0"
+        - "Implement minimal simulation layer"
+      estimated_effort: "1-3 weeks"
+
+  breaking_changes:
+    - package: "thiserror"
+      from_version: "1.0.69"
+      to_version: "2.0.17"
+      severity: "HIGH"
+      impact: "All error types in library affected"
+      breaking_aspects:
+        - "Error derive macro syntax may change"
+        - "Error display formatting may change"
+        - "Source field handling may change"
+      testing_required: true
+      estimated_effort: "7-9 hours"
+      validation_checklist:
+        - "Full error type audit"
+        - "Integration test all error paths"
+        - "Verify error messages unchanged"
+        - "Test error chaining still works"
+
+# ============================================================================
+# HIGH PRIORITY UPDATES - TESTING REQUIRED
+# ============================================================================
+
+high_priority_updates:
+  major_versions:
+    - package: "json-ld"
+      from_version: "0.18"
+      to_version: "0.21.2"
+      change_type: "MAJOR"
+      affected_features: ["rdf", "rdf-composition"]
+      breaking_changes: true
+      estimated_test_hours: 3
+
+    - package: "rmcp"
+      from_version: "0.9.1"
+      to_version: "0.12.0"
+      change_type: "MAJOR"
+      affected_features: ["rdf"]
+      breaking_changes: true
+      estimated_test_hours: 2
+
+  frontier_packages:
+    - package: "libp2p"
+      from_version: "0.54.1"
+      to_version: "0.56.0"
+      change_type: "MINOR"
+      affected_features: ["federated-network"]
+      complexity: "HIGH"
+      transitive_deps: 40
+      estimated_test_hours: 2
+
+    - package: "bevy_ecs"
+      from_version: "0.14.2"
+      to_version: "0.17.3"
+      change_type: "MINOR"
+      affected_features: ["economic-sim"]
+      complexity: "MEDIUM"
+      transitive_deps: 30
+      estimated_test_hours: 2
+
+# ============================================================================
+# RECOMMENDED UPDATES - SAFE TO INTEGRATE
+# ============================================================================
+
+recommended_updates:
+  patch_level:
+    - {package: "clap", from: "4.5", to: "4.6", effort: "MINIMAL"}
+    - {package: "anyhow", from: "1.0.100", to: "1.0.101", effort: "MINIMAL"}
+    - {package: "serde_yaml", from: "0.9", to: "0.9.34", effort: "MINIMAL"}
+
+  minor_level:
+    - {package: "uuid", from: "1.0", to: "1.19", effort: "LOW"}
+    - {package: "oxrdf", from: "0.2.4", to: "0.3.1", effort: "LOW"}
+    - {package: "toml", from: "0.8.23", to: "0.8.24", effort: "LOW"}
+    - {package: "handlebars", from: "5.1.2", to: "6.4.0", effort: "MEDIUM"}
+    - {package: "petgraph", from: "0.6.5", to: "0.8.3", effort: "LOW"}
+    - {package: "ordered-float", from: "4.2", to: "5.1.0", effort: "LOW"}
+    - {package: "lru", from: "0.12.5", to: "0.16.3", effort: "LOW"}
+    - {package: "smartcore", from: "0.3.2", to: "0.4.8", effort: "MEDIUM"}
+
+# ============================================================================
+# DEPENDENCY CONSOLIDATION OPPORTUNITIES
+# ============================================================================
+
+consolidation_opportunities:
+  - name: "Duplicate parking_lot usage"
+    current_features: ["kernel", "autonomic", "concurrency"]
+    recommendation: "Consolidate into single feature flag"
+    waste_reduction: "Reduce feature matrix complexity"
+
+  - name: "Duplicate crossbeam usage"
+    current_features: ["kernel", "autonomic", "concurrency"]
+    recommendation: "Consider feature sharing"
+    waste_reduction: "Cleaner feature composition"
+
+  - name: "uuid in multiple features"
+    current_features: ["agent2028", "autonomic", "kernel"]
+    recommendation: "Consider moving to core dependencies"
+    waste_reduction: "Simplified feature flags"
+
+  - name: "lazy_static vs once_cell"
+    status: "Evaluate for removal"
+    recommendation: "Consider dropping lazy_static if once_cell fully replaces"
+    waste_reduction: "Remove unused dependency"
+
+# ============================================================================
+# SUPPLY CHAIN & SECURITY ASSESSMENT
+# ============================================================================
+
+supply_chain_analysis:
+  known_risks:
+    - package: "libp2p"
+      transitive_dependencies: 40
+      complexity: "VERY_HIGH"
+      recommendation: "Use feature flags to minimize compilation"
+      risk_level: "MEDIUM"
+
+    - package: "bevy_ecs"
+      transitive_dependencies: 30
+      complexity: "HIGH"
+      recommendation: "Isolate to optional feature"
+      risk_level: "MEDIUM"
+
+    - package: "rustls"
+      category: "CRYPTOGRAPHY"
+      recommendation: "Monitor security advisories quarterly"
+      risk_level: "LOW"
+
+  security_audit_status: "REQUIRES_AUDIT"
+  recommended_tools:
+    - "cargo audit"
+    - "cargo-deny"
+    - "trivy (container scanning)"
+
+# ============================================================================
+# MSRV & TOOLCHAIN ANALYSIS
+# ============================================================================
+
+msrv_analysis:
+  current_msrv: "1.74"
+  recommended_msrv: "1.80"
+  rationale:
+    - "Removes support for 13-month-old compiler"
+    - "Enables stable const generics"
+    - "Better async/await support"
+    - "More dependencies support 1.80+"
+    - "Aligns with 1-year support window"
+
+  rust_180_features:
+    - "Improved const generics"
+    - "Stable async traits"
+    - "Scoped thread APIs"
+    - "Additional stdlib stabilizations"
+
+  compatibility_testing:
+    commands:
+      - "rustup install 1.80"
+      - "cargo +1.80 check"
+      - "cargo +1.80 test"
+      - "cargo +1.80 build --all-features"
+    estimated_duration_hours: 2
+
+# ============================================================================
+# UPGRADE PHASES & TIMELINE
+# ============================================================================
+
+upgrade_phases:
+
+  phase_1:
+    name: "Core Dependency Updates (Safe)"
+    duration_hours: 2
+    risk_level: "LOW"
+    dependencies:
+      - {package: "clap", from: "4.5", to: "4.6"}
+      - {package: "uuid", from: "1.0", to: "1.19"}
+      - {package: "toml", from: "0.8.23", to: "0.8.24"}
+      - {package: "oxrdf", from: "0.2.4", to: "0.3.1"}
+    commands:
+      - "cargo make check"
+      - "cargo make test"
+    validation:
+      - "All core tests pass"
+      - "No new warnings"
+
+  phase_2:
+    name: "Frontier Feature Updates (Testing Required)"
+    duration_hours: 6
+    risk_level: "MEDIUM"
+    dependencies:
+      - {package: "libp2p", from: "0.54.1", to: "0.56.0"}
+      - {package: "petgraph", from: "0.6.5", to: "0.8.3"}
+      - {package: "bevy_ecs", from: "0.14.2", to: "0.17.3"}
+      - {package: "cucumber", from: "0.21", to: "0.22.1"}
+    commands:
+      - "cargo make test --features rdf-composition"
+      - "cargo make test --features economic-sim"
+      - "cargo make test --all-features"
+    validation:
+      - "Feature-specific tests pass"
+      - "Integration tests pass"
+      - "No regressions"
+
+  phase_3:
+    name: "Breaking Change Upgrades (CRITICAL)"
+    duration_hours: 9
+    risk_level: "HIGH"
+    dependencies:
+      - {package: "thiserror", from: "1.0.69", to: "2.0.17"}
+      - {package: "json-ld", from: "0.18", to: "0.21.2"}
+      - {package: "rmcp", from: "0.9.1", to: "0.12.0"}
+    commands:
+      - "Full error type audit"
+      - "cargo make test --features rdf"
+      - "cargo make test --all-features"
+    validation:
+      - "All error handling verified"
+      - "RDF feature tests pass"
+      - "Zero regressions"
+      - "API compatibility verified"
+
+  phase_4:
+    name: "Supply Chain Resolution (BLOCKING)"
+    duration_hours: 40
+    risk_level: "CRITICAL"
+    tasks:
+      - "Research bft-rs alternatives"
+      - "Research simrs alternatives"
+      - "Decision and implementation"
+      - "Comprehensive testing"
+    validation:
+      - "federated-network feature resolved"
+      - "economic-sim feature resolved"
+      - "Decision documented in CHANGELOG"
+
+  phase_5:
+    name: "MSRV Bump & Final Validation"
+    duration_hours: 4
+    risk_level: "LOW"
+    changes:
+      - "Update Cargo.toml: rust-version = 1.80"
+    commands:
+      - "cargo +1.80 check"
+      - "cargo +1.80 test"
+      - "cargo make pre-commit"
+      - "cargo make ci"
+    validation:
+      - "Compiler works with 1.80"
+      - "All tests pass"
+      - "CI pipeline succeeds"
+
+# ============================================================================
+# RELEASE CHECKLIST
+# ============================================================================
+
+release_checklist_v6_0_0:
+  pre_release:
+    blocking:
+      - {task: "Resolve bft-rs dependency", status: "PENDING"}
+      - {task: "Resolve simrs dependency", status: "PENDING"}
+      - {task: "Test thiserror 2.0 integration", status: "PENDING"}
+      - {task: "Verify MSRV 1.80 compatibility", status: "PENDING"}
+
+    high_priority:
+      - {task: "Test json-ld 0.21.2 with rdf-composition", status: "PENDING"}
+      - {task: "Test rmcp 0.12.0 with rdf feature", status: "PENDING"}
+      - {task: "Run cargo audit", status: "PENDING"}
+      - {task: "Test all frontier features", status: "PENDING"}
+
+    standard:
+      - {task: "Run cargo make pre-commit", status: "PENDING"}
+      - {task: "Run cargo make test --all-features", status: "PENDING"}
+      - {task: "Run cargo make bench --all-features", status: "PENDING"}
+      - {task: "Update CHANGELOG.md", status: "PENDING"}
+      - {task: "Create migration guide", status: "PENDING"}
+      - {task: "Update README for MSRV 1.80", status: "PENDING"}
+
+# ============================================================================
+# DEPENDENCY HEALTH METRICS
+# ============================================================================
+
+quality_metrics:
+  core_dependencies_current: 10
+  core_dependencies_at_patch_minor: 10
+  core_currency_percentage: 100
+
+  feature_dependencies_current: 27
+  feature_dependencies_requiring_updates: 9
+  feature_currency_percentage: 67
+
+  frontier_dependencies_current: 35
+  frontier_dependencies_missing: 2
+  frontier_currency_percentage: 94
+
+  total_breaking_changes_identified: 3
+  total_missing_dependencies: 2
+
+  supply_chain_issues: 2
+  security_issues_known: 0
+
+overall_health_score: "82%"
+status: "READY_FOR_UPGRADE_WITH_CAVEATS"
+recommendation: "Proceed with CAUTION - resolve blocking issues first"
+
+# ============================================================================
+# PRIORITY SUMMARY FOR PLANNER
+# ============================================================================
+
+priority_matrix:
+  P0_BLOCKING:
+    - "Resolve bft-rs missing"
+    - "Resolve simrs missing"
+    - "Test thiserror 2.0"
+    - "Validate MSRV 1.80"
+    estimated_total_hours: 50
+
+  P1_HIGH:
+    - "Test json-ld 0.21.2"
+    - "Test rmcp 0.12.0"
+    - "Test all frontiers"
+    - "Create migration guide"
+    estimated_total_hours: 20
+
+  P2_MEDIUM:
+    - "Update all patch/minor versions"
+    - "Run security audit"
+    - "Consolidate dependencies"
+    estimated_total_hours: 8
+
+  P3_LOW:
+    - "Evaluate unused features"
+    - "Optimize feature flags"
+    estimated_total_hours: 4
+
+total_estimated_effort: "82 hours"

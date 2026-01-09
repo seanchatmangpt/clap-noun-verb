@@ -29,11 +29,7 @@
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::time::Duration;
 use thiserror::Error;
-
-#[cfg(feature = "async")]
-use tokio::sync::RwLock;
 
 /// Result type for federated network operations
 pub type Result<T> = std::result::Result<T, FederatedError>;
