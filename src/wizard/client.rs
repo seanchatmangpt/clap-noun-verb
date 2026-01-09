@@ -48,7 +48,12 @@ impl GenAiClient {
             #[cfg(feature = "caching")]
             cache: if wizard_config.enable_cache {
                 // Default cache size: 100 entries
-                Some(LruCache::new(NonZeroUsize::new(100).expect("100 is non-zero")))
+                // SAFETY: 100 is a compile-time constant that is non-zero
+                const CACHE_SIZE: NonZeroUsize = match NonZeroUsize::new(100) {
+                    Some(size) => size,
+                    None => unreachable!(),
+                };
+                Some(LruCache::new(CACHE_SIZE))
             } else {
                 None
             },

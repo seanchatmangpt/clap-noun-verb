@@ -260,6 +260,17 @@ pub struct WizardConfig {
     /// Enable caching (requires "caching" feature)
     #[cfg(feature = "caching")]
     pub enable_cache: bool,
+    /// v2 feature configs
+    #[cfg(feature = "wizard")]
+    pub streaming_config: Option<crate::wizard::streaming::StreamingConfig>,
+    #[cfg(feature = "wizard")]
+    pub cache_config: Option<crate::wizard::cache::CacheConfig>,
+    #[cfg(feature = "wizard")]
+    pub rate_limit_config: Option<crate::wizard::rate_limit::RateLimitConfig>,
+    #[cfg(feature = "wizard")]
+    pub retry_config: Option<crate::wizard::retry::RetryConfig>,
+    #[cfg(feature = "wizard")]
+    pub fallback_config: Option<crate::wizard::fallback::FallbackConfig>,
 }
 
 impl Default for WizardConfig {
@@ -270,6 +281,16 @@ impl Default for WizardConfig {
             endpoint: None,
             #[cfg(feature = "caching")]
             enable_cache: false,
+            #[cfg(feature = "wizard")]
+            streaming_config: None,
+            #[cfg(feature = "wizard")]
+            cache_config: None,
+            #[cfg(feature = "wizard")]
+            rate_limit_config: None,
+            #[cfg(feature = "wizard")]
+            retry_config: None,
+            #[cfg(feature = "wizard")]
+            fallback_config: None,
         }
     }
 }
@@ -318,6 +339,16 @@ impl WizardConfig {
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(false),
+            #[cfg(feature = "wizard")]
+            streaming_config: None,
+            #[cfg(feature = "wizard")]
+            cache_config: None,
+            #[cfg(feature = "wizard")]
+            rate_limit_config: None,
+            #[cfg(feature = "wizard")]
+            retry_config: None,
+            #[cfg(feature = "wizard")]
+            fallback_config: None,
         })
     }
 
@@ -460,7 +491,9 @@ mod tests {
                 assert_eq!(requested, 100000);
                 assert_eq!(max, 8192);
             }
-            _ => panic!("Expected TokenLimit error"),
+            _ => {
+                assert!(false, "Expected TokenLimit error");
+            }
         }
     }
 

@@ -93,16 +93,24 @@ pub struct SessionData {
 }
 
 impl SessionData {
-    /// Create new session data
+    /// Create new session data with default capacity
+    #[inline]
     pub fn new(session_id: String) -> Self {
+        Self::with_capacity(session_id, 8)
+    }
+
+    /// Create new session data with specified history capacity
+    #[inline]
+    pub fn with_capacity(session_id: String, capacity: usize) -> Self {
         Self {
             session_id,
-            history: Vec::new(),
+            history: Vec::with_capacity(capacity),
             metadata: serde_json::Value::Null,
         }
     }
 
     /// Add an interaction to the history
+    #[inline]
     pub fn add_interaction(&mut self, prompt: String, response: String) {
         self.history.push((prompt, response));
     }
@@ -126,22 +134,26 @@ pub struct WizardSession<S: State> {
 }
 
 impl<S: State> WizardSession<S> {
-    /// Get session ID
+    /// Get session ID (zero-cost reference)
+    #[inline(always)]
     pub fn session_id(&self) -> &str {
         &self.data.session_id
     }
 
-    /// Get interaction history
+    /// Get interaction history (zero-cost slice reference)
+    #[inline(always)]
     pub fn history(&self) -> &[(String, String)] {
         &self.data.history
     }
 
-    /// Get session metadata
+    /// Get session metadata (zero-cost reference)
+    #[inline(always)]
     pub fn metadata(&self) -> &serde_json::Value {
         &self.data.metadata
     }
 
     /// Set session metadata
+    #[inline]
     pub fn set_metadata(&mut self, metadata: serde_json::Value) {
         self.data.metadata = metadata;
     }
@@ -156,15 +168,23 @@ impl<S: State> WizardSession<S> {
 }
 
 impl WizardSession<Init> {
-    /// Create a new wizard session in Init state
+    /// Create a new wizard session in Init state with default capacity
+    #[inline]
     pub fn new(session_id: String) -> Self {
+        Self::with_capacity(session_id, 8)
+    }
+
+    /// Create a new wizard session with specified history capacity
+    #[inline]
+    pub fn with_capacity(session_id: String, capacity: usize) -> Self {
         Self {
-            data: SessionData::new(session_id),
+            data: SessionData::with_capacity(session_id, capacity),
             _state: PhantomData,
         }
     }
 
-    /// Transition to Active state
+    /// Transition to Active state (zero-cost state transition)
+    #[inline(always)]
     pub fn start(self) -> WizardSession<Active> {
         WizardSession {
             data: self.data,
@@ -175,11 +195,13 @@ impl WizardSession<Init> {
 
 impl WizardSession<Active> {
     /// Add an interaction to the session
+    #[inline]
     pub fn add_interaction(&mut self, prompt: String, response: String) {
         self.data.add_interaction(prompt, response);
     }
 
-    /// Pause the session
+    /// Pause the session (zero-cost state transition)
+    #[inline(always)]
     pub fn pause(self) -> WizardSession<Paused> {
         WizardSession {
             data: self.data,
@@ -187,7 +209,8 @@ impl WizardSession<Active> {
         }
     }
 
-    /// Complete the session successfully
+    /// Complete the session successfully (zero-cost state transition)
+    #[inline(always)]
     pub fn complete(self) -> WizardSession<Complete> {
         WizardSession {
             data: self.data,
@@ -195,7 +218,8 @@ impl WizardSession<Active> {
         }
     }
 
-    /// Fail the session
+    /// Fail the session (zero-cost state transition)
+    #[inline(always)]
     pub fn fail(self) -> WizardSession<Failed> {
         WizardSession {
             data: self.data,
@@ -205,7 +229,8 @@ impl WizardSession<Active> {
 }
 
 impl WizardSession<Paused> {
-    /// Resume a paused session
+    /// Resume a paused session (zero-cost state transition)
+    #[inline(always)]
     pub fn resume(self) -> WizardSession<Active> {
         WizardSession {
             data: self.data,
@@ -213,7 +238,8 @@ impl WizardSession<Paused> {
         }
     }
 
-    /// Fail a paused session
+    /// Fail a paused session (zero-cost state transition)
+    #[inline(always)]
     pub fn fail(self) -> WizardSession<Failed> {
         WizardSession {
             data: self.data,
@@ -338,10 +364,9 @@ mod tests {
         let session = SessionBuilder::new()
             .session_id("test-456".to_string())
             .metadata(serde_json::json!({"key": "value"}))
-            .build();
+            .build()
+            .expect("Failed to build session");
 
-        assert!(session.is_ok());
-        let session = session.ok().unwrap();
         assert_eq!(session.session_id(), "test-456");
     }
 

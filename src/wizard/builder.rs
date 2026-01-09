@@ -152,10 +152,9 @@ mod tests {
             .with_model("gpt-4")
             .with_temperature(0.8)
             .with_max_tokens(1024)
-            .build();
+            .build()
+            .expect("Failed to build wizard");
 
-        assert!(wizard.is_ok());
-        let wizard = wizard.unwrap();
         assert_eq!(wizard.config().model, "gpt-4");
         assert_eq!(wizard.config().temperature, 0.8);
         assert_eq!(wizard.config().max_tokens, 1024);
@@ -163,21 +162,23 @@ mod tests {
 
     #[test]
     fn test_builder_with_context() {
-        let wizard = WizardBuilder::new().with_context("Test context").build();
+        let wizard = WizardBuilder::new()
+            .with_context("Test context")
+            .build()
+            .expect("Failed to build wizard with context");
 
-        assert!(wizard.is_ok());
-        let wizard = wizard.unwrap();
         assert_eq!(wizard.context(), Some("Test context"));
     }
 
     #[test]
     fn test_wizard_prompt() {
-        let wizard = WizardBuilder::new().with_model("test-model").build().unwrap();
+        let wizard = WizardBuilder::new()
+            .with_model("test-model")
+            .build()
+            .expect("Failed to build wizard for prompt test");
 
-        let response = wizard.prompt("Hello, wizard!");
-        assert!(response.is_ok());
+        let response = wizard.prompt("Hello, wizard!").expect("Failed to get prompt response");
 
-        let response = response.unwrap();
         assert_eq!(response.model, "test-model");
         assert!(response.tokens.is_some());
     }

@@ -28,32 +28,38 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    /// Get the prompt text
+    /// Get the prompt text (zero-cost reference)
+    #[inline(always)]
     pub fn text(&self) -> &str {
         &self.text
     }
 
-    /// Get the system message if present
+    /// Get the system message if present (zero-cost reference)
+    #[inline(always)]
     pub fn system(&self) -> Option<&str> {
         self.system.as_deref()
     }
 
-    /// Get the max tokens setting
+    /// Get the max tokens setting (zero-cost copy of usize)
+    #[inline(always)]
     pub fn max_tokens(&self) -> Option<usize> {
         self.max_tokens
     }
 
-    /// Get the temperature setting
+    /// Get the temperature setting (zero-cost copy of f32)
+    #[inline(always)]
     pub fn temperature(&self) -> Option<f32> {
         self.temperature
     }
 
-    /// Get metadata value by key
+    /// Get metadata value by key (zero-cost reference)
+    #[inline]
     pub fn metadata(&self, key: &str) -> Option<&str> {
         self.metadata.get(key).map(|s| s.as_str())
     }
 
-    /// Get all metadata
+    /// Get all metadata (zero-cost reference)
+    #[inline(always)]
     pub fn all_metadata(&self) -> &HashMap<String, String> {
         &self.metadata
     }
@@ -103,14 +109,20 @@ pub struct PromptBuilder {
 }
 
 impl PromptBuilder {
-    /// Create a new prompt builder
+    /// Create a new prompt builder with pre-allocated metadata capacity
     pub fn new() -> Self {
+        Self::with_metadata_capacity(4)
+    }
+
+    /// Create a new prompt builder with specified metadata capacity
+    #[inline]
+    pub fn with_metadata_capacity(capacity: usize) -> Self {
         Self {
             text: None,
             system: None,
             max_tokens: None,
             temperature: None,
-            metadata: HashMap::new(),
+            metadata: HashMap::with_capacity(capacity),
         }
     }
 
@@ -194,15 +206,17 @@ impl PromptTemplate {
         }
     }
 
-    /// Extract variable names from template
+    /// Extract variable names from template with capacity pre-allocation
     fn extract_variables(template: &str) -> Vec<String> {
-        let mut vars = Vec::new();
+        // Pre-allocate: estimate 1 variable per 20 chars (reasonable default)
+        let estimated_capacity = (template.len() / 20).max(2);
+        let mut vars = Vec::with_capacity(estimated_capacity);
         let mut chars = template.chars().peekable();
 
         while let Some(c) = chars.next() {
             if c == '{' && chars.peek() == Some(&'{') {
                 chars.next(); // consume second '{'
-                let mut var_name = String::new();
+                let mut var_name = String::with_capacity(16); // typical variable name length
 
                 while let Some(c) = chars.next() {
                     if c == '}' && chars.peek() == Some(&'}') {
@@ -223,19 +237,64 @@ impl PromptTemplate {
         &self.variables
     }
 
-    /// Render template with provided values
+    /// Render template with provided values (optimized to reduce allocations)
     pub fn render(&self, values: &HashMap<String, String>) -> Result<String> {
-        let mut result = self.template.clone();
-
+        // Pre-validate all variables exist before starting replacements
         for var in &self.variables {
-            let value = values.get(var).ok_or_else(|| {
-                WizardError::InvalidPrompt(format!("Missing template variable: {}", var))
-            })?;
-
-            let placeholder = format!("{{{{{}}}}}", var);
-            result = result.replace(&placeholder, value);
+            if !values.contains_key(var) {
+                return Err(WizardError::InvalidPrompt(format!("Missing template variable: {}", var)));
+            }
         }
 
+        // Estimate result size: template + average value length * variable count
+        let avg_value_len = values.values().map(|v| v.len()).sum::<usize>() / values.len().max(1);
+        let estimated_size = self.template.len() + (avg_value_len * self.variables.len());
+        let mut result = String::with_capacity(estimated_size);
+
+        let mut last_end = 0;
+        let template_bytes = self.template.as_bytes();
+        let mut i = 0;
+
+        // Single-pass rendering to avoid multiple allocations
+        while i < template_bytes.len() {
+            if i + 1 < template_bytes.len()
+                && template_bytes[i] == b'{'
+                && template_bytes[i + 1] == b'{' {
+                // Found potential variable start
+                let var_start = i + 2;
+                let mut var_end = var_start;
+
+                // Find variable end
+                while var_end + 1 < template_bytes.len() {
+                    if template_bytes[var_end] == b'}' && template_bytes[var_end + 1] == b'}' {
+                        // Extract variable name
+                        let var_name = &self.template[var_start..var_end].trim();
+
+                        // Add text before variable
+                        result.push_str(&self.template[last_end..i]);
+
+                        // Add variable value (we validated existence above)
+                        if let Some(value) = values.get(*var_name) {
+                            result.push_str(value);
+                        }
+
+                        i = var_end + 2;
+                        last_end = i;
+                        break;
+                    }
+                    var_end += 1;
+                }
+
+                if var_end + 1 >= template_bytes.len() {
+                    i += 1; // Not a valid variable, move forward
+                }
+            } else {
+                i += 1;
+            }
+        }
+
+        // Add remaining text
+        result.push_str(&self.template[last_end..]);
         Ok(result)
     }
 
@@ -258,10 +317,9 @@ mod tests {
             .max_tokens(100)
             .temperature(0.7)
             .metadata("user_id", "123")
-            .build();
+            .build()
+            .expect("Failed to build prompt");
 
-        assert!(prompt.is_ok());
-        let prompt = prompt.ok().unwrap();
         assert_eq!(prompt.text(), "What is the meaning of life?");
         assert_eq!(prompt.system(), Some("You are a helpful assistant"));
         assert_eq!(prompt.max_tokens(), Some(100));
@@ -323,9 +381,9 @@ mod tests {
         values.insert("name".to_string(), "Alice".to_string());
         values.insert("role".to_string(), "Developer".to_string());
 
-        let result = template.render(&values);
-        assert!(result.is_ok());
-        assert_eq!(result.ok().unwrap(), "Hello Alice, your role is Developer");
+        let result = template.render(&values)
+            .expect("Failed to render template");
+        assert_eq!(result, "Hello Alice, your role is Developer");
     }
 
     #[test]
@@ -344,9 +402,8 @@ mod tests {
         values.insert("action".to_string(), "delete".to_string());
         values.insert("item".to_string(), "file.txt".to_string());
 
-        let result = template.to_prompt(&values);
-        assert!(result.is_ok());
-        let prompt = result.ok().unwrap();
+        let prompt = template.to_prompt(&values)
+            .expect("Failed to create prompt from template");
         assert_eq!(prompt.text(), "Process delete for file.txt");
     }
 }

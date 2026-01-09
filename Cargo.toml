@@ -141,7 +141,8 @@ experimental = []
 ggen = []
 
 # Wizard: AI integration with rust-genai for multi-provider LLM support
-wizard = ["async", "dep:genai", "dep:genai-types"]
+# v2 features require caching (lru) and retry jitter (rand)
+wizard = ["async", "caching", "dep:genai", "dep:genai-types", "dep:rand"]
 
 # tokio-specific: For code that explicitly targets tokio (maps to async feature)
 tokio = ["async"]
@@ -590,4 +591,9 @@ harness = false
 # Wizard Package Benchmarks (Agent CLI Builder Performance)
 [[bench]]
 name = "wizard_benchmarks"
+harness = false
+
+# Wizard v2 Micro-benchmarks (Performance Optimization)
+[[bench]]
+name = "wizard_v2_micro_benchmarks"
 harness = false

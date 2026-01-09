@@ -69,9 +69,7 @@ pub struct Binding {
 impl Binding {
     /// Create a new empty binding
     pub fn new() -> Self {
-        Self {
-            bindings: HashMap::new(),
-        }
+        Self { bindings: HashMap::new() }
     }
 
     /// Insert a variable binding
@@ -166,11 +164,11 @@ impl SparqlExecutor {
     fn create_quad(subject: &str, predicate: &str, object: &str) -> Result<Quad, SparqlError> {
         use oxigraph::model::{GraphNameRef, Literal, Subject, Term};
 
-        let subj = NamedNode::new(subject)
-            .map(Subject::from)
-            .map_err(|e| SparqlError::ConversionError {
+        let subj = NamedNode::new(subject).map(Subject::from).map_err(|e| {
+            SparqlError::ConversionError {
                 message: format!("Invalid subject IRI '{}': {}", subject, e),
-            })?;
+            }
+        })?;
 
         let pred = NamedNode::new(predicate).map_err(|e| SparqlError::ConversionError {
             message: format!("Invalid predicate IRI '{}': {}", predicate, e),
@@ -214,7 +212,8 @@ impl SparqlExecutor {
     fn convert_results(&self, results: QueryResults) -> Result<QueryResult, SparqlError> {
         match results {
             QueryResults::Solutions(solutions) => {
-                let variables: Vec<String> = solutions.variables().iter().map(|v| v.as_str().to_string()).collect();
+                let variables: Vec<String> =
+                    solutions.variables().iter().map(|v| v.as_str().to_string()).collect();
 
                 let mut bindings = Vec::new();
 
@@ -283,11 +282,7 @@ impl SparqlExecutor {
 
         let result = self.execute_query(query)?;
 
-        Ok(result
-            .bindings
-            .iter()
-            .filter_map(|b| b.get("class").map(|s| s.to_string()))
-            .collect())
+        Ok(result.bindings.iter().filter_map(|b| b.get("class").map(|s| s.to_string())).collect())
     }
 
     /// List all RDF properties in the ontology
@@ -435,14 +430,8 @@ cnv:name rdf:type rdf:Property ;
         assert!(result.is_ok(), "list_classes failed: {:?}", result.err());
         let classes = result.unwrap();
         assert!(!classes.is_empty(), "No classes found");
-        assert!(
-            classes.iter().any(|c| c.contains("Verb")),
-            "Verb class not found"
-        );
-        assert!(
-            classes.iter().any(|c| c.contains("Noun")),
-            "Noun class not found"
-        );
+        assert!(classes.iter().any(|c| c.contains("Verb")), "Verb class not found");
+        assert!(classes.iter().any(|c| c.contains("Noun")), "Noun class not found");
     }
 
     #[test]
@@ -458,10 +447,7 @@ cnv:name rdf:type rdf:Property ;
         assert!(result.is_ok(), "list_properties failed: {:?}", result.err());
         let properties = result.unwrap();
         assert!(!properties.is_empty(), "No properties found");
-        assert!(
-            properties.iter().any(|p| p.contains("name")),
-            "name property not found"
-        );
+        assert!(properties.iter().any(|p| p.contains("name")), "name property not found");
     }
 
     #[test]

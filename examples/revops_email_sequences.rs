@@ -16,8 +16,7 @@ fn main() {
 
     println!("═══ SUPPORT & SLA COLD SEQUENCE ═══");
     for (i, email) in email.support_cold_sequence().iter().enumerate() {
-        println!("\n📧 EMAIL {} (Send {}):", i+1,
-                 ["Immediately", "Day 3", "Day 5"][i]);
+        println!("\n📧 EMAIL {} (Send {}):", i + 1, ["Immediately", "Day 3", "Day 5"][i]);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }
@@ -25,8 +24,7 @@ fn main() {
     println!("\n❄️  CONSULTING COLD SEQUENCE\n");
     println!("═══ CONSULTING COLD SEQUENCE ═══");
     for (i, email) in email.consulting_cold_sequence().iter().enumerate() {
-        println!("\n📧 EMAIL {} (Send {}):", i+1,
-                 ["Immediately", "Day 4", "Day 6"][i]);
+        println!("\n📧 EMAIL {} (Send {}):", i + 1, ["Immediately", "Day 4", "Day 6"][i]);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }
@@ -35,7 +33,7 @@ fn main() {
     println!("\n🔥 WARM EMAIL SEQUENCES\n");
     println!("═══ INTERESTED → PROPOSAL SEQUENCE ═══");
     for (i, email) in email.interested_to_proposal().iter().enumerate() {
-        println!("\n📧 EMAIL {} (After discovery call):", i+1);
+        println!("\n📧 EMAIL {} (After discovery call):", i + 1);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }
@@ -44,7 +42,7 @@ fn main() {
     println!("\n💚 NURTURE SEQUENCES\n");
     println!("═══ WEEK 1 NURTURE SEQUENCE ═══");
     for (i, email) in email.nurture_week1().iter().enumerate() {
-        println!("\n📧 NURTURE {} (Day {}):", i+1, i*2);
+        println!("\n📧 NURTURE {} (Day {}):", i + 1, i * 2);
         println!("{}\n", email);
         println!("─────────────────────────────────────────────────────────");
     }
@@ -94,8 +92,8 @@ No pressure either way. Just wanted to check in.
 
 Best,
 [Your Name]
-Clap Maintainer & Consulting"#.to_string(),
-
+Clap Maintainer & Consulting"#
+                .to_string(),
             // Email 2
             r#"Subject: RE: Quick question about [Company]'s CLI stack?
 
@@ -116,8 +114,8 @@ I've got 30 min open this Thursday or Friday.
 No obligation - just want to help if I can.
 
 Cheers,
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Email 3
             r#"Subject: RE: Quick question about [Company]'s CLI stack?
 
@@ -134,7 +132,8 @@ with the CLI work!
 [Calendar Link]
 
 Best,
-[Your Name]"#.to_string(),
+[Your Name]"#
+                .to_string(),
         ]
     }
 
@@ -160,8 +159,8 @@ Interested?
 [Calendar Link]
 
 [Your Name]
-Clap Creator & Principal Architect"#.to_string(),
-
+Clap Creator & Principal Architect"#
+                .to_string(),
             // Email 2
             r#"Subject: RE: Free architecture review for [Company]
 
@@ -172,8 +171,8 @@ this Thursday if you want to chat about CLI architecture.
 
 [Calendar Link]
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Email 3
             r#"Subject: RE: Free architecture review for [Company]
 
@@ -186,7 +185,8 @@ Last offer: Free 30-min architecture review this month.
 If this isn't a priority right now, I get it. Feel free to reach out
 if it becomes one.
 
-[Your Name]"#.to_string(),
+[Your Name]"#
+                .to_string(),
         ]
     }
 
@@ -210,8 +210,8 @@ Let me know if you have any questions or want to adjust anything.
 
 Looking forward to working together!
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Follow-up if no response
             r#"Subject: RE: proposal for [Company] - quick question
 
@@ -226,8 +226,8 @@ Do you have any questions about:
 
 Happy to adjust if needed.
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Closing/negotiation
             r#"Subject: RE: Let's make this happen
 
@@ -241,7 +241,8 @@ OPTION 3: Pilot project (start smaller, expand later)
 
 What works best for you?
 
-[Your Name]"#.to_string(),
+[Your Name]"#
+                .to_string(),
         ]
     }
 
@@ -261,8 +262,8 @@ This should help with [specific problem they mentioned].
 
 Let me know if you try it!
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Day 2
             r#"Subject: Most teams see [benefit] with [solution]
 
@@ -276,8 +277,8 @@ Here's how [Competitor/Similar company] did it:
 
 Similar to your situation?
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Day 4
             r#"Subject: [Social proof] - thought of you
 
@@ -291,8 +292,8 @@ Made me think of our conversation about [topic].
 
 This might be relevant: [Resource link]
 
-[Your Name]"#.to_string(),
-
+[Your Name]"#
+                .to_string(),
             // Day 6
             r#"Subject: [Limited time] special for [Company]
 
@@ -305,7 +306,8 @@ Since we've been talking, wanted to make sure you knew.
 
 Interested? [Calendar link] or reply here.
 
-[Your Name]"#.to_string(),
+[Your Name]"#
+                .to_string(),
         ]
     }
 }

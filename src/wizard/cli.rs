@@ -175,8 +175,14 @@ mod tests {
 
     #[test]
     fn test_output_format_parsing() {
-        assert_eq!("text".parse::<OutputFormat>().unwrap(), OutputFormat::Text);
-        assert_eq!("json".parse::<OutputFormat>().unwrap(), OutputFormat::Json);
+        assert_eq!(
+            "text".parse::<OutputFormat>().expect("Failed to parse 'text'"),
+            OutputFormat::Text
+        );
+        assert_eq!(
+            "json".parse::<OutputFormat>().expect("Failed to parse 'json'"),
+            OutputFormat::Json
+        );
         assert!("invalid".parse::<OutputFormat>().is_err());
     }
 }

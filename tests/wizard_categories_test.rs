@@ -12,7 +12,7 @@
 //! - Behavior verification (test observable outputs)
 //! - AAA pattern (Arrange-Act-Assert)
 
-use clap_noun_verb::cli::help::{CommandCategory, CommandReference, HelpSystem};
+use clap_noun_verb::cli::help::{CommandCategory, HelpSystem};
 
 // =============================================================================
 // COMMAND CATEGORY TESTS

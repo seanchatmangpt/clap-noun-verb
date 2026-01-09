@@ -36,13 +36,10 @@
 //!     test_ok!(complex_operation(), "Operation failed");
 //! }
 //! ```
-
 use std::fmt;
-
 // ============================================================================
 // CORE TRAIT: TestResultExt
 // ============================================================================
-
 /// Extension trait for Result types in tests.
 ///
 /// Provides lint-compliant alternatives to unwrap/expect that:
@@ -71,7 +68,6 @@ pub trait TestResultExt<T, E> {
     /// ```
     #[track_caller]
     fn test_unwrap(self) -> T;
-
     /// Unwrap a Result in test context with custom message.
     ///
     /// Provides better diagnostics than expect() by including:
@@ -91,7 +87,6 @@ pub trait TestResultExt<T, E> {
     /// ```
     #[track_caller]
     fn test_expect(self, msg: &str) -> T;
-
     /// Unwrap a Result in test context with lazy message generation.
     ///
     /// Use this when the error message is expensive to compute.
@@ -107,7 +102,6 @@ pub trait TestResultExt<T, E> {
     where
         F: FnOnce() -> String;
 }
-
 // Implementation for all Result types
 impl<T, E: fmt::Debug> TestResultExt<T, E> for Result<T, E> {
     #[track_caller]
@@ -120,7 +114,6 @@ impl<T, E: fmt::Debug> TestResultExt<T, E> for Result<T, E> {
             }
         }
     }
-
     #[track_caller]
     fn test_expect(self, msg: &str) -> T {
         match self {
@@ -130,7 +123,6 @@ impl<T, E: fmt::Debug> TestResultExt<T, E> for Result<T, E> {
             }
         }
     }
-
     #[track_caller]
     fn test_expect_lazy<F>(self, f: F) -> T
     where
@@ -144,11 +136,9 @@ impl<T, E: fmt::Debug> TestResultExt<T, E> for Result<T, E> {
         }
     }
 }
-
 // ============================================================================
 // CORE TRAIT: TestOptionExt
 // ============================================================================
-
 /// Extension trait for Option types in tests.
 ///
 /// Provides lint-compliant alternatives to unwrap/expect for Options.
@@ -160,7 +150,6 @@ pub trait TestOptionExt<T> {
     /// Panics if the Option is None. This is intentional in tests.
     #[track_caller]
     fn test_unwrap(self) -> T;
-
     /// Assert Option is Some and unwrap with context message.
     ///
     /// # Example
@@ -171,7 +160,6 @@ pub trait TestOptionExt<T> {
     /// ```
     #[track_caller]
     fn test_some(self, msg: &str) -> T;
-
     /// Assert Option is None.
     ///
     /// # Example
@@ -182,28 +170,25 @@ pub trait TestOptionExt<T> {
     #[track_caller]
     fn test_none(self, msg: &str);
 }
-
 impl<T> TestOptionExt<T> for Option<T> {
     #[track_caller]
     fn test_unwrap(self) -> T {
         match self {
-            Some(v) => v,
+            Some(_v) => v,
             None => panic!("[TEST ASSERTION FAILED] Option was None"),
         }
     }
-
     #[track_caller]
     fn test_some(self, msg: &str) -> T {
         match self {
-            Some(v) => v,
+            Some(_v) => v,
             None => panic!("[TEST ASSERTION FAILED] {}: Option was None", msg),
         }
     }
-
     #[track_caller]
     fn test_none(self, msg: &str) {
         match self {
-            Some(v) => panic!(
+            Some(_v) => panic!(
                 "[TEST ASSERTION FAILED] {}: Option was Some({:?})",
                 msg,
                 std::any::type_name::<T>()
@@ -212,11 +197,9 @@ impl<T> TestOptionExt<T> for Option<T> {
         }
     }
 }
-
 // ============================================================================
 // MACROS: Ergonomic Assertion Helpers
 // ============================================================================
-
 /// Assert that a Result is Ok and unwrap it.
 ///
 /// This macro provides:
@@ -243,7 +226,6 @@ macro_rules! test_ok {
         $crate::common::test_prelude::TestResultExt::test_expect($expr, $msg)
     };
 }
-
 /// Assert that an Option is Some and unwrap it.
 ///
 /// # Example
@@ -264,7 +246,6 @@ macro_rules! test_some {
         $crate::common::test_prelude::TestOptionExt::test_some($expr, $msg)
     };
 }
-
 /// Assert that an Option is None.
 ///
 /// # Example
@@ -278,11 +259,9 @@ macro_rules! test_none {
         $crate::common::test_prelude::TestOptionExt::test_none($expr, $msg)
     };
 }
-
 // ============================================================================
 // CONVENIENCE RE-EXPORTS
 // ============================================================================
-
 /// Prelude for test modules.
 ///
 /// Import this to get all test utilities:
@@ -291,75 +270,63 @@ macro_rules! test_none {
 /// use tests::common::test_prelude::*;
 /// ```
 pub mod prelude {
-    pub use super::{TestOptionExt, TestResultExt};
-    pub use crate::{test_none, test_ok, test_some};
+    pub use super::{};
+    pub use crate::{};
 }
-
 // ============================================================================
 // DOCUMENTATION & EXAMPLES
 // ============================================================================
-
 #[cfg(test)]
 mod tests_for_test_prelude {
     use super::*;
-
     #[test]
     fn test_result_ext_ok() {
         let result: Result<i32, &str> = Ok(42);
         assert_eq!(result.test_unwrap(), 42);
     }
-
     #[test]
     #[should_panic(expected = "TEST ASSERTION FAILED")]
     fn test_result_ext_err() {
         let result: Result<i32, &str> = Err("error");
         let _ = result.test_unwrap();
     }
-
     #[test]
     fn test_result_ext_expect() {
         let result: Result<i32, &str> = Ok(42);
         assert_eq!(result.test_expect("Should be Ok"), 42);
     }
-
     #[test]
     #[should_panic(expected = "Custom message")]
     fn test_result_ext_expect_err() {
         let result: Result<i32, &str> = Err("error");
         let _ = result.test_expect("Custom message");
     }
-
     #[test]
     fn test_option_ext_some() {
         let option = Some(42);
         assert_eq!(option.test_unwrap(), 42);
     }
-
     #[test]
     #[should_panic(expected = "TEST ASSERTION FAILED")]
     fn test_option_ext_none() {
         let option: Option<i32> = None;
         let _ = option.test_unwrap();
     }
-
     #[test]
     fn test_macro_test_ok() {
         let result: Result<i32, &str> = Ok(42);
         assert_eq!(test_ok!(result), 42);
     }
-
     #[test]
     fn test_macro_test_ok_with_msg() {
         let result: Result<i32, &str> = Ok(42);
         assert_eq!(test_ok!(result, "Should work"), 42);
     }
-
     #[test]
     fn test_macro_test_some() {
         let option = Some(42);
         assert_eq!(test_some!(option), 42);
     }
-
     #[test]
     fn test_option_test_none() {
         let option: Option<i32> = None;

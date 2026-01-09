@@ -33,7 +33,9 @@ pub mod validation;
 
 pub use blake3_hash::Blake3Hash;
 pub use builder::OntologyBuilder;
-pub use code_generator::{CliCodeGenerator, CliConfig, CodeGenError, GeneratedCli, NounDefinition, VerbDefinition};
+pub use code_generator::{
+    CliCodeGenerator, CliConfig, CodeGenError, GeneratedCli, NounDefinition, VerbDefinition,
+};
 pub use guard_validation::{recover_from_error, GuardValidationMiddleware};
 pub use invocation::{InvocationError, InvocationParser, ParsedInvocation};
 pub use kgc_integration::{AuditEntry, KgcMetadata, KgcPackage, KgcShard};
@@ -45,7 +47,9 @@ pub use ontology::{ClnvOntology, Ontology};
 pub use receipt::{Receipt, ReceiptGenerator};
 pub use rmcp_handler::RdfMcpHandler;
 pub use sparql::SparqlPlanner;
-pub use sparql_executor_oxigraph::{Binding as OxigraphBinding, QueryResult, SparqlError, SparqlExecutor};
+pub use sparql_executor_oxigraph::{
+    Binding as OxigraphBinding, QueryResult, SparqlError, SparqlExecutor,
+};
 pub use turtle_parser::{ParsedTurtle, TurtleError, TurtleParser};
 pub use turtle_tools::{
     DiagnosticMessage, ExportToTurtle, ExportToTurtleInput, ExportToTurtleOutput,

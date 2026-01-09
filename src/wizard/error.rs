@@ -31,14 +31,52 @@ pub enum WizardError {
     /// Configuration error
     ConfigError(String),
 
+    /// Configuration error (short form alias)
+    Config(String),
+
     /// I/O error during wizard operations
     IoError(std::io::Error),
+
+    /// I/O error (short form alias)
+    Io(std::io::Error),
 
     /// Serialization/deserialization error
     SerdeError(serde_json::Error),
 
+    /// JSON error (short form alias)
+    Json(serde_json::Error),
+
     /// Environment variable not found
     EnvVarError(std::env::VarError),
+
+    /// API request error
+    Request(String),
+
+    /// Response parsing error
+    Parse(String),
+
+    /// Token limit exceeded
+    TokenLimit {
+        /// Requested tokens
+        requested: usize,
+        /// Maximum allowed tokens
+        max: usize,
+    },
+
+    /// Authentication error
+    Auth(String),
+
+    /// Rate limit exceeded
+    RateLimit(String),
+
+    /// Request timeout
+    Timeout(String),
+
+    /// Network error
+    Network(String),
+
+    /// All models in fallback chain failed
+    Fallback(String),
 
     /// Generic error with message
     Other(String),
@@ -53,10 +91,20 @@ impl fmt::Display for WizardError {
             }
             Self::InvalidPrompt(msg) => write!(f, "Invalid prompt: {}", msg),
             Self::SessionNotInitialized => write!(f, "Wizard session not initialized"),
-            Self::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            Self::IoError(err) => write!(f, "I/O error: {}", err),
-            Self::SerdeError(err) => write!(f, "Serialization error: {}", err),
+            Self::ConfigError(msg) | Self::Config(msg) => write!(f, "Configuration error: {}", msg),
+            Self::IoError(err) | Self::Io(err) => write!(f, "I/O error: {}", err),
+            Self::SerdeError(err) | Self::Json(err) => write!(f, "Serialization error: {}", err),
             Self::EnvVarError(err) => write!(f, "Environment variable error: {}", err),
+            Self::Request(msg) => write!(f, "API request error: {}", msg),
+            Self::Parse(msg) => write!(f, "Response parsing error: {}", msg),
+            Self::TokenLimit { requested, max } => {
+                write!(f, "Token limit exceeded: requested {} but max is {}", requested, max)
+            }
+            Self::Auth(msg) => write!(f, "Authentication error: {}", msg),
+            Self::RateLimit(msg) => write!(f, "Rate limit exceeded: {}", msg),
+            Self::Timeout(msg) => write!(f, "Request timeout: {}", msg),
+            Self::Network(msg) => write!(f, "Network error: {}", msg),
+            Self::Fallback(msg) => write!(f, "Fallback chain failed: {}", msg),
             Self::Other(msg) => write!(f, "Error: {}", msg),
         }
     }
@@ -65,8 +113,8 @@ impl fmt::Display for WizardError {
 impl std::error::Error for WizardError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::IoError(err) => Some(err),
-            Self::SerdeError(err) => Some(err),
+            Self::IoError(err) | Self::Io(err) => Some(err),
+            Self::SerdeError(err) | Self::Json(err) => Some(err),
             Self::EnvVarError(err) => Some(err),
             _ => None,
         }
@@ -76,13 +124,13 @@ impl std::error::Error for WizardError {
 // Error conversions for ergonomic ? operator usage
 impl From<std::io::Error> for WizardError {
     fn from(err: std::io::Error) -> Self {
-        Self::IoError(err)
+        Self::Io(err)
     }
 }
 
 impl From<serde_json::Error> for WizardError {
     fn from(err: serde_json::Error) -> Self {
-        Self::SerdeError(err)
+        Self::Json(err)
     }
 }
 
@@ -94,6 +142,9 @@ impl From<std::env::VarError> for WizardError {
 
 /// Result type for wizard operations
 pub type Result<T> = std::result::Result<T, WizardError>;
+
+/// Result type alias for wizard operations (alternative name)
+pub type WizardResult<T> = std::result::Result<T, WizardError>;
 
 #[cfg(test)]
 mod tests {
@@ -109,12 +160,18 @@ mod tests {
             to: "Complete".to_string(),
         };
         assert_eq!(format!("{}", err), "Invalid state transition from 'Init' to 'Complete'");
+
+        let err = WizardError::TokenLimit { requested: 10000, max: 8192 };
+        assert_eq!(format!("{}", err), "Token limit exceeded: requested 10000 but max is 8192");
+
+        let err = WizardError::RateLimit("too many requests".to_string());
+        assert_eq!(format!("{}", err), "Rate limit exceeded: too many requests");
     }
 
     #[test]
     fn test_error_conversion() {
         let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
         let wizard_err: WizardError = io_err.into();
-        assert!(matches!(wizard_err, WizardError::IoError(_)));
+        assert!(matches!(wizard_err, WizardError::Io(_)));
     }
 }

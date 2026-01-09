@@ -1,10 +1,11 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Interactive wizard session example
 //!
 //! Demonstrates REPL-style interactive wizard sessions with history management.
 //!
 //! Run with:
 //! ```bash
-//! cargo run --example wizard_interactive
+//! cargo run --example wizard_interactive --features wizard
 //! ```
 //!
 //! Commands in the REPL:
@@ -13,8 +14,10 @@
 //! - `history` - Show conversation history
 //! - Any other input - Send as prompt to the wizard
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{InteractiveSession, WizardBuilder};
 
+#[cfg(feature = "wizard")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Wizard Interactive Example ===\n");
 

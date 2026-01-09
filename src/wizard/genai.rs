@@ -220,9 +220,8 @@ mod tests {
     fn test_client_creation() {
         let config = GenAiConfig::new("gpt-4".to_string())
             .with_api_key("test-key".to_string());
-        let client = GenAiClient::new(config);
-        assert!(client.is_ok());
-        let client = client.ok().unwrap();
+        let client = GenAiClient::new(config)
+            .expect("Failed to create GenAI client");
         assert_eq!(client.model(), "gpt-4");
     }
 

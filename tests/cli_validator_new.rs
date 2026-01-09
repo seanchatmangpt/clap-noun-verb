@@ -6,21 +6,21 @@ use clap_noun_verb::error::{NounVerbError, Result};
 
 #[test]
 fn test_validator_new() {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     // Validator should be created successfully
     assert!(true); // Validator is zero-sized, just verify it compiles
 }
 
 #[test]
 fn test_validator_default() {
-    let validator = ArgValidator::default();
+    let _validator = ArgValidator::default();
     // Default should work
     assert!(true);
 }
 
 #[test]
 fn test_validator_validate_required_str_success() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name").required(true));
 
     let matches = cmd
@@ -35,7 +35,7 @@ fn test_validator_validate_required_str_success() -> Result<()> {
 
 #[test]
 fn test_validator_validate_required_str_missing() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name").required(true));
 
     let matches = cmd
@@ -50,7 +50,7 @@ fn test_validator_validate_required_str_missing() -> Result<()> {
 
 #[test]
 fn test_validator_validate_optional_str_present() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name").long("name"));
 
     let matches = cmd
@@ -65,7 +65,7 @@ fn test_validator_validate_optional_str_present() -> Result<()> {
 
 #[test]
 fn test_validator_validate_optional_str_missing() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name"));
 
     let matches = cmd
@@ -80,7 +80,7 @@ fn test_validator_validate_optional_str_missing() -> Result<()> {
 
 #[test]
 fn test_validator_validate_required_typed() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("count").required(true).value_parser(clap::value_parser!(usize)));
 
@@ -96,7 +96,7 @@ fn test_validator_validate_required_typed() -> Result<()> {
 
 #[test]
 fn test_validator_validate_flag_set() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("verbose").long("verbose").action(clap::ArgAction::SetTrue));
 
@@ -111,7 +111,7 @@ fn test_validator_validate_flag_set() -> Result<()> {
 
 #[test]
 fn test_validator_validate_flag_not_set() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("verbose").long("verbose").action(clap::ArgAction::SetTrue));
 
@@ -126,7 +126,7 @@ fn test_validator_validate_flag_not_set() -> Result<()> {
 
 #[test]
 fn test_validator_validate_flag_count() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("verbose").short('v').long("verbose").action(clap::ArgAction::Count));
 
@@ -142,7 +142,7 @@ fn test_validator_validate_flag_count() -> Result<()> {
 
 #[test]
 fn test_validator_validate_many_success() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("items").required(true).num_args(1..));
 
     let matches = cmd
@@ -160,7 +160,7 @@ fn test_validator_validate_many_success() -> Result<()> {
 
 #[test]
 fn test_validator_validate_many_empty() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("items").required(true).num_args(1..));
 
     let matches = cmd
@@ -175,7 +175,7 @@ fn test_validator_validate_many_empty() -> Result<()> {
 
 #[test]
 fn test_validator_validate_many_opt_empty() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("items").num_args(1..));
 
     let matches = cmd
@@ -190,7 +190,7 @@ fn test_validator_validate_many_opt_empty() -> Result<()> {
 
 #[test]
 fn test_validator_extract_args() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("name").required(true))
         .arg(Arg::new("value").required(true));
@@ -211,7 +211,7 @@ fn test_validator_extract_args() -> Result<()> {
 
 #[test]
 fn test_validator_extract_opts() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test")
         .arg(Arg::new("verbose").long("verbose").action(clap::ArgAction::SetTrue));
 

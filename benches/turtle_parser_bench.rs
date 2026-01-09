@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 #[cfg(feature = "rdf-composition")]
 use clap_noun_verb::rdf::turtle_parser::TurtleParser;
@@ -8,7 +8,7 @@ use clap_noun_verb::rdf::turtle_parser::TurtleParser;
 fn generate_turtle(num_verbs: usize) -> String {
     let mut turtle = String::from(
         "@prefix cnv: <https://cnv.dev/ontology#> .\n\
-         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n"
+         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n",
     );
 
     // Create noun
@@ -30,9 +30,7 @@ fn turtle_parsing_small(c: &mut Criterion) {
     let turtle = black_box(generate_turtle(10));
     let parser = TurtleParser::new();
 
-    c.bench_function("turtle_parse_10_verbs", |b| {
-        b.iter(|| parser.parse(&turtle))
-    });
+    c.bench_function("turtle_parse_10_verbs", |b| b.iter(|| parser.parse(&turtle)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -40,9 +38,7 @@ fn turtle_parsing_medium(c: &mut Criterion) {
     let turtle = black_box(generate_turtle(100));
     let parser = TurtleParser::new();
 
-    c.bench_function("turtle_parse_100_verbs", |b| {
-        b.iter(|| parser.parse(&turtle))
-    });
+    c.bench_function("turtle_parse_100_verbs", |b| b.iter(|| parser.parse(&turtle)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -50,9 +46,7 @@ fn turtle_parsing_large(c: &mut Criterion) {
     let turtle = black_box(generate_turtle(1000));
     let parser = TurtleParser::new();
 
-    c.bench_function("turtle_parse_1000_verbs", |b| {
-        b.iter(|| parser.parse(&turtle))
-    });
+    c.bench_function("turtle_parse_1000_verbs", |b| b.iter(|| parser.parse(&turtle)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -63,9 +57,11 @@ fn turtle_parsing_parameterized(c: &mut Criterion) {
         let turtle = black_box(generate_turtle(*size));
         let parser = TurtleParser::new();
 
-        group.bench_with_input(BenchmarkId::from_parameter(format!("{}_verbs", size)), size, |b, _| {
-            b.iter(|| parser.parse(&turtle))
-        });
+        group.bench_with_input(
+            BenchmarkId::from_parameter(format!("{}_verbs", size)),
+            size,
+            |b, _| b.iter(|| parser.parse(&turtle)),
+        );
     }
     group.finish();
 }
@@ -76,9 +72,7 @@ fn turtle_validation(c: &mut Criterion) {
     let parser = TurtleParser::new();
     let parsed = parser.parse(&turtle).expect("Failed to parse");
 
-    c.bench_function("turtle_validate_100_verbs", |b| {
-        b.iter(|| parsed.validate_ontology())
-    });
+    c.bench_function("turtle_validate_100_verbs", |b| b.iter(|| parsed.validate_ontology()));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -87,9 +81,7 @@ fn prefix_resolution(c: &mut Criterion) {
     let parser = TurtleParser::new();
     let parsed = parser.parse(&turtle).expect("Failed to parse");
 
-    c.bench_function("prefix_resolution_100_verbs", |b| {
-        b.iter(|| parsed.resolve_prefixes())
-    });
+    c.bench_function("prefix_resolution_100_verbs", |b| b.iter(|| parsed.resolve_prefixes()));
 }
 
 #[cfg(feature = "rdf-composition")]

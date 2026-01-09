@@ -136,7 +136,8 @@ mod tests {
 
     #[test]
     fn test_session_creation() {
-        let wizard = WizardBuilder::new().build().unwrap();
+        let wizard =
+            WizardBuilder::new().build().expect("Failed to build wizard for session creation test");
         let session = InteractiveSession::new(wizard);
 
         assert_eq!(session.history().len(), 0);
@@ -145,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_session_prompt() {
-        let wizard = WizardBuilder::new().build().unwrap();
+        let wizard = WizardBuilder::new().build().expect("Failed to build wizard for prompt test");
         let mut session = InteractiveSession::new(wizard);
 
         let result = session.prompt("Test input".to_string());
@@ -155,7 +156,8 @@ mod tests {
 
     #[test]
     fn test_clear_history() {
-        let wizard = WizardBuilder::new().build().unwrap();
+        let wizard =
+            WizardBuilder::new().build().expect("Failed to build wizard for clear history test");
         let mut session = InteractiveSession::new(wizard);
 
         let _response = session.prompt("Test".to_string());
@@ -167,14 +169,13 @@ mod tests {
 
     #[test]
     fn test_export_history() {
-        let wizard = WizardBuilder::new().build().unwrap();
+        let wizard =
+            WizardBuilder::new().build().expect("Failed to build wizard for export history test");
         let mut session = InteractiveSession::new(wizard);
 
         let _response = session.prompt("Test".to_string());
-        let json = session.export_history_json();
+        let json = session.export_history_json().expect("Failed to export history as JSON");
 
-        assert!(json.is_ok());
-        let json = json.unwrap();
         assert!(json.contains("Test"));
     }
 }
