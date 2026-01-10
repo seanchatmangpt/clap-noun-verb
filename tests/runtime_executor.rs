@@ -3,7 +3,7 @@
 use clap_noun_verb::error::{NounVerbError, Result};
 use clap_noun_verb::logic::{HandlerContext, HandlerInput, HandlerOutput};
 use clap_noun_verb::runtime::executor::Executor;
-use clap_noun_verb::runtime::interceptor::{Interceptor, NoOpInterceptor};
+use clap_noun_verb::runtime::interceptor::NoOpInterceptor;
 use std::collections::HashMap;
 
 #[test]
@@ -69,7 +69,7 @@ fn test_executor_with_interceptors() -> Result<()> {
     executor.add_interceptor(Box::new(NoOpInterceptor));
 
     let handler =
-        |input: HandlerInput| -> Result<HandlerOutput> { HandlerOutput::from_data("Success") };
+        |_input: HandlerInput| -> Result<HandlerOutput> { HandlerOutput::from_data("Success") };
 
     let input = HandlerInput {
         args: HashMap::new(),

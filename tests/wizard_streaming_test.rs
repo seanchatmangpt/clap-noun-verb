@@ -1,17 +1,22 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Streaming Tests for Wizard v2
 //!
 //! Tests partial response handling, stream interruption, buffer management,
 //! and cancellation scenarios.
 //! Follows Chicago TDD with behavior verification.
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{Prompt, WizardSession};
+#[cfg(feature = "wizard")]
 use std::time::Duration;
+#[cfg(feature = "wizard")]
 use tokio::time::timeout;
 
 // =============================================================================
 // PARTIAL RESPONSE HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_partial_content() {
     // Arrange: Create prompt that simulates partial streaming
@@ -25,6 +30,7 @@ fn test_prompt_with_partial_content() {
     assert!(extended.text.contains("end"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_with_partial_interactions() {
     // Arrange: Session to track partial responses
@@ -51,6 +57,7 @@ fn test_session_with_partial_interactions() {
 // STREAM INTERRUPTION AND RECOVERY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_stream_timeout_handling() {
     // Arrange: Simulate streaming operation with timeout
@@ -68,6 +75,7 @@ async fn test_stream_timeout_handling() {
     assert!(result.is_err(), "Should timeout");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_stream_recovery_after_interruption() {
     // Arrange: Session that can resume after interruption
@@ -94,6 +102,7 @@ async fn test_stream_recovery_after_interruption() {
 // BUFFER OVERFLOW PREVENTION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_large_streaming_response_accumulation() {
     // Arrange: Simulate accumulating large streaming response
@@ -118,6 +127,7 @@ fn test_large_streaming_response_accumulation() {
     assert_eq!(session.history().last().unwrap().1.len(), chunk_size * chunk_count);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_streaming_buffer_efficiency() {
     // Arrange: Test efficient string building
@@ -139,6 +149,7 @@ fn test_streaming_buffer_efficiency() {
 // CANCELLATION MID-STREAM
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_cancellation_during_stream() {
     // Arrange: Start streaming operation
@@ -156,6 +167,7 @@ async fn test_cancellation_during_stream() {
     assert_eq!(failed.history()[0].1, "partial response");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_multiple_concurrent_stream_cancellations() {
     // Arrange: Multiple sessions streaming
@@ -182,6 +194,7 @@ async fn test_multiple_concurrent_stream_cancellations() {
 // ERROR HANDLING DURING STREAMING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_error_during_stream_processing() {
     // Arrange: Simulate streaming with potential errors
@@ -209,6 +222,7 @@ async fn test_error_during_stream_processing() {
 // EMPTY STREAM HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_stream_response() {
     // Arrange: Session with empty streaming response
@@ -223,6 +237,7 @@ fn test_empty_stream_response() {
     assert_eq!(session.history()[0].1, "");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_whitespace_only_stream() {
     // Arrange: Stream with only whitespace
@@ -245,6 +260,7 @@ fn test_whitespace_only_stream() {
 // STREAM CHUNK PROCESSING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_small_chunk_accumulation() {
     // Arrange: Process many small chunks rapidly
@@ -268,6 +284,7 @@ fn test_rapid_small_chunk_accumulation() {
     assert_eq!(session.history().last().unwrap().1.len(), chunk_count);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_variable_chunk_sizes() {
     // Arrange: Process chunks of varying sizes
@@ -287,6 +304,7 @@ fn test_variable_chunk_sizes() {
 // STREAM STATE CONSISTENCY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_stream_state_after_pause_resume() {
     // Arrange: Session streaming data
@@ -313,6 +331,7 @@ fn test_stream_state_after_pause_resume() {
 // UNICODE STREAMING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_unicode_chunk_boundaries() {
     // Arrange: Stream Unicode characters that may split across chunks
@@ -335,6 +354,7 @@ fn test_unicode_chunk_boundaries() {
     assert!(reconstructed.len() > 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_emoji_streaming() {
     // Arrange: Stream emojis
@@ -354,6 +374,7 @@ fn test_emoji_streaming() {
 // PERFORMANCE UNDER STREAMING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_streaming_performance() {
     // Arrange: Measure streaming accumulation performance

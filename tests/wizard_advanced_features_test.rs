@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Comprehensive tests for wizard advanced features
 //!
 //! Tests caching, rate limiting, retry logic, and streaming features.
@@ -11,8 +12,11 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::cache::*;
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::rate_limit::*;
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::retry::*;
 use std::time::Duration;
 
@@ -20,6 +24,7 @@ use std::time::Duration;
 // CacheConfig Tests - Comprehensive caching configuration
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_default_values() {
     // Arrange + Act
@@ -31,6 +36,7 @@ fn test_cache_config_default_values() {
     assert!(config.enable_stats);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_builder_pattern() {
     // Arrange + Act
@@ -42,6 +48,7 @@ fn test_cache_config_builder_pattern() {
     assert!(!config.enable_stats);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_validation_success() {
     // Arrange
@@ -54,6 +61,7 @@ fn test_cache_config_validation_success() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_validation_zero_max_entries() {
     // Arrange
@@ -66,6 +74,7 @@ fn test_cache_config_validation_zero_max_entries() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_validation_zero_ttl() {
     // Arrange
@@ -78,6 +87,7 @@ fn test_cache_config_validation_zero_ttl() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_small_values() {
     // Arrange
@@ -90,6 +100,7 @@ fn test_cache_config_small_values() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_config_large_values() {
     // Arrange
@@ -106,6 +117,7 @@ fn test_cache_config_large_values() {
 // CacheStats Tests - Test cache statistics tracking
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_default() {
     // Arrange + Act
@@ -118,6 +130,7 @@ fn test_cache_stats_default() {
     assert_eq!(stats.insertions, 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_hit_rate_zero_requests() {
     // Arrange
@@ -130,6 +143,7 @@ fn test_cache_stats_hit_rate_zero_requests() {
     assert_eq!(hit_rate, 0.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_hit_rate_all_hits() {
     // Arrange
@@ -142,6 +156,7 @@ fn test_cache_stats_hit_rate_all_hits() {
     assert_eq!(hit_rate, 1.0); // 100%
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_hit_rate_all_misses() {
     // Arrange
@@ -154,6 +169,7 @@ fn test_cache_stats_hit_rate_all_misses() {
     assert_eq!(hit_rate, 0.0); // 0%
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_hit_rate_mixed() {
     // Arrange
@@ -166,6 +182,7 @@ fn test_cache_stats_hit_rate_mixed() {
     assert!((hit_rate - 0.75).abs() < 0.001); // 75%
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_total_requests() {
     // Arrange
@@ -182,6 +199,7 @@ fn test_cache_stats_total_requests() {
 // RateLimitConfig Tests - Comprehensive rate limiting configuration
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_default_values() {
     // Arrange + Act
@@ -193,6 +211,7 @@ fn test_rate_limit_config_default_values() {
     assert_eq!(config.strategy, RateLimitStrategy::Wait);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_builder() {
     // Arrange + Act
@@ -207,6 +226,7 @@ fn test_rate_limit_config_builder() {
     assert_eq!(config.strategy, RateLimitStrategy::Error);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_validation_success() {
     // Arrange
@@ -219,6 +239,7 @@ fn test_rate_limit_config_validation_success() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_validation_zero_tokens() {
     // Arrange
@@ -235,6 +256,7 @@ fn test_rate_limit_config_validation_zero_tokens() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_validation_negative_tokens() {
     // Arrange
@@ -251,6 +273,7 @@ fn test_rate_limit_config_validation_negative_tokens() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_config_validation_zero_burst() {
     // Arrange
@@ -267,6 +290,7 @@ fn test_rate_limit_config_validation_zero_burst() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_strategy_variants() {
     // Arrange + Act + Assert
@@ -282,6 +306,7 @@ fn test_rate_limit_strategy_variants() {
 // RetryConfig Tests - Comprehensive retry configuration
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_default_values() {
     // Arrange + Act
@@ -296,6 +321,7 @@ fn test_retry_config_default_values() {
     assert!(config.retry_on_rate_limit);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_builder() {
     // Arrange + Act
@@ -316,6 +342,7 @@ fn test_retry_config_builder() {
     assert!(!config.retry_on_rate_limit);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_success() {
     // Arrange
@@ -328,6 +355,7 @@ fn test_retry_config_validation_success() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_zero_attempts() {
     // Arrange
@@ -340,6 +368,7 @@ fn test_retry_config_validation_zero_attempts() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_zero_initial_delay() {
     // Arrange
@@ -352,6 +381,7 @@ fn test_retry_config_validation_zero_initial_delay() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_max_less_than_initial() {
     // Arrange
@@ -364,6 +394,7 @@ fn test_retry_config_validation_max_less_than_initial() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_negative_multiplier() {
     // Arrange
@@ -376,6 +407,7 @@ fn test_retry_config_validation_negative_multiplier() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_validation_jitter_out_of_range() {
     // Arrange
@@ -388,6 +420,7 @@ fn test_retry_config_validation_jitter_out_of_range() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_calculate_delay_exponential() {
     // Arrange
@@ -412,6 +445,7 @@ fn test_retry_config_calculate_delay_exponential() {
     assert_eq!(delay3.as_millis(), 8000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_calculate_delay_capped() {
     // Arrange
@@ -430,6 +464,7 @@ fn test_retry_config_calculate_delay_capped() {
     assert_eq!(delay_large.as_millis(), 5000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_calculate_delay_with_jitter() {
     // Arrange
@@ -450,6 +485,7 @@ fn test_retry_config_calculate_delay_with_jitter() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_linear_backoff() {
     // Arrange
@@ -476,6 +512,7 @@ fn test_retry_config_linear_backoff() {
 // RetryContext Tests - Test retry tracking
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_context_default() {
     // Arrange + Act
@@ -487,6 +524,7 @@ fn test_retry_context_default() {
     assert!(context.last_error.is_none());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_context_record_attempt() {
     // Arrange
@@ -504,6 +542,7 @@ fn test_retry_context_record_attempt() {
     assert!(context.last_error.unwrap().contains("timeout"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_context_multiple_errors() {
     // Arrange
@@ -524,6 +563,7 @@ fn test_retry_context_multiple_errors() {
 // Integration Tests - Test feature combinations
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_and_rate_limit_configs_together() {
     // Arrange
@@ -539,6 +579,7 @@ fn test_cache_and_rate_limit_configs_together() {
     assert!(rate_valid.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_all_features_default_configs() {
     // Arrange + Act
@@ -556,6 +597,7 @@ fn test_all_features_default_configs() {
 // Edge Cases and Boundary Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_stats_overflow_protection() {
     // Arrange
@@ -568,6 +610,7 @@ fn test_cache_stats_overflow_protection() {
     assert_eq!(total, u64::MAX);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_single_attempt() {
     // Arrange
@@ -580,6 +623,7 @@ fn test_retry_config_single_attempt() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_config_very_large_attempts() {
     // Arrange
@@ -592,6 +636,7 @@ fn test_retry_config_very_large_attempts() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_fractional_tokens() {
     // Arrange
@@ -604,6 +649,7 @@ fn test_rate_limit_fractional_tokens() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_very_high_tokens() {
     // Arrange

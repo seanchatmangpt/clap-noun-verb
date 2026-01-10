@@ -48,3 +48,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(not(feature = "wizard"))]
+fn main() {
+    println!("This example requires the 'wizard' feature to be enabled.");
+    println!("Run with: cargo run --example wizard_interactive --features wizard");
+}

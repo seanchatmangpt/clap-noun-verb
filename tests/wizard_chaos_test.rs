@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Chaos Engineering Tests for Wizard v2
 //!
 //! Tests network failures, timeouts, partial responses, and recovery scenarios.
@@ -6,15 +7,20 @@
 //! - Behavior verification through observable outcomes
 //! - AAA pattern (Arrange-Act-Assert)
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{GenAiClient, ModelConfig, Prompt, WizardConfig, WizardSession};
+#[cfg(feature = "wizard")]
 use std::time::Duration;
+#[cfg(feature = "wizard")]
 use tokio::time::timeout;
 
 // =============================================================================
 // NETWORK FAILURE INJECTION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires network control or mocking
 async fn test_network_timeout_handling() {
     // Arrange: Create client with very short timeout
@@ -34,6 +40,7 @@ async fn test_network_timeout_handling() {
     assert!(result.is_err() || result.unwrap().is_err(), "Should handle timeout gracefully");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_connection_failure_recovery() {
     // Arrange: Create session
@@ -50,6 +57,7 @@ async fn test_connection_failure_recovery() {
     assert_eq!(resumed_session.history().len(), 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_partial_response_handling() {
     // Arrange: Simulate partial response scenario
@@ -67,6 +75,7 @@ fn test_partial_response_handling() {
 // TIMEOUT SCENARIOS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_request_timeout_with_cancel() {
     // Arrange: Create timeout context
@@ -83,6 +92,7 @@ async fn test_request_timeout_with_cancel() {
     assert!(result.is_err(), "Should timeout after 100ms");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_progressive_timeout_backoff() {
     // Arrange: Test multiple timeouts with increasing durations
@@ -105,6 +115,7 @@ async fn test_progressive_timeout_backoff() {
 // API PROVIDER UNAVAILABILITY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_missing_api_key_error() {
     // Arrange: Clear environment variable (save original)
@@ -123,6 +134,7 @@ fn test_missing_api_key_error() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_invalid_endpoint_config() {
     // Arrange: Create config with invalid endpoint
@@ -143,6 +155,7 @@ fn test_invalid_endpoint_config() {
 // RECOVERY VERIFICATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_recovery_after_failure() {
     // Arrange: Create session and simulate failure
@@ -160,6 +173,7 @@ fn test_session_recovery_after_failure() {
     assert_eq!(failed_session.history()[0].0, "prompt 1");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_pause_resume_recovery() {
     // Arrange: Create and populate session
@@ -181,6 +195,7 @@ fn test_session_pause_resume_recovery() {
 // STATE CONSISTENCY AFTER FAILURES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_state_consistency_after_multiple_failures() {
     // Arrange: Create multiple sessions
@@ -204,6 +219,7 @@ fn test_state_consistency_after_multiple_failures() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_concurrent_session_failure_isolation() {
     // Arrange: Create multiple independent sessions
@@ -226,6 +242,7 @@ fn test_concurrent_session_failure_isolation() {
 // CHAOS INJECTION SCENARIOS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_state_transitions_under_chaos() {
     // Arrange: Create session
@@ -243,6 +260,7 @@ fn test_rapid_state_transitions_under_chaos() {
     assert_eq!(final_session.session_id(), "chaos-transitions");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_memory_stability_under_failure() {
     // Arrange: Create session with large history
@@ -263,6 +281,7 @@ fn test_memory_stability_under_failure() {
     assert_eq!(failed.history()[999].0, "prompt-999");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_config_validation_under_invalid_input() {
     // Arrange: Create config with boundary values

@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! End-to-end wizard workflow integration tests
 //!
 //! Tests complete user workflows through the wizard system:
@@ -20,6 +21,7 @@ use clap_noun_verb::cli::interactive::{generate_interactive_output, InteractiveH
 // COMPLETE WORKFLOW TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_startup_workflow() {
     // Arrange: User starts wizard
@@ -44,6 +46,7 @@ fn test_wizard_startup_workflow() {
     assert!(has_help, "Startup should offer help options");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_example_selection_workflow() {
     // Arrange: User wants to see an example
@@ -69,6 +72,7 @@ fn test_wizard_example_selection_workflow() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_category_selection_workflow() {
     // Arrange: User wants to browse by category
@@ -91,6 +95,7 @@ fn test_wizard_category_selection_workflow() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_guided_setup_workflow() {
     // Arrange: User selects guided setup
@@ -111,6 +116,7 @@ fn test_wizard_guided_setup_workflow() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_quickstart_workflow() {
     // Arrange: User wants quickstart
@@ -132,6 +138,7 @@ fn test_wizard_quickstart_workflow() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_exit_workflow() {
     // Arrange: User wants to exit
@@ -152,6 +159,7 @@ fn test_wizard_exit_workflow() {
 // MULTI-STEP WORKFLOW TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_complete_discovery_journey() {
     // Arrange: User discovers features through wizard
@@ -181,6 +189,7 @@ fn test_wizard_complete_discovery_journey() {
     assert!(has_exit, "Step 5: Should offer exit");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_learning_path_workflow() {
     // Arrange: Simulate new user learning path
@@ -205,6 +214,7 @@ fn test_wizard_learning_path_workflow() {
     assert!(categories > 0, "Should have categories to browse");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_troubleshooting_workflow() {
     // Arrange: User needs help
@@ -226,6 +236,7 @@ fn test_wizard_troubleshooting_workflow() {
 // WORKFLOW STATE CONSISTENCY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_maintains_state_through_workflow() {
     // Arrange
@@ -244,6 +255,7 @@ fn test_wizard_maintains_state_through_workflow() {
     assert_eq!(menu2.options.len(), menu3.options.len(), "Options should not change");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_workflow_is_repeatable() {
     // Arrange & Act: Run complete workflow twice
@@ -265,6 +277,7 @@ fn test_wizard_workflow_is_repeatable() {
 // USER JOURNEY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_new_user_first_time_journey() {
     // Arrange: Simulate first-time user experience
@@ -288,6 +301,7 @@ fn test_new_user_first_time_journey() {
     assert!(has_setup, "New user should see guided setup");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_experienced_user_journey() {
     // Arrange: Experienced user wants specific info
@@ -314,6 +328,7 @@ fn test_experienced_user_journey() {
 // WORKFLOW INTEGRATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_integrates_all_components() {
     // Arrange: Verify all components work together
@@ -350,6 +365,7 @@ fn test_wizard_integrates_all_components() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_workflow_json_output() {
     // Arrange: Wizard should support JSON output for agents
@@ -372,6 +388,7 @@ fn test_wizard_workflow_json_output() {
 // WORKFLOW ERROR HANDLING TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_workflow_handles_edge_cases() {
     // Arrange: Test workflow robustness
@@ -384,6 +401,7 @@ fn test_wizard_workflow_handles_edge_cases() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_workflow_concurrent_access() {
     use std::sync::Arc;
@@ -407,6 +425,7 @@ fn test_wizard_workflow_concurrent_access() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_complete_wizard_session() {
     // Arrange: Simulate complete wizard session

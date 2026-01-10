@@ -1,18 +1,24 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Concurrent Stress Tests for Wizard v2
 //!
 //! Tests high-throughput scenarios, concurrent sessions, memory stability,
 //! and resource exhaustion handling.
 //! Follows Chicago TDD principles with real collaborators and state verification.
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{ModelConfig, Prompt, SessionBuilder, WizardSession};
+#[cfg(feature = "wizard")]
 use std::sync::{Arc, Mutex};
+#[cfg(feature = "wizard")]
 use std::thread;
+#[cfg(feature = "wizard")]
 use std::time::{Duration, Instant};
 
 // =============================================================================
 // CONCURRENT SESSION TESTS (100+ sessions)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_100_concurrent_session_creation() {
     // Arrange: Prepare 100 session IDs
@@ -35,6 +41,7 @@ fn test_100_concurrent_session_creation() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_concurrent_session_state_transitions() {
     // Arrange: Create shared counter for verification
@@ -71,6 +78,7 @@ fn test_concurrent_session_state_transitions() {
 // HIGH-THROUGHPUT PROMPT PROCESSING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_high_throughput_prompt_creation() {
     // Arrange: Create many prompts rapidly
@@ -93,6 +101,7 @@ fn test_high_throughput_prompt_creation() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_long_history() {
     // Arrange: Create prompt with extensive history
@@ -120,6 +129,7 @@ fn test_prompt_with_long_history() {
 // MEMORY STABILITY OVER TIME
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_memory_stability_with_large_sessions() {
     // Arrange: Create session with large interaction history
@@ -142,6 +152,7 @@ fn test_memory_stability_with_large_sessions() {
     assert!(session.history()[4999].0.starts_with("Question 4999"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_metadata_memory_stability() {
     // Arrange: Create session with large metadata
@@ -169,6 +180,7 @@ fn test_session_metadata_memory_stability() {
 // LOCK CONTENTION DETECTION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_concurrent_access_without_deadlock() {
     // Arrange: Create shared sessions
@@ -203,6 +215,7 @@ fn test_concurrent_access_without_deadlock() {
 // THREAD POOL EXHAUSTION HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_thread_spawn_and_join() {
     // Arrange: Spawn many threads rapidly
@@ -234,6 +247,7 @@ fn test_rapid_thread_spawn_and_join() {
 // RESOURCE EXHAUSTION RECOVERY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_concurrent_modification() {
     // Arrange: Create shared config
@@ -261,6 +275,7 @@ fn test_model_config_concurrent_modification() {
     assert!(final_config.temperature >= 0.5);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_builder_under_load() {
     // Arrange: Build many sessions rapidly
@@ -295,6 +310,7 @@ fn test_session_builder_under_load() {
 // PERFORMANCE BENCHMARKS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_creation_performance() {
     // Arrange: Prepare for performance test
@@ -317,6 +333,7 @@ fn test_session_creation_performance() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_interaction_addition_performance() {
     // Arrange: Create session
@@ -342,6 +359,7 @@ fn test_interaction_addition_performance() {
     assert_eq!(session.history().len(), iterations as usize);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_concurrent_prompt_processing() {
     // Arrange: Create prompts concurrently

@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Comprehensive session state machine tests for wizard module
 //!
 //! Tests type-safe state transitions, session lifecycle, SessionBuilder,
@@ -10,6 +11,7 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::session::*;
 use serde_json::json;
 
@@ -17,6 +19,7 @@ use serde_json::json;
 // State Trait Tests - Verify all states implement State trait correctly
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_init_state_name() {
     // Arrange + Act
@@ -27,6 +30,7 @@ fn test_init_state_name() {
     assert!(!state.is_terminal());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_state_name() {
     // Arrange + Act
@@ -37,6 +41,7 @@ fn test_active_state_name() {
     assert!(!state.is_terminal());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_paused_state_name() {
     // Arrange + Act
@@ -47,6 +52,7 @@ fn test_paused_state_name() {
     assert!(!state.is_terminal());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_complete_state_name() {
     // Arrange + Act
@@ -57,6 +63,7 @@ fn test_complete_state_name() {
     assert!(state.is_terminal());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_failed_state_name() {
     // Arrange + Act
@@ -71,6 +78,7 @@ fn test_failed_state_name() {
 // SessionData Tests - Test session data management
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_new() {
     // Arrange
@@ -85,6 +93,7 @@ fn test_session_data_new() {
     assert_eq!(data.metadata, serde_json::Value::Null);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_with_capacity() {
     // Arrange
@@ -99,6 +108,7 @@ fn test_session_data_with_capacity() {
     assert_eq!(data.history.capacity(), capacity);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_add_interaction() {
     // Arrange
@@ -115,6 +125,7 @@ fn test_session_data_add_interaction() {
     assert_eq!(data.history[0].1, response);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_multiple_interactions() {
     // Arrange
@@ -130,6 +141,7 @@ fn test_session_data_multiple_interactions() {
     assert_eq!(data.history[5].0, "prompt5");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_last_interaction() {
     // Arrange
@@ -157,6 +169,7 @@ fn test_session_data_last_interaction() {
 // WizardSession<Init> Tests - Test initial state
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_session_new() {
     // Arrange
@@ -170,6 +183,7 @@ fn test_wizard_session_new() {
     assert_eq!(session.history().len(), 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_session_with_capacity() {
     // Arrange
@@ -183,6 +197,7 @@ fn test_wizard_session_with_capacity() {
     assert_eq!(session.session_id(), session_id);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_session_metadata() {
     // Arrange
@@ -203,6 +218,7 @@ fn test_wizard_session_metadata() {
 // State Transition Tests - Test all valid transitions
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_init_to_active_transition() {
     // Arrange
@@ -216,6 +232,7 @@ fn test_init_to_active_transition() {
     assert_eq!(session.session_id(), session_id);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_to_complete_transition() {
     // Arrange
@@ -232,6 +249,7 @@ fn test_active_to_complete_transition() {
     assert_eq!(session.history().len(), 1);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_to_paused_transition() {
     // Arrange
@@ -245,6 +263,7 @@ fn test_active_to_paused_transition() {
     assert_eq!(session.session_id(), "test");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_paused_to_active_transition() {
     // Arrange
@@ -259,6 +278,7 @@ fn test_paused_to_active_transition() {
     assert_eq!(session.session_id(), "test");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_to_failed_transition() {
     // Arrange
@@ -272,6 +292,7 @@ fn test_active_to_failed_transition() {
     assert_eq!(session.session_id(), "test");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_paused_to_failed_transition() {
     // Arrange
@@ -290,6 +311,7 @@ fn test_paused_to_failed_transition() {
 // Session Lifecycle Tests - Test complete workflows
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_complete_session_lifecycle_success() {
     // Arrange - create session
@@ -307,6 +329,7 @@ fn test_complete_session_lifecycle_success() {
     assert_eq!(session.history().len(), 1);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_lifecycle_with_pause_resume() {
     // Arrange - create and start session
@@ -328,6 +351,7 @@ fn test_session_lifecycle_with_pause_resume() {
     assert_eq!(session.history().len(), 2);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_lifecycle_failure() {
     // Arrange
@@ -348,6 +372,7 @@ fn test_session_lifecycle_failure() {
 // Session Builder Tests - Test builder pattern
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_builder_success() {
     // Arrange + Act
@@ -363,6 +388,7 @@ fn test_session_builder_success() {
     assert_eq!(session.metadata(), &json!({"key": "value"}));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_builder_missing_session_id() {
     // Arrange + Act
@@ -372,6 +398,7 @@ fn test_session_builder_missing_session_id() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_builder_default() {
     // Arrange + Act
@@ -382,6 +409,7 @@ fn test_session_builder_default() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_builder_with_empty_metadata() {
     // Arrange + Act
@@ -397,6 +425,7 @@ fn test_session_builder_with_empty_metadata() {
 // Active Session Tests - Test interaction management
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_session_add_multiple_interactions() {
     // Arrange
@@ -412,6 +441,7 @@ fn test_active_session_add_multiple_interactions() {
     assert_eq!(session.history().len(), 5);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_session_empty_interactions() {
     // Arrange
@@ -425,6 +455,7 @@ fn test_active_session_empty_interactions() {
     assert_eq!(session.history().len(), 1);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_active_session_large_interaction() {
     // Arrange
@@ -445,6 +476,7 @@ fn test_active_session_large_interaction() {
 // Compile-Time Safety Tests - Document type-safe transitions
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_compile_time_safety_init_cannot_pause() {
     // This test documents that certain transitions are impossible at compile time
@@ -461,6 +493,7 @@ fn test_compile_time_safety_init_cannot_pause() {
     // This is a compile-time guarantee - no runtime check needed
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_compile_time_safety_complete_is_terminal() {
     // Arrange
@@ -476,6 +509,7 @@ fn test_compile_time_safety_complete_is_terminal() {
     assert_eq!(session.session_id(), "test");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_compile_time_safety_failed_is_terminal() {
     // Arrange
@@ -494,6 +528,7 @@ fn test_compile_time_safety_failed_is_terminal() {
 // SessionData Serialization Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_serialization() {
     // Arrange
@@ -512,6 +547,7 @@ fn test_session_data_serialization() {
     assert!(json_str.contains("metadata"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_deserialization() {
     // Arrange
@@ -535,6 +571,7 @@ fn test_session_data_deserialization() {
 // Edge Cases and Boundary Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_with_unicode_characters() {
     // Arrange
@@ -547,6 +584,7 @@ fn test_session_with_unicode_characters() {
     assert_eq!(session_id, "session-🦀");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_with_very_long_id() {
     // Arrange
@@ -559,6 +597,7 @@ fn test_session_with_very_long_id() {
     assert_eq!(session.session_id(), long_id);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_with_zero_capacity() {
     // Arrange + Act
@@ -568,6 +607,7 @@ fn test_session_with_zero_capacity() {
     assert_eq!(session.session_id(), "test");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_metadata_overwrite() {
     // Arrange
@@ -585,6 +625,7 @@ fn test_session_metadata_overwrite() {
 // Zero-Cost Abstraction Tests - Document performance characteristics
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_state_transitions_are_zero_cost() {
     // This test documents that state transitions use PhantomData

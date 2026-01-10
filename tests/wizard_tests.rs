@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Integration tests for the wizard module
 //!
 //! These tests use Chicago TDD principles:
@@ -13,10 +14,12 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{
     GenAiClient, Message, Model, ModelConfig, Prompt, Role, WizardConfig,
 };
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_creation() {
     // Arrange
@@ -31,6 +34,7 @@ fn test_prompt_creation() {
     assert!(prompt.history.is_empty());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_system() {
     // Arrange
@@ -45,6 +49,7 @@ fn test_prompt_with_system() {
     assert_eq!(prompt.system.as_deref(), Some(system));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_history() {
     // Arrange
@@ -60,6 +65,7 @@ fn test_prompt_with_history() {
     assert_eq!(prompt.history[1].role, Role::Assistant);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_validation() {
     // Arrange
@@ -73,6 +79,7 @@ fn test_model_config_validation() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_valid() {
     // Arrange
@@ -86,6 +93,7 @@ fn test_model_config_valid() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_default() {
     // Arrange + Act
@@ -96,6 +104,7 @@ fn test_wizard_config_default() {
     assert!(config.api_key.is_none());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_id_generation() {
     // Arrange
@@ -108,6 +117,7 @@ fn test_model_id_generation() {
     assert_eq!(model_id, "claude-3-sonnet-20240229");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_message_serialization() {
     // Arrange
@@ -129,7 +139,9 @@ fn test_message_serialization() {
 // These tests are marked with #[ignore] by default to prevent CI failures
 // Run them manually with: cargo test --features wizard -- --ignored
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore]
 async fn test_genai_client_creation_with_env() {
     // Arrange - Requires ANTHROPIC_API_KEY in environment
@@ -148,7 +160,9 @@ async fn test_genai_client_creation_with_env() {
     assert!(client.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore]
 async fn test_genai_client_simple_generation() {
     // Arrange - Requires ANTHROPIC_API_KEY in environment
@@ -172,7 +186,9 @@ async fn test_genai_client_simple_generation() {
     assert!(response.text.to_lowercase().contains("hello"));
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore]
 async fn test_genai_client_with_system_prompt() {
     // Arrange
@@ -198,7 +214,9 @@ async fn test_genai_client_with_system_prompt() {
     assert!(response.text.contains('4'));
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore]
 async fn test_genai_client_conversation_history() {
     // Arrange
@@ -227,7 +245,9 @@ async fn test_genai_client_conversation_history() {
 }
 
 #[cfg(feature = "caching")]
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore]
 async fn test_genai_client_caching() {
     // Arrange

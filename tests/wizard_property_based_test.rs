@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Property-based tests for wizard/interactive help using proptest
 //!
 //! Tests invariants and properties that should hold for all inputs.
