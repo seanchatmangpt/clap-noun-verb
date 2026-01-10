@@ -1,9 +1,11 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Edge Case Tests for Wizard v2
 //!
 //! Tests boundary conditions, empty inputs, extremely long inputs,
 //! rapid operations, and model switching scenarios.
 //! Follows Chicago TDD with state-based verification.
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{
     AnthropicModel, GeminiModel, Model, ModelConfig, OpenAIModel, Prompt, SessionBuilder,
     WizardConfig, WizardSession,
@@ -13,6 +15,7 @@ use clap_noun_verb::wizard::{
 // EMPTY PROMPTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_string_prompt() {
     // Arrange: Empty prompt
@@ -24,6 +27,7 @@ fn test_empty_string_prompt() {
     assert!(prompt.system.is_none());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_whitespace_only_prompt() {
     // Arrange: Whitespace-only prompts
@@ -36,6 +40,7 @@ fn test_whitespace_only_prompt() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_session_operations() {
     // Arrange: Session with no interactions
@@ -54,6 +59,7 @@ fn test_empty_session_operations() {
 // EXTREMELY LONG PROMPTS (>100K chars)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_100k_character_prompt() {
     // Arrange: 100K character prompt
@@ -66,6 +72,7 @@ fn test_100k_character_prompt() {
     assert_eq!(prompt.text.len(), 100_000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_1mb_prompt() {
     // Arrange: 1MB prompt
@@ -78,6 +85,7 @@ fn test_1mb_prompt() {
     assert_eq!(prompt.text.len(), 1_000_000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_100k_word_count() {
     // Arrange: Prompt with many words (realistic long document)
@@ -97,6 +105,7 @@ fn test_prompt_with_100k_word_count() {
 // SPECIAL CHARACTERS AND EMOJIS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_emoji_only_prompt() {
     // Arrange: Prompt with only emojis
@@ -110,6 +119,7 @@ fn test_emoji_only_prompt() {
     assert!(prompt.text.len() > 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_mixed_emoji_and_text() {
     // Arrange: Mixed content
@@ -122,6 +132,7 @@ fn test_mixed_emoji_and_text() {
     assert_eq!(prompt.text, mixed);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_special_control_characters() {
     // Arrange: Various control characters
@@ -138,6 +149,7 @@ fn test_special_control_characters() {
 // MULTIPLE CONCURRENT CANCELLATIONS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_multiple_session_transitions() {
     // Arrange: Create multiple sessions
@@ -160,6 +172,7 @@ fn test_multiple_session_transitions() {
     assert_eq!(results.len(), 100);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_pause_resume_cycles() {
     // Arrange: Create session
@@ -182,6 +195,7 @@ fn test_rapid_pause_resume_cycles() {
 // RAPID SESSION CREATION/DESTRUCTION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_session_creation() {
     // Arrange: Create many sessions rapidly
@@ -197,6 +211,7 @@ fn test_rapid_session_creation() {
     assert!(true, "Rapid creation handled");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_lifecycle_completion() {
     // Arrange: Test complete lifecycle
@@ -220,6 +235,7 @@ fn test_session_lifecycle_completion() {
 // MODEL SWITCHING DURING SESSION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_switching() {
     // Arrange: Different model configurations
@@ -239,6 +255,7 @@ fn test_model_config_switching() {
     assert_eq!(configs[2].model, Model::Gemini(GeminiModel::Gemini15Pro));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_model_config_changes() {
     // Arrange: Base config
@@ -261,6 +278,7 @@ fn test_rapid_model_config_changes() {
     assert!(true);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_max_tokens_boundary() {
     // Arrange: Test max tokens for each model
@@ -281,6 +299,7 @@ fn test_model_max_tokens_boundary() {
 // BOUNDARY CONDITIONS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_id_boundary_lengths() {
     // Arrange: Various session ID lengths
@@ -294,6 +313,7 @@ fn test_session_id_boundary_lengths() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_temperature_boundaries() {
     // Arrange: Boundary temperature values
@@ -313,6 +333,7 @@ fn test_temperature_boundaries() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_top_p_boundaries() {
     // Arrange: Boundary top_p values
@@ -331,6 +352,7 @@ fn test_top_p_boundaries() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_zero_max_tokens() {
     // Arrange: Zero max tokens
@@ -347,6 +369,7 @@ fn test_zero_max_tokens() {
 // METADATA EDGE CASES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_null_metadata() {
     // Arrange: Session with null metadata
@@ -360,6 +383,7 @@ fn test_null_metadata() {
     assert_eq!(session.metadata(), &serde_json::Value::Null);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_deeply_nested_metadata() {
     // Arrange: Deeply nested metadata (100 levels)
@@ -379,6 +403,7 @@ fn test_deeply_nested_metadata() {
     assert_eq!(session.metadata(), &nested);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_large_array_metadata() {
     // Arrange: Metadata with large array
@@ -399,6 +424,7 @@ fn test_large_array_metadata() {
 // INTERACTION HISTORY EDGE CASES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_interaction_strings() {
     // Arrange: Session with empty interactions
@@ -415,6 +441,7 @@ fn test_empty_interaction_strings() {
     assert_eq!(session.history()[0].1, "");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_identical_consecutive_interactions() {
     // Arrange: Session with identical interactions
@@ -430,6 +457,7 @@ fn test_identical_consecutive_interactions() {
     assert_eq!(session.history().len(), 100);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_very_long_single_interaction() {
     // Arrange: Session with very long interaction
@@ -452,6 +480,7 @@ fn test_very_long_single_interaction() {
 // PROMPT HISTORY EDGE CASES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_prompt_history() {
     // Arrange: Prompt with empty history
@@ -461,6 +490,7 @@ fn test_empty_prompt_history() {
     assert_eq!(prompt.history.len(), 0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_only_system_message() {
     // Arrange: Prompt with no text but system message

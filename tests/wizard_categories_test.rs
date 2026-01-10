@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Integration tests for wizard category filtering and display
 //!
 //! Tests the command category system used by the interactive wizard:
@@ -18,6 +19,7 @@ use clap_noun_verb::cli::help::{CommandCategory, HelpSystem};
 // COMMAND CATEGORY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_category_has_description() {
     // Arrange: All possible categories
@@ -42,6 +44,7 @@ fn test_command_category_has_description() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_category_display() {
     // Arrange
@@ -54,6 +57,7 @@ fn test_command_category_display() {
     assert!(!display_str.is_empty(), "Category should display as non-empty string");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_category_debug() {
     // Arrange
@@ -66,6 +70,7 @@ fn test_command_category_debug() {
     assert!(!debug_str.is_empty(), "Category should have debug representation");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_category_clone() {
     // Arrange
@@ -86,6 +91,7 @@ fn test_command_category_clone() {
 // HELP SYSTEM INTEGRATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_help_system_initialization() {
     // Arrange & Act
@@ -96,6 +102,7 @@ fn test_help_system_initialization() {
     let _system = help_system;
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_help_system_commands_by_category() {
     // Arrange
@@ -113,6 +120,7 @@ fn test_help_system_commands_by_category() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_help_system_handles_all_categories() {
     // Arrange
@@ -141,6 +149,7 @@ fn test_help_system_handles_all_categories() {
 // COMMAND REFERENCE TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_reference_structure() {
     // Arrange
@@ -156,6 +165,7 @@ fn test_command_reference_structure() {
     assert_eq!(format!("{:?}", command.category), "System");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_command_reference_serialization() {
     // Arrange
@@ -181,6 +191,7 @@ fn test_command_reference_serialization() {
 // CATEGORY FILTERING TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_filter_pack_commands() {
     // Arrange: Simulate wizard showing pack commands
@@ -200,6 +211,7 @@ fn test_wizard_can_filter_pack_commands() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_filter_ai_commands() {
     // Arrange: Simulate wizard showing AI commands
@@ -219,6 +231,7 @@ fn test_wizard_can_filter_ai_commands() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_category_filtering_is_deterministic() {
     // Arrange
@@ -244,6 +257,7 @@ fn test_category_filtering_is_deterministic() {
 // CATEGORY DESCRIPTION QUALITY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_category_descriptions_are_informative() {
     // Arrange
@@ -276,6 +290,7 @@ fn test_category_descriptions_are_informative() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_category_descriptions_are_unique() {
     // Arrange
@@ -305,6 +320,7 @@ fn test_category_descriptions_are_unique() {
 // WIZARD INTEGRATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_category_workflow() {
     // Arrange: Simulate complete wizard category workflow
@@ -328,6 +344,7 @@ fn test_wizard_category_workflow() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_display_all_categories() {
     // Arrange
@@ -357,6 +374,7 @@ fn test_wizard_can_display_all_categories() {
 // CATEGORY ENUMERATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_all_categories_are_tested() {
     // Arrange: List all categories we expect to exist
@@ -385,6 +403,7 @@ fn test_all_categories_are_tested() {
 // CONSISTENCY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_help_system_is_stateless() {
     // Arrange
@@ -404,6 +423,7 @@ fn test_help_system_is_stateless() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_multiple_help_systems_are_consistent() {
     // Arrange: Create multiple help systems

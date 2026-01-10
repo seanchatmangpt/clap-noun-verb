@@ -1,15 +1,18 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Fuzz Testing for Wizard v2
 //!
 //! Tests malformed input handling, buffer overflow protection,
 //! Unicode handling, and security boundaries.
 //! Follows Chicago TDD with behavior verification.
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{ModelConfig, Prompt, SessionBuilder, WizardConfig, WizardSession};
 
 // =============================================================================
 // PROMPT INJECTION ATTEMPTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_injection_with_system_commands() {
     // Arrange: Malicious prompts attempting command injection
@@ -32,6 +35,7 @@ fn test_prompt_injection_with_system_commands() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_id_injection_attempts() {
     // Arrange: Malicious session IDs
@@ -55,6 +59,7 @@ fn test_session_id_injection_attempts() {
 // MALFORMED INPUT HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_prompt_handling() {
     // Arrange: Empty and whitespace-only prompts
@@ -67,6 +72,7 @@ fn test_empty_prompt_handling() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_null_byte_in_prompt() {
     // Arrange: Prompt with null bytes
@@ -79,6 +85,7 @@ fn test_null_byte_in_prompt() {
     assert!(prompt.text.contains('\0'));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_malformed_json_in_metadata() {
     // Arrange: Session with various metadata
@@ -106,6 +113,7 @@ fn test_malformed_json_in_metadata() {
 // BUFFER OVERFLOW PROTECTION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_extremely_long_prompt() {
     // Arrange: Very long prompt (1MB+)
@@ -118,6 +126,7 @@ fn test_extremely_long_prompt() {
     assert_eq!(prompt.text.len(), 1_000_000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_extremely_long_session_id() {
     // Arrange: Very long session ID (100K chars)
@@ -130,6 +139,7 @@ fn test_extremely_long_session_id() {
     assert_eq!(session.session_id().len(), 100_000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_massive_history() {
     // Arrange: Create prompt with very large history
@@ -158,6 +168,7 @@ fn test_prompt_with_massive_history() {
 // UNICODE HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_unicode_emoji_in_prompts() {
     // Arrange: Prompts with various Unicode
@@ -180,6 +191,7 @@ fn test_unicode_emoji_in_prompts() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_unicode_in_session_ids() {
     // Arrange: Session IDs with Unicode
@@ -192,6 +204,7 @@ fn test_unicode_in_session_ids() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_combining_characters_in_prompts() {
     // Arrange: Prompts with combining characters
@@ -211,6 +224,7 @@ fn test_combining_characters_in_prompts() {
 // VERY LARGE RESPONSES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_with_large_responses() {
     // Arrange: Session with very large response content
@@ -230,6 +244,7 @@ fn test_session_with_large_responses() {
 // INVALID UTF-8 SEQUENCES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_valid_utf8_enforcement() {
     // Note: Rust String type enforces valid UTF-8 at compile time
@@ -249,6 +264,7 @@ fn test_valid_utf8_enforcement() {
 // SPECIAL CHARACTER HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_special_characters_in_prompts() {
     // Arrange: Prompts with special characters
@@ -269,6 +285,7 @@ fn test_special_characters_in_prompts() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_boundary_characters() {
     // Arrange: Boundary Unicode characters
@@ -291,6 +308,7 @@ fn test_boundary_characters() {
 // CONFIGURATION FUZZING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_extreme_temperature_values() {
     // Arrange: Extreme temperature values
@@ -316,6 +334,7 @@ fn test_extreme_temperature_values() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_extreme_top_p_values() {
     // Arrange: Extreme top_p values
@@ -330,6 +349,7 @@ fn test_extreme_top_p_values() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_extreme_max_tokens() {
     // Arrange: Extreme token values
@@ -346,6 +366,7 @@ fn test_extreme_max_tokens() {
 // RAPID MUTATION TESTING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rapid_config_mutations() {
     // Arrange: Base config
@@ -365,6 +386,7 @@ fn test_rapid_config_mutations() {
     assert!(config.max_response_tokens >= 100);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_random_session_metadata_fuzzing() {
     // Arrange: Various random metadata structures

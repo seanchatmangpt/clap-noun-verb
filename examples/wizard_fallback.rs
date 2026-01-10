@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Example: Fallback chain for model switching
 //!
 //! This example demonstrates automatic fallback to alternative models
@@ -9,6 +10,7 @@
 //! Environment variables required:
 //!   ANTHROPIC_API_KEY=your-api-key (or other provider keys)
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{
     config::{AnthropicModel, GeminiModel, Model, ModelConfig, OpenAIModel},
     fallback::{FallbackClient, FallbackConfig},
@@ -16,6 +18,7 @@ use clap_noun_verb::wizard::{
     WizardConfig,
 };
 
+#[cfg(feature = "wizard")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Wizard Fallback Example ===\n");
@@ -138,4 +141,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Success rate: {:.2}%", client.stats().success_rate() * 100.0);
 
     Ok(())
+}
+
+#[cfg(not(feature = "wizard"))]
+fn main() {
+    println!("This example requires the 'wizard' feature to be enabled.");
+    println!("Run with: cargo run --example wizard_fallback --features wizard");
 }

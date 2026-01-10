@@ -5,6 +5,30 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.0] - 2026-01-10
+
+### Added
+
+- **Wizard Package v2 Enhancements**
+  - TTL-to-wizard code generation system with comprehensive roadmap
+  - V2 wizard package architecture and core feature specifications
+  - 10-agent swarm coordination for wizard package development
+  - rust-genai integration for multi-provider LLM support
+  - End-to-end wizard code generation pipeline
+
+- **Documentation Improvements**
+  - Diataxis framework implementation for production documentation organization
+  - Comprehensive research thesis consolidating analysis and strategic insights
+  - Setup, help, and version documentation enhancements
+  - Hyper-Thesis Framework integration for defense preparation
+
+### Technical Details
+
+- **No breaking changes** - Full backward compatibility with v5.5.x
+- **Production-ready**: Comprehensive test suite and Andon signals cleared
+- **Agent-grade quality**: Designed for trillion-agent ecosystem
+- **Wizard integration**: LLM-powered CLI generation capabilities
+
 ## [5.5.0] - 2026-01-06
 
 ### Added

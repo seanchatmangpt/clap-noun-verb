@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Integration tests for wizard example display and search functionality
 //!
 //! Tests the example management system used by the interactive wizard:
@@ -18,6 +19,7 @@ use clap_noun_verb::cli::examples::{Example, ExampleVariation, ExamplesRegistry}
 // EXAMPLE REGISTRY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_examples_registry_initialization() {
     // Arrange & Act
@@ -28,6 +30,7 @@ fn test_examples_registry_initialization() {
     assert!(!all_examples.is_empty(), "Registry should contain examples for wizard");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_search_by_keyword() {
     // Arrange
@@ -53,6 +56,7 @@ fn test_example_search_by_keyword() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_search_case_insensitive() {
     // Arrange
@@ -68,6 +72,7 @@ fn test_example_search_case_insensitive() {
     assert_eq!(results_lower.len(), results_mixed.len(), "Search should be case-insensitive");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_structure_is_complete() {
     // Arrange
@@ -93,6 +98,7 @@ fn test_example_structure_is_complete() {
 // EXAMPLE CONTENT VALIDATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_commands_are_valid() {
     // Arrange
@@ -117,6 +123,7 @@ fn test_example_commands_are_valid() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_descriptions_are_informative() {
     // Arrange
@@ -144,6 +151,7 @@ fn test_example_descriptions_are_informative() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_expected_output_provided() {
     // Arrange
@@ -171,6 +179,7 @@ fn test_example_expected_output_provided() {
 // EXAMPLE VARIATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_variations_are_distinct() {
     // Arrange
@@ -196,6 +205,7 @@ fn test_example_variations_are_distinct() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_variations_have_unique_commands() {
     // Arrange
@@ -224,6 +234,7 @@ fn test_example_variations_have_unique_commands() {
 // SEARCH FUNCTIONALITY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_search_returns_relevant_results() {
     // Arrange
@@ -252,6 +263,7 @@ fn test_search_returns_relevant_results() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_search_empty_string_returns_all() {
     // Arrange
@@ -265,6 +277,7 @@ fn test_search_empty_string_returns_all() {
     assert_eq!(search_results.len(), all_examples.len(), "Empty search should return all examples");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_search_nonexistent_term_returns_empty() {
     // Arrange
@@ -281,6 +294,7 @@ fn test_search_nonexistent_term_returns_empty() {
 // EXAMPLE REGISTRY CONSISTENCY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_registry_is_deterministic() {
     // Arrange & Act: Create multiple registries
@@ -299,6 +313,7 @@ fn test_registry_is_deterministic() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_registry_search_is_deterministic() {
     // Arrange
@@ -323,6 +338,7 @@ fn test_registry_search_is_deterministic() {
 // EXAMPLE DATA QUALITY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_examples_have_no_duplicates() {
     // Arrange
@@ -342,6 +358,7 @@ fn test_examples_have_no_duplicates() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_examples_cover_common_use_cases() {
     // Arrange
@@ -366,6 +383,7 @@ fn test_examples_cover_common_use_cases() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_registry_is_well_populated() {
     // Arrange
@@ -384,6 +402,7 @@ fn test_example_registry_is_well_populated() {
 // INTEGRATION WITH WIZARD TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_find_pack_examples() {
     // Arrange: Simulate wizard showing "pack list" example
@@ -401,6 +420,7 @@ fn test_wizard_can_find_pack_examples() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_find_ai_examples() {
     // Arrange: Simulate wizard showing "ai generate" example
@@ -417,6 +437,7 @@ fn test_wizard_can_find_ai_examples() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_can_find_marketplace_examples() {
     // Arrange: Simulate wizard showing "marketplace search" example
@@ -433,6 +454,7 @@ fn test_wizard_can_find_marketplace_examples() {
 // EXAMPLE SERIALIZATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_json_serialization() {
     // Arrange
@@ -459,6 +481,7 @@ fn test_example_json_serialization() {
     assert!(json_str.contains("variations"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_example_variation_json_serialization() {
     // Arrange

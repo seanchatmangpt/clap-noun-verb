@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Performance regression tests for wizard module
 //!
 //! Tests performance characteristics, memory usage, and latency requirements
@@ -10,6 +11,7 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::*;
 use std::time::Instant;
 
@@ -17,6 +19,7 @@ use std::time::Instant;
 // Session Creation Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_creation_latency() {
     // Arrange
@@ -34,6 +37,7 @@ fn test_session_creation_latency() {
     assert!(avg_latency < 100, "Session creation too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_state_transition_latency() {
     // Arrange
@@ -61,6 +65,7 @@ fn test_session_state_transition_latency() {
 // Configuration Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_creation_performance() {
     // Arrange
@@ -83,6 +88,7 @@ fn test_model_config_creation_performance() {
     assert!(avg_latency < 50, "Config creation too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_validation_performance() {
     // Arrange
@@ -110,6 +116,7 @@ fn test_model_config_validation_performance() {
 // Error Creation Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_creation_performance() {
     // Arrange
@@ -127,6 +134,7 @@ fn test_error_creation_performance() {
     assert!(avg_latency < 30, "Error creation too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_display_performance() {
     // Arrange
@@ -150,6 +158,7 @@ fn test_error_display_performance() {
 // Prompt Building Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_creation_performance() {
     // Arrange
@@ -167,6 +176,7 @@ fn test_prompt_creation_performance() {
     assert!(avg_latency < 30, "Prompt creation too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_history_performance() {
     // Arrange
@@ -197,6 +207,7 @@ fn test_prompt_with_history_performance() {
 // Session Data Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_interaction_append_performance() {
     // Arrange
@@ -215,6 +226,7 @@ fn test_session_data_interaction_append_performance() {
     assert!(avg_latency < 50, "Interaction append too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_large_history_access() {
     // Arrange
@@ -239,6 +251,7 @@ fn test_session_data_large_history_access() {
 // Memory Usage Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_memory_footprint() {
     // Arrange
@@ -265,6 +278,7 @@ fn test_session_memory_footprint() {
     drop(sessions);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_config_memory_footprint() {
     // Arrange
@@ -289,6 +303,7 @@ fn test_config_memory_footprint() {
 // Serialization Performance Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_data_serialization_performance() {
     // Arrange
@@ -310,6 +325,7 @@ fn test_session_data_serialization_performance() {
     assert!(avg_latency < 1000, "Serialization too slow: {}µs", avg_latency);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_config_serialization_performance() {
     // Arrange
@@ -335,6 +351,7 @@ fn test_config_serialization_performance() {
 // Scalability Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_scalability() {
     // Arrange & Act - create increasing numbers of sessions
@@ -358,6 +375,7 @@ fn test_session_scalability() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_interaction_history_scalability() {
     // Arrange
@@ -402,6 +420,7 @@ fn get_current_memory_usage() -> usize {
 // Regression Prevention Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_no_performance_regression_session_creation() {
     // This test serves as a baseline - if it fails, performance has regressed
@@ -427,6 +446,7 @@ fn test_no_performance_regression_session_creation() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_no_performance_regression_validation() {
     // Arrange

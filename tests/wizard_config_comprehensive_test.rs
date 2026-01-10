@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Comprehensive configuration tests for wizard module
 //!
 //! Tests all configuration types, validation logic, environment variable loading,
@@ -10,6 +11,7 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::config::*;
 use std::env;
 
@@ -17,6 +19,7 @@ use std::env;
 // Provider Tests - Test all provider variants
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_all_provider_variants() {
     // Arrange + Act + Assert
@@ -36,6 +39,7 @@ fn test_all_provider_variants() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_provider_env_var_names() {
     // Arrange + Act + Assert
@@ -49,6 +53,7 @@ fn test_provider_env_var_names() {
     assert_eq!(Provider::Ollama.env_var_name(), "OLLAMA_HOST");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_provider_default_endpoints() {
     // Arrange + Act + Assert
@@ -57,6 +62,7 @@ fn test_provider_default_endpoints() {
     assert_eq!(Provider::Anthropic.default_endpoint(), None);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_provider_serialization() {
     // Arrange
@@ -70,6 +76,7 @@ fn test_provider_serialization() {
     assert_eq!(json.unwrap(), r#""anthropic""#);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_provider_deserialization() {
     // Arrange
@@ -87,6 +94,7 @@ fn test_provider_deserialization() {
 // Model Tests - Test all model variants and methods
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_providers() {
     // Arrange
@@ -102,6 +110,7 @@ fn test_model_providers() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_openai_model_ids() {
     // Arrange + Act + Assert
@@ -110,6 +119,7 @@ fn test_openai_model_ids() {
     assert_eq!(Model::OpenAI(OpenAIModel::Gpt35Turbo).model_id(), "gpt-3.5-turbo");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_anthropic_model_ids() {
     // Arrange + Act + Assert
@@ -124,6 +134,7 @@ fn test_anthropic_model_ids() {
     );
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_gemini_model_ids() {
     // Arrange + Act + Assert
@@ -131,6 +142,7 @@ fn test_gemini_model_ids() {
     assert_eq!(Model::Gemini(GeminiModel::Gemini15Flash).model_id(), "gemini-1.5-flash");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_custom_model() {
     // Arrange
@@ -145,6 +157,7 @@ fn test_custom_model() {
     assert_eq!(model.provider(), Provider::OpenAI); // Default for custom
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_max_tokens() {
     // Arrange + Act + Assert
@@ -159,6 +172,7 @@ fn test_model_max_tokens() {
 // ModelConfig Tests - Test configuration builder and validation
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_defaults() {
     // Arrange + Act
@@ -171,6 +185,7 @@ fn test_model_config_defaults() {
     assert!(matches!(config.model, Model::Anthropic(AnthropicModel::Claude3Sonnet)));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_new() {
     // Arrange
@@ -184,6 +199,7 @@ fn test_model_config_new() {
     assert_eq!(config.temperature, 0.7);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_with_temperature() {
     // Arrange + Act
@@ -193,6 +209,7 @@ fn test_model_config_with_temperature() {
     assert_eq!(config.temperature, 0.5);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_temperature_clamping_upper_bound() {
     // Arrange + Act
@@ -202,6 +219,7 @@ fn test_model_config_temperature_clamping_upper_bound() {
     assert_eq!(config.temperature, 2.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_temperature_clamping_lower_bound() {
     // Arrange + Act
@@ -211,6 +229,7 @@ fn test_model_config_temperature_clamping_lower_bound() {
     assert_eq!(config.temperature, 0.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_with_top_p() {
     // Arrange + Act
@@ -220,6 +239,7 @@ fn test_model_config_with_top_p() {
     assert_eq!(config.top_p, 0.9);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_top_p_clamping_upper() {
     // Arrange + Act
@@ -229,6 +249,7 @@ fn test_model_config_top_p_clamping_upper() {
     assert_eq!(config.top_p, 1.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_top_p_clamping_lower() {
     // Arrange + Act
@@ -238,6 +259,7 @@ fn test_model_config_top_p_clamping_lower() {
     assert_eq!(config.top_p, 0.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_with_max_tokens() {
     // Arrange + Act
@@ -247,6 +269,7 @@ fn test_model_config_with_max_tokens() {
     assert_eq!(config.max_response_tokens, 2048);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_validation_success() {
     // Arrange
@@ -259,6 +282,7 @@ fn test_model_config_validation_success() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_validation_exceeds_token_limit() {
     // Arrange
@@ -273,6 +297,7 @@ fn test_model_config_validation_exceeds_token_limit() {
     assert!(matches!(err, clap_noun_verb::wizard::error::WizardError::TokenLimit { .. }));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_validation_at_exact_limit() {
     // Arrange
@@ -285,6 +310,7 @@ fn test_model_config_validation_at_exact_limit() {
     assert!(result.is_ok());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_chained_builder() {
     // Arrange + Act
@@ -303,6 +329,7 @@ fn test_model_config_chained_builder() {
 // WizardConfig Tests - Test complete configuration
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_default() {
     // Arrange + Act
@@ -313,6 +340,7 @@ fn test_wizard_config_default() {
     assert!(config.endpoint.is_none());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_new() {
     // Arrange
@@ -325,6 +353,7 @@ fn test_wizard_config_new() {
     assert_eq!(config.model_config.model, model);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_validation_missing_api_key() {
     // Arrange
@@ -338,6 +367,7 @@ fn test_wizard_config_validation_missing_api_key() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_validation_ollama_no_api_key() {
     // Arrange
@@ -355,6 +385,7 @@ fn test_wizard_config_validation_ollama_no_api_key() {
     assert!(config.api_key.is_none());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_config_with_api_key() {
     // Arrange
@@ -372,6 +403,7 @@ fn test_wizard_config_with_api_key() {
 // WizardConfig::from_env() Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_env_with_anthropic_key() {
     // Arrange
@@ -391,6 +423,7 @@ fn test_from_env_with_anthropic_key() {
     env::remove_var("ANTHROPIC_API_KEY");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_env_missing_api_key() {
     // Arrange
@@ -405,6 +438,7 @@ fn test_from_env_missing_api_key() {
     assert!(result.is_err());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_env_with_wizard_model() {
     // Arrange
@@ -429,6 +463,7 @@ fn test_from_env_with_wizard_model() {
 // Model String Parsing Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_parse_model_string_openai() {
     // Arrange
@@ -450,6 +485,7 @@ fn test_parse_model_string_openai() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_parse_model_string_anthropic() {
     // Arrange
@@ -469,6 +505,7 @@ fn test_parse_model_string_anthropic() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_parse_model_string_custom() {
     // Arrange
@@ -484,6 +521,7 @@ fn test_parse_model_string_custom() {
     env::remove_var("WIZARD_MODEL");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_parse_model_string_invalid() {
     // Arrange - malformed model string
@@ -503,6 +541,7 @@ fn test_parse_model_string_invalid() {
 // Serialization Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_serialization() {
     // Arrange
@@ -521,6 +560,7 @@ fn test_model_config_serialization() {
     assert!(json_str.contains("0.8"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_model_config_deserialization() {
     // Arrange
@@ -545,6 +585,7 @@ fn test_model_config_deserialization() {
 // Boundary Value Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_temperature_boundary_values() {
     // Arrange + Act + Assert
@@ -558,6 +599,7 @@ fn test_temperature_boundary_values() {
     assert_eq!(config_two.temperature, 2.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_top_p_boundary_values() {
     // Arrange + Act + Assert
@@ -568,6 +610,7 @@ fn test_top_p_boundary_values() {
     assert_eq!(config_one.top_p, 1.0);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_max_tokens_boundary_values() {
     // Arrange + Act

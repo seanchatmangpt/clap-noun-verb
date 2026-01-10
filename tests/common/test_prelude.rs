@@ -174,14 +174,14 @@ impl<T> TestOptionExt<T> for Option<T> {
     #[track_caller]
     fn test_unwrap(self) -> T {
         match self {
-            Some(_v) => v,
+            Some(v) => v,
             None => panic!("[TEST ASSERTION FAILED] Option was None"),
         }
     }
     #[track_caller]
     fn test_some(self, msg: &str) -> T {
         match self {
-            Some(_v) => v,
+            Some(v) => v,
             None => panic!("[TEST ASSERTION FAILED] {}: Option was None", msg),
         }
     }
@@ -269,10 +269,7 @@ macro_rules! test_none {
 /// ```rust
 /// use tests::common::test_prelude::*;
 /// ```
-pub mod prelude {
-    pub use super::{};
-    pub use crate::{};
-}
+pub mod prelude {}
 // ============================================================================
 // DOCUMENTATION & EXAMPLES
 // ============================================================================

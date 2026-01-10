@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Rate Limit Tests for Wizard v2
 //!
 //! Tests token bucket correctness, burst handling, concurrent rate limiting,
@@ -7,14 +8,17 @@
 //! Note: These tests verify rate limiting behavior patterns.
 //! Actual rate limiting implementation may be provider-specific.
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{ModelConfig, Prompt, WizardSession};
 use std::time::{Duration, Instant};
+#[cfg(feature = "wizard")]
 use tokio::time::sleep;
 
 // =============================================================================
 // TOKEN BUCKET CORRECTNESS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_request_pacing() {
     // Arrange: Test request pacing behavior
@@ -35,6 +39,7 @@ async fn test_request_pacing() {
     assert!(duration >= expected_min, "Pacing should enforce minimum intervals");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_rate_limit_token_replenishment() {
     // Arrange: Simulate token bucket replenishment
@@ -86,6 +91,7 @@ async fn test_rate_limit_token_replenishment() {
 // BURST HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_burst_request_handling() {
     // Arrange: Burst of requests
@@ -114,6 +120,7 @@ async fn test_burst_request_handling() {
     assert!(duration < Duration::from_secs(1), "Burst should complete quickly with parallelism");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_burst_capacity_limits() {
     // Arrange: Model config with token limits
@@ -128,6 +135,7 @@ fn test_burst_capacity_limits() {
 // CONCURRENT RATE LIMITING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_concurrent_request_fairness() {
     // Arrange: Multiple concurrent sessions
@@ -165,6 +173,7 @@ async fn test_concurrent_request_fairness() {
 // LIMIT RESET BEHAVIOR
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_rate_limit_window_reset() {
     // Arrange: Simulate rate limit window
@@ -215,6 +224,7 @@ async fn test_rate_limit_window_reset() {
 // FAIRNESS VERIFICATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_fair_request_distribution() {
     // Arrange: Multiple clients making requests
@@ -257,6 +267,7 @@ async fn test_fair_request_distribution() {
 // OVERHEAD MEASUREMENT
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limiting_overhead() {
     // Arrange: Measure prompt creation overhead
@@ -283,6 +294,7 @@ fn test_rate_limiting_overhead() {
 // BACKPRESSURE HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_backpressure_with_queue_limit() {
     // Arrange: Simulate queue with limited capacity
@@ -316,6 +328,7 @@ async fn test_backpressure_with_queue_limit() {
 // ADAPTIVE RATE LIMITING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_adaptive_rate_adjustment() {
     // Arrange: Simulate adaptive rate limiter
@@ -373,6 +386,7 @@ async fn test_adaptive_rate_adjustment() {
 // PERFORMANCE UNDER RATE LIMITS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_throughput_under_rate_limit() {
     // Arrange: Measure throughput with rate limiting
@@ -402,6 +416,7 @@ async fn test_throughput_under_rate_limit() {
 // ERROR HANDLING WITH RATE LIMITS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_rate_limit_error_representation() {
     // Arrange: Test how rate limit errors are represented
@@ -412,6 +427,7 @@ fn test_rate_limit_error_representation() {
     assert!(true, "Rate limit errors should be representable in WizardError");
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_after_rate_limit() {
     // Arrange: Simulate rate limit with retry

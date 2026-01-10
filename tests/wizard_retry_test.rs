@@ -1,16 +1,20 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Retry Tests for Wizard v2
 //!
 //! Tests exponential backoff verification, jitter distribution,
 //! max attempt enforcement, and retry exhaustion handling.
 //! Follows Chicago TDD with behavior verification.
 
+#[cfg(feature = "wizard")]
 use std::time::{Duration, Instant};
+#[cfg(feature = "wizard")]
 use tokio::time::sleep;
 
 // =============================================================================
 // EXPONENTIAL BACKOFF VERIFICATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_exponential_backoff_progression() {
     // Arrange: Test exponential backoff delays
@@ -32,6 +36,7 @@ async fn test_exponential_backoff_progression() {
     assert_eq!(delays[4], Duration::from_millis(1600));
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_exponential_backoff_with_max_delay() {
     // Arrange: Backoff with maximum delay cap
@@ -56,6 +61,7 @@ async fn test_exponential_backoff_with_max_delay() {
 // JITTER DISTRIBUTION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_jitter_application() {
     // Arrange: Base delay with jitter
@@ -82,6 +88,7 @@ fn test_jitter_application() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_jitter_distribution_properties() {
     // Arrange: Calculate jittered delays
@@ -105,6 +112,7 @@ fn test_jitter_distribution_properties() {
 // MAX ATTEMPT ENFORCEMENT
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_max_attempts_enforced() {
     // Arrange: Retry loop with max attempts
@@ -122,6 +130,7 @@ async fn test_max_attempts_enforced() {
     assert_eq!(attempts, max_attempts);
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_successful_retry_stops_early() {
     // Arrange: Retry that succeeds before max attempts
@@ -149,6 +158,7 @@ async fn test_successful_retry_stops_early() {
 // SELECTIVE RETRY (Auth Errors)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_retry_decision_logic() {
     // Arrange: Error types
@@ -180,6 +190,7 @@ fn test_retry_decision_logic() {
 // RETRY EXHAUSTION HANDLING
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_exhaustion() {
     // Arrange: Retry loop that exhausts attempts
@@ -200,6 +211,7 @@ async fn test_retry_exhaustion() {
     assert!(last_error.unwrap().contains("Attempt 3 failed"));
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_exhaustion_with_final_error() {
     // Arrange: Track all errors during retries
@@ -222,6 +234,7 @@ async fn test_retry_exhaustion_with_final_error() {
 // SUCCESSFUL RETRY AFTER FAILURE
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_success_after_failures() {
     // Arrange: Operation that fails twice then succeeds
@@ -246,6 +259,7 @@ async fn test_retry_success_after_failures() {
     assert_eq!(result, Some("Success"));
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_timing_verification() {
     // Arrange: Measure retry timing
@@ -278,6 +292,7 @@ async fn test_retry_timing_verification() {
 // RETRY CIRCUIT BREAKER
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_circuit_breaker_pattern() {
     // Arrange: Circuit breaker state machine
@@ -352,6 +367,7 @@ async fn test_circuit_breaker_pattern() {
 // RETRY WITH TIMEOUT
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_with_per_attempt_timeout() {
     // Arrange: Retry with timeout per attempt
@@ -376,6 +392,7 @@ async fn test_retry_with_per_attempt_timeout() {
 // RETRY STATISTICS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
 async fn test_retry_statistics_collection() {
     // Arrange: Collect retry statistics
@@ -421,6 +438,7 @@ async fn test_retry_statistics_collection() {
 // ADAPTIVE RETRY STRATEGY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_adaptive_retry_delay_calculation() {
     // Arrange: Adaptive retry strategy

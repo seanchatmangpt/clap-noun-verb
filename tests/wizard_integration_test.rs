@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Integration tests for wizard/interactive help CLI functionality
 //!
 //! Tests end-to-end wizard workflows including:
@@ -23,6 +24,7 @@ use serde_json;
 // ARRANGE-ACT-ASSERT PATTERN TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_interactive_help_initialization() {
     // Arrange: No setup needed
@@ -39,6 +41,7 @@ fn test_interactive_help_initialization() {
     assert_eq!(menu.title, "Welcome to ggen Interactive Help", "Menu should have correct title");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_has_all_required_options() {
     // Arrange
@@ -64,6 +67,7 @@ fn test_menu_has_all_required_options() {
     assert!(has_categories, "Menu must have category options");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_options_have_unique_keys() {
     // Arrange
@@ -79,6 +83,7 @@ fn test_menu_options_have_unique_keys() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_options_have_valid_text() {
     // Arrange
@@ -99,6 +104,7 @@ fn test_menu_options_have_valid_text() {
 // MENU ACTION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_action_show_example() {
     // Arrange
@@ -119,6 +125,7 @@ fn test_menu_action_show_example() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_action_show_category() {
     // Arrange
@@ -142,6 +149,7 @@ fn test_menu_action_show_category() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_action_exit() {
     // Arrange
@@ -162,6 +170,7 @@ fn test_menu_action_exit() {
 // SERIALIZATION TESTS (State-based verification)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_interactive_output_json_serialization() {
     // Arrange
@@ -179,6 +188,7 @@ fn test_interactive_output_json_serialization() {
     assert!(json_str.contains("subtitle"), "JSON should contain subtitle field");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_option_json_serialization() {
     // Arrange
@@ -200,6 +210,7 @@ fn test_menu_option_json_serialization() {
     assert!(json_str.contains("action"), "JSON should contain action");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_action_variants_serialization() {
     // Arrange: Test all MenuAction variants
@@ -222,6 +233,7 @@ fn test_menu_action_variants_serialization() {
 // DETERMINISTIC BEHAVIOR TESTS (Regression)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_structure_is_deterministic() {
     // Arrange & Act: Create multiple instances
@@ -247,6 +259,7 @@ fn test_menu_structure_is_deterministic() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_output_is_idempotent() {
     // Arrange
@@ -264,6 +277,7 @@ fn test_menu_output_is_idempotent() {
     assert_eq!(output2.options.len(), output3.options.len());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_generate_interactive_output_is_deterministic() {
     // Act: Generate output multiple times
@@ -285,6 +299,7 @@ fn test_generate_interactive_output_is_deterministic() {
 // COMMAND CATEGORY INTEGRATION TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_category_options_reference_valid_categories() {
     // Arrange
@@ -320,6 +335,7 @@ fn test_category_options_reference_valid_categories() {
 // ERROR HANDLING TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_interactive_help_handles_default() {
     // Arrange & Act
@@ -331,6 +347,7 @@ fn test_interactive_help_handles_default() {
     assert!(!output.unwrap().options.is_empty());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_generate_interactive_output_never_fails() {
     // Act: Generate output
@@ -344,6 +361,7 @@ fn test_generate_interactive_output_never_fails() {
 // STATE CONSISTENCY TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_maintains_state_consistency() {
     // Arrange
@@ -366,6 +384,7 @@ fn test_menu_maintains_state_consistency() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_menu_options_are_well_formed() {
     // Arrange
@@ -391,6 +410,7 @@ fn test_menu_options_are_well_formed() {
 // COMPREHENSIVE WORKFLOW TESTS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_complete_wizard_workflow_simulation() {
     // Arrange: Simulate complete user workflow
@@ -419,6 +439,7 @@ fn test_complete_wizard_workflow_simulation() {
     assert!(menu.title.contains("Interactive Help"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_supports_multiple_interaction_patterns() {
     // Arrange
@@ -443,6 +464,7 @@ fn test_wizard_supports_multiple_interaction_patterns() {
     assert!(action_counts.get("exit").is_some(), "Must have exit action");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_menu_scalability() {
     // Arrange

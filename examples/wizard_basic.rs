@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Basic wizard usage example
 //!
 //! Demonstrates simple wizard configuration and single prompt execution.
@@ -7,6 +8,7 @@
 //! cargo run --example wizard_basic
 //! ```
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{WizardBuilder, WizardConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

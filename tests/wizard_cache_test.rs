@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Cache Tests for Wizard v2
 //!
 //! Tests cache hit/miss verification, TTL expiration, concurrent access,
@@ -8,6 +9,7 @@
 
 #![cfg(feature = "caching")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{GenAiClient, ModelConfig, Prompt, WizardConfig};
 use std::time::Duration;
 
@@ -15,7 +17,9 @@ use std::time::Duration;
 // CACHE HIT/MISS VERIFICATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires API credentials and caching feature
 async fn test_cache_miss_on_first_request() {
     // Arrange: Create client with caching enabled
@@ -32,7 +36,9 @@ async fn test_cache_miss_on_first_request() {
     assert!(!response.metadata.from_cache);
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires API credentials and caching feature
 async fn test_cache_hit_on_duplicate_request() {
     // Arrange: Create client with caching
@@ -55,6 +61,7 @@ async fn test_cache_hit_on_duplicate_request() {
     assert_eq!(response1.content, response2.content);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_disabled_by_default() {
     // Arrange: Create config without enabling cache
@@ -68,6 +75,7 @@ fn test_cache_disabled_by_default() {
 // CACHE KEY GENERATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_identical_prompts_same_cache_key() {
     // Arrange: Two identical prompts
@@ -81,6 +89,7 @@ fn test_identical_prompts_same_cache_key() {
     assert_eq!(prompt1.history.len(), prompt2.history.len());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_different_prompts_different_cache_keys() {
     // Arrange: Different prompts
@@ -100,7 +109,9 @@ fn test_different_prompts_different_cache_keys() {
 // TTL EXPIRATION (if implemented)
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires TTL implementation and time control
 async fn test_cache_entry_expiration() {
     // Note: This test would require TTL support in the cache
@@ -118,6 +129,7 @@ async fn test_cache_entry_expiration() {
 // CONCURRENT CACHE ACCESS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_concurrent_prompt_creation() {
     // Arrange: Create many prompts concurrently
@@ -147,7 +159,9 @@ fn test_concurrent_prompt_creation() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires caching feature and API access
 async fn test_concurrent_cache_access_thread_safety() {
     // Arrange: Client with caching
@@ -180,7 +194,9 @@ async fn test_concurrent_cache_access_thread_safety() {
 // CACHE EVICTION POLICIES
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires caching feature
 async fn test_cache_eviction_lru() {
     // Arrange: Client with small cache (100 entries as default)
@@ -205,7 +221,9 @@ async fn test_cache_eviction_lru() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires caching feature
 async fn test_cache_clear() {
     // Arrange: Client with cached entries
@@ -233,6 +251,7 @@ async fn test_cache_clear() {
 // CACHE CORRUPTION RECOVERY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_consistency_for_caching() {
     // Arrange: Create prompt
@@ -256,6 +275,7 @@ fn test_prompt_consistency_for_caching() {
 // MEMORY EFFICIENCY
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_memory_footprint() {
     // Arrange: Create various prompts
@@ -271,6 +291,7 @@ fn test_prompt_memory_footprint() {
     assert_eq!(sizes[2], 10000);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_memory_efficiency_with_duplicates() {
     // Arrange: Many identical prompts
@@ -292,7 +313,9 @@ fn test_cache_memory_efficiency_with_duplicates() {
 // CACHE STATISTICS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires caching feature
 async fn test_cache_statistics_tracking() {
     // Arrange: Client with caching
@@ -321,6 +344,7 @@ async fn test_cache_statistics_tracking() {
 // CACHE WARMUP
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_cache_warmup_with_common_prompts() {
     // Arrange: List of common prompts for warmup
@@ -343,7 +367,9 @@ fn test_cache_warmup_with_common_prompts() {
 // CACHE INVALIDATION
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[tokio::test]
+#[cfg(feature = "wizard")]
 #[ignore] // Requires caching feature
 async fn test_cache_invalidation_on_config_change() {
     // Arrange: Client with caching
@@ -370,6 +396,7 @@ async fn test_cache_invalidation_on_config_change() {
 // PROMPT VARIATIONS
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_history_affects_cache() {
     // Arrange: Same prompt with different history
@@ -386,6 +413,7 @@ fn test_prompt_with_history_affects_cache() {
     assert_ne!(prompt1.history.len(), prompt2.history.len());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_prompt_with_system_affects_cache() {
     // Arrange: Same prompt with different system messages

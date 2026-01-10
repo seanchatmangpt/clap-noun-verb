@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "wizard"), allow(dead_code))]
 //! Comprehensive error handling tests for wizard module
 //!
 //! Tests all WizardError variants, error conversions, Display implementations,
@@ -10,6 +11,7 @@
 
 #![cfg(feature = "wizard")]
 
+#[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::error::{WizardError, WizardResult};
 use std::io;
 
@@ -17,6 +19,7 @@ use std::io;
 // Error Variant Tests - Verify all error types can be constructed
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_client_error_variant() {
     // Arrange
@@ -31,6 +34,7 @@ fn test_client_error_variant() {
     assert!(format!("{}", error).contains(message));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_invalid_state_transition_variant() {
     // Arrange
@@ -48,6 +52,7 @@ fn test_invalid_state_transition_variant() {
     assert!(display.contains(&to));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_invalid_prompt_variant() {
     // Arrange
@@ -62,6 +67,7 @@ fn test_invalid_prompt_variant() {
     assert!(format!("{}", error).contains(reason));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_session_not_initialized_variant() {
     // Arrange + Act
@@ -72,6 +78,7 @@ fn test_session_not_initialized_variant() {
     assert_eq!(format!("{}", error), "Wizard session not initialized");
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_config_error_variant() {
     // Arrange
@@ -86,6 +93,7 @@ fn test_config_error_variant() {
     assert!(format!("{}", error).contains(message));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_config_short_form_variant() {
     // Arrange
@@ -99,6 +107,7 @@ fn test_config_short_form_variant() {
     assert!(format!("{}", error).contains("Configuration error"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_io_error_variant() {
     // Arrange
@@ -113,6 +122,7 @@ fn test_io_error_variant() {
     assert!(format!("{}", error).contains("file not found"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_io_short_form_variant() {
     // Arrange
@@ -126,6 +136,7 @@ fn test_io_short_form_variant() {
     assert!(format!("{}", error).contains("I/O error"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_serde_error_variant() {
     // Arrange
@@ -139,6 +150,7 @@ fn test_serde_error_variant() {
     assert!(format!("{}", error).contains("Serialization error"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_json_short_form_variant() {
     // Arrange
@@ -151,6 +163,7 @@ fn test_json_short_form_variant() {
     assert!(matches!(error, WizardError::Json(_)));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_env_var_error_variant() {
     // Arrange
@@ -164,6 +177,7 @@ fn test_env_var_error_variant() {
     assert!(format!("{}", error).contains("Environment variable error"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_request_error_variant() {
     // Arrange
@@ -178,6 +192,7 @@ fn test_request_error_variant() {
     assert!(format!("{}", error).contains(message));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_parse_error_variant() {
     // Arrange
@@ -192,6 +207,7 @@ fn test_parse_error_variant() {
     assert!(format!("{}", error).contains(message));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_token_limit_variant() {
     // Arrange
@@ -209,6 +225,7 @@ fn test_token_limit_variant() {
     assert!(display.contains(&max.to_string()));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_other_error_variant() {
     // Arrange
@@ -226,6 +243,7 @@ fn test_other_error_variant() {
 // Error Conversion Tests - Test From trait implementations
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_io_error_conversion() {
     // Arrange
@@ -238,6 +256,7 @@ fn test_from_io_error_conversion() {
     assert!(matches!(wizard_err, WizardError::IoError(_)));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_serde_json_error_conversion() {
     // Arrange
@@ -250,6 +269,7 @@ fn test_from_serde_json_error_conversion() {
     assert!(matches!(wizard_err, WizardError::SerdeError(_)));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_from_env_var_error_conversion() {
     // Arrange
@@ -266,6 +286,7 @@ fn test_from_env_var_error_conversion() {
 // Error Source Tests - Test std::error::Error::source()
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_source_for_io_error() {
     // Arrange
@@ -279,6 +300,7 @@ fn test_error_source_for_io_error() {
     assert!(source.is_some());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_source_for_serde_error() {
     // Arrange
@@ -292,6 +314,7 @@ fn test_error_source_for_serde_error() {
     assert!(source.is_some());
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_source_for_simple_variants() {
     // Arrange
@@ -308,6 +331,7 @@ fn test_error_source_for_simple_variants() {
 // Display Formatting Tests - Verify error messages are user-friendly
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_display_format_consistency() {
     // Arrange
@@ -328,6 +352,7 @@ fn test_display_format_consistency() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_debug_format() {
     // Arrange
@@ -345,6 +370,7 @@ fn test_debug_format() {
 // Result Type Tests - Test WizardResult<T> usage
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_result_ok() {
     // Arrange
@@ -358,6 +384,7 @@ fn test_wizard_result_ok() {
     assert_eq!(result.unwrap(), value);
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_wizard_result_err() {
     // Arrange
@@ -375,6 +402,7 @@ fn test_wizard_result_err() {
 // Error Propagation Tests - Test ? operator usage
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_propagation_with_question_mark() {
     // Arrange
@@ -395,6 +423,7 @@ fn test_error_propagation_with_question_mark() {
     assert!(matches!(result.unwrap_err(), WizardError::InvalidPrompt(_)));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_io_error_propagation() {
     // Arrange
@@ -416,6 +445,7 @@ fn test_io_error_propagation() {
 // Edge Case Tests
 // =============================================================================
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_empty_error_messages() {
     // Arrange + Act
@@ -432,6 +462,7 @@ fn test_empty_error_messages() {
     }
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_very_long_error_messages() {
     // Arrange
@@ -445,6 +476,7 @@ fn test_very_long_error_messages() {
     assert!(display.contains(&long_message));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_token_limit_zero_values() {
     // Arrange + Act
@@ -455,6 +487,7 @@ fn test_token_limit_zero_values() {
     assert!(display.contains("0"));
 }
 
+#[cfg(feature = "wizard")]
 #[test]
 fn test_error_equality_not_implemented() {
     // Note: WizardError does not implement PartialEq by design
