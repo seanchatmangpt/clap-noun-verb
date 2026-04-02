@@ -9,7 +9,7 @@ The wrapper type that provides CLI argument access to verb handlers.
 **Signature**:
 ```rust
 pub struct HandlerInput {
-    pub args: clap::ArgMatches,
+    pub args: clap_noun_verb::ArgMatches,  // Re-exported from clap
     pub context: Option<AppContext>,
 }
 ```

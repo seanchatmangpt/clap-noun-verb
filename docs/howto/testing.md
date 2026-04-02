@@ -375,6 +375,6 @@ cargo test --test '*'
 ---
 
 **Related**:
-- [Tutorial 3: Generate Your First CLI](../tutorials/tutorial-3-first-cli.md)
-- [How-to: Validate Ontologies](validation.md)
-- [How-to: Debug RDF Issues](debugging.md)
+- [Tutorial 03: Adding Commands](../tutorial/03-adding-commands.md)
+- [How-to: Validation](validation.md)
+- [How-to: Debugging](debugging.md)

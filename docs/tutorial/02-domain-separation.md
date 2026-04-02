@@ -448,7 +448,7 @@ fn process_order(
 
 - **[Tutorial 03: Adding Commands](03-adding-commands.md)** - Command patterns and organization
 - **[Tutorial 04: Testing Basics](04-testing-basics.md)** - Chicago TDD for domain logic
-- **[Explanation: Domain Separation](../explanation/architecture/domain-separation.md)** - Philosophy deep dive
+- **[Explanation: Architecture](../explanation/architecture.md)** - System architecture overview
 
 **Estimated time to next tutorial:** 15 minutes
 

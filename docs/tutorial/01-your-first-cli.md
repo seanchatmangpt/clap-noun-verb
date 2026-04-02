@@ -31,8 +31,8 @@ Add dependencies to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.2"
-clap-noun-verb-macros = "5.2"
+clap-noun-verb = "5.6"
+clap-noun-verb-macros = "5.6"
 serde = { version = "1.0", features = ["derive"] }
 ```
 

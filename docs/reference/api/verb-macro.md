@@ -104,12 +104,13 @@ $ myapp config set log_level info
 /// # Arguments
 /// * `username` - User login name
 /// * `email` - User email address
-#[noun("user", "User management")]
 #[verb("create")]
 fn create_user(username: String, email: String) -> Result<UserId> {
     Ok(UserId(1))
 }
 ```
+
+> **Note:** The `#[noun]` macro was deprecated in v5.6.0. Nouns are now auto-detected from the filename.
 
 ## Return Type
 
@@ -216,18 +217,18 @@ async fn fetch_data(url: String) -> Result<Data> {
 ## Advanced: Multiple Verbs Under One Noun
 
 ```rust
-#[noun("database", "Database operations")]
+// In database.rs file - noun auto-detected as "database"
 #[verb("create")]
 fn db_create(name: String) -> Result<DatabaseId> { }
 
-#[noun("database", "Database operations")]
 #[verb("drop")]
 fn db_drop(name: String) -> Result<Output> { }
 
-#[noun("database", "Database operations")]
 #[verb("list")]
 fn db_list() -> Result<Vec<Database>> { }
 ```
+
+> **Note:** In v5.6.0+, nouns are auto-detected from the filename. Put all verbs for a noun in the same file (e.g., `database.rs` → noun "database").
 
 ## See Also
 
