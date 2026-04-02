@@ -34,7 +34,7 @@ pub use interactive::{InteractiveHelp, InteractiveOutput};
 /// Auto-run CLI with all registered commands
 ///
 /// This function automatically discovers all functions marked with
-/// `#[noun]` and `#[verb]` attributes and runs the CLI.
+/// `#[verb]` attributes and runs the CLI.
 ///
 /// These attribute macros are provided by the `clap-noun-verb-macros` crate.
 pub fn run() -> crate::error::Result<()> {

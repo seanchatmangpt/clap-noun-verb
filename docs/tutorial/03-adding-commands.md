@@ -4,6 +4,10 @@
 **Time:** 20 minutes
 **Prerequisites:** [Tutorial 02: Domain Separation](02-domain-separation.md)
 
+> **v5.6.0 Update**: `#[noun]` is deprecated. Nouns are auto-detected from filename.
+> `#[arg]` on parameters still works, but documentation style (`# Arguments` with tags) is preferred.
+> See `playground/src/commands/` for reference examples.
+
 ---
 
 ## What You'll Learn
@@ -12,15 +16,15 @@ How to organize commands in clap-noun-verb:
 - Auto-discovery of nouns and verbs
 - Explicit noun/verb specification
 - Command grouping patterns
-- Argument attributes (Phase 2 tags)
+- Doc comment argument tags
 
 ---
 
 ## Auto-Discovery: The Magic
 
 clap-noun-verb automatically discovers commands from:
-1. **Module names** → Nouns
-2. **Function names** → Verbs
+1. **File names** → Nouns (e.g., `config.rs` → noun "config")
+2. **Function `#[verb]` attributes** → Verbs
 
 ### Example: File-Based Discovery
 
@@ -33,18 +37,22 @@ src/
 ```
 
 ```rust
-// commands/services.rs - Module name becomes noun
+// commands/services.rs - Filename becomes noun
 use clap_noun_verb_macros::verb;
+
+//! Service management commands
 
 #[verb] // Auto-discovered as "services status"
 pub fn show_status() -> Result<ServiceStatus, Box<dyn std::error::Error>> {
     // ...
 }
 
+/// Restart a service
+///
+/// # Arguments
+/// * `name` - Service name
 #[verb] // Auto-discovered as "services restart"
-pub fn restart(
-    #[arg(help = "Service name")] name: String,
-) -> Result<RestartResult, Box<dyn std::error::Error>> {
+pub fn restart(name: String) -> Result<RestartResult, Box<dyn std::error::Error>> {
     // ...
 }
 ```
@@ -64,9 +72,13 @@ Sometimes you need explicit control over nouns and verbs:
 ### Explicit Verb Names
 
 ```rust
+/// Show service logs
+///
+/// # Arguments
+/// * `service` - Service name
 #[verb("logs")] // Explicit verb name (function name doesn't matter)
 pub fn show_service_logs(
-    #[arg(help = "Service name")] service: String,
+    service: String,
 ) -> Result<LogsOutput, Box<dyn std::error::Error>> {
     // ...
 }
@@ -477,9 +489,9 @@ commands/
 
 ## Key Takeaways
 
-✅ **Auto-discovery** - Module names → nouns, function names → verbs
-✅ **Explicit control** - Override nouns/verbs when needed
-✅ **Phase 2 tags** - 10 argument attributes for rich CLIs
+✅ **Auto-discovery** - Filename → noun, `#[verb]` → verb
+✅ **Explicit control** - Override nouns/verbs when filename doesn't match
+✅ **Doc comment tags** - `[default:]`, `[env:]`, `[value_hint:]`, `[group:]`, etc.
 ✅ **Organized structure** - Group commands by resource or action
 ✅ **Type-safe** - Compile-time validation of all attributes
 
@@ -496,20 +508,20 @@ commands/
 
 ---
 
-## Quick Reference: Phase 2 Tags
+## Quick Reference: Doc Comment Tags
 
 | Tag | Purpose | Example |
 |-----|---------|---------|
-| `help` | Argument description | `#[arg(help = "Port number")]` |
-| `default` | Default value | `#[arg(default = "8080")]` |
-| `env` | Environment variable | `#[arg(env = "PORT")]` |
-| `value_hint` | Shell completion | `#[arg(value_hint = "file_path")]` |
-| `requires` | Dependency | `#[arg(requires = "verbose")]` |
-| `conflicts` | Mutual exclusion | `#[arg(conflicts = "json")]` |
-| `group` | Argument group | `#[arg(group = "auth")]` |
-| `hide` | Hide from help | `#[arg(hide)]` |
-| `help_heading` | Group in help | `#[arg(help_heading = "Database")]` |
-| `global` | Global argument | `#[arg(global)]` |
+| `[default: value]` | Default value | `* \`port\` - Port [default: 8080]` |
+| `[env: VAR]` | Environment variable | `* \`port\` - Port [env: PORT]` |
+| `[value_hint: Type]` | Shell completion | `* \`file\` - File [value_hint: FilePath]` |
+| `[requires: arg]` | Dependency | `* \`log\` - Log file [requires: verbose]` |
+| `[conflicts: arg]` | Mutual exclusion | `* \`json\` - JSON [conflicts: yaml]` |
+| `[group: name]` | Argument group | `* \`json\` - JSON [group: format]` |
+| `[hide]` | Hide from help | `* \`debug\` - Debug [hide]` |
+| `[help_heading: name]` | Group in help | `* \`host\` - Host [help_heading: Database]` |
+| `[global]` | Global argument | `* \`format\` - Format [global]` |
+| `[exclusive]` | Exclusive arg | `* \`version\` - Check version [exclusive]` |
 
 ---
 

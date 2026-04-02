@@ -5,11 +5,27 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.1] - 2026-04-02
+
+### Changed
+
+- **Documentation and examples migrated to pure documentation style** — All 7 example files updated to remove `#[noun]` attributes and migrate `#[arg]` parameter attributes to doc comment tags (`[default:]`, `[env:]`, `[value_hint:]`).
+- **Source code comments updated** — Removed `#[noun]` references from inline doc comments in `src/lib.rs`, `src/cli/mod.rs`, `src/cli/registry.rs`, `src/io/types.rs`.
+- **Code generator updated** — `src/rdf/code_generator.rs` no longer emits `#[noun(...)]` in generated code.
+- **Tutorial docs updated** — `01-your-first-cli.md`, `03-adding-commands.md`, `tutorial-3-first-cli.md` converted to doc comment style.
+- **API reference updated** — `noun-macro.md` deprecation notice, `verb-macro.md` examples, `api-catalog.md` noun section updated.
+- **Playground version bumped** — `playground/src/main.rs` updated to reference v5.6.0, module doc comment cleaned.
+
+### Added
+
+- **Deprecation notices** to `noun-macro.md`, `attribute-macro-api.md` (archive) with migration examples showing the target documentation style.
+
 ## [5.6.0] - 2026-04-02
 
 ### Changed
 
 - **`#[noun]` attribute deprecated** — Nouns are now auto-detected from filename and module doc comments (`//!`). The `#[noun("name", "about")]` attribute is a no-op; remove it from your code.
+- **`#[arg]` on items now emits compile error** — Applying `#[arg(...)]` to functions, structs, or other items is now a compile-time error with a helpful message pointing to correct usage (on parameters within `#[verb]` functions, or doc comment tags like `[default:]`, `[env:]`).
 - **Default output format is now `JsonPretty`** — Previously `Json` (compact), now defaults to pretty-printed JSON for better readability.
 - **YAML output no longer requires `config-formats` feature** — Built-in YAML serialization via `serde_json`-to-YAML converter. No external `serde_yaml` dependency needed.
 - **TOML output format removed** — Replaced by `Plain` format (key: value pairs). TOML required the `config-formats` feature and added unnecessary dependency weight.

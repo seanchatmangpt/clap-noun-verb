@@ -12,40 +12,26 @@
 
 ### Command Registration
 
-#### Noun Decorator
-```rust
-#[noun(name = "string")]
-fn function_name() -> ReturnType
-```
+#### Noun Decorator — DEPRECATED (v5.6.0)
 
-**Parameters:**
-- `name`: Command name (kebab-case, required)
-- `about`: Help text (optional)
-- `aliases`: Alternative names (optional)
-
-**Example:**
-```rust
-#[noun(name = "services")]
-fn services_command() -> Result<()> {
-    Ok(())
-}
-```
+> `#[noun]` is now a no-op. Nouns are auto-detected from filename + `//!` doc comments.
+> See `docs/reference/api/noun-macro.md` for migration guide.
 
 #### Verb Decorator
 ```rust
-#[verb(name = "string", noun = "parent")]
+#[verb("name")]                    // Noun auto-detected from filename
+#[verb("name", "noun")]            // Explicit noun (when filename doesn't match)
 fn function_name(args...) -> Result<T>
 ```
 
 **Parameters:**
-- `name`: Command name (kebab-case, required)
-- `noun`: Parent noun (required)
-- `about`: Help text (optional)
-- `aliases`: Alternative names (optional)
+- `name`: Command name (required)
+- `noun`: Parent noun (optional, auto-detected from filename)
 
 **Example:**
 ```rust
-#[verb(name = "status", noun = "services")]
+// In file: services.rs
+#[verb("status")]
 fn status_command() -> Result<()> {
     Ok(())
 }
@@ -278,31 +264,25 @@ pub type Result<T> = std::result::Result<T, NounVerbError>;
 
 ## Macro System
 
-### #[noun]
+### #[noun] — DEPRECATED (v5.6.0)
 
-**Signature:**
-```rust
-#[noun(
-    name = "string",        // Required: Command name (kebab-case)
-    about = "description",  // Optional: Help text
-    aliases = ["a", "b"],   // Optional: Alternative names
-)]
-fn handler() -> Result<T>
-```
-
-**Generated:**
-- Static `CommandRegistry` entry via `linkme`
-- `NounCommand` trait implementation
-- Help text integration
-- Automatic discovery at compile time
-
-**Example:**
-```rust
-#[noun(name = "services", about = "Manage services")]
-fn services() -> Result<()> {
-    Ok(())
-}
-```
+> `#[noun]` is now a no-op that emits a deprecation warning.
+> Nouns are auto-detected from filename (e.g., `services.rs` → noun "services")
+> and module doc comments (`//! Description`).
+>
+> **Migration:**
+> ```rust
+> // Before:
+> #[noun(name = "services", about = "Manage services")]
+> fn services() -> Result<()> { }
+>
+> // After:
+> //! Manage services
+> #[verb("list")]
+> fn list() -> Result<()> { }
+> ```
+>
+> See `docs/reference/api/noun-macro.md` for full migration guide.
 
 ### #[verb]
 
@@ -560,10 +540,8 @@ features = [
 
 **Define commands:**
 ```rust
-#[noun(name = "services")]
-fn services() -> Result<()> { Ok(()) }
-
-#[verb(name = "status", noun = "services")]
+// services.rs file
+#[verb("status")]
 fn status() -> Result<()> { Ok(()) }
 ```
 
@@ -639,11 +617,8 @@ fn main() -> Result<()> {
 ```rust
 use clap_noun_verb::run_cli;
 
-// Define commands with macros
-#[noun(name = "services")]
-fn services() -> Result<()> { Ok(()) }
-
-#[verb(name = "status", noun = "services")]
+// Define commands with macros (services.rs)
+#[verb("status")]
 fn status() -> Result<()> { Ok(()) }
 
 // Run with auto-discovery

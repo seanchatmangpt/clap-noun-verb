@@ -25,14 +25,14 @@
 //!
 //! ## Version 5.3.0 Architecture
 //!
-//! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[noun]` and `#[verb]` for declarative command registration
+//! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
 //! - **Type Inference** - Arguments automatically inferred from function signatures
 //! - **JSON Output** - All output automatically serialized to JSON
 //!
 //! ### Key Principles
 //!
-//! 1. **Zero Boilerplate** - Just add `#[noun]` and `#[verb]` attributes to functions
+//! 1. **Zero Boilerplate** - Just add `#[verb]` attributes to functions
 //! 2. **Auto-Discovery** - Commands automatically discovered at compile time
 //! 3. **Type Inference** - Arguments inferred from function signatures
 //! 4. **JSON by Default** - Perfect for agents, MCP, and modern tooling

@@ -90,34 +90,30 @@ The generator produces code like this:
 
 ```rust
 // Generated from your ontology
-#[noun("services", "Commands for managing services")]
-pub struct Services;
+//! Services management commands
 
-#[verb(Services, "status")]
+#[verb("status")]
 pub async fn status_service(args: &StatusArgs) -> Result<StatusResponse> {
     // Handler implementation
     Ok(StatusResponse::default())
 }
 
-#[verb(Services, "start")]
+#[verb("start")]
 pub async fn start_service(args: &StartArgs) -> Result<StartResponse> {
     // Handler implementation
     Ok(StartResponse::default())
 }
-
-// ... more verbs generated from your ontology
 ```
 
 ### What Each Macro Does
 
-**`#[noun(...)]`**: Defines a command category
-- First argument: command name (lowercase)
-- Second argument: description
-- Creates a struct representing the noun
+**`//! ...`**: Module doc comment becomes noun description
+- Placed at top of file
+- Describes what the noun/command category does
+- Auto-detected from filename
 
-**`#[verb(...)]`**: Defines a command under a noun
-- First argument: noun type
-- Second argument: command name
+**`#[verb("name")]`**: Defines a command under a noun
+- Argument: command name
 - Generates handler function with proper types
 
 ## Step 5: Create a Full CLI Example

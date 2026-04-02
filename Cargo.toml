@@ -154,7 +154,7 @@ tokio = ["async"]
 [dependencies]
 # CLI Framework (REQUIRED - this is what we wrap)
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb-macros = { version = "5.6.0", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "5.6.1", path = "clap-noun-verb-macros" }
 
 # Auto-discovery (REQUIRED - distributed slices for #[noun]/#[verb])
 linkme = "0.3"

@@ -1,5 +1,29 @@
 # Reference: #[noun] Macro
 
+> **DEPRECATED since v5.6.0** — `#[noun]` is now a no-op that emits a deprecation warning.
+> Nouns are auto-detected from the filename (e.g., `config.rs` → noun "config")
+> and module doc comments (`//! Description`).
+>
+> **Migration**:
+> ```rust
+> // Before (deprecated):
+> #[noun("config", "Application configuration")]
+> #[verb("set")]
+> fn set_config(key: String) -> Result<Output> { }
+>
+> // After (documentation style):
+> //! Application configuration
+> #[verb("set")]
+> fn set_config(key: String) -> Result<Output> { }
+> // Noun "config" auto-detected from filename
+> ```
+>
+> For files with multiple nouns or filename mismatches, use explicit noun syntax:
+> ```rust
+> #[verb("set", "config")]
+> fn set_config(key: String) -> Result<Output> { }
+> ```
+
 **File**: `clap-noun-verb-macros/src/lib.rs`
 
 ## Signature

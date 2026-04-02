@@ -1,7 +1,7 @@
 //! Type Detection Helpers for Macro Expansion
 //!
 //! Provides utilities for detecting I/O types in function signatures.
-//! Used by the #[verb] and #[noun] macros to auto-enhance parameters
+//! Used by the #[verb] macro to auto-enhance parameters
 //! with I/O handling capabilities.
 //!
 //! # Design

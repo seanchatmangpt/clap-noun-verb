@@ -7,7 +7,7 @@
 //! rather than by name (e.g., --flag value).
 
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Business Logic Layer (Pure Functions - Reusable)
@@ -49,8 +49,7 @@ fn clone_repository(url: String, destination: Option<String>) -> Repo {
 /// destination: Option<String>,
 /// ```
 /// This makes arguments positional (accessed by position rather than name).
-#[noun("git", "Git commands")]
-#[verb("clone")]
+#[verb("clone", "git")]
 fn clone_repo(
     // In v3.2.0: #[arg(index = 0)] - Repository URL (first positional argument)
     url: String,

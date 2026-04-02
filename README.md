@@ -74,7 +74,7 @@ For development: also add `clap-noun-verb-macros = "5.3"`
 ## 2-Minute Example
 
 ```rust
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use clap_noun_verb::Result;
 use serde::Serialize;
 
@@ -85,7 +85,8 @@ pub struct CalcResult { result: i32 }
 fn add(x: i32, y: i32) -> i32 { x + y }
 
 // CLI wrapper (thin, delegating)
-#[noun("calc", "Calculator")]
+//
+// Noun "calc" is auto-detected from the filename (e.g., calc.rs)
 #[verb("add")]
 fn cmd_add(x: i32, y: i32) -> Result<CalcResult> {
     Ok(CalcResult { result: add(x, y) })

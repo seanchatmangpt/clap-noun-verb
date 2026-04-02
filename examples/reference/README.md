@@ -7,7 +7,7 @@ These examples provide exhaustive coverage of clap-noun-verb APIs.
 ## Examples
 
 ### attribute_macro.rs - Complete Macro API
-**Comprehensive #[noun] and #[verb] macro demonstration**
+**Comprehensive #[verb] macro demonstration with doc comment syntax**
 
 ```bash
 cargo run --example ref_attribute_macro -- services status
@@ -15,9 +15,9 @@ cargo run --example ref_attribute_macro -- services logs api
 ```
 
 **Demonstrates:**
-- `#[noun("name", "about")]` - Full noun syntax
-- `#[verb("name")]` - Full verb syntax
-- Doc comment parsing for help text
+- `#[verb("name")]` - Verb syntax (noun auto-detected from filename)
+- `//!` doc comments - Module documentation
+- `# Arguments` - Doc comment argument tags (`[default:]`, `[env:]`, etc.)
 - Auto-discovery and registration
 
 ### framework.rs - Framework Integration

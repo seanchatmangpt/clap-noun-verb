@@ -194,8 +194,8 @@ fn generate_sparql_query(
 ///
 /// # Arguments
 /// * `description` - What to generate (required, -d/--description)
-/// * `model` - AI model to use (optional, defaults to gpt-4-turbo)
-/// * `output` - Output file path (optional, defaults to stdout)
+/// * `model` - AI model to use [default: gpt-4-turbo]
+/// * `output` - Output file path [default: stdout]
 ///
 /// # Examples
 /// ```bash
@@ -207,9 +207,9 @@ fn generate_sparql_query(
 /// ```
 #[verb("generate", "ai")]
 pub fn ai_generate(
-    #[arg(short, long)] description: String,
-    #[arg(short, long, default_value = "gpt-4-turbo")] model: String,
-    #[arg(short, long, default_value = "stdout")] output: String,
+    description: String,
+    model: String,
+    output: String,
 ) -> CnvResult<GenerateOutput> {
     // Validate inputs with user-friendly error messages
     let validated_prompt = validate_prompt(&description)
@@ -261,9 +261,9 @@ pub fn ai_generate(
 #[verb("project", "ai")]
 pub fn ai_project(
     name: String,
-    #[arg(short, long)] description: Option<String>,
-    #[arg(short, long, default_value = "gpt-4-turbo")] model: String,
-    #[arg(short, long)] template: Option<String>,
+    description: Option<String>,
+    model: String,
+    template: Option<String>,
 ) -> CnvResult<ProjectOutput> {
     // Validate model
     let validated_model = validate_model_name(&model)

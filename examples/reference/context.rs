@@ -5,7 +5,7 @@
 
 use clap_noun_verb::AppContext;
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -55,8 +55,7 @@ struct ConfigInfo {
 }
 
 /// Get configuration info
-#[noun("app", "Application configuration")]
-#[verb("config")]
+#[verb("config", "app")]
 fn show_config() -> Result<ConfigInfo> {
     // In a real app, you'd pass context through args or a global
     // For this example, we'll create fresh config
@@ -74,8 +73,7 @@ fn show_config() -> Result<ConfigInfo> {
 }
 
 /// Get a value from cache
-#[noun("cache", "In-memory cache management")]
-#[verb("get")]
+#[verb("get", "cache")]
 fn cache_get(key: String) -> Result<CacheResult> {
     let cache = Cache::new();
 
@@ -92,8 +90,7 @@ fn cache_get(key: String) -> Result<CacheResult> {
 }
 
 /// Set a value in cache
-#[noun("cache", "In-memory cache management")]
-#[verb("set")]
+#[verb("set", "cache")]
 fn cache_set(key: String, value: String) -> Result<CacheResult> {
     let cache = Cache::new();
     cache.set(key.clone(), value.clone());
@@ -102,8 +99,7 @@ fn cache_set(key: String, value: String) -> Result<CacheResult> {
 }
 
 /// Show cache statistics
-#[noun("cache", "In-memory cache management")]
-#[verb("stats")]
+#[verb("stats", "cache")]
 fn cache_stats() -> Result<String> {
     Ok("Cache is empty (in-memory demo)".to_string())
 }

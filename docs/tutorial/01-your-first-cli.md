@@ -92,24 +92,28 @@ pub struct MathResult {
 }
 
 /// Add two numbers
-#[verb(
-    help = "Add two numbers together"
-)]
+///
+/// # Arguments
+/// * `x` - First number
+/// * `y` - Second number
+#[verb]
 pub fn add(
-    #[arg(help = "First number")] x: i32,
-    #[arg(help = "Second number")] y: i32,
+    x: i32,
+    y: i32,
 ) -> Result<MathResult, Box<dyn std::error::Error>> {
     let result = crate::domain::add(x, y);
     Ok(MathResult { result })
 }
 
 /// Subtract two numbers
-#[verb(
-    help = "Subtract second number from first"
-)]
+///
+/// # Arguments
+/// * `x` - First number
+/// * `y` - Second number
+#[verb]
 pub fn subtract(
-    #[arg(help = "First number")] x: i32,
-    #[arg(help = "Second number")] y: i32,
+    x: i32,
+    y: i32,
 ) -> Result<MathResult, Box<dyn std::error::Error>> {
     let result = crate::domain::subtract(x, y);
     Ok(MathResult { result })
@@ -201,10 +205,15 @@ pub fn multiply(x: i32, y: i32) -> i32 {
 **Act:** Add CLI command
 ```rust
 // In src/commands.rs
-#[verb(help = "Multiply two numbers")]
+/// Multiply two numbers
+///
+/// # Arguments
+/// * `x` - First number
+/// * `y` - Second number
+#[verb]
 pub fn multiply(
-    #[arg(help = "First number")] x: i32,
-    #[arg(help = "Second number")] y: i32,
+    x: i32,
+    y: i32,
 ) -> Result<MathResult, Box<dyn std::error::Error>> {
     let result = crate::domain::multiply(x, y);
     Ok(MathResult { result })

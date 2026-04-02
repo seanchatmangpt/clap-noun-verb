@@ -331,6 +331,6 @@ fn process(
 ## See Also
 
 - `#[verb]` - Parent macro documentation
-- `#[noun]` - Root command macro
+- `#[noun]` - ~~Root command macro~~ **DEPRECATED** since v5.6.0 — use filename auto-detection
 - Doc Comment Syntax - How to write argument descriptions
 - Relationship Resolution - How tags are processed

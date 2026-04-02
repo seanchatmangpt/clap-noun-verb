@@ -24,7 +24,7 @@
 //! not in code attributes, keeping the function signature clean and readable.
 
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Business Logic Layer (Pure Functions - Reusable)
@@ -69,8 +69,7 @@ fn create_export_config(
 /// * `output` - Output file path
 /// * `filename` - Output filename [requires: format]
 /// * `raw` - Raw output mode [conflicts: format]
-#[noun("export", "Export commands")]
-#[verb("data")]
+#[verb("data", "export")]
 fn export_data(
     json: bool,
     yaml: bool,

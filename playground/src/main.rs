@@ -1,10 +1,10 @@
-//! Playground CLI - clap-noun-verb v5.5.0 Documentation-Style Demo
+//! Playground CLI - clap-noun-verb v5.6.0 Documentation-Style Demo
 //!
 //! Architecture: CLI validates, domain computes, integration connects
 //!
 //! ```text
 //! ┌─────────────┐
-//! │   CLI Layer │  ← commands/ (thin, #[noun]/#[verb] attributes)
+//! │   CLI Layer │  ← commands/ (thin, #[verb] with doc comment tags)
 //! └──────┬──────┘
 //!        │
 //! ┌──────▼──────────┐
@@ -18,7 +18,7 @@
 //!
 //! ## v5 Features Demonstrated
 //!
-//! - **Documentation-Style**: `#[noun]`/`#[verb]` with `# Arguments` doc comments
+//! - **Documentation-Style**: `#[verb]` with `# Arguments` doc comments and tags
 //! - **Argument Tags**: `[default:]`, `[env:]`, `[value_hint:]`, `[group:]`, `[requires:]`, `[conflicts:]`
 //! - **RDF/Ontology**: SPARQL queries and Turtle export
 //! - **Output Formats**: JSON, YAML, Table output modes
@@ -41,6 +41,6 @@ mod outputs;
 use clap_noun_verb::Result;
 
 fn main() -> Result<()> {
-    // Auto-discover all #[noun] and #[verb] commands and run
+    // Auto-discover all #[verb] commands and run
     clap_noun_verb::run()
 }

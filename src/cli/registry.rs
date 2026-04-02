@@ -1,7 +1,7 @@
 //! Compile-time command registry for attribute macros
 //!
 //! This module provides a registry that collects functions marked with
-//! `#[verb]` and `#[noun]` attributes at compile time using linkme.
+//! `#[verb]` attributes at compile time using linkme.
 //!
 //! These attribute macros are provided by the `clap-noun-verb-macros` crate.
 //!

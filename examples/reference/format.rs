@@ -4,7 +4,7 @@
 //! (JSON, YAML, TOML, Table, TSV) instead of just JSON.
 
 use clap_noun_verb::{OutputFormat, Result};
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -35,16 +35,14 @@ fn get_inventory() -> Inventory {
 }
 
 /// List inventory in JSON format (default)
-#[noun("inventory", "Inventory management")]
-#[verb("json")]
+#[verb("json", "inventory")]
 fn show_json() -> Result<Inventory> {
     Ok(get_inventory())
 }
 
 /// List inventory (demonstrating format flexibility)
 /// In a real app, this would accept --format argument
-#[noun("inventory", "Inventory management")]
-#[verb("all")]
+#[verb("all", "inventory")]
 fn show_all_formats() -> Result<String> {
     let inventory = get_inventory();
 
@@ -62,22 +60,19 @@ fn show_all_formats() -> Result<String> {
 }
 
 /// List products as table
-#[noun("inventory", "Inventory management")]
-#[verb("table")]
+#[verb("table", "inventory")]
 fn show_table() -> Result<Vec<Product>> {
     Ok(get_inventory().products)
 }
 
 /// Export as TSV for spreadsheet
-#[noun("inventory", "Inventory management")]
-#[verb("tsv")]
+#[verb("tsv", "inventory")]
 fn export_tsv() -> Result<Vec<Product>> {
     Ok(get_inventory().products)
 }
 
 /// Show summary statistics
-#[noun("inventory", "Inventory management")]
-#[verb("summary")]
+#[verb("summary", "inventory")]
 fn show_summary() -> Result<Inventory> {
     Ok(get_inventory())
 }

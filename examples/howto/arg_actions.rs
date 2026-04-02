@@ -7,7 +7,7 @@
 //! - Auto-inference: `bool` type automatically uses SetTrue action
 
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Business Logic Layer (Pure Functions - Reusable)
@@ -44,8 +44,7 @@ fn create_build_config(verbosity: usize, cache: bool, debug: bool, quiet: bool) 
 /// - `usize` type auto-infers Count action (e.g., `-vvv` → 3)
 /// - `bool` type auto-infers SetTrue action
 /// - Explicit action: `#[arg(action = "set_false")]` for inverse flags
-#[noun("build", "Build commands")]
-#[verb("project")]
+#[verb("project", "build")]
 fn build_project(
     // In v3.2.0: #[arg(short = 'v')] - Verbosity level (Count action: -v = 1, -vv = 2, -vvv = 3)
     // Auto-inferred as Count action from usize type

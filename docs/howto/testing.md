@@ -284,7 +284,7 @@ fn test_generated_code_has_proper_structure() {
     let code = generated.rust_code();
 
     // Verify code structure
-    assert!(code.contains("#[noun("));
+    // Generated code uses #[verb("name")] syntax without #[noun]
     assert!(code.contains("#[verb("));
     assert!(code.contains("pub async fn"));
     assert!(code.contains("Result<"));

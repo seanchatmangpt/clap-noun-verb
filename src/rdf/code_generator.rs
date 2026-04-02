@@ -527,7 +527,6 @@ impl CliCodeGenerator {
         let struct_ident = format_ident!("{}", struct_name);
 
         Ok(quote! {
-            #[noun(#noun_name, #description)]
             pub struct #struct_ident;
         })
     }

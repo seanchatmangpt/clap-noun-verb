@@ -7,7 +7,7 @@
 //! by explicit command-line arguments.
 
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Business Logic Layer (Pure Functions - Reusable)
@@ -64,8 +64,7 @@ fn create_server_config(
 /// port: u16,
 /// ```
 /// The environment variable will be read if set, with CLI arguments taking precedence.
-#[noun("server", "Server configuration")]
-#[verb("config")]
+#[verb("config", "server")]
 fn server_config(
     // In v3.2.0: #[arg(env = "SERVER_PORT", default_value = "8080")] - Server port (env: SERVER_PORT, default: 8080)
     port: u16,

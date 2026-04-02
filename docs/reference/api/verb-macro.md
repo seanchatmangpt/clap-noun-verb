@@ -5,7 +5,7 @@
 ## Signature
 
 ```rust
-#[verb(name, "about")]
+#[verb(name)]
 fn command_name(arg1: Type1, arg2: Type2) -> Result<Output> { }
 ```
 
@@ -17,10 +17,13 @@ The `#[verb]` macro registers a command as a verb under its parent noun. It auto
 
 ### Required:
 - `name` - String literal naming the verb command (e.g., `"list"`, `"create"`, `"delete"`)
-- `about` - String literal describing the verb's purpose (shown in help)
 
 ### Optional:
-- `"noun_name"` - Specify parent noun explicitly (inferred from `#[noun]` by default)
+- `"noun_name"` - Specify parent noun explicitly (auto-detected from filename by default)
+
+> **v5.6.0+**: Nouns are auto-detected from the filename (e.g., `config.rs` → noun "config").
+> Use `#[verb("action", "noun")]` only when the filename doesn't match the desired noun,
+> or when a file contains verbs for multiple nouns.
 
 ## Macro Expansion
 
@@ -37,7 +40,8 @@ The macro generates:
 ### Basic Verb
 
 ```rust
-#[noun("status", "Status commands")]
+//! Status commands
+
 #[verb("check")]
 fn check_status() -> Result<Status> {
     Ok(Status::Running)
@@ -52,10 +56,15 @@ $ myapp status check
 ### Verb with Arguments
 
 ```rust
-#[noun("user", "User management")]
+//! User management
+
+/// Create a new user
+///
+/// # Arguments
+/// * `username` - User's login name
+/// * `email` - User's email address
 #[verb("create")]
 fn create_user(username: String, email: String) -> Result<UserId> {
-    // Implementation
     Ok(UserId(1))
 }
 ```
@@ -68,10 +77,15 @@ $ myapp user create alice alice@example.com
 ### Verb with Optional Arguments
 
 ```rust
-#[noun("config", "Configuration")]
+//! Configuration
+
+/// Set a configuration value
+///
+/// # Arguments
+/// * `key` - Configuration key [default: timeout]
+/// * `value` - Configuration value [env: CONFIG_VALUE]
 #[verb("set")]
 fn set_config(key: String, value: Option<String>) -> Result<Output> {
-    // Implementation
     Ok(Output::default())
 }
 ```

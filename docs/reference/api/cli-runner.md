@@ -32,15 +32,19 @@ fn main() -> Result<()> {
 ```rust
 // src/main.rs
 use clap_noun_verb::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 
-#[noun("user", "User management")]
+//! User management commands
+
 #[verb("list")]
 fn list_users() -> Result<Vec<String>> {
     Ok(vec!["alice".to_string(), "bob".to_string()])
 }
 
-#[noun("user", "User management")]
+/// Create a new user
+///
+/// # Arguments
+/// * `name` - Username to create
 #[verb("create")]
 fn create_user(name: String) -> Result<String> {
     Ok(format!("Created user: {}", name))

@@ -3,7 +3,7 @@
 //! Demonstrates how to mark commands as deprecated and provide migration guidance.
 
 use clap_noun_verb::{Deprecation, DeprecationType, Result};
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -20,8 +20,7 @@ struct ServiceStatus {
 }
 
 /// Modern endpoint for service health check
-#[noun("server", "Server management")]
-#[verb("health")]
+#[verb("health", "server")]
 fn check_health() -> Result<ServiceStatus> {
     Ok(ServiceStatus { service: "api-server".to_string(), is_running: true, uptime_seconds: 86400 })
 }
@@ -29,8 +28,7 @@ fn check_health() -> Result<ServiceStatus> {
 /// Old endpoint (deprecated in 3.5.0, will be removed in 4.0.0)
 ///
 /// ⚠️  This command is deprecated. Use 'health' instead.
-#[noun("server", "Server management")]
-#[verb("status")]
+#[verb("status", "server")]
 fn check_status() -> Result<ApiResponse> {
     // Show deprecation warning
     let deprecation = Deprecation::new(DeprecationType::Verb)
@@ -49,8 +47,7 @@ fn check_status() -> Result<ApiResponse> {
 }
 
 /// Old restart command (deprecated)
-#[noun("server", "Server management")]
-#[verb("restart")]
+#[verb("restart", "server")]
 fn restart_service() -> Result<ApiResponse> {
     let deprecation = Deprecation::new(DeprecationType::Verb)
         .since("3.3.0")
@@ -68,8 +65,7 @@ fn restart_service() -> Result<ApiResponse> {
 }
 
 /// View deprecation information for a command
-#[noun("server", "Server management")]
-#[verb("deprecation-info")]
+#[verb("deprecation-info", "server")]
 fn show_deprecation_info() -> Result<String> {
     let mut info = String::new();
 

@@ -1,5 +1,12 @@
 # Attribute Macro API (v3.0.0)
 
+> **ARCHIVED** — This document describes the historical v3.0.0 API.
+>
+> **Deprecation Summary (v5.6.0)**:
+> - `#[noun("name", "about")]` → **DEPRECATED** (no-op, emits warning). Use filename auto-detection + `//!` doc comments.
+> - `#[arg(...)]` on parameters → Still works, but documentation style (`# Arguments` with tags) is preferred.
+> - See `playground/src/commands/` for the current recommended patterns.
+
 ## Overview
 
 Rust's **attribute macros** provide decorator-style syntax similar to Python's Typer. With v3.0.0, you can define CLI commands directly on functions using `#[noun]` and `#[verb]` attributes.
