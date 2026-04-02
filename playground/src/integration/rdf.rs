@@ -195,6 +195,12 @@ fn term_to_string(term: &Term) -> String {
         Term::NamedNode(n) => n.as_str().to_string(),
         Term::BlankNode(b) => format!("_:{}", b.as_str()),
         Term::Literal(l) => l.value().to_string(),
+        Term::Triple(t) => format!(
+            "[{} {} {}]",
+            term_to_string(&t.subject.clone().into()),
+            term_to_string(&t.predicate.clone().into()),
+            term_to_string(&t.object)
+        ),
     }
 }
 

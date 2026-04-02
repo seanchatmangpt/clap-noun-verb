@@ -48,9 +48,8 @@ Build CLIs for autonomous agents and MCP:
 
 **Recommended reading:**
 - **[AUTONOMIC.md](../../AUTONOMIC.md)** - Complete autonomic layer reference
-- **[Explanation: Agent2028](../explanation/autonomic/agent2028.md)** - Trillion-agent ecosystem vision
-- **[Explanation: MCP Integration](../explanation/semantic/mcp-integration.md)** - Model Context Protocol
-- **[Reference: Introspection API](../reference/api/introspection.md)** - Machine-grade introspection
+
+> **Note:** Advanced AI agent integration documentation (Agent2028, MCP integration, introspection API) is planned for future releases.
 
 **Practice projects:**
 1. **MCP server** - Expose CLI as MCP tool server
@@ -64,11 +63,7 @@ Build CLIs for autonomous agents and MCP:
 
 Master elite Rust techniques:
 
-**Recommended reading:**
-- **[Explanation: Type-First Thinking](../explanation/architecture/type-first-thinking.md)** - Encode invariants in types
-- **[Explanation: Zero-Cost Abstractions](../explanation/architecture/zero-cost.md)** - Performance without overhead
-- **[How-To: Advanced Error Strategies](../howto/advanced/error-strategies.md)** - Complex error handling
-- **[How-To: Custom Serialization](../howto/advanced/custom-serialization.md)** - Advanced output formats
+> **Note:** Advanced pattern documentation (type-first thinking, zero-cost abstractions, advanced error strategies) is planned for future releases. For now, explore the [examples/](../../examples/) directory for patterns.
 
 **Practice projects:**
 1. **Type-safe CLI builder** - API that makes invalid CLIs impossible
@@ -82,11 +77,7 @@ Master elite Rust techniques:
 
 Integrate with knowledge graphs:
 
-**Recommended reading:**
-- **[Explanation: RDF Rationale](../explanation/semantic/rdf-rationale.md)** - Why RDF for CLIs
-- **[How-To: SPARQL Queries](../howto/advanced/sparql-queries.md)** - Query knowledge graphs
-- **[How-To: Ontology Design](../howto/advanced/ontology-design.md)** - Design domain ontologies
-- **[Reference: RDF API](../reference/api/rdf.md)** - RDF/SPARQL API reference
+> **Note:** RDF and semantic web documentation is planned for future releases. See [AUTONOMIC.md](../../AUTONOMIC.md) for current semantic CLI capabilities.
 
 **Practice projects:**
 1. **Knowledge graph CLI** - Query semantic data
@@ -98,6 +89,8 @@ Integrate with knowledge graphs:
 
 ## Advanced Topics
 
+> **Note:** The following advanced topic guides are planned for future releases. For now, refer to [Production Deployment](../howto/production/deployment.md) and explore the [examples/](../../examples/) directory.
+
 ### Testing Strategies
 
 **Beyond Chicago TDD:**
@@ -105,13 +98,6 @@ Integrate with knowledge graphs:
 - Mutation testing with `cargo-mutants`
 - Fuzz testing with `cargo-fuzz`
 - Benchmark testing with `criterion`
-
-**Reading:**
-- **[How-To: Testing Strategies](../howto/testing/strategies.md)**
-- **[How-To: Property Testing](../howto/testing/property-testing.md)**
-- **[How-To: Integration Testing](../howto/testing/integration.md)**
-
----
 
 ### Performance Optimization
 
@@ -121,13 +107,6 @@ Integrate with knowledge graphs:
 - Compile-time optimization with `const fn`
 - SIMD vectorization for data processing
 
-**Reading:**
-- **[How-To: Performance Profiling](../howto/advanced/performance-profiling.md)**
-- **[How-To: Memory Optimization](../howto/advanced/memory-optimization.md)**
-- **[Explanation: Zero-Cost Abstractions](../explanation/architecture/zero-cost.md)**
-
----
-
 ### Security
 
 **Build secure CLIs:**
@@ -135,11 +114,6 @@ Integrate with knowledge graphs:
 - Secret management (not in code!)
 - Cryptographic signing for receipts
 - Supply chain security with `cargo-audit`
-
-**Reading:**
-- **[How-To: Production Security](../howto/production/security.md)**
-- **[How-To: Secrets Management](../howto/security/secrets.md)**
-- **[How-To: Dependency Auditing](../howto/security/auditing.md)**
 
 ---
 
@@ -151,7 +125,6 @@ Remember the [Diataxis](https://diataxis.fr/) framework:
 
 **📚 Reference** - Information-Oriented
 - Look up API details
-- [Reference: API Overview](../reference/api/overview.md)
 - [Reference: Verb Macro](../reference/api/verb-macro.md)
 - [Reference: Arg Attributes](../reference/api/arg-attributes.md)
 
@@ -159,13 +132,10 @@ Remember the [Diataxis](https://diataxis.fr/) framework:
 - Solve specific problems
 - [How-To Index](../howto/README.md)
 - [Production Guides](../howto/production/)
-- [Testing Guides](../howto/testing/)
 
 **💡 Explanation** - Understanding-Oriented
 - Understand the "why"
 - [Architecture Philosophy](../explanation/architecture/)
-- [Autonomic CLI Concepts](../explanation/autonomic/)
-- [Semantic Web Integration](../explanation/semantic/)
 
 ---
 
@@ -183,7 +153,6 @@ Remember the [Diataxis](https://diataxis.fr/) framework:
 
 ### Stay Updated
 - **Changelog:** [CHANGELOG.md](../../CHANGELOG.md)
-- **Roadmap:** [ROADMAP.md](../../ROADMAP.md)
 - **Release Notes:** [GitHub Releases](https://github.com/seanchatmangpt/clap-noun-verb/releases)
 
 ---

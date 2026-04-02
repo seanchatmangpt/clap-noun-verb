@@ -1,7 +1,7 @@
 //! Capability commands - intent surface
 
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
+use clap_noun_verb::{Result, NounVerbError};
 use crate::domain::capability::{Capability, CapabilityResolver, CapabilityInfo};
 use crate::outputs::CapabilityEnabledOutput;
 
@@ -23,7 +23,8 @@ fn enable_capability(
         profile: profile.unwrap_or_else(|| "default".to_string()),
     };
 
-    let resolution = resolver.resolve(&capability)?;
+    let resolution = resolver.resolve(&capability)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(CapabilityEnabledOutput {
         capability: format!("{}/{}/{}",
@@ -56,7 +57,8 @@ fn list_capabilities() -> Result<crate::outputs::CapabilityListOutput> {
 /// Show capability details
 #[verb("show")]
 fn show_capability(name: String) -> Result<crate::outputs::CapabilityShowOutput> {
-    let info = Capability::find(&name)?;
+    let info = Capability::find(&name)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(crate::outputs::CapabilityShowOutput {
         name: info.name,
         description: info.description,

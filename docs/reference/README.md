@@ -21,38 +21,21 @@ Use the reference when you:
 
 **Complete catalog of the core clap-noun-verb API**
 
-- **[API Overview](api/overview.md)** - API structure and organization
 - **[#[verb] Macro](api/verb-macro.md)** - Complete macro reference with all syntax variations
 - **[#[arg] Attributes](api/arg-attributes.md)** - All argument attributes and their effects
+- **[#[noun] Macro](api/noun-macro.md)** - **DEPRECATED** - See deprecation notice
 - **[Types Catalog](api/types.md)** - All public types with descriptions and examples
-- **[Traits Reference](api/traits.md)** - Trait requirements and implementations
 - **[Errors Catalog](api/errors.md)** - Complete error type hierarchy
+- **[CLI Runner](api/cli-runner.md)** - `run()` function and entry point
 
-### Autonomic CLI Layer API
-
-**Machine-grade interface for agents and autonomous systems**
-
-- **[Introspection API](autonomic/introspection.md)** - `--capabilities`, `--introspect`, `--graph` flags
-- **[Effect Metadata](autonomic/effects.md)** - Effect types, sensitivity levels, idempotency
-- **[Plane Interactions](autonomic/planes.md)** - O/Σ/Q/ΔΣ plane interactions
-- **[Guards & Budgets](autonomic/guards.md)** - Resource constraints and enforcement
-- **[Execution Receipts](autonomic/receipts.md)** - Structured audit log format
-
-### RDF/SPARQL API
-
-**Semantic CLI layer for intent-based command discovery**
-
-- **[CLI Ontology](rdf/ontology.md)** - RDF schema reference for CLI commands
-- **[SPARQL Queries](rdf/sparql-queries.md)** - Query patterns for command discovery
-- **[SHACL Shapes](rdf/shacl-shapes.md)** - Validation rules and constraints
+> **Note:** Autonomic CLI Layer API and RDF/SPARQL API documentation is planned for future releases. See [AUTONOMIC.md](../AUTONOMIC.md) for current capabilities.
 
 ### CLI Reference
 
 **Command-line interface and configuration**
 
-- **[CLI Commands](cli-commands.md)** - All CLI flags, options, and subcommands
-- **[Environment Variables](environment-vars.md)** - Environment variable reference
-- **[Configuration Files](configuration.md)** - Config file format and schema
+- **[Configuration](configuration.md)** - Config file format and schema
+- **[Performance SLOs](performance-slos.md)** - Performance targets and guarantees
 
 ---
 
@@ -76,21 +59,10 @@ Each reference page provides:
 |-----------|-----------|
 | **#[verb] macro** | [api/verb-macro.md](api/verb-macro.md) |
 | **#[arg] attributes** | [api/arg-attributes.md](api/arg-attributes.md) |
-| **Result<T,E>** | [api/types.md](api/types.md#result-type) |
+| **#[noun] macro** | [api/noun-macro.md](api/noun-macro.md) (deprecated) |
+| **Result<T,E>** | [api/types.md](api/types.md) |
 | **NounVerbError** | [api/errors.md](api/errors.md) |
-| **OutputFormat** | [api/types.md](api/types.md#outputformat) |
-| **AppContext** | [api/types.md](api/types.md#appcontext) |
-
-### By Feature
-
-| Feature | Reference |
-|---------|-----------|
-| **Introspection** | [autonomic/introspection.md](autonomic/introspection.md) |
-| **Effect Metadata** | [autonomic/effects.md](autonomic/effects.md) |
-| **Guards** | [autonomic/guards.md](autonomic/guards.md) |
-| **Receipts** | [autonomic/receipts.md](autonomic/receipts.md) |
-| **RDF Ontology** | [rdf/ontology.md](rdf/ontology.md) |
-| **SPARQL** | [rdf/sparql-queries.md](rdf/sparql-queries.md) |
+| **OutputFormat** | [api/types.md](api/types.md) |
 
 ### By Use Case
 
@@ -99,9 +71,8 @@ Each reference page provides:
 | **Define a command** | [api/verb-macro.md](api/verb-macro.md) |
 | **Parse arguments** | [api/arg-attributes.md](api/arg-attributes.md) |
 | **Handle errors** | [api/errors.md](api/errors.md) |
-| **Format output** | [api/types.md](api/types.md#outputformat) |
-| **Introspect CLI** | [autonomic/introspection.md](autonomic/introspection.md) |
-| **Query commands** | [rdf/sparql-queries.md](rdf/sparql-queries.md) |
+| **Format output** | [api/types.md](api/types.md) |
+| **Run CLI** | [api/cli-runner.md](api/cli-runner.md) |
 
 ---
 
@@ -109,11 +80,11 @@ Each reference page provides:
 
 | Section | Files | Status |
 |---------|-------|--------|
-| **Core API** | 6 files | ⏳ **Planned** |
-| **Autonomic** | 5 files | ⏳ **Planned** |
-| **RDF/SPARQL** | 3 files | ⏳ **Planned** |
-| **CLI** | 3 files | ⏳ **Planned** |
-| **TOTAL** | **19 files** | ⏳ **0% complete** |
+| **Core API** | 6 files | ✅ **Available** |
+| **CLI** | 2 files | ✅ **Available** |
+| **TOTAL** | **8 files** | ✅ **Available** |
+
+> **Planned:** Autonomic API, RDF/SPARQL API coming in future releases.
 
 ---
 
@@ -173,4 +144,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: During migration from v4 to v5.1.1 documentation, the legacy [CLI_REFERENCE.md](../CLI_REFERENCE.md) remains available. New reference documentation follows Diataxis principles with validated v5.1.1 APIs.
+**Note**: Reference documentation follows Diataxis principles with validated v5.6.1 APIs.

@@ -162,16 +162,16 @@ Each tutorial follows this structure:
 
 | Tutorial | Status | Estimated Time |
 |----------|--------|----------------|
-| [01. Your First CLI](01-your-first-cli.md) | ⏳ **Planned** | 5-10 min |
-| [02. Domain Separation](02-domain-separation.md) | ⏳ **Planned** | 10-15 min |
-| [03. Adding Commands](03-adding-commands.md) | ⏳ **Planned** | 10-15 min |
-| [04. Testing Basics](04-testing-basics.md) | ⏳ **Planned** | 20-30 min |
-| [05. Output Formats](05-output-formats.md) | ⏳ **Planned** | 15-20 min |
-| [06. Autonomic Features](06-autonomic-features.md) | ⏳ **Planned** | 20-30 min |
-| [07. Async Operations](07-async-operations.md) | ⏳ **Planned** | 30-45 min |
-| [08. Error Handling](08-error-handling.md) | ⏳ **Planned** | 30-45 min |
-| [09. Deployment Basics](09-deployment-basics.md) | ⏳ **Planned** | 20-30 min |
-| [10. Next Steps](10-next-steps.md) | ⏳ **Planned** | 10 min |
+| [01. Your First CLI](01-your-first-cli.md) | ✅ **Available** | 5-10 min |
+| [02. Domain Separation](02-domain-separation.md) | ✅ **Available** | 10-15 min |
+| [03. Adding Commands](03-adding-commands.md) | ✅ **Available** | 10-15 min |
+| [04. Testing Basics](04-testing-basics.md) | ✅ **Available** | 20-30 min |
+| [05. Output Formats](05-output-formats.md) | ✅ **Available** | 15-20 min |
+| [06. Autonomic Features](06-autonomic-features.md) | ✅ **Available** | 20-30 min |
+| [07. Async Operations](07-async-operations.md) | ✅ **Available** | 30-45 min |
+| [08. Error Handling](08-error-handling.md) | ✅ **Available** | 30-45 min |
+| [09. Deployment Basics](09-deployment-basics.md) | ✅ **Available** | 20-30 min |
+| [10. Next Steps](10-next-steps.md) | ✅ **Available** | 10 min |
 
 **Total Estimated Time**: 2-3 hours for complete series
 
@@ -183,4 +183,4 @@ Each tutorial follows this structure:
 
 ---
 
-**Note**: During migration from v4 to v5.1.1 documentation, the legacy [QUICKSTART.md](../QUICKSTART.md) remains available. New tutorials follow Diataxis principles with validated v5.1.1 code examples.
+**Note**: New tutorials follow Diataxis principles with validated v5.6.1 code examples.

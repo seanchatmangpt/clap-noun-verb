@@ -2,7 +2,9 @@
 //!
 //! Receipts prove what sync actually did with cryptographic verification.
 
+use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::path::Path;
 
 /// Cryptographic receipt proving what sync actually did
@@ -95,35 +97,52 @@ impl Receipt {
         self.artifacts.push(artifact);
     }
 
-    /// Finalize receipt (compute hash and sign)
-    pub fn finalize(&mut self) -> Result<(), String> {
-        // Compute content hash
+    /// Finalize receipt (compute hash and sign with provided key)
+    ///
+    /// # Arguments
+    ///
+    /// * `signing_key` - Ed25519 signing key for cryptographic signature
+    pub fn finalize(&mut self, signing_key: &SigningKey) -> Result<(), String> {
+        // Compute content hash (excluding signature field)
         self.content_hash = self.compute_hash()?;
 
-        // In full implementation, this would sign with private key
-        self.signature = None;
+        // Create signing message (hash + timestamp)
+        let message = self.signing_message()?;
+
+        // Sign with Ed25519
+        let signature: Signature = signing_key.sign(&message);
+        self.signature = Some(hex::encode(signature.to_bytes()));
 
         Ok(())
     }
 
-    /// Compute SHA-256 hash of receipt content
+    /// Compute SHA-256 hash of receipt content (excluding signature)
     fn compute_hash(&self) -> Result<String, String> {
-        let content = serde_json::to_vec(self)
-            .map_err(|e| format!("Failed to serialize receipt: {}", e))?;
+        // Create a version without signature for hashing
+        let hashable = ReceiptHashable {
+            id: &self.id,
+            timestamp: &self.timestamp,
+            operations: &self.operations,
+            artifacts: &self.artifacts,
+            agent: &self.agent,
+        };
 
-        // Use sha2::Sha256 if feature is enabled
-        #[cfg(feature = "ggen-foundation")]
-        {
-            use sha2::Digest;
-            let hash = sha2::Sha256::digest(&content);
-            Ok(format!("{:x}", hash))
-        }
+        let content = serde_json::to_vec(&hashable)
+            .map_err(|e| format!("Failed to serialize receipt for hashing: {}", e))?;
 
-        #[cfg(not(feature = "ggen-foundation"))]
-        {
-            // Fallback: simple hex encoding
-            Ok(hex::encode(&content))
-        }
+        // Compute SHA-256 hash
+        let mut hasher = Sha256::new();
+        hasher.update(&content);
+        let hash = hasher.finalize();
+
+        Ok(format!("{:x}", hash))
+    }
+
+    /// Create message for signing (hash + timestamp)
+    pub fn signing_message(&self) -> Result<Vec<u8>, String> {
+        let mut message = self.content_hash.as_bytes().to_vec();
+        message.extend_from_slice(self.timestamp.as_bytes());
+        Ok(message)
     }
 
     /// Load receipt from file
@@ -146,7 +165,20 @@ impl Receipt {
 }
 
 /// Receipt verifier for cryptographic verification
-pub struct ReceiptVerifier;
+pub struct ReceiptVerifier {
+    /// Optional public key for signature verification
+    public_key: Option<VerifyingKey>,
+}
+
+/// Hashable version of receipt (excludes signature)
+#[derive(Serialize)]
+struct ReceiptHashable<'a> {
+    id: &'a String,
+    timestamp: &'a String,
+    operations: &'a Vec<ReceiptOperation>,
+    artifacts: &'a Vec<String>,
+    agent: &'a ReceiptAgent,
+}
 
 /// Result from receipt verification
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -157,6 +189,8 @@ pub struct VerificationResult {
     pub signature_valid: bool,
     /// Whether chain is valid (for chain verification)
     pub chain_valid: bool,
+    /// Whether all receipts in chain are valid
+    pub all_valid: bool,
     /// Any warnings found during verification
     pub warnings: Vec<String>,
     /// Chain length (for chain verification)
@@ -166,36 +200,85 @@ pub struct VerificationResult {
 }
 
 impl ReceiptVerifier {
-    /// Create new verifier
+    /// Create new verifier without public key (hash-only verification)
     pub fn new() -> Self {
-        Self
+        Self { public_key: None }
+    }
+
+    /// Create verifier with public key for signature verification
+    pub fn with_public_key(public_key: VerifyingKey) -> Self {
+        Self {
+            public_key: Some(public_key),
+        }
     }
 
     /// Verify a single receipt
+    ///
+    /// Verifies:
+    /// 1. Content hash integrity
+    /// 2. Ed25519 signature (if public key provided)
     pub fn verify(&self, receipt: &Receipt) -> Result<VerificationResult, String> {
-        // Verify content hash
-        let computed_hash = receipt.compute_hash()?;
+        let mut warnings = Vec::new();
+        let mut valid = true;
+
+        // 1. Verify content hash
+        let computed_hash = receipt.compute_hash()
+            .map_err(|e| format!("Failed to compute hash: {}", e))?;
         let hash_valid = computed_hash == receipt.content_hash;
 
-        // In full implementation, this would verify signature
-        let signature_valid = true;
+        if !hash_valid {
+            warnings.push("Content hash mismatch - receipt may be tampered".to_string());
+            valid = false;
+        }
+
+        // 2. Verify signature (if public key provided)
+        let signature_valid = match (&receipt.signature, &self.public_key) {
+            (Some(sig_bytes), Some(public_key)) => {
+                // Decode signature from hex
+                let sig_bytes_decoded = hex::decode(sig_bytes)
+                    .map_err(|e| format!("Invalid signature hex encoding: {}", e))?;
+
+                // Convert to ed25519-dalek Signature
+                let signature = Signature::from_slice(&sig_bytes_decoded)
+                    .map_err(|e| format!("Invalid signature format: {}", e))?;
+
+                // Create signing message
+                let message = receipt.signing_message()
+                    .map_err(|e| format!("Failed to create signing message: {}", e))?;
+
+                // Verify signature
+                public_key.verify(&message, &signature)
+                    .map(|_| true)
+                    .unwrap_or(false)
+            }
+            (Some(_), None) => {
+                warnings.push("Signature present but no public key provided - skipping signature verification".to_string());
+                true // Assume valid if no key to verify against
+            }
+            (None, _) => {
+                warnings.push("No signature present - receipt is not cryptographically signed".to_string());
+                false
+            }
+        };
+
+        if !signature_valid {
+            warnings.push("Signature verification failed - receipt may be forged".to_string());
+            valid = false;
+        }
 
         Ok(VerificationResult {
-            valid: hash_valid && signature_valid,
+            valid,
             signature_valid,
             chain_valid: true, // Single receipt is always chain-valid
-            warnings: if !hash_valid {
-                vec!["Content hash mismatch".to_string()]
-            } else {
-                Vec::new()
-            },
+            all_valid: valid && signature_valid,
+            warnings,
             chain_length: 1,
             broken_links: Vec::new(),
         })
     }
 
     /// Verify receipt chain (receipt pointing to previous receipts)
-    pub fn verify_chain(&self, receipt: &Receipt) -> Result<VerificationResult, String> {
+    pub fn verify_chain(&self, _receipt: &Receipt) -> Result<VerificationResult, String> {
         // In full implementation, this would:
         // - Load previous receipts from chain
         // - Verify each receipt in the chain
@@ -205,6 +288,7 @@ impl ReceiptVerifier {
             valid: true,
             signature_valid: true,
             chain_valid: true,
+            all_valid: true,
             warnings: Vec::new(),
             chain_length: 1,
             broken_links: Vec::new(),

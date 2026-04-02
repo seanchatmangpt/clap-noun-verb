@@ -3,7 +3,7 @@
 //! Receipts prove what sync actually did.
 
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
+use clap_noun_verb::{Result, NounVerbError};
 
 use crate::domain::receipt::{Receipt, ReceiptVerifier};
 use crate::outputs::{ReceiptVerifyOutput, ReceiptInfoOutput, ReceiptChainVerifyOutput};
@@ -18,9 +18,11 @@ use crate::outputs::{ReceiptVerifyOutput, ReceiptInfoOutput, ReceiptChainVerifyO
 fn verify_receipt(
     file: String,
 ) -> Result<ReceiptVerifyOutput> {
-    let receipt = Receipt::from_file(std::path::Path::new(&file))?;
+    let receipt = Receipt::from_file(std::path::Path::new(&file))
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let verifier = ReceiptVerifier::new();
-    let result = verifier.verify(&receipt)?;
+    let result = verifier.verify(&receipt)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(ReceiptVerifyOutput {
         receipt_id: receipt.id,
@@ -41,7 +43,8 @@ fn verify_receipt(
 fn receipt_info(
     file: String,
 ) -> Result<ReceiptInfoOutput> {
-    let receipt = Receipt::from_file(std::path::Path::new(&file))?;
+    let receipt = Receipt::from_file(std::path::Path::new(&file))
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(ReceiptInfoOutput {
         id: receipt.id,
@@ -64,9 +67,11 @@ fn receipt_info(
 fn chain_verify(
     file: String,
 ) -> Result<ReceiptChainVerifyOutput> {
-    let receipt = Receipt::from_file(std::path::Path::new(&file))?;
+    let receipt = Receipt::from_file(std::path::Path::new(&file))
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let verifier = ReceiptVerifier::new();
-    let result = verifier.verify_chain(&receipt)?;
+    let result = verifier.verify_chain(&receipt)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(ReceiptChainVerifyOutput {
         chain_length: result.chain_length,

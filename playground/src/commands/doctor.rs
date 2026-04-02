@@ -3,6 +3,7 @@
 //! Detects workspace integrity, lockfile truth, pack integrity, trust/profile conflicts.
 
 use clap_noun_verb_macros::verb;
+use clap_noun_verb::NounVerbError;
 use clap_noun_verb::Result;
 
 use crate::domain::doctor::{Doctor, DiagnosticCheck};
@@ -18,11 +19,11 @@ use crate::outputs::{DoctorRunOutput, DoctorCheckOutput, DoctorEnvOutput};
 fn doctor_run(
     fix: bool,
 ) -> Result<DoctorRunOutput> {
-    let doctor = Doctor::new()?;
-    let results = doctor.run_all_diagnostics()?;
+    let doctor = Doctor::new().map_err(|e| NounVerbError::execution_error(e))?;
+    let results = doctor.run_all_diagnostics().map_err(|e| NounVerbError::execution_error(e))?;
 
     if fix {
-        doctor.auto_fix(&results)?;
+        doctor.auto_fix(&results).map_err(|e| NounVerbError::execution_error(e))?;
     }
 
     let passed = results.iter().filter(|r| r.passed).count();
@@ -32,7 +33,7 @@ fn doctor_run(
         checks_run: results.len(),
         passed,
         failed,
-        results,
+        results: results.into_iter().map(Into::into).collect(),
     })
 }
 
@@ -48,11 +49,11 @@ fn doctor_check(
     check_name: String,
     fix: bool,
 ) -> Result<DoctorCheckOutput> {
-    let doctor = Doctor::new()?;
-    let result = doctor.run_check(&check_name)?;
+    let doctor = Doctor::new().map_err(|e| NounVerbError::execution_error(e))?;
+    let result = doctor.run_check(&check_name).map_err(|e| NounVerbError::execution_error(e))?;
 
     if fix && !result.passed {
-        doctor.fix_check(&check_name)?;
+        doctor.fix_check(&check_name).map_err(|e| NounVerbError::execution_error(e))?;
     }
 
     Ok(DoctorCheckOutput {
@@ -68,13 +69,13 @@ fn doctor_check(
 /// Displays workspace and environment information.
 #[verb("env")]
 fn doctor_env() -> Result<DoctorEnvOutput> {
-    let doctor = Doctor::new()?;
+    let doctor = Doctor::new().map_err(|e| NounVerbError::execution_error(e))?;
 
     Ok(DoctorEnvOutput {
-        workspace_root: doctor.workspace_root()?,
+        workspace_root: doctor.workspace_root().map_err(|e| NounVerbError::execution_error(e))?,
         ggen_version: env!("CARGO_PKG_VERSION").to_string(),
-        lockfile_valid: doctor.check_lockfile_exists()?,
-        pack_integrity: doctor.check_pack_integrity()?,
-        policy_conflicts: doctor.check_policy_conflicts()?,
+        lockfile_valid: doctor.check_lockfile_exists().map_err(|e| NounVerbError::execution_error(e))?,
+        pack_integrity: doctor.check_pack_integrity().map_err(|e| NounVerbError::execution_error(e))?,
+        policy_conflicts: doctor.check_policy_conflicts().map_err(|e| NounVerbError::execution_error(e))?,
     })
 }

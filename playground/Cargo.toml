@@ -8,6 +8,7 @@ authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
 [dependencies]
 # Use local workspace version for testing framework fixes
 clap-noun-verb = { path = ".." }
+clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
 clap-noun-verb-macros = { path = "../clap-noun-verb-macros" }
 linkme = "0.3"
 serde = { version = "1.0", features = ["derive"] }
@@ -16,10 +17,11 @@ serde_yaml = "0.9"  # For YAML output format
 
 # Enhanced capabilities
 tera = "1.20"           # Templating engine for LaTeX generation
-oxigraph = "0.5.1"      # RDF/SPARQL semantic capabilities (matches clap-noun-verb v5.1.0)
+oxigraph = { version = "0.5.6", features = ["rdf-12"] }  # RDF/SPARQL semantic capabilities
 
 # Performance & Reliability (Phase 1 Optimizations)
 lazy_static = "1.4"     # Global cached instances (template engine, RDF store)
+once_cell = "1.19"      # Modern alternative to lazy_static
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Unique ID generation
 
 # ggen v26.4.2 dependencies (always enabled, no feature flags)
@@ -28,8 +30,33 @@ ed25519-dalek = "2.0"    # Signature verification for receipts
 chrono = { version = "0.4", features = ["serde"] }  # Timestamps for receipts and packs
 hex = "0.4"              # Hex encoding for fallback hash
 
+# Async runtime and networking
+tokio = { version = "1.47", features = ["rt-multi-thread", "fs", "process"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false, optional = true }
+
+# Graph algorithms
+petgraph = "0.8.3"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# CLI UX
+colored = "3.0"
+indicatif = "0.17"
+
+# File system operations
+directories = "5.0"
+tempfile = "3.14"  # Temporary directories for testing
+rand = "0.8"  # Random number generation for cryptographic signing
+
 [features]
 default = []
+# Future feature flags (all dependencies currently enabled by default)
+# receipts = []                     # Always enabled
+# rdf = []                         # RDF/SPARQL
+# templates = ["tera", "rdf"]       # Template codegen
+# marketplace = ["reqwest"]         # Optional marketplace (requires reqwest optional=true)
 
 [[bin]]
 name = "playground"

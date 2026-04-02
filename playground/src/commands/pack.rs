@@ -1,9 +1,9 @@
 //! Pack commands - law-bearing implementation units
 
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
+use clap_noun_verb::{Result, NounVerbError};
 use crate::domain::pack::{Pack, PackStore, DependencyGraph};
-use crate::outputs::{PackAddedOutput, PackRemovedOutput, PackListOutput, PackShowOutput, PackVerifyOutput, PackGraphOutput, PackUpdateOutput};
+use crate::outputs::{PackAddedOutput, PackRemovedOutput, PackListOutput, PackShowOutput, PackVerifyOutput, PackGraphOutput, PackUpdateOutput, PackInfo};
 
 /// Add a pack
 #[verb("add")]
@@ -12,9 +12,12 @@ fn add_pack(
     version: Option<String>,
     force: bool,
 ) -> Result<PackAddedOutput> {
-    let store = PackStore::new()?;
-    let pack = store.resolve(&identifier, version.as_deref())?;
-    store.install(&pack, force)?;
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    let pack = store.resolve(&identifier, version.as_deref())
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    store.install(&pack, force)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(PackAddedOutput {
         name: pack.name,
@@ -30,8 +33,10 @@ fn remove_pack(
     identifier: String,
     force: bool,
 ) -> Result<PackRemovedOutput> {
-    let store = PackStore::new()?;
-    store.remove(&identifier, force)?;
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    store.remove(&identifier, force)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(PackRemovedOutput {
         identifier,
@@ -42,9 +47,12 @@ fn remove_pack(
 /// List installed packs
 #[verb("list")]
 fn list_packs() -> Result<PackListOutput> {
-    let store = PackStore::new()?;
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    let packs = store.list_all()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(PackListOutput {
-        packs: store.list_all()?,
+        packs: packs.into_iter().map(|p| PackInfo { name: p.name, version: p.version }).collect(),
     })
 }
 

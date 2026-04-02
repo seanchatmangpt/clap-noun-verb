@@ -1,7 +1,7 @@
 //! Registry commands for searching, info, and listing
 
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
+use clap_noun_verb::{Result, NounVerbError};
 
 use crate::integration::registry_client::RegistryClient;
 use crate::outputs::{RegistrySearchOutput, RegistrySearchResultItem, RegistryInfoOutput, RegistrySourcesOutput, RegistrySourceItem};
@@ -14,8 +14,10 @@ fn search_registry(
     limit: Option<usize>,
 ) -> Result<RegistrySearchOutput> {
     let client = RegistryClient::default();
-    let results = client.search(&query, category.as_deref(), limit.unwrap_or(20))?;
+    let results = client.search(&query, category.as_deref(), limit.unwrap_or(20))
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
+    let count = results.len();
     Ok(RegistrySearchOutput {
         query: query.clone(),
         category: category.clone(),
@@ -25,7 +27,7 @@ fn search_registry(
             description: r.description,
             category: r.category,
         }).collect(),
-        count: results.len(),
+        count,
     })
 }
 
@@ -33,7 +35,8 @@ fn search_registry(
 #[verb("info")]
 fn registry_info(identifier: String) -> Result<RegistryInfoOutput> {
     let client = RegistryClient::default();
-    let info = client.get_info(&identifier)?;
+    let info = client.get_info(&identifier)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(RegistryInfoOutput {
         name: info.name,
@@ -50,14 +53,16 @@ fn registry_info(identifier: String) -> Result<RegistryInfoOutput> {
 #[verb("list")]
 fn list_registries() -> Result<RegistrySourcesOutput> {
     let client = RegistryClient::default();
-    let sources = client.list_sources()?;
+    let sources = client.list_sources()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
+    let count = sources.len();
     Ok(RegistrySourcesOutput {
         sources: sources.into_iter().map(|s| RegistrySourceItem {
             name: s.name,
             url: s.url,
             priority: s.priority,
         }).collect(),
-        count: sources.len(),
+        count,
     })
 }

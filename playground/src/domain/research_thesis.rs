@@ -4,7 +4,7 @@
 //! Enables SPARQL queries and defense preparation via ontology.
 
 use serde::{Deserialize, Serialize};
-use crate::papers::PaperFamily;
+use crate::domain::papers::PaperFamily;
 
 /// Research thesis metadata aligned with HTF
 #[derive(Debug, Clone, Serialize, Deserialize)]

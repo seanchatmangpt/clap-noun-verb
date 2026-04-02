@@ -1,7 +1,7 @@
 //! Policy commands - governance and execution constraints
 
 use clap_noun_verb_macros::verb;
-use clap_noun_verb::Result;
+use clap_noun_verb::{Result, NounVerbError};
 use crate::domain::policy::{PolicyProfile, PolicyValidator};
 use crate::outputs::{PolicyListOutput, PolicyShowOutput, PolicyValidateOutput};
 
@@ -21,12 +21,13 @@ fn list_policies() -> Result<Vec<PolicyListOutput>> {
 /// Show policy details
 #[verb("show")]
 fn show_policy(name: String) -> Result<PolicyShowOutput> {
-    let profile = PolicyProfile::find(&name)?;
+    let profile = PolicyProfile::find(&name)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(PolicyShowOutput {
-        name: profile.name.clone(),
-        description: profile.description.clone(),
-        strict: profile.strict,
-        rules: profile.rules.len(),
+        name: profile.name(),
+        description: profile.description(),
+        strict: profile.strict(),
+        rules: profile.rules().len(),
     })
 }
 
@@ -39,7 +40,8 @@ fn validate_policy(
     let validator = PolicyValidator::new();
     let profile_name = profile.unwrap_or_else(|| "default".to_string());
     let lockfile_ref = lockfile.as_deref();
-    let result = validator.validate(&profile_name, lockfile_ref)?;
+    let result = validator.validate(&profile_name, lockfile_ref)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(PolicyValidateOutput {
         profile: result.profile.clone(),
