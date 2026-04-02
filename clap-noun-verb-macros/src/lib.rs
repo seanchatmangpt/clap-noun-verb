@@ -232,27 +232,14 @@ pub fn span(input: TokenStream) -> TokenStream {
 
     let block = &args[1];
 
-    // Register usage (only when autonomic feature enabled)
-    let usage = telemetry_validation::generate_span_usage(&span_ident);
+    // Register usage (telemetry removed — no-op)
+    let _usage = &span_ident;
 
     // Generate instrumented code
-    // When autonomic feature is disabled, just execute the block without telemetry
     let expanded = quote::quote! {
         {
-            // Span usage registration (only when autonomic feature enabled)
-            #[cfg(feature = "autonomic")]
-            #usage
-
-            // Create span (only when autonomic feature enabled)
-            #[cfg(feature = "autonomic")]
-            let mut _span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(#span_ident);
-
             // Execute block
             let _result = #block;
-
-            // Finish span (only when autonomic feature enabled)
-            #[cfg(feature = "autonomic")]
-            _span.finish();
 
             _result
         }
@@ -269,95 +256,30 @@ pub fn span(input: TokenStream) -> TokenStream {
 /// fn my_function() {}
 /// ```
 #[proc_macro_attribute]
-pub fn noun(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn noun(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(input as ItemFn);
 
-    // Parse arguments: name and about
-    let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
-    let args_vec: syn::punctuated::Punctuated<_, _> =
-        match Parser::parse2(parser, proc_macro2::TokenStream::from(args)) {
-            Ok(args) => args,
-            Err(e) => return e.to_compile_error().into(),
-        };
-
-    if args_vec.len() != 2 {
-        return syn::Error::new_spanned(
-            quote! { #args_vec },
-            "Expected exactly 2 arguments: name and about",
-        )
-        .to_compile_error()
-        .into();
-    }
-
-    let name_expr = &args_vec[0];
-    let about_expr = &args_vec[1];
-
-    let name_str = match name_expr {
-        syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => s.value(),
-        _ => {
-            return syn::Error::new_spanned(name_expr, "First argument must be a string literal")
-                .to_compile_error()
-                .into()
-        }
-    };
-
-    let about_str = match about_expr {
-        syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => s.value(),
-        _ => {
-            return syn::Error::new_spanned(about_expr, "Second argument must be a string literal")
-                .to_compile_error()
-                .into()
-        }
-    };
-
-    let fn_name = &input_fn.sig.ident;
-    let init_fn_name = quote::format_ident!("__init_noun_{}", fn_name);
-
-    // Check if #[verb] is also present - if so, emit helper attribute for #[verb] to detect
-    let has_verb_attr = input_fn.attrs.iter().any(|attr| {
-        attr.path().is_ident("verb")
-            || attr.path().segments.last().map(|seg| seg.ident == "verb").unwrap_or(false)
-    });
-
-    // Generate registration code
-    // Core team approach: Emit helper attribute in generated code when #[verb] is present
-    // This ensures #[verb] can always detect the noun name, regardless of processing order
-    let mut output_fn = input_fn.clone();
+    // DEPRECATED: #[noun] is no longer needed. Nouns are auto-detected from:
+    // - Filename (e.g., papers.rs -> noun "papers")
+    // - Module doc comments (//! ...) for the noun description
+    //
+    // This macro is now a no-op. Remove #[noun(...)] from your code.
+    // The noun name and about arguments are ignored.
 
     // Remove #[noun] attribute from output (it's been processed)
+    let mut output_fn = input_fn.clone();
     output_fn.attrs.retain(|attr| {
         !attr.path().is_ident("noun")
             && attr.path().segments.last().map(|seg| seg.ident != "noun").unwrap_or(true)
     });
 
-    // If #[verb] is present, emit helper doc comment in generated code
-    // Core team approach: Use doc comment as hidden storage - Rust won't try to process it
-    let helper_doc = if has_verb_attr {
-        let doc_attr_value = format!("__noun_name_internal:{}", name_str);
-        quote! {
-            #[doc = #doc_attr_value]
-        }
-    } else {
-        quote! {}
-    };
-
+    // Emit deprecation warning
     let expanded = quote! {
-        #helper_doc
+        #[deprecated(
+            since = "5.6.0",
+            note = "#[noun] is no longer needed — nouns are auto-detected from filename and module doc comments (//!). Remove this attribute."
+        )]
         #output_fn
-
-        // Auto-generated registration
-        // CRITICAL FIX: Use named function instead of closure to satisfy fn() type requirement
-        #[allow(non_upper_case_globals)]
-        #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__NOUN_REGISTRY)]
-        static #init_fn_name: fn() = {
-            fn __register_impl() {
-                ::clap_noun_verb::cli::registry::CommandRegistry::register_noun(
-                    #name_str,
-                    #about_str,
-                );
-            }
-            __register_impl  // Return function pointer (not a call!)
-        };
     };
 
     expanded.into()
@@ -1610,12 +1532,8 @@ fn generate_verb_registration(
     let duplicate_check =
         validation::generate_duplicate_detection(&verb_name, noun_name_for_check, fn_name);
 
-    // Generate telemetry span instrumentation
-    let telemetry_instrumentation = telemetry_validation::generate_verb_instrumentation(
-        &verb_name,
-        noun_name_for_check,
-        fn_name,
-    );
+    // Telemetry instrumentation removed (no-op)
+    let _telemetry_instrumentation = ();
 
     // Generate wrapper function
     // Empty string "" means root-level verb (no noun)
@@ -1637,10 +1555,6 @@ fn generate_verb_registration(
     // and the #[verb] macro has already parsed them for metadata generation
 
     let expanded = quote! {
-        // Telemetry span declaration for this verb (only when autonomic feature enabled)
-        #[cfg(feature = "autonomic")]
-        #telemetry_instrumentation
-
         #output_fn
 
         // GAP 2: Compile-time duplicate verb detection
@@ -1649,24 +1563,9 @@ fn generate_verb_registration(
         // Wrapper function that adapts HandlerInput to function signature
         // NOTE: Use __handler_input to avoid shadowing if user has an arg named "input"
         fn #wrapper_name(__handler_input: ::clap_noun_verb::logic::HandlerInput) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
-            // Telemetry: Start span for this verb execution (only when autonomic feature enabled)
-            #[cfg(feature = "autonomic")]
-            let mut _verb_span = ::clap_noun_verb::autonomic::telemetry::TraceSpan::new_root(
-                concat!(#noun_name_str, ".", #verb_name)
-            );
-            #[cfg(feature = "autonomic")]
-            {
-                _verb_span.set_attribute("noun", #noun_name_str);
-                _verb_span.set_attribute("verb", #verb_name);
-            }
-
             // Execute handler with argument extraction
             #(#arg_extractions)*
             let result = #fn_name(#(#arg_calls),*)?;
-
-            // Finish span and record duration (only when autonomic feature enabled)
-            #[cfg(feature = "autonomic")]
-            _verb_span.finish();
 
             ::clap_noun_verb::logic::HandlerOutput::from_data(result)
         }
@@ -1702,15 +1601,22 @@ fn generate_verb_registration(
                         }
                     }
 
-                    // Extract module doc from function doc as fallback
-                    // Note: Full module doc extraction requires parsing the entire file,
-                    // which is complex in proc macros. For now, we use function doc as a fallback.
-                    // Users can add module doc (`//!`) at the top of the file, but we can't easily extract it.
-                    let noun_about = if !#about_str.is_empty() {
-                        #about_str.to_string()
-                    } else {
-                        String::new()
-                    };
+                    // Extract module doc comments (//! ...) from source file
+                    // The noun description comes from the file's module-level docs,
+                    // not from the verb's function docs.
+                    let file_path = file!();
+                    let noun_about = ::std::fs::read_to_string(file_path)
+                        .ok()
+                        .and_then(|content| {
+                            let lines: Vec<&str> = content
+                                .lines()
+                                .take(20)
+                                .filter(|line| line.trim_start().starts_with("//!"))
+                                .map(|line| line.trim_start_matches("//!").trim())
+                                .collect();
+                            if lines.is_empty() { None } else { Some(lines.join("\n")) }
+                        })
+                        .unwrap_or_default();
 
                     // Leak strings to get static lifetime for registration (acceptable for CLI construction)
                     let name_static: &'static str = Box::leak(inferred_name.into_boxed_str());

@@ -197,7 +197,7 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 // Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
-pub use format::OutputFormat;
+pub use format::{OutputFormat, format_output};
 
 // =============================================================================
 // FEATURE-GATED RE-EXPORTS

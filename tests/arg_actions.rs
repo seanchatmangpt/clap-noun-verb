@@ -4,7 +4,7 @@
 //! are correctly parsed and applied.
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -22,8 +22,7 @@ fn get_config(verbose: usize, debug: bool) -> Config {
 /// Note: In real usage with #[arg] support, you would use:
 /// #[arg(action = "count")] for usize flags (auto-inferred).
 /// For testing, we verify the registry behavior works with action support.
-#[noun("config", "Application configuration")]
-#[verb("set")]
+#[verb("set", "config")]
 fn set_config(
     verbose: usize, // Auto-inferred as Count action
     debug: bool,

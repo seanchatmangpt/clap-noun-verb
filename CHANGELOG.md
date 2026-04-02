@@ -5,6 +5,32 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.0] - 2026-04-02
+
+### Changed
+
+- **`#[noun]` attribute deprecated** — Nouns are now auto-detected from filename and module doc comments (`//!`). The `#[noun("name", "about")]` attribute is a no-op; remove it from your code.
+- **Default output format is now `JsonPretty`** — Previously `Json` (compact), now defaults to pretty-printed JSON for better readability.
+- **YAML output no longer requires `config-formats` feature** — Built-in YAML serialization via `serde_json`-to-YAML converter. No external `serde_yaml` dependency needed.
+- **TOML output format removed** — Replaced by `Plain` format (key: value pairs). TOML required the `config-formats` feature and added unnecessary dependency weight.
+
+### Added
+
+- **`format_output()` convenience function** — `format_output(&data, OutputFormat::Table)` as a free function alternative to `OutputFormat::Table.format(&data)`. Re-exported from `clap_noun_verb`.
+- **`OutputFormat::JsonPretty`** — Explicit pretty-printed JSON variant. `Json` is now compact-only.
+- **`OutputFormat::Plain`** — Human-readable `key: value` text output format.
+- **`OutputFormat::description()`** — Returns human-readable description for each format variant.
+- **Registry first-write-wins** — `register_noun()` uses `entry().or_insert()` so the first noun registration wins, preventing later verbs from overwriting the noun description.
+
+### Removed
+
+- **Telemetry instrumentation from macros** — `#[span]`, `#[noun]`, and `#[verb]` no longer emit telemetry span code. The `autonomic` feature's telemetry integration is simplified.
+- **`OutputFormat::Toml`** — Removed in favor of `Plain` format.
+
+### Fixed
+
+- **`test_arg_actions_registered`** — Updated to use explicit `#[verb("set", "config")]` syntax instead of deprecated `#[noun]` + `#[verb]` combination.
+
 ## [5.5.0] - 2026-01-06
 
 ### Added

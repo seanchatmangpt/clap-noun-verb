@@ -1,12 +1,12 @@
 //! Output formatting system
 //!
 //! This module provides pluggable output formatters for different output formats.
-//! The default is JSON, but YAML, TOML, and table formats are also supported.
+//! The default is JSON, but YAML, Table, Plain, and TSV formats are also supported.
 //!
 //! # Example
 //!
 //! ```rust,ignore
-//! use clap_noun_verb::format::{OutputFormat, Formatter};
+//! use clap_noun_verb::format::{OutputFormat, format_output};
 //! use serde::Serialize;
 //!
 //! #[derive(Serialize)]
@@ -16,7 +16,12 @@
 //! }
 //!
 //! let output = Output { name: "example".to_string(), value: 42 };
-//! let formatted = OutputFormat::Yaml.format(&output)?;
+//!
+//! // Method style
+//! let formatted = OutputFormat::Table.format(&output)?;
+//!
+//! // Function style
+//! let formatted = format_output(&output, OutputFormat::Yaml)?;
 //! println!("{}", formatted);
 //! ```
 
@@ -27,15 +32,17 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
-    /// JSON format (default)
-    #[default]
+    /// Compact JSON
     Json,
-    /// YAML format
+    /// Pretty-printed JSON (default)
+    #[default]
+    JsonPretty,
+    /// YAML format (built-in, no external deps)
     Yaml,
-    /// TOML format
-    Toml,
     /// Pretty printed table format
     Table,
+    /// Plain text (key: value pairs)
+    Plain,
     /// Tab-separated values
     Tsv,
 }
@@ -43,23 +50,33 @@ pub enum OutputFormat {
 impl OutputFormat {
     /// Format a serializable value
     pub fn format<S: Serialize>(self, value: &S) -> Result<String, Box<dyn std::error::Error>> {
-        match self {
-            OutputFormat::Json => format_json(value),
-            OutputFormat::Yaml => format_yaml(value),
-            OutputFormat::Toml => format_toml(value),
-            OutputFormat::Table => format_table(value),
-            OutputFormat::Tsv => format_tsv(value),
-        }
+        let json = serde_json::to_value(value)?;
+        let output = match self {
+            OutputFormat::Json => serde_json::to_string(&json)?,
+            OutputFormat::JsonPretty => serde_json::to_string_pretty(&json)?,
+            OutputFormat::Yaml => json_to_yaml(&json, 0),
+            OutputFormat::Table => json_to_table(&json),
+            OutputFormat::Plain => json_to_plain(&json),
+            OutputFormat::Tsv => json_to_tsv(&json),
+        };
+        Ok(output)
     }
 
     /// Get all available format names
     pub fn available_formats() -> &'static [&'static str] {
-        &["json", "yaml", "toml", "table", "tsv"]
+        &["json", "json-pretty", "yaml", "table", "plain", "tsv"]
     }
 
-    /// Check if a format is available
-    pub fn is_available(&self) -> bool {
-        true
+    /// Get human-readable description
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Json => "Compact JSON (machine-readable)",
+            Self::JsonPretty => "Pretty-printed JSON (human-readable)",
+            Self::Yaml => "YAML format",
+            Self::Table => "ASCII table format",
+            Self::Plain => "Plain text (key: value)",
+            Self::Tsv => "Tab-separated values",
+        }
     }
 }
 
@@ -67,9 +84,10 @@ impl fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Json => write!(f, "json"),
+            Self::JsonPretty => write!(f, "json-pretty"),
             Self::Yaml => write!(f, "yaml"),
-            Self::Toml => write!(f, "toml"),
             Self::Table => write!(f, "table"),
+            Self::Plain => write!(f, "plain"),
             Self::Tsv => write!(f, "tsv"),
         }
     }
@@ -81,9 +99,10 @@ impl std::str::FromStr for OutputFormat {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "json" => Ok(OutputFormat::Json),
+            "json-pretty" | "jsonpretty" | "pretty" => Ok(OutputFormat::JsonPretty),
             "yaml" | "yml" => Ok(OutputFormat::Yaml),
-            "toml" => Ok(OutputFormat::Toml),
             "table" | "ascii" => Ok(OutputFormat::Table),
+            "plain" | "text" => Ok(OutputFormat::Plain),
             "tsv" | "tab" => Ok(OutputFormat::Tsv),
             _ => Err(format!(
                 "Unknown format '{}'. Available: {:?}",
@@ -94,36 +113,39 @@ impl std::str::FromStr for OutputFormat {
     }
 }
 
-/// JSON formatter (default)
+/// Format a serializable value using the specified output format.
+///
+/// Convenience function for commands that need to format output.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let data = vec![("a", "b"), ("c", "d")];
+/// println!("{}", format_output(&data, OutputFormat::Table)?);
+/// ```
+pub fn format_output<T: Serialize>(
+    data: &T,
+    format: OutputFormat,
+) -> Result<String, Box<dyn std::error::Error>> {
+    format.format(data)
+}
+
+/// JSON formatter (compact)
 fn format_json<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
+    let json = serde_json::to_value(value)?;
+    Ok(serde_json::to_string(&json)?)
+}
+
+/// JSON formatter (pretty-printed)
+fn format_json_pretty<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
     Ok(serde_json::to_string_pretty(&json)?)
 }
 
-/// YAML formatter (requires "config-formats" feature)
-#[cfg(feature = "config-formats")]
+/// YAML formatter (built-in, no external deps)
 fn format_yaml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
     let json = serde_json::to_value(value)?;
-    Ok(serde_yaml::to_string(&json)?)
-}
-
-/// YAML formatter fallback (when "config-formats" is not enabled)
-#[cfg(not(feature = "config-formats"))]
-fn format_yaml<S: Serialize>(_value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    Err("YAML format requires the 'config-formats' feature. Enable it with: cargo add clap-noun-verb --features config-formats".into())
-}
-
-/// TOML formatter (requires "config-formats" feature)
-#[cfg(feature = "config-formats")]
-fn format_toml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(toml::to_string_pretty(&json)?)
-}
-
-/// TOML formatter fallback (when "config-formats" is not enabled)
-#[cfg(not(feature = "config-formats"))]
-fn format_toml<S: Serialize>(_value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    Err("TOML format requires the 'config-formats' feature. Enable it with: cargo add clap-noun-verb --features config-formats".into())
+    Ok(json_to_yaml(&json, 0))
 }
 
 /// Table formatter - converts JSON to ASCII table
@@ -219,6 +241,59 @@ fn json_to_table(value: &serde_json::Value) -> String {
     }
 }
 
+/// Helper: Convert JSON value to YAML-like format (built-in, no serde_yaml dep)
+fn json_to_yaml(value: &serde_json::Value, indent: usize) -> String {
+    let prefix = "  ".repeat(indent);
+    match value {
+        serde_json::Value::Null => "null".to_string(),
+        serde_json::Value::Bool(b) => b.to_string(),
+        serde_json::Value::Number(n) => n.to_string(),
+        serde_json::Value::String(s) => format!("\"{}\"", s),
+        serde_json::Value::Array(arr) => {
+            if arr.is_empty() {
+                "[]".to_string()
+            } else {
+                arr.iter()
+                    .map(|v| format!("{}- {}", prefix, json_to_yaml(v, indent + 1)))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }
+        }
+        serde_json::Value::Object(map) => {
+            map.iter()
+                .map(|(k, v)| {
+                    if v.is_object() || v.is_array() {
+                        format!("{}{}:\n{}", prefix, k, json_to_yaml(v, indent + 1))
+                    } else {
+                        format!("{}{}: {}", prefix, k, json_to_yaml(v, indent))
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        }
+    }
+}
+
+/// Plain text formatter - key: value pairs
+fn json_to_plain(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Array(arr) => {
+            arr.iter()
+                .map(json_to_plain)
+                .collect::<Vec<_>>()
+                .join("\n")
+        }
+        serde_json::Value::Object(map) => {
+            map.iter()
+                .map(|(k, v)| format!("{}: {}", k, json_to_plain(v)))
+                .collect::<Vec<_>>()
+                .join("\n")
+        }
+        _ => value.to_string(),
+    }
+}
+
 /// Helper: Convert JSON to TSV
 fn json_to_tsv(value: &serde_json::Value) -> String {
     match value {
@@ -271,7 +346,11 @@ mod tests {
     fn test_available_formats() {
         let formats = OutputFormat::available_formats();
         assert!(formats.contains(&"json"));
+        assert!(formats.contains(&"json-pretty"));
         assert!(formats.contains(&"yaml"));
-        assert!(formats.contains(&"toml"));
+        assert!(formats.contains(&"table"));
+        assert!(formats.contains(&"plain"));
+        assert!(formats.contains(&"tsv"));
+        assert_eq!(formats.len(), 6);
     }
 }
