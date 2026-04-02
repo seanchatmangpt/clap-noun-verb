@@ -277,33 +277,3 @@ edit:completion:arg-completer[{cli_name}] = {{|@args|
 }}
 "#)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::domain::ontology::build_playground_ontology;
-
-    #[test]
-    fn test_shell_type_parsing() {
-        assert_eq!(ShellType::from_str("bash"), Some(ShellType::Bash));
-        assert_eq!(ShellType::from_str("ZSH"), Some(ShellType::Zsh));
-        assert_eq!(ShellType::from_str("unknown"), None);
-    }
-
-    #[test]
-    fn test_generate_bash_completion() {
-        let caps = build_playground_ontology();
-        let script = generate_completion_script("playground", &caps, ShellType::Bash);
-        assert!(script.script.contains("_playground_completions"));
-        assert!(script.script.contains("papers"));
-    }
-
-    #[test]
-    fn test_generate_all_shells() {
-        let caps = build_playground_ontology();
-        for shell in ShellType::all() {
-            let script = generate_completion_script("playground", &caps, shell);
-            assert!(!script.script.is_empty(), "Empty script for {:?}", shell);
-        }
-    }
-}

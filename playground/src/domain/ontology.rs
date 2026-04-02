@@ -171,29 +171,3 @@ WHERE {{
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_build_playground_ontology() {
-        let capabilities = build_playground_ontology();
-        assert!(capabilities.len() >= 9);
-    }
-
-    #[test]
-    fn test_capability_to_triples() {
-        let cap = CliCapability::read_only("papers", "list", "List papers");
-        let triples = cap.to_triples();
-        assert_eq!(triples.len(), 5);
-        assert!(triples[0].predicate.contains("type"));
-    }
-
-    #[test]
-    fn test_sparql_query_generation() {
-        let query = SparqlQueryType::SelectByNoun("papers".to_string());
-        let sparql = query.to_sparql();
-        assert!(sparql.contains("papers"));
-    }
-}

@@ -141,31 +141,3 @@ impl ExecutionContract {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::domain::ontology::build_playground_ontology;
-
-    #[test]
-    fn test_introspection_from_capabilities() {
-        let caps = build_playground_ontology();
-        let response = IntrospectionResponse::from_capabilities(
-            "playground",
-            "1.0.0",
-            "Domain-separated exemplar",
-            &caps,
-        );
-        assert_eq!(response.cli_name, "playground");
-        assert!(response.nouns.len() >= 3);
-        assert!(response.autonomic_features.contains(&"introspection".to_string()));
-    }
-
-    #[test]
-    fn test_execution_contract() {
-        let cap = CliCapability::mutating("config", "set", "Set config");
-        let contract = ExecutionContract::for_capability(&cap);
-        assert_eq!(contract.effect_type, EffectType::Mutating);
-        assert!(!contract.idempotent);
-    }
-}

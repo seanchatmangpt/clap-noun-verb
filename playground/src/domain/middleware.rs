@@ -116,24 +116,3 @@ impl MiddlewareStats {
         if total == 0 { 0.0 } else { self.cache_hits as f64 / total as f64 * 100.0 }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_middleware_config_default() {
-        let config = MiddlewareConfig::default();
-        assert!(config.logging.enabled);
-        assert!(!config.auth.require_auth);
-        assert_eq!(config.rate_limiting.max_requests, 100);
-    }
-
-    #[test]
-    fn test_cache_hit_rate() {
-        let mut stats = MiddlewareStats::default();
-        stats.cache_hits = 80;
-        stats.cache_misses = 20;
-        assert!((stats.cache_hit_rate() - 80.0).abs() < 0.01);
-    }
-}

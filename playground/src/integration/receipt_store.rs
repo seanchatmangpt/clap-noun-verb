@@ -216,14 +216,17 @@ impl ReceiptStore {
         }
 
         // Sort by timestamp (most recent first)
-        {
-            let by_id = &index.by_id;
-            index.by_timestamp.sort_by(|a, b| {
-                let ts_a = by_id.get(a).map(|m| m.timestamp.as_str());
-                let ts_b = by_id.get(b).map(|m| m.timestamp.as_str());
-                ts_b.cmp(&ts_a)
-            });
-        }
+        // Collect into a separate vec to avoid borrow conflict between
+        // index.by_id (immutable) and index.by_timestamp.sort_by (mutable)
+        let mut timestamp_pairs: Vec<(String, String)> = index
+            .by_timestamp
+            .iter()
+            .filter_map(|id| {
+                index.by_id.get(id).map(|m| (id.clone(), m.timestamp.clone()))
+            })
+            .collect();
+        timestamp_pairs.sort_by(|a, b| b.1.cmp(&a.1));
+        index.by_timestamp = timestamp_pairs.into_iter().map(|(id, _)| id).collect();
 
         // Save updated index
         self.save_index(&index)?;
@@ -276,14 +279,17 @@ impl ReceiptStore {
             .push(receipt.id.clone());
 
         // Sort by timestamp (most recent first)
-        {
-            let by_id = &index.by_id;
-            index.by_timestamp.sort_by(|a, b| {
-                let ts_a = by_id.get(a).map(|m| m.timestamp.as_str());
-                let ts_b = by_id.get(b).map(|m| m.timestamp.as_str());
-                ts_b.cmp(&ts_a)
-            });
-        }
+        // Collect into a separate vec to avoid borrow conflict between
+        // index.by_id (immutable) and index.by_timestamp.sort_by (mutable)
+        let mut timestamp_pairs: Vec<(String, String)> = index
+            .by_timestamp
+            .iter()
+            .filter_map(|id| {
+                index.by_id.get(id).map(|m| (id.clone(), m.timestamp.clone()))
+            })
+            .collect();
+        timestamp_pairs.sort_by(|a, b| b.1.cmp(&a.1));
+        index.by_timestamp = timestamp_pairs.into_iter().map(|(id, _)| id).collect();
 
         // Persist index
         self.save_index(&index)?;
@@ -366,7 +372,8 @@ mod tests {
             timestamp: chrono::Utc::now().to_rfc3339(),
         });
 
-        receipt.finalize().unwrap();
+        let signing_key = ed25519_dalek::SigningKey::from_bytes(&[0u8; 32]);
+        receipt.finalize(&signing_key).unwrap();
         receipt
     }
 

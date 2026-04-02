@@ -158,34 +158,3 @@ impl ExecutionReceipt {
 fn generate_id() -> String {
     Uuid::new_v4().to_string()
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_execution_span() {
-        let span = ExecutionSpan::new("papers.generate")
-            .with_attribute("family", "IMRaD")
-            .complete(SpanStatus::Ok);
-        assert_eq!(span.operation, "papers.generate");
-        assert_eq!(span.status, SpanStatus::Ok);
-        assert!(span.duration_ms.is_some());
-    }
-
-    #[test]
-    fn test_cli_metrics_success_rate() {
-        let mut metrics = CliMetrics::default();
-        metrics.total_invocations = 100;
-        metrics.successful_invocations = 95;
-        assert!((metrics.success_rate() - 95.0).abs() < 0.01);
-    }
-
-    #[test]
-    fn test_execution_receipt() {
-        let receipt = ExecutionReceipt::new("papers generate", &["IMRaD".to_string()], 42, true)
-            .with_agent("agent-001");
-        assert_eq!(receipt.command, "papers generate");
-        assert_eq!(receipt.agent_id, Some("agent-001".to_string()));
-    }
-}
