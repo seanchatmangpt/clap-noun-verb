@@ -16,7 +16,7 @@
 //! - JTBD-010: Mix positional and named arguments
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // =============================================================================
@@ -34,8 +34,7 @@ struct MultiFileOutput {
 ///
 /// # Arguments
 /// * `files` - Input files to process (comma-separated list)
-#[noun("batch", "Batch processing commands")]
-#[verb("process")]
+#[verb("process", "batch")]
 fn batch_process(files: String) -> Result<MultiFileOutput> {
     // Parse comma-separated string into Vec
     let file_list: Vec<String> = files.split(',').map(|s| s.trim().to_string()).collect();
@@ -88,8 +87,7 @@ fn verbosity_description(verbose: usize) -> String {
 ///
 /// # Arguments
 /// * `verbose` - Verbosity level (use -v, -vv, or -vvv)
-#[noun("runner", "Task runner commands")]
-#[verb("execute")]
+#[verb("execute", "runner")]
 fn runner_execute(verbose: usize) -> Result<VerbosityOutput> {
     let description = verbosity_description(verbose);
     Ok(VerbosityOutput { level: verbose, description })
@@ -130,8 +128,7 @@ struct ServerConfig {
 /// * `port` - Server port number [default: 8080]
 /// * `timeout` - Request timeout in seconds [default: 30]
 /// * `workers` - Number of worker threads [default: 4]
-#[noun("server", "Server management commands")]
-#[verb("configure")]
+#[verb("configure", "server")]
 fn server_configure(
     port: Option<u16>,
     timeout: Option<u64>,
@@ -186,8 +183,7 @@ struct FeatureFlags {
 /// * `debug` - Enable debug mode
 /// * `optimize` - Enable optimizations
 /// * `cache` - Enable caching
-#[noun("feature", "Feature flag commands")]
-#[verb("toggle")]
+#[verb("toggle", "feature")]
 fn feature_toggle(debug: bool, optimize: bool, cache: bool) -> Result<FeatureFlags> {
     Ok(FeatureFlags { debug, optimize, cache })
 }
@@ -231,8 +227,7 @@ struct EnvConfig {
 /// # Arguments
 /// * `api_key` - API key [env: API_KEY]
 /// * `base_url` - Base URL [env: BASE_URL] [default: https://api.example.com]
-#[noun("env", "Environment configuration")]
-#[verb("setup")]
+#[verb("setup", "env")]
 fn env_setup(api_key: Option<String>, base_url: Option<String>) -> Result<EnvConfig> {
     Ok(EnvConfig {
         api_key,
@@ -277,8 +272,7 @@ struct OutputFormat {
 /// * `json` - Export as JSON [group: format]
 /// * `yaml` - Export as YAML [group: format]
 /// * `csv` - Export as CSV [group: format]
-#[noun("export", "Data export commands")]
-#[verb("data")]
+#[verb("data", "export")]
 fn export_data(json: bool, yaml: bool, csv: bool) -> Result<OutputFormat> {
     let format = if json {
         "json"
@@ -336,8 +330,7 @@ struct UserInfo {
 /// * `username` - Username (required)
 /// * `email` - Email address (required)
 /// * `age` - User age (optional)
-#[noun("user", "User management commands")]
-#[verb("create")]
+#[verb("create", "user")]
 fn user_create(username: String, email: String, age: Option<u8>) -> Result<UserInfo> {
     Ok(UserInfo { username, email, age })
 }
@@ -384,8 +377,7 @@ struct FileOp {
 /// # Arguments
 /// * `source` - Source file path
 /// * `destination` - Destination file path
-#[noun("file", "File operations")]
-#[verb("copy")]
+#[verb("copy", "file")]
 fn file_copy(source: String, destination: Option<String>) -> Result<FileOp> {
     Ok(FileOp { source, destination })
 }
@@ -429,8 +421,7 @@ struct PageConfig {
 /// * `page` - Page number [default: 1]
 /// * `limit` - Items per page [default: 10]
 /// * `sort` - Sort order [default: asc]
-#[noun("items", "Item listing commands")]
-#[verb("list")]
+#[verb("list", "items")]
 fn items_list(
     page: Option<usize>,
     limit: Option<usize>,
@@ -486,8 +477,7 @@ struct DeployConfig {
 /// * `version` - Version to deploy
 /// * `dry_run` - Perform a dry run without actual changes
 /// * `force` - Force deployment even with warnings
-#[noun("deploy", "Deployment commands")]
-#[verb("to")]
+#[verb("to", "deploy")]
 fn deploy_to(
     environment: String,
     version: Option<String>,

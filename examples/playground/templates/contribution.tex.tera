@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{ {{- title -}} }
+\author{ {{- author -}} }
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+{{ abstract }}
+\end{abstract}
+
+% Contribution Thesis Structure: Gap, Design, Evaluation, Impact
+% This structure emphasizes identifying knowledge gaps and demonstrating contribution
+
+\section{Gap}
+{{ gap }}
+
+Identification of the knowledge gap in existing literature, establishing the motivation and necessity for this research contribution.
+
+\section{Design}
+{{ design }}
+
+Design of the contribution addressing the identified gap, including methodology, theoretical framework, and implementation approach.
+
+\section{Evaluation}
+{{ evaluation }}
+
+Rigorous evaluation of the contribution, demonstrating its effectiveness in addressing the knowledge gap through empirical validation.
+
+\section{Impact}
+{{ impact }}
+
+Discussion of the broader impact and implications of this contribution to the field, including future research directions.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{ {{- title -}} }
+\author{ {{- author -}} }
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+{{ abstract }}
+\end{abstract}
+
+% Narrative Thesis Structure: Field, Voice, Pattern, Insight
+% This structure supports interpretive and qualitative research traditions
+
+\section{Field}
+{{ field }}
+
+Description of the research field and context, establishing the landscape within which the narrative unfolds.
+
+\section{Voice}
+{{ voice }}
+
+The researcher's perspective and positionality, acknowledging subjectivity and reflexivity in the interpretive process.
+
+\section{Pattern}
+{{ pattern }}
+
+Identification and articulation of patterns emerging from the data, weaving together themes and recurring elements.
+
+\section{Insight}
+{{ insight }}
+
+Interpretation and synthesis of insights, offering meaning-making and implications for understanding the phenomenon.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

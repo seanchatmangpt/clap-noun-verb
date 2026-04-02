@@ -6,12 +6,13 @@ rust-version = "1.74"
 authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
 
 [dependencies]
-# Use published crates.io version (NOT local workspace)
-clap-noun-verb = "5.3.3"
-clap = "4.5"
-colored = "2.1"
+# Use local workspace version for testing framework fixes
+clap-noun-verb = { path = ".." }
+clap-noun-verb-macros = { path = "../clap-noun-verb-macros" }
+linkme = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9"  # For YAML output format
 
 # Enhanced capabilities
 tera = "1.20"           # Templating engine for LaTeX generation
@@ -21,6 +22,19 @@ oxigraph = "0.5.1"      # RDF/SPARQL semantic capabilities (matches clap-noun-ve
 lazy_static = "1.4"     # Global cached instances (template engine, RDF store)
 uuid = { version = "1.0", features = ["v4", "serde"] }  # Unique ID generation
 
+# ggen v26.4.2 dependencies (always enabled, no feature flags)
+sha2 = "0.10"            # Cryptographic hashing for receipts
+ed25519-dalek = "2.0"    # Signature verification for receipts
+chrono = { version = "0.4", features = ["serde"] }  # Timestamps for receipts and packs
+hex = "0.4"              # Hex encoding for fallback hash
+
+[features]
+default = []
+
 [[bin]]
 name = "playground"
 path = "src/main.rs"
+
+[[example]]
+name = "ggen_quickstart"
+path = "examples/ggen_quickstart.rs"

@@ -36,16 +36,19 @@ use syn::{parse::Parser, parse_macro_input, ItemFn};
 // Note: #[arg(...)] attributes on function parameters cannot be a real proc_macro_attribute
 // because Rust doesn't allow proc_macro_attribute on parameters - only on items.
 // The #[verb] macro parses #[arg(...)] attributes directly from pat_type.attrs.
-// However, we provide a pass-through #[arg] macro so the compiler accepts the attribute.
-// Users may still need #[allow(unknown_attributes)] in some contexts.
+//
+// This proc_macro_attribute exists solely so Rust accepts #[arg] on parameters
+// without triggering "unknown attribute" errors. When applied to an item (function,
+// struct, etc.), it emits a compile error — #[arg] should ONLY appear on parameters
+// within #[verb] functions, where it is parsed as raw tokens by the verb macro.
 
-/// Pass-through attribute macro for #[arg(...)] on function parameters
+/// Attribute macro for #[arg(...)] on function parameters within #[verb] functions.
 ///
-/// This attribute is parsed by the #[verb] macro but needs to exist as a real
-/// proc_macro_attribute so the compiler accepts it. It does nothing itself -
-/// the #[verb] macro processes these attributes during expansion.
+/// **DO NOT apply this to items (functions, structs, etc.)** — it will produce a
+/// compile error. Use it only on function parameters inside a `#[verb]` function.
 ///
-/// Usage:
+/// # Correct usage (on parameters)
+///
 /// ```rust,ignore
 /// #[verb("set")]
 /// fn set_config(
@@ -53,10 +56,29 @@ use syn::{parse::Parser, parse_macro_input, ItemFn};
 ///     port: u16,
 /// ) -> Result<()> {}
 /// ```
+///
+/// # Incorrect usage (on item) — will error
+///
+/// ```rust,ignore
+/// #[arg(something)]  // ERROR: #[arg] cannot be applied to items
+/// fn my_function() {}
+/// ```
 #[proc_macro_attribute]
-pub fn arg(_args: TokenStream, input: TokenStream) -> TokenStream {
-    // Just pass through - the #[verb] macro will parse #[arg(...)] attributes
-    input
+pub fn arg(_args: TokenStream, _input: TokenStream) -> TokenStream {
+    // This macro fires when #[arg] is applied to an item (function, struct, etc.).
+    // On parameters inside #[verb] functions, it never executes — #[verb] reads
+    // the raw attribute tokens directly. So if we're here, it's misuse.
+    syn::Error::new(
+        proc_macro2::Span::call_site(),
+        "#[arg(...)] cannot be applied to items directly. \
+         It should only be used on function parameters within a #[verb] function.\n\
+         \n\
+         Correct:\n  #[verb(\"set\")]\n  fn set(#[arg(default_value = \"80\")] port: u16) {{}}\n\
+         \n\
+         For argument metadata, you can also use doc comment tags:\n  /// [default: 80]\n  /// [env: PORT]\n  port: u16"
+    )
+    .to_compile_error()
+    .into()
 }
 
 /// Attribute macro for generating self-introspecting meta-framework capabilities

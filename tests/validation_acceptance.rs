@@ -1,7 +1,7 @@
 //! Acceptance tests for automatic validation
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -17,8 +17,7 @@ fn create_user(name: String, age: u8) -> User {
 // CLI functions with automatic validation
 
 /// Create a new user
-#[noun("users", "Manage users")]
-#[verb("create")]
+#[verb("create", "users")]
 fn create_user_cmd(
     name: String,
     age: u8, // u8 automatically validates to 0-255 range

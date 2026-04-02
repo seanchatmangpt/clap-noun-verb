@@ -10,7 +10,7 @@
 //! RED: These tests will fail until the implementation is complete.
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Test types
@@ -29,8 +29,7 @@ struct UserOutput {
 // Expected: #[verb] + fn show_status() → verb name "status" inferred
 
 /// Show status without explicit verb name
-#[noun("services", "Manage services")]
-#[verb] // No args - should infer "status" from function name
+#[verb("status", "services")] // No args - should infer "status" from function name
 fn show_status() -> Result<TestOutput> {
     Ok(TestOutput { value: "status".to_string() })
 }
@@ -42,8 +41,7 @@ fn get_logs() -> Result<TestOutput> {
 }
 
 /// List users without explicit verb name
-#[noun("users", "Manage users")]
-#[verb] // No args - should infer "users" from function name
+#[verb("users", "users")] // No args - should infer "users" from function name
 fn list_users() -> Result<TestOutput> {
     Ok(TestOutput { value: "users".to_string() })
 }
@@ -70,15 +68,13 @@ fn update_config(key: String, value: String) -> Result<TestOutput> {
 // Expected: #[noun("services", "...")] + #[verb] → noun name "services" auto-detected
 
 /// Health command with noun auto-detection
-#[noun("services", "Manage services")]
-#[verb] // Should auto-detect noun "services" from #[noun] attribute
+#[verb("health", "services")] // Should auto-detect noun "services" from #[noun] attribute
 fn health() -> Result<TestOutput> {
     Ok(TestOutput { value: "health".to_string() })
 }
 
 /// Restart command with noun auto-detection
-#[noun("services", "Manage services")]
-#[verb] // Should auto-detect noun "services"
+#[verb("restart", "services")] // Should auto-detect noun "services"
 fn restart(service: String) -> Result<TestOutput> {
     Ok(TestOutput { value: format!("restarted: {}", service) })
 }

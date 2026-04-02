@@ -4,7 +4,7 @@
 //! correctly read values from environment variables.
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -24,8 +24,7 @@ fn get_config(port: u16, host: String, verbose: bool) -> Config {
 /// #[arg(env = "SERVER_PORT", default_value = "8080")] on parameters.
 /// For testing, we verify the registry behavior works with env support.
 /// The macro already parses env attributes from #[arg(...)] when present.
-#[noun("config", "Application configuration")]
-#[verb("set")]
+#[verb("set", "config")]
 fn set_config(port: u16, host: String, verbose: bool) -> Result<Config> {
     Ok(get_config(port, host, verbose))
 }

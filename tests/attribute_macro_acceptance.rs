@@ -4,7 +4,7 @@
 //! Following London TDD (outside-in), we start with these acceptance tests.
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 // Test types
@@ -33,8 +33,7 @@ fn get_service_logs(service: String, lines: usize) -> Logs {
 // CLI functions with attribute macros (validation + delegation only)
 
 /// Show service status
-#[noun("services", "Manage services")]
-#[verb("status")]
+#[verb("status", "services")]
 fn show_status() -> Result<Status> {
     // 1. Validate inputs (none here)
     // 2. Delegate to business logic

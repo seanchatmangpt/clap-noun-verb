@@ -1,0 +1,26 @@
+[package]
+name = "playground-cli"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+
+[dependencies]
+# Use local workspace version for testing framework fixes
+clap-noun-verb = { path = ".." }
+clap-noun-verb-macros = { path = "../clap-noun-verb-macros" }
+linkme = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Enhanced capabilities
+tera = "1.20"           # Templating engine for LaTeX generation
+oxigraph = "0.5.1"      # RDF/SPARQL semantic capabilities (matches clap-noun-verb v5.1.0)
+
+# Performance & Reliability (Phase 1 Optimizations)
+lazy_static = "1.4"     # Global cached instances (template engine, RDF store)
+uuid = { version = "1.0", features = ["v4", "serde"] }  # Unique ID generation
+
+[[bin]]
+name = "playground"
+path = "src/main.rs"

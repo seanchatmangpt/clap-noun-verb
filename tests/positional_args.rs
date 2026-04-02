@@ -4,7 +4,7 @@
 //! are correctly parsed and applied as positional arguments.
 
 use clap_noun_verb::error::Result;
-use clap_noun_verb_macros::{noun, verb};
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -22,8 +22,7 @@ fn clone_repo(url: String, destination: Option<String>) -> Repo {
 /// Note: In real usage with #[arg] support, you would use:
 /// #[arg(index = 0)] on the url parameter and #[arg(index = 1)] on destination.
 /// For testing, we verify the registry behavior works with positional args.
-#[noun("git", "Git commands")]
-#[verb("clone")]
+#[verb("clone", "git")]
 fn clone_repository(url: String, destination: Option<String>) -> Result<Repo> {
     Ok(clone_repo(url, destination))
 }

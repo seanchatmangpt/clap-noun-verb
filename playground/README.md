@@ -20,6 +20,7 @@
 - Oxigraph 0.5.1 for RDF/SPARQL semantic capabilities
 - Complete Diataxis documentation structure
 - v5.3.3: Markdown code fence stripping in help text (cleaner CLI output)
+- **ggen v26.4.2 integration** - 7-domain capability model for code generation
 
 ---
 
@@ -52,6 +53,13 @@
 **Format**: Architecture, design decisions, philosophy
 
 → [Jump to Explanation](#-explanation-architecture--philosophy)
+
+### 🚀 ggen v26.4.2 Integration
+**Goal**: Modern code generation with 7-domain capability model
+**Audience**: Projects requiring AI agent integration
+**Format**: Capability-based code generation
+
+→ [Jump to ggen Documentation](#-ggen-v2642-integration)
 
 ---
 
@@ -754,9 +762,60 @@ cargo build --release
 
 ---
 
+## 🚀 ggen v26.4.2 Integration
+
+### What is ggen?
+
+**ggen v26.4.2** is a modern code generation tool with a **7-domain capability model** that provides fine-grained control over code generation, template management, and build orchestration.
+
+### The 7-Domain Capability Model
+
+ggen v26.4.2 organizes functionality into **7 domains**:
+
+1. **Generator** (`gen`) - Core code generation engine
+2. **Template** (`template`) - Template management and rendering
+3. **Builder** (`builder`) - Build orchestration and compilation
+4. **MCP** (`mcp`) - Model Context Protocol for AI agent integration
+5. **Validator** (`validator`) - Code quality and validation
+6. **Pack** (`pack`) - Package management and distribution
+7. **Receipt** (`receipt`) - Cryptographic verification and audit trails
+
+### Quickstart with ggen
+
+```bash
+# 1. Enable MCP capability
+ggen capability enable --surface mcp --projection rust
+
+# 2. Add required packs
+ggen pack add mcp-server
+
+# 3. Run sync (sacred command)
+ggen sync
+
+# 4. Verify receipt
+ggen receipt verify --file receipts/<id>.json
+```
+
+### Documentation
+
+- **Quickstart Example**: [examples/ggen_quickstart.rs](examples/ggen_quickstart.rs)
+- **Migration Guide**: [docs/ggen_migration.md](docs/ggen_migration.md)
+- **Official Docs**: https://docs.ggen.dev
+
+### Key Benefits
+
+- ✅ **Modular capabilities** - Enable only what you need
+- ✅ **Pack ecosystem** - Community-contributed templates and tools
+- ✅ **Cryptographic receipts** - Verifiable proof of operations
+- ✅ **Multi-projection** - Generate Rust, Go, TypeScript, and more
+- ✅ **MCP integration** - First-class AI agent support
+
+---
+
 ## 📚 Further Reading
 
 - **clap-noun-verb**: https://crates.io/crates/clap-noun-verb
+- **ggen v26.4.2**: https://docs.ggen.dev
 - **Diataxis Framework**: https://diataxis.fr/
 - **Tera Templating**: https://keats.github.io/tera/
 - **Oxigraph RDF**: https://github.com/oxigraph/oxigraph
