@@ -96,7 +96,7 @@ pub struct MathResult {
 /// # Arguments
 /// * `x` - First number
 /// * `y` - Second number
-#[verb]
+#[verb("add", "math")]  // Explicit noun since filename is "commands.rs"
 pub fn add(
     x: i32,
     y: i32,
@@ -110,7 +110,7 @@ pub fn add(
 /// # Arguments
 /// * `x` - First number
 /// * `y` - Second number
-#[verb]
+#[verb("subtract", "math")]  // Explicit noun since filename is "commands.rs"
 pub fn subtract(
     x: i32,
     y: i32,
@@ -119,6 +119,8 @@ pub fn subtract(
     Ok(MathResult { result })
 }
 ```
+
+**Note**: We use explicit noun syntax `#[verb("add", "math")]` because the file is named `commands.rs`. Without the explicit noun, the command would be `calculator commands add` instead of `calculator math add`.
 
 **Key Pattern:**
 1. CLI function delegates to domain immediately
@@ -186,7 +188,12 @@ The `#[verb]` macro:
 3. Serializes result to JSON
 4. Handles errors automatically
 
-**Noun inference:** Function `add` in `commands.rs` → noun `math` (from module)
+**Noun inference:** By default, nouns are inferred from the **filename** (not module name). For example:
+- `math.rs` → noun `math`
+- `services.rs` → noun `services`
+- `commands.rs` → noun `commands`
+
+When the filename doesn't match your desired noun, use explicit syntax: `#[verb("add", "math")]`
 
 ---
 
