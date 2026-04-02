@@ -4,9 +4,9 @@
 
 [![Crates.io](https://img.shields.io/crates/v/clap-noun-verb)](https://crates.io/crates/clap-noun-verb)
 [![Documentation](https://docs.rs/clap-noun-verb/badge.svg)](https://docs.rs/clap-noun-verb)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 
-**Current Version**: v5.3.2 | [Changelog](CHANGELOG.md) | [Phase 2 Features](docs/phase2-analysis.md)
+**Current Version**: v5.6.1 | [Changelog](CHANGELOG.md) | [API Reference](docs/reference/api-catalog.md)
 
 > **Architecture First:** CLI is interface, not application. Separate domain logic from CLI.
 
@@ -64,10 +64,10 @@
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.3"
+clap-noun-verb = "5.6"
 ```
 
-For development: also add `clap-noun-verb-macros = "5.3"`
+For development: also add `clap-noun-verb-macros = "5.6"`
 
 ---
 
@@ -107,9 +107,9 @@ $ myapp calc add 2 3
 
 ---
 
-## v5.2.0 Features (Phase 2)
+## Doc Comment Tags
 
-**Typer-like Doc Comment Syntax** for argument relationships:
+**Typer-like Doc Comment Syntax** for argument configuration:
 
 ```rust
 /// # Arguments
@@ -137,7 +137,7 @@ fn export(json: bool, yaml: bool, format: Option<String>, output: Option<String>
 - `[global]` - Propagate to subcommands
 - `[exclusive]` - Can't combine with other args
 
-See [Phase 2 Analysis](docs/phase2-analysis.md) for complete details.
+See [API Catalog](docs/reference/api-catalog.md) for complete details.
 
 ---
 
