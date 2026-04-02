@@ -181,19 +181,16 @@ pub fn process(input: String) -> Result<String> {
 
 ## Next Steps
 
-**How-To Guides** (task-oriented):
-- [Error Handling Patterns](../how-to/error-handling.md) - Add rich error types
-- [Chicago TDD Testing](../how-to/testing-patterns.md) - Test domain + CLI layers
-- [Multi-Command CLIs](../how-to/multi-command.md) - Scale to complex commands
+**Continue Learning:**
+- [Tutorial 02: Domain Separation](02-domain-separation.md) - Deep dive into architecture
+- [Tutorial 03: Adding Commands](03-adding-commands.md) - Multi-command CLIs
+- [Tutorial 04: Testing Basics](04-testing-basics.md) - Chicago TDD methodology
+- [How-To: Testing](../howto/testing.md) - Test strategies
+- [How-To: Validation](../howto/validation.md) - Input validation techniques
+- [Reference: Verb Macro](../reference/api/verb-macro.md) - Complete API reference
+- [Explanation: Architecture](../explanation/architecture.md) - Design philosophy
 
-**Reference** (information-oriented):
-- [Macro System](../reference/macros.md) - `#[verb]` attribute details
-- [Architecture](../reference/architecture.md) - Domain separation patterns
-- [Error Types](../reference/errors.md) - Error handling reference
-
-**Explanation** (understanding-oriented):
-- [Why Domain Separation?](../explanation/domain-separation.md) - Design rationale
-- [Semantic CLI Design](../explanation/semantic-design.md) - Noun-verb philosophy
+> **Note:** Advanced guides (async commands, multi-command patterns, error handling patterns) are planned for future releases.
 
 ## Common Agent Questions
 

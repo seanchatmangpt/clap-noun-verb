@@ -6,45 +6,44 @@ Welcome to the Wizard package - an AI-powered CLI wizard framework with rust-gen
 
 The Wizard package documentation is organized into four sections following the [Diataxis](https://diataxis.fr/) framework:
 
-### [🎓 Tutorials](./tutorials/README.md)
+### [🎓 Tutorials](../tutorial/README.md)
 **Learning-oriented guides to get you started**
 
-Start here if you're new to Wizard:
-- [Getting Started](./tutorials/getting-started.md) - Set up your first project in 5 minutes
-- [Your First Wizard Session](./tutorials/first-session.md) - Build a simple interactive wizard
-- [Running Examples](./tutorials/examples.md) - Explore working examples
+Start here if you're new to clap-noun-verb:
+- [Your First CLI](../tutorial/01-your-first-cli.md) - Build a CLI in 5 minutes
+- [Domain Separation](../tutorial/02-domain-separation.md) - Architecture principles
+- [Adding Commands](../tutorial/03-adding-commands.md) - Multi-command CLIs
+- [Testing Basics](../tutorial/04-testing-basics.md) - Chicago TDD methodology
 
-### [🔧 How-To Guides](./how-to/README.md)
+### [🔧 How-To Guides](../howto/README.md)
 **Task-oriented guides for solving specific problems**
 
 Use these when you need to accomplish a specific task:
-- [Streaming Responses](./how-to/streaming.md) - Implement token-by-token generation
-- [Caching Responses](./how-to/caching.md) - Improve performance with LRU caching
-- [Implementing Retry Logic](./how-to/retry-logic.md) - Handle transient failures gracefully
-- [Using Model Fallbacks](./how-to/model-fallbacks.md) - Chain multiple AI models
-- [Configuration Guide](./how-to/configuration.md) - Configure wizard for your needs
-- [CLI Integration](./how-to/cli-integration.md) - Integrate with clap CLI framework
+- [Production Deployment](../howto/production/deployment.md) - Deploy your CLI
+- [Production Monitoring](../howto/production/monitoring.md) - Observability
+- [Production Configuration](../howto/production/configuration.md) - Config management
+- [Production Security](../howto/production/security.md) - Security best practices
+- [Testing](../howto/testing.md) - Test strategies
+- [Validation](../howto/validation.md) - Input validation
 
-### [📖 Reference](./reference/README.md)
+### [📖 Reference](../reference/README.md)
 **Information-oriented technical documentation**
 
 Look here for complete technical information:
-- [API Reference](./reference/api.md) - Complete public API documentation
-- [Configuration Reference](./reference/configuration.md) - All configuration options
-- [Error Types](./reference/errors.md) - Error handling and recovery
-- [Feature Flags](./reference/features.md) - Feature flag guide
-- [Type Index](./reference/types.md) - All public types and traits
+- [Verb Macro](../reference/api/verb-macro.md) - `#[verb]` attribute reference
+- [Arg Attributes](../reference/api/arg-attributes.md) - Argument attributes
+- [Types](../reference/api/types.md) - Public types
+- [Errors](../reference/api/errors.md) - Error types
 
-### [💡 Explanation](./explanation/README.md)
+### [💡 Explanation](../explanation/README.md)
 **Understanding-oriented conceptual documentation**
 
 Read these to understand the design and concepts:
-- [Architecture Overview](./explanation/architecture.md) - High-level system design
-- [Design Decisions](./explanation/design-decisions.md) - Why we made key choices
-- [How Streaming Works](./explanation/streaming-internals.md) - Deep dive into streaming
-- [How Caching Works](./explanation/caching-internals.md) - Cache algorithm details
-- [Type-Safe Design](./explanation/type-safety.md) - Zero-cost abstraction patterns
-- [Concepts & Terminology](./explanation/concepts.md) - Key terms and ideas
+- [Architecture](../explanation/architecture.md) - System architecture
+- [Agent Architecture](../explanation/agent-architecture.md) - Multi-agent design
+- [AUTONOMIC.md](../AUTONOMIC.md) - Autonomic CLI layer
+
+> **Note:** The wizard package (requires "wizard" feature) has specialized documentation. See [wizard_quick_reference.md](wizard_quick_reference.md) for wizard-specific features.
 
 ## 🚀 Quick Start
 

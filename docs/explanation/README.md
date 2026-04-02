@@ -17,45 +17,20 @@ Use explanation docs when you:
 
 ## Explanation Topics
 
-### 🏗️ Architecture Philosophy
+### 🏗️ Architecture & Design
 
-**Understanding domain-first design and type-driven development**
+**Understanding clap-noun-verb's architecture**
 
-- **[Domain Separation](architecture/domain-separation.md)** - Why CLI validates, domain computes, integration connects
-- **[Type-First Thinking](architecture/type-first-thinking.md)** - Types encode invariants, compiler as design tool
-- **[Zero-Cost Abstractions](architecture/zero-cost-abstractions.md)** - Performance without runtime overhead
-- **[Chicago TDD Rationale](architecture/chicago-tdd.md)** - State-based testing vs London School mocking
+- **[Architecture Overview](architecture.md)** - System architecture and component design
+- **[Agent Architecture](agent-architecture.md)** - Multi-agent system design
+- **[Design Patterns](design-patterns.md)** - Common patterns and best practices
+- **[Type Safety](type-safety.md)** - Type-driven development and invariants
+- **[Performance](performance.md)** - Performance characteristics and optimization
+- **[RDF Basics](rdf-basics.md)** - Introduction to RDF for CLIs
+- **[Semantic Web](semantic-web.md)** - Semantic web integration
+- **[AUTONOMIC.md](../AUTONOMIC.md)** - Autonomic CLI layer (main doc)
 
-### 🤖 Autonomic CLI Design
-
-**Understanding machine-grade interfaces for autonomous systems**
-
-- **[Machine-Grade Interfaces](autonomic/machine-grade-cli.md)** - CLIs as contracts, not scripts
-- **[MAPE-K Loop Integration](autonomic/mape-k-loops.md)** - Monitor-Analyze-Plan-Execute-Knowledge loops
-- **[Agent2028 Vision](autonomic/agent2028.md)** - Trillion-agent ecosystems and autonomous control
-- **[Deterministic Execution](autonomic/determinism.md)** - Same inputs → same outputs with guards
-
-### 🧠 Semantic CLI Design
-
-**Understanding RDF/SPARQL for intent-based command discovery**
-
-- **[RDF Rationale](semantic/rdf-rationale.md)** - Why RDF for CLI ontologies
-- **[SPARQL Benefits](semantic/sparql-benefits.md)** - Query advantages over traditional help systems
-- **[Ontology Design Principles](semantic/ontology-design.md)** - Schema design for CLI commands
-
-### ⚖️ Framework Comparisons
-
-**Understanding trade-offs with alternative frameworks**
-
-- **[vs Pure Clap](comparisons/vs-clap.md)** - clap-noun-verb vs pure clap
-- **[vs Python Typer](comparisons/vs-typer.md)** - Rust vs Python for CLIs
-- **[vs Go Cobra](comparisons/vs-cobra.md)** - Rust vs Go for CLIs
-
-### 🗺️ Future Direction
-
-**Understanding the roadmap and vision**
-
-- **[Roadmap](roadmap.md)** - Planned features and long-term vision
+> **Note:** Additional explanation topics (domain separation, type-first thinking, zero-cost abstractions, Chicago TDD rationale) are planned for future releases.
 
 ---
 
@@ -78,33 +53,14 @@ Each explanation follows this structure:
 
 | Question | Explanation |
 |----------|-------------|
-| **Why separate domain logic?** | [architecture/domain-separation.md](architecture/domain-separation.md) |
-| **Why use types for invariants?** | [architecture/type-first-thinking.md](architecture/type-first-thinking.md) |
-| **Why zero-cost abstractions?** | [architecture/zero-cost-abstractions.md](architecture/zero-cost-abstractions.md) |
-| **Why Chicago TDD?** | [architecture/chicago-tdd.md](architecture/chicago-tdd.md) |
-| **Why machine-grade CLIs?** | [autonomic/machine-grade-cli.md](autonomic/machine-grade-cli.md) |
-| **Why Agent2028?** | [autonomic/agent2028.md](autonomic/agent2028.md) |
-| **Why RDF for CLIs?** | [semantic/rdf-rationale.md](semantic/rdf-rationale.md) |
-| **Why SPARQL queries?** | [semantic/sparql-benefits.md](semantic/sparql-benefits.md) |
-
-### By Design Principle
-
-| Principle | Explanation |
-|-----------|-------------|
-| **Domain Separation** | [architecture/domain-separation.md](architecture/domain-separation.md) |
-| **Type-First** | [architecture/type-first-thinking.md](architecture/type-first-thinking.md) |
-| **Zero-Cost** | [architecture/zero-cost-abstractions.md](architecture/zero-cost-abstractions.md) |
-| **Machine-Grade** | [autonomic/machine-grade-cli.md](autonomic/machine-grade-cli.md) |
-| **Deterministic** | [autonomic/determinism.md](autonomic/determinism.md) |
-| **Semantic** | [semantic/rdf-rationale.md](semantic/rdf-rationale.md) |
-
-### By Comparison
-
-| Comparison | Explanation |
-|------------|-------------|
-| **vs Clap** | [comparisons/vs-clap.md](comparisons/vs-clap.md) |
-| **vs Typer** | [comparisons/vs-typer.md](comparisons/vs-typer.md) |
-| **vs Cobra** | [comparisons/vs-cobra.md](comparisons/vs-cobra.md) |
+| **How does the architecture work?** | [architecture.md](architecture.md) |
+| **How do agents coordinate?** | [agent-architecture.md](agent-architecture.md) |
+| **What design patterns are used?** | [design-patterns.md](design-patterns.md) |
+| **How does type safety help?** | [type-safety.md](type-safety.md) |
+| **What about performance?** | [performance.md](performance.md) |
+| **How does RDF integration work?** | [rdf-basics.md](rdf-basics.md) |
+| **What about semantic web?** | [semantic-web.md](semantic-web.md) |
+| **What are autonomic features?** | [AUTONOMIC.md](../AUTONOMIC.md) |
 
 ---
 
@@ -112,12 +68,12 @@ Each explanation follows this structure:
 
 | Category | Files | Status |
 |----------|-------|--------|
-| **Architecture** | 4 files | ⏳ **Planned** |
-| **Autonomic** | 4 files | ⏳ **Planned** |
-| **Semantic** | 3 files | ⏳ **Planned** |
-| **Comparisons** | 3 files | ⏳ **Planned** |
-| **Roadmap** | 1 file | ⏳ **Planned** |
-| **TOTAL** | **17 files** | ⏳ **0% complete** |
+| **Core** | 8 files | ✅ **Available** |
+| **Architecture (docs/architecture/)** | 20+ files | ✅ **Available** |
+| **AUTONOMIC.md** | 1 file | ✅ **Available** |
+| **TOTAL** | **29+ files** | ✅ **Available** |
+
+> **Planned:** Additional topics (domain separation deep dive, type-first thinking guide, zero-cost abstractions, Chicago TDD rationale, framework comparisons) coming in future releases.
 
 ---
 
