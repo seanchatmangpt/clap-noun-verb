@@ -216,14 +216,14 @@ impl ReceiptStore {
         }
 
         // Sort by timestamp (most recent first)
-        index.by_timestamp.sort_by(|a, b| {
-            let index_a = index.by_id.get(a);
-            let index_b = index.by_id.get(b);
-            match (index_a, index_b) {
-                (Some(meta_a), Some(meta_b)) => meta_b.timestamp.cmp(&meta_a.timestamp),
-                _ => std::cmp::Ordering::Equal,
-            }
-        });
+        {
+            let by_id = &index.by_id;
+            index.by_timestamp.sort_by(|a, b| {
+                let ts_a = by_id.get(a).map(|m| m.timestamp.as_str());
+                let ts_b = by_id.get(b).map(|m| m.timestamp.as_str());
+                ts_b.cmp(&ts_a)
+            });
+        }
 
         // Save updated index
         self.save_index(&index)?;
@@ -276,14 +276,14 @@ impl ReceiptStore {
             .push(receipt.id.clone());
 
         // Sort by timestamp (most recent first)
-        index.by_timestamp.sort_by(|a, b| {
-            let index_a = index.by_id.get(a);
-            let index_b = index.by_id.get(b);
-            match (index_a, index_b) {
-                (Some(meta_a), Some(meta_b)) => meta_b.timestamp.cmp(&meta_a.timestamp),
-                _ => std::cmp::Ordering::Equal,
-            }
-        });
+        {
+            let by_id = &index.by_id;
+            index.by_timestamp.sort_by(|a, b| {
+                let ts_a = by_id.get(a).map(|m| m.timestamp.as_str());
+                let ts_b = by_id.get(b).map(|m| m.timestamp.as_str());
+                ts_b.cmp(&ts_a)
+            });
+        }
 
         // Persist index
         self.save_index(&index)?;

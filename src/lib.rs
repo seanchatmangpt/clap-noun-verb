@@ -116,7 +116,7 @@ pub mod kernel;
 pub mod io;
 
 // Advanced clap Integration
-pub mod clap;
+pub mod clap_ext;
 
 // Plugin System (requires "full" feature)
 #[cfg(feature = "full")]
@@ -202,6 +202,11 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
 pub use format::{OutputFormat, format_output};
+
+// Re-export clap types so users don't need clap as a direct dependency
+// This follows the facade pattern used by serde, tokio, and tracing
+// Note: These are from clap's builder module (the main clap crate re-exports these)
+pub use clap::{Arg, ArgAction, ArgMatches, Command};
 
 // =============================================================================
 // FEATURE-GATED RE-EXPORTS

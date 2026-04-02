@@ -51,23 +51,39 @@ fn list_packs() -> Result<PackListOutput> {
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let packs = store.list_all()
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+
     Ok(PackListOutput {
-        packs: packs.into_iter().map(|p| PackInfo { name: p.name, version: p.version }).collect(),
+        packs: packs.into_iter().map(|p| PackInfo {
+            name: p.name,
+            version: p.version,
+        }).collect(),
     })
 }
 
 /// Show pack details
 #[verb("show")]
 fn show_pack(identifier: String) -> Result<PackShowOutput> {
-    let store = PackStore::new()?;
-    Err("Not implemented".to_string())
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    let details = store.show(&identifier)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+
+    Ok(PackShowOutput {
+        name: details.name,
+        version: details.version,
+        description: details.description,
+        dependencies: details.dependencies,
+        capabilities: details.capabilities,
+    })
 }
 
 /// Verify pack integrity
 #[verb("verify")]
 fn verify_pack(identifier: String) -> Result<PackVerifyOutput> {
-    let store = PackStore::new()?;
-    let result = store.verify(&identifier)?;
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    let result = store.verify(&identifier)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     Ok(PackVerifyOutput {
         identifier,
@@ -83,7 +99,8 @@ fn verify_pack(identifier: String) -> Result<PackVerifyOutput> {
 fn graph_packs(
     dot_format: bool,
 ) -> Result<PackGraphOutput> {
-    let graph = DependencyGraph::load()?;
+    let graph = DependencyGraph::load()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(PackGraphOutput {
         graph: graph.to_dot_format(),
     })
@@ -94,13 +111,16 @@ fn graph_packs(
 fn update_packs(
     dry_run: bool,
 ) -> Result<PackUpdateOutput> {
-    let store = PackStore::new()?;
-    let updates = store.check_updates()?;
+    let store = PackStore::new()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
+    let updates = store.check_updates()
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
 
     if dry_run {
         return Ok(PackUpdateOutput::dry_run(updates));
     }
 
-    let applied = store.apply_updates(updates)?;
+    let applied = store.apply_updates(updates)
+        .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(PackUpdateOutput::applied(applied))
 }

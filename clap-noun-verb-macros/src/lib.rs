@@ -1232,17 +1232,17 @@ fn generate_verb_registration(
                 if let Some(ref act) = config.action {
                     // Parse action string to ArgAction
                     match act.as_str() {
-                        "count" => quote! { Some(::clap::ArgAction::Count) },
-                        "set" => quote! { Some(::clap::ArgAction::Set) },
-                        "set_false" => quote! { Some(::clap::ArgAction::SetFalse) },
-                        "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
-                        "append" => quote! { Some(::clap::ArgAction::Append) },
+                        "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
+                        "set" => quote! { Some(::clap_noun_verb::ArgAction::Set) },
+                        "set_false" => quote! { Some(::clap_noun_verb::ArgAction::SetFalse) },
+                        "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
+                        "append" => quote! { Some(::clap_noun_verb::ArgAction::Append) },
                         _ => quote! { None },
                     }
                 } else if let Some(ref inferred) = inferred_action {
                     match inferred.as_str() {
-                        "count" => quote! { Some(::clap::ArgAction::Count) },
-                        "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
+                        "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
+                        "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
                         _ => quote! { None },
                     }
                 } else {
@@ -1250,8 +1250,8 @@ fn generate_verb_registration(
                 }
             } else if let Some(ref inferred) = inferred_action {
                 match inferred.as_str() {
-                    "count" => quote! { Some(::clap::ArgAction::Count) },
-                    "set_true" => quote! { Some(::clap::ArgAction::SetTrue) },
+                    "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
+                    "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
                     _ => quote! { None },
                 }
             } else {
@@ -1939,9 +1939,9 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         // Parse value_parser = ...
                                         // Workaround: Convert TokenStream to string and match common patterns
                                         // This allows us to support common expressions like:
-                                        // - clap::value_parser!(u16).range(1..=65535)
-                                        // - clap::value_parser!(u32).range(1..)
-                                        // - clap::value_parser!(PathBuf)
+                                        // - clap_noun_verb::value_parser!(u16).range(1..=65535)
+                                        // - clap_noun_verb::value_parser!(u32).range(1..)
+                                        // - clap_noun_verb::value_parser!(PathBuf)
                                         // etc.
                                         // Convert syn::Expr to TokenStream, then to string
                                         let ts = quote::quote! { #nv.value };
@@ -2161,11 +2161,11 @@ fn extract_inner_type(ty: &syn::Type) -> syn::Type {
 /// Infer type parser for common types
 ///
 /// Returns a string representation of the parser expression for auto-inferred types:
-/// - `PathBuf` → `clap::value_parser!(PathBuf)`
-/// - `IpAddr` → `clap::value_parser!(IpAddr)`
-/// - `Ipv4Addr` → `clap::value_parser!(Ipv4Addr)`
-/// - `Ipv6Addr` → `clap::value_parser!(Ipv6Addr)`
-/// - `Url` → `clap::value_parser!(Url)` (if url feature available)
+/// - `PathBuf` → `clap_noun_verb::value_parser!(PathBuf)`
+/// - `IpAddr` → `clap_noun_verb::value_parser!(IpAddr)`
+/// - `Ipv4Addr` → `clap_noun_verb::value_parser!(Ipv4Addr)`
+/// - `Ipv6Addr` → `clap_noun_verb::value_parser!(Ipv6Addr)`
+/// - `Url` → `clap_noun_verb::value_parser!(Url)` (if url feature available)
 /// - Numeric types already handled by validation constraints
 fn infer_type_parser(ty: &syn::Type) -> Option<String> {
     if let syn::Type::Path(type_path) = ty {
@@ -2173,13 +2173,13 @@ fn infer_type_parser(ty: &syn::Type) -> Option<String> {
             type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
 
         match type_name.as_str() {
-            "PathBuf" => Some("clap::value_parser!(::std::path::PathBuf)".to_string()),
-            "IpAddr" => Some("clap::value_parser!(::std::net::IpAddr)".to_string()),
-            "Ipv4Addr" => Some("clap::value_parser!(::std::net::Ipv4Addr)".to_string()),
-            "Ipv6Addr" => Some("clap::value_parser!(::std::net::Ipv6Addr)".to_string()),
+            "PathBuf" => Some("clap_noun_verb::value_parser!(::std::path::PathBuf)".to_string()),
+            "IpAddr" => Some("clap_noun_verb::value_parser!(::std::net::IpAddr)".to_string()),
+            "Ipv4Addr" => Some("clap_noun_verb::value_parser!(::std::net::Ipv4Addr)".to_string()),
+            "Ipv6Addr" => Some("clap_noun_verb::value_parser!(::std::net::Ipv6Addr)".to_string()),
             // Url requires url crate - check if available at compile time
             // For now, we'll include it and let compilation fail if url feature isn't enabled
-            "Url" => Some("clap::value_parser!(::url::Url)".to_string()),
+            "Url" => Some("clap_noun_verb::value_parser!(::url::Url)".to_string()),
             // Duration requires custom parser - defer to explicit specification
             _ => None,
         }
