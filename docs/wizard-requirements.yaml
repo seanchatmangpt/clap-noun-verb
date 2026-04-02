@@ -1,0 +1,598 @@
+# Wizard Package Requirements Specification
+# SPARC Methodology - Specification Phase
+# Project: clap-noun-verb
+# Version: 0.1.0
+
+specification:
+  project: clap-noun-verb
+  component: wizard
+  version: 0.1.0
+  methodology: SPARC + Chicago TDD + DfLSS
+
+functional_requirements:
+  - id: FR-001
+    title: "Wizard CLI Command Structure"
+    description: "System shall provide wizard command with start, chat, generate, and configure subcommands"
+    priority: critical
+    acceptance_criteria:
+      - "wizard start initializes new session in ≤100ms (P95)"
+      - "wizard chat provides interactive REPL interface"
+      - "wizard generate produces 1-3 command suggestions in ≤3s"
+      - "wizard configure manages model settings"
+      - "All commands compile with --features wizard"
+      - "Stub implementations compile without feature flag"
+    dependencies:
+      - clap v4.x
+      - rust-genai v0.x
+    test_strategy: "Chicago TDD with AAA pattern, state verification"
+
+  - id: FR-002
+    title: "Session Lifecycle Management"
+    description: "System shall manage wizard session states with type-safe state machine"
+    priority: critical
+    acceptance_criteria:
+      - "State transitions encoded in types (invalid transitions impossible)"
+      - "States: Uninitialized → Initializing → Active → Paused/Terminated"
+      - "Error state reachable from any state"
+      - "All states implement Drop for cleanup"
+      - "Session state is serializable"
+    state_machine:
+      states:
+        - Uninitialized
+        - Initializing
+        - Active
+        - Paused
+        - Terminated
+        - Error
+      transitions:
+        - from: Uninitialized
+          to: Initializing
+          trigger: "initialize(config)"
+        - from: Initializing
+          to: Active
+          trigger: "successful_init"
+        - from: Active
+          to: Paused
+          trigger: "pause()"
+        - from: Paused
+          to: Active
+          trigger: "resume()"
+        - from: Active
+          to: Terminated
+          trigger: "terminate()"
+        - from: "*"
+          to: Error
+          trigger: "error_occurred"
+    test_strategy: "Property tests for state invariants"
+
+  - id: FR-003
+    title: "Interaction Modes"
+    description: "System shall support interactive, script, and API interaction modes"
+    priority: high
+    acceptance_criteria:
+      - "Interactive mode: REPL with command history"
+      - "Script mode: single prompt → single response"
+      - "API mode: async/await programmatic interface"
+      - "Mode selection via CLI flags or API calls"
+      - "All modes handle graceful shutdown"
+    modes:
+      interactive:
+        features:
+          - REPL prompt
+          - Multi-line input (Ctrl+D to submit)
+          - Command history (up/down arrows)
+          - Real-time response streaming
+          - Slash commands (/exit, /clear, /history)
+        performance:
+          - First token latency: ≤200ms (P50)
+          - Streaming response visible in real-time
+      script:
+        features:
+          - Input from CLI arg or stdin
+          - Output to stdout
+          - Exit code indicates status
+          - Machine-readable formats
+        performance:
+          - Total execution: ≤5s (P95)
+      api:
+        features:
+          - Async/await interface
+          - Streaming via async streams
+          - Thread-safe (Send + Sync)
+          - Graceful shutdown
+    test_strategy: "Integration tests for each mode with real scenarios"
+
+  - id: FR-004
+    title: "AI Model Configuration"
+    description: "System shall integrate rust-genai for flexible AI model configuration"
+    priority: critical
+    acceptance_criteria:
+      - "Support OpenAI, Anthropic, and local models via rust-genai"
+      - "Model switching without recompilation"
+      - "Configuration validation before API calls"
+      - "Deterministic mode: temperature=0.0, fixed seed"
+      - "Model capabilities queried at runtime"
+    supported_models:
+      openai:
+        - gpt-4
+        - gpt-4-turbo
+        - gpt-3.5-turbo
+      anthropic:
+        - claude-3-opus
+        - claude-3-sonnet
+      local:
+        - ollama/llama2
+        - ollama/mistral
+    determinism_modes:
+      deterministic:
+        temperature: 0.0
+        top_p: 1.0
+        seed: "fixed"
+        use_case: "Testing, reproducibility"
+      balanced:
+        temperature: 0.7
+        top_p: 0.9
+        seed: "random"
+        use_case: "General usage"
+      creative:
+        temperature: 1.2
+        top_p: 0.95
+        seed: "random"
+        use_case: "Brainstorming"
+    test_strategy: "Property tests verify determinism in deterministic mode"
+
+  - id: FR-005
+    title: "Output Formatting"
+    description: "System shall support multiple output formats with determinism guarantees"
+    priority: high
+    acceptance_criteria:
+      - "Formats: text, json, yaml, markdown, shell"
+      - "All formats implement FormatOutput trait"
+      - "JSON output is valid JSON"
+      - "Shell output is executable and shellcheck compatible"
+      - "Format selection via --format flag"
+      - "Auto-detect: text for TTY, json for pipes"
+    formats:
+      text:
+        features:
+          - Word wrapping at 80 chars
+          - ANSI color codes (TTY only)
+          - Section headers
+      json:
+        schema:
+          type: object
+          required: [response, metadata]
+          properties:
+            response:
+              type: string
+            metadata:
+              type: object
+              properties:
+                tokens: {type: integer}
+                latency_ms: {type: integer}
+                model: {type: string}
+      yaml:
+        features:
+          - Human and machine readable
+          - Comments preserved
+          - Multi-line strings
+      markdown:
+        features:
+          - Code fences for commands
+          - Bullet points
+          - Headers
+      shell:
+        features:
+          - Shebang line
+          - Comments
+          - Error checking (set -e)
+          - Shellcheck compatible
+    test_strategy: "Snapshot tests for all formats"
+
+non_functional_requirements:
+  - id: NFR-001
+    category: performance
+    title: "Session Initialization Latency"
+    description: "Session initialization shall complete in ≤100ms at P95"
+    measurement: "Time from wizard start to ready state"
+    validation:
+      - "Benchmark with criterion"
+      - "SLO check in CI pipeline"
+      - "Performance regression tests"
+    baseline: "50ms (current estimate)"
+    target: "100ms P95"
+
+  - id: NFR-002
+    category: performance
+    title: "Response Generation Latency"
+    description: "Full response generation shall complete in ≤5s at P95"
+    measurement: "Time from prompt submission to complete response"
+    validation:
+      - "End-to-end integration tests"
+      - "Real API call benchmarks"
+    baseline: "3s (estimate with gpt-3.5-turbo)"
+    target: "5s P95"
+
+  - id: NFR-003
+    category: performance
+    title: "Concurrent Session Throughput"
+    description: "System shall handle 100+ concurrent sessions without degradation"
+    measurement: "Number of active sessions with maintained SLOs"
+    validation:
+      - "Load testing with 100 concurrent sessions"
+      - "Monitor memory usage and latency"
+    target: "100 concurrent sessions"
+    constraints:
+      - "Single process"
+      - "API rate limits respected"
+
+  - id: NFR-004
+    category: resource_usage
+    title: "Memory Per Session"
+    description: "Memory usage per session shall not exceed 50MB at P95"
+    measurement: "Heap allocation per active session"
+    validation:
+      - "Memory profiler (valgrind, heaptrack)"
+      - "Memory leak detection"
+    target: "50MB P95 per session"
+    optimization_strategies:
+      - "String interning for repeated content"
+      - "Message history pruning"
+      - "Streaming responses (no buffering)"
+      - "Lazy loading of model metadata"
+
+  - id: NFR-005
+    category: resource_usage
+    title: "Binary Size"
+    description: "Release binary size shall not exceed 10MB with wizard feature"
+    measurement: "Stripped release binary size"
+    validation:
+      - "Size check in CI"
+      - "Regression tests"
+    targets:
+      with_feature: "10MB"
+      without_feature: "2MB"
+
+  - id: NFR-006
+    category: reliability
+    title: "Error Handling"
+    description: "All public APIs return Result<T, E> with comprehensive error types"
+    requirements:
+      - "No unwrap() or expect() in production code"
+      - "Errors include context and recovery suggestions"
+      - "Error messages user-friendly and actionable"
+      - "Errors logged with appropriate levels"
+    validation:
+      - "All error paths tested"
+      - "Error message review"
+      - "Panic detection tests"
+
+  - id: NFR-007
+    category: reliability
+    title: "Idempotency"
+    description: "Operations with identical inputs produce identical outputs (deterministic mode)"
+    scope:
+      - "Session initialization"
+      - "Command generation (deterministic mode)"
+      - "Configuration operations"
+    exceptions:
+      - "Session IDs always unique"
+      - "Timestamps reflect actual execution"
+      - "Non-deterministic mode intentionally varied"
+    validation:
+      - "Property tests verify idempotency"
+      - "Deterministic mode tests"
+
+  - id: NFR-008
+    category: observability
+    title: "Tracing Integration"
+    description: "All public APIs instrumented with tracing spans"
+    requirements:
+      - "All public APIs instrumented"
+      - "Spans for async operations"
+      - "Fields: session_id, model, operation"
+      - "Log levels: ERROR, WARN, INFO, DEBUG, TRACE"
+      - "Performance overhead ≤5%"
+    validation:
+      - "Tracing enabled in all modules"
+      - "Span nesting verified"
+      - "Performance benchmarks with tracing"
+
+  - id: NFR-009
+    category: observability
+    title: "Metrics Export"
+    description: "System shall export Prometheus-compatible metrics"
+    metrics:
+      - name: wizard_sessions_active
+        type: gauge
+        description: "Number of active wizard sessions"
+      - name: wizard_requests_total
+        type: counter
+        labels: [operation, status]
+        description: "Total requests by operation and status"
+      - name: wizard_request_duration_seconds
+        type: histogram
+        labels: [operation]
+        buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        description: "Request duration distribution"
+      - name: wizard_tokens_processed
+        type: counter
+        labels: [model]
+        description: "Total tokens processed by model"
+    validation:
+      - "Metrics exported in Prometheus format"
+      - "Dashboard queries documented"
+
+security_requirements:
+  - id: SEC-001
+    title: "Input Sanitization"
+    description: "All user inputs sanitized to prevent prompt injection"
+    requirements:
+      - "Maximum prompt length: 10,000 characters"
+      - "Forbidden pattern detection"
+      - "Unicode normalization (NFC)"
+      - "Special character escaping for shell output"
+    validation:
+      - "Fuzz testing with malicious inputs"
+      - "Injection attempt detection tests"
+
+  - id: SEC-002
+    title: "API Key Management"
+    description: "API keys stored securely using OS keyring"
+    requirements:
+      - "OS keyring integration (linux: Secret Service, macos: Keychain, windows: Credential Manager)"
+      - "Never store keys in plaintext files"
+      - "Never log API keys"
+      - "Redact keys in error messages"
+      - "Clear keys from memory after use"
+    fallback: "Environment variable (WIZARD_API_KEY)"
+    validation:
+      - "Key storage tests on all platforms"
+      - "Memory clearing verification"
+
+  - id: SEC-003
+    title: "Rate Limiting"
+    description: "API rate limiting to prevent quota exhaustion"
+    limits:
+      requests_per_minute: 60
+      tokens_per_minute: 100000
+      burst_size: 10
+    behavior:
+      - "Block when limit exceeded"
+      - "Clear error message with wait time"
+      - "Exponential backoff for retries"
+    validation:
+      - "Rate limit enforcement tests"
+      - "Burst handling tests"
+
+  - id: SEC-004
+    title: "Data Retention"
+    description: "Zero persistent storage of conversation data in v0.1.0"
+    policy:
+      session_data:
+        duration: "In-memory only"
+        cleanup: "On session termination"
+      configuration:
+        duration: "Until user deletion"
+        location: "~/.wizard.toml"
+      logs:
+        duration: "Based on log rotation policy"
+        sensitive_data: "Redacted"
+    user_controls:
+      - "/clear: Clear conversation history"
+      - "wizard configure reset: Delete configuration"
+      - "Session termination: Clear all session data"
+    validation:
+      - "Data cleared on exit"
+      - "No persistent conversation files"
+
+feature_flags:
+  - id: FF-001
+    name: wizard
+    description: "Enable full AI capabilities with rust-genai integration"
+    enabled:
+      dependencies:
+        - rust-genai = "0.1"
+        - tokio = { version = "1.0", features = ["full"] }
+        - reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+        - serde = { version = "1.0", features = ["derive"] }
+        - tracing = "0.1"
+      compiled_modules:
+        - wizard::cli
+        - wizard::session
+        - wizard::client
+        - wizard::ai_model
+        - wizard::format
+      binary_size: "~10MB"
+      startup_time: "~100ms"
+    disabled:
+      dependencies:
+        - "Minimal dependencies only"
+      compiled_modules:
+        - wizard::stub
+      behavior: "Return clear error message instructing to recompile with feature"
+      error_message: "Wizard feature not enabled. Recompile with --features wizard"
+      binary_size: "~2MB (no increase)"
+    validation:
+      - "Compilation succeeds with and without feature"
+      - "Binary size targets met"
+      - "Error messages helpful when disabled"
+
+integration_requirements:
+  - id: INT-001
+    title: "Clap Macro Integration"
+    description: "Integrate with existing clap-noun-verb noun/verb macros"
+    requirements:
+      - "Use #[noun(wizard)] macro"
+      - "Define verbs with #[verb(...)] macro"
+      - "Feature flag conditional compilation"
+      - "Help text generation"
+      - "Type safety preserved"
+    validation:
+      - "Macro expansion tests"
+      - "Help text verification"
+
+  - id: INT-002
+    title: "Configuration Hierarchy"
+    description: "Support multiple configuration sources with precedence"
+    precedence:
+      1: "CLI arguments (highest)"
+      2: "Environment variables"
+      3: "Configuration file (~/.wizard.toml)"
+      4: "Built-in defaults (lowest)"
+    environment_variables:
+      - WIZARD_MODEL
+      - WIZARD_API_KEY
+      - WIZARD_TEMPERATURE
+      - WIZARD_MAX_TOKENS
+    validation:
+      - "Precedence order tests"
+      - "Environment variable tests"
+      - "Config file parsing tests"
+
+  - id: INT-003
+    title: "Output Module Integration"
+    description: "Integrate with existing format module from clap-noun-verb"
+    requirements:
+      - "Implement FormatOutput trait"
+      - "Support all existing output formats"
+      - "Error handling consistency"
+      - "Output validation"
+    validation:
+      - "Format module integration tests"
+      - "Error conversion tests"
+
+test_specifications:
+  - id: TEST-001
+    title: "Unit Test Coverage"
+    target: "85%+ overall, 95%+ critical paths"
+    critical_modules:
+      - wizard::session
+      - wizard::ai_model
+      - wizard::sanitizer
+      - wizard::rate_limiter
+    test_framework: "Chicago TDD"
+    requirements:
+      - "AAA pattern (Arrange-Act-Assert)"
+      - "State-based testing"
+      - "Real collaborators (minimal mocks)"
+      - "Behavior verification"
+      - "Observable outputs tested"
+    measurement:
+      tool: cargo-tllvm-cov
+      command: cargo make coverage
+      report: HTML coverage report
+      ci: "Coverage tracked in pull requests"
+
+  - id: TEST-002
+    title: "Integration Tests"
+    scenarios:
+      - "Session lifecycle: init → chat → terminate"
+      - "Command generation: description → commands"
+      - "Configuration: set → get → verify"
+      - "Error handling: invalid input → clear error"
+      - "Output formatting: response → all formats"
+      - "Feature flag: disabled → helpful error"
+    requirements:
+      - "End-to-end workflows"
+      - "Real AI API integration (with test key)"
+      - "All interaction modes tested"
+    measurement:
+      - "All scenarios pass"
+      - "Integration tests in CI"
+
+  - id: TEST-003
+    title: "Property-Based Tests"
+    properties:
+      - "Prompt sanitizer preserves length bounds"
+      - "Session state machine maintains invariants"
+      - "Serialization round-trips preserve data"
+      - "Rate limiter enforces fairness"
+      - "Configuration validation catches invalid inputs"
+    framework: proptest
+    requirements:
+      - "100+ test cases per property"
+      - "Shrinking finds minimal failing cases"
+
+  - id: TEST-004
+    title: "Performance Benchmarks"
+    benchmarks:
+      - name: session_initialization
+        target: "≤100ms P95"
+      - name: prompt_sanitization
+        target: "≤1ms"
+      - name: output_formatting
+        target: "≤10ms"
+      - name: configuration_loading
+        target: "≤50ms"
+    framework: criterion
+    ci_integration:
+      - "Run on every PR"
+      - "Compare against baseline"
+      - "Fail on >10% regression"
+
+  - id: TEST-005
+    title: "Snapshot Tests"
+    coverage:
+      - "All output formats"
+      - "Error messages"
+      - "Help text"
+      - "Configuration display"
+    framework: insta
+    requirements:
+      - "Snapshots reviewed in code review"
+      - "Deterministic outputs verified"
+
+constraints:
+  technical:
+    - "Must use existing PostgreSQL database (if applicable)"
+    - "Compatible with Rust 1.74+"
+    - "Deploy to existing infrastructure"
+    - "Integration with clap-noun-verb framework"
+
+  business:
+    - "Launch as part of v0.2.0"
+    - "Zero breaking changes to existing API"
+    - "Backward compatibility maintained"
+
+  regulatory:
+    - "API usage terms of service compliance"
+    - "Data privacy requirements (no persistent storage v0.1.0)"
+
+validation_checklist:
+  requirements_quality:
+    - "All requirements testable"
+    - "Acceptance criteria clear and measurable"
+    - "Edge cases documented"
+    - "Performance metrics defined"
+    - "Security requirements specified"
+    - "Dependencies identified"
+    - "Constraints documented"
+
+  sparc_compliance:
+    - "Functional requirements complete"
+    - "Non-functional requirements complete"
+    - "Feature flag specifications complete"
+    - "Integration specifications complete"
+    - "Security specifications complete"
+    - "Test specifications complete"
+
+  chicago_tdd_compliance:
+    - "State-based testing approach"
+    - "Real collaborators preferred"
+    - "Behavior verification specified"
+    - "AAA pattern required"
+    - "Observable outputs identified"
+
+  type_first_thinking:
+    - "Core types defined with invariants"
+    - "State machine encoded in types"
+    - "Error types comprehensive"
+    - "Zero-cost abstractions identified"
+    - "API design prevents misuse"
+
+revision_history:
+  - version: 0.1.0
+    date: 2026-01-09
+    author: Specification Engineer
+    changes: Initial requirements specification

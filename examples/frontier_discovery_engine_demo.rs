@@ -136,10 +136,7 @@ mod tests {
 
     #[test]
     fn test_capability_discovery() {
-        let capabilities = vec![
-            Capability::semantic_analysis(),
-            Capability::code_generation(),
-        ];
+        let capabilities = vec![Capability::semantic_analysis(), Capability::code_generation()];
         assert_eq!(capabilities.len(), 2);
         println!("✅ Capabilities discovered dynamically");
     }

@@ -43,17 +43,11 @@ struct TestProperty {
 
 impl TestProperty {
     fn command_parsing() -> Self {
-        TestProperty {
-            name: "command-parsing",
-            description: "All valid inputs parse correctly",
-        }
+        TestProperty { name: "command-parsing", description: "All valid inputs parse correctly" }
     }
 
     fn error_handling() -> Self {
-        TestProperty {
-            name: "error-handling",
-            description: "All errors are handled gracefully",
-        }
+        TestProperty { name: "error-handling", description: "All errors are handled gracefully" }
     }
 
     fn idempotence() -> Self {
@@ -150,10 +144,7 @@ mod tests {
 
     #[test]
     fn test_property_based_testing() {
-        let properties = vec![
-            TestProperty::command_parsing(),
-            TestProperty::error_handling(),
-        ];
+        let properties = vec![TestProperty::command_parsing(), TestProperty::error_handling()];
         assert!(!properties.is_empty());
         println!("✅ Property-based testing framework operational");
     }

@@ -34,10 +34,10 @@ pub use crate::semantic::agent_builder::*;
 
 #[cfg(not(feature = "rdf"))]
 pub mod agent_builder {
-    use clap::{Command, Arg};
+    use clap::{Arg, Command};
     use std::collections::HashMap;
-    use thiserror::Error;
     use std::sync::Arc;
+    use thiserror::Error;
 
     /// Errors from agent CLI building
     #[derive(Debug, Error)]
@@ -244,13 +244,7 @@ pub mod agent_builder {
                 requires_args: false,
             };
 
-            self.commands.insert(
-                name_str,
-                DynamicCommand {
-                    metadata,
-                    handler,
-                },
-            );
+            self.commands.insert(name_str, DynamicCommand { metadata, handler });
 
             Ok(self)
         }
@@ -264,10 +258,7 @@ pub mod agent_builder {
         /// # Returns
         ///
         /// Returns error on the first duplicate or invalid name encountered
-        pub fn register_commands<I>(
-            &mut self,
-            commands: I,
-        ) -> AgentResult<&mut Self>
+        pub fn register_commands<I>(&mut self, commands: I) -> AgentResult<&mut Self>
         where
             I: IntoIterator<Item = (String, String, Arc<dyn CommandHandler>)>,
         {
@@ -341,10 +332,9 @@ pub mod agent_builder {
 
         /// Execute a command by name with arguments
         pub fn execute(&self, name: &str, args: CommandArgs) -> AgentResult<serde_json::Value> {
-            let command = self.commands.get(name)
-                .ok_or_else(|| AgentBuilderError::HandlerFailed(
-                    format!("Command not found: {}", name)
-                ))?;
+            let command = self.commands.get(name).ok_or_else(|| {
+                AgentBuilderError::HandlerFailed(format!("Command not found: {}", name))
+            })?;
 
             command.handler.execute(&args)
         }
@@ -365,18 +355,18 @@ pub mod agent_builder {
 
             for (name_key, cmd_def) in &self.commands {
                 let cmd_name: &'static str = Box::leak(name_key.clone().into_boxed_str());
-                let cmd_desc: &'static str = Box::leak(cmd_def.metadata.description.clone().into_boxed_str());
+                let cmd_desc: &'static str =
+                    Box::leak(cmd_def.metadata.description.clone().into_boxed_str());
 
                 let subcommand = Command::new(cmd_name).about(cmd_desc);
 
                 let mut subcommand = subcommand;
                 for arg_spec in &cmd_def.metadata.arguments {
                     let arg_name: &'static str = Box::leak(arg_spec.name.clone().into_boxed_str());
-                    let arg_help: &'static str = Box::leak(arg_spec.description.clone().into_boxed_str());
+                    let arg_help: &'static str =
+                        Box::leak(arg_spec.description.clone().into_boxed_str());
 
-                    let arg = Arg::new(arg_name)
-                        .help(arg_help)
-                        .required(arg_spec.required);
+                    let arg = Arg::new(arg_name).help(arg_help).required(arg_spec.required);
 
                     subcommand = subcommand.arg(arg);
                 }
@@ -391,7 +381,7 @@ pub mod agent_builder {
         pub fn run_with_args(&self, args: Vec<String>) -> AgentResult<serde_json::Value> {
             if args.len() < 2 {
                 return Err(AgentBuilderError::ValidationFailed(
-                    "No command specified".to_string()
+                    "No command specified".to_string(),
                 ));
             }
 

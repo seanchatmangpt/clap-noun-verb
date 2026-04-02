@@ -11,7 +11,7 @@ use std::process::{Command, Stdio};
 
 /// Helper function to run an example and capture output
 fn run_example(example_name: &str, args: Vec<&str>) -> Result<(String, i32)> {
-    let mut cmd = Command::new("cargo")
+    let cmd = Command::new("cargo")
         .args(&["run", "--example", example_name, "--"])
         .args(&args)
         .stdout(Stdio::piped())

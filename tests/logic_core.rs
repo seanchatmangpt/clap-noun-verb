@@ -2,7 +2,6 @@
 
 use clap_noun_verb::error::Result;
 use clap_noun_verb::logic::core::{make_core_function, CoreFunctionImpl};
-use clap_noun_verb::logic::CoreFunction;
 
 #[test]
 fn test_make_core_function() {

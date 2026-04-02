@@ -175,6 +175,10 @@ pub mod frontier;
 #[cfg(feature = "rdf")]
 pub mod ggen_integration;
 
+// Wizard - Interactive multi-step CLI workflows with AI assistance (requires "wizard" feature)
+#[cfg(feature = "wizard")]
+pub mod wizard;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 

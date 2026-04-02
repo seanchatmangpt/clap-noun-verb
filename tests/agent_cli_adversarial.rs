@@ -3,8 +3,7 @@
 //! Chicago TDD: State-based testing, real collaborators, behavior verification (AAA)
 
 use clap_noun_verb::agent_cli::{
-    AgentCliBuilder, AgentResult, CommandArgs, CommandHandler, CommandMetadata,
-    AgentBuilderError,
+    AgentBuilderError, AgentCliBuilder, AgentResult, CommandArgs, CommandHandler, CommandMetadata,
 };
 use std::sync::{Arc, Mutex};
 
@@ -16,9 +15,7 @@ struct CountingHandler {
 
 impl CountingHandler {
     fn new() -> Self {
-        Self {
-            counter: Arc::new(Mutex::new(0)),
-        }
+        Self { counter: Arc::new(Mutex::new(0)) }
     }
 
     fn count(&self) -> u32 {
@@ -125,12 +122,7 @@ fn test_edge_case_command_names() {
     let mut builder = AgentCliBuilder::new("edge-test", "Edge case test");
     let handler = Arc::new(CountingHandler::new());
 
-    let names = vec![
-        "cmd-with-hyphens",
-        "cmd123numbers",
-        "cmd_with_underscores",
-        "cmd-123-mixed",
-    ];
+    let names = vec!["cmd-with-hyphens", "cmd123numbers", "cmd_with_underscores", "cmd-123-mixed"];
 
     // Act: Register edge case names
     for name in &names {
@@ -338,9 +330,7 @@ fn test_named_arguments() {
     let cli = builder.build().expect("Build failed");
 
     // Act: Build args with named values
-    let args = CommandArgs::new()
-        .with_arg("key1", "value1")
-        .with_arg("key2", "value2");
+    let args = CommandArgs::new().with_arg("key1", "value1").with_arg("key2", "value2");
 
     let result = cli.execute("cmd", args.clone());
 

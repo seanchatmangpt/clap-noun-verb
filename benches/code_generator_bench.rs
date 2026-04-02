@@ -1,16 +1,16 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 #[cfg(feature = "rdf-composition")]
-use clap_noun_verb::rdf::turtle_parser::TurtleParser;
-#[cfg(feature = "rdf-composition")]
 use clap_noun_verb::rdf::code_generator::CliCodeGenerator;
+#[cfg(feature = "rdf-composition")]
+use clap_noun_verb::rdf::turtle_parser::TurtleParser;
 
 /// Generate test Turtle document with N verbs
 #[cfg(feature = "rdf-composition")]
 fn generate_turtle(num_verbs: usize) -> String {
     let mut turtle = String::from(
         "@prefix cnv: <https://cnv.dev/ontology#> .\n\
-         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n"
+         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n",
     );
 
     turtle.push_str("cnv:Services a cnv:Noun ;\n    cnv:name \"services\" ;\n    rdfs:comment \"Service commands\" .\n\n");
@@ -32,9 +32,7 @@ fn code_generation_small(c: &mut Criterion) {
     let parsed = parser.parse(&turtle).expect("Failed to parse");
     let generator = CliCodeGenerator::new().expect("Failed to create generator");
 
-    c.bench_function("codegen_10_verbs", |b| {
-        b.iter(|| generator.generate_from_ontology(&parsed))
-    });
+    c.bench_function("codegen_10_verbs", |b| b.iter(|| generator.generate_from_ontology(&parsed)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -44,9 +42,7 @@ fn code_generation_medium(c: &mut Criterion) {
     let parsed = parser.parse(&turtle).expect("Failed to parse");
     let generator = CliCodeGenerator::new().expect("Failed to create generator");
 
-    c.bench_function("codegen_50_verbs", |b| {
-        b.iter(|| generator.generate_from_ontology(&parsed))
-    });
+    c.bench_function("codegen_50_verbs", |b| b.iter(|| generator.generate_from_ontology(&parsed)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -56,9 +52,7 @@ fn code_generation_large(c: &mut Criterion) {
     let parsed = parser.parse(&turtle).expect("Failed to parse");
     let generator = CliCodeGenerator::new().expect("Failed to create generator");
 
-    c.bench_function("codegen_100_verbs", |b| {
-        b.iter(|| generator.generate_from_ontology(&parsed))
-    });
+    c.bench_function("codegen_100_verbs", |b| b.iter(|| generator.generate_from_ontology(&parsed)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -68,9 +62,7 @@ fn code_generation_xl(c: &mut Criterion) {
     let parsed = parser.parse(&turtle).expect("Failed to parse");
     let generator = CliCodeGenerator::new().expect("Failed to create generator");
 
-    c.bench_function("codegen_500_verbs", |b| {
-        b.iter(|| generator.generate_from_ontology(&parsed))
-    });
+    c.bench_function("codegen_500_verbs", |b| b.iter(|| generator.generate_from_ontology(&parsed)));
 }
 
 #[cfg(feature = "rdf-composition")]
@@ -87,9 +79,7 @@ fn code_generation_parameterized(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::from_parameter(format!("{}_verbs", size)),
             size,
-            |b, _| {
-                b.iter(|| generator.generate_from_ontology(&parsed))
-            },
+            |b, _| b.iter(|| generator.generate_from_ontology(&parsed)),
         );
     }
     group.finish();
@@ -100,7 +90,9 @@ fn noun_macro_generation(c: &mut Criterion) {
     let generator = CliCodeGenerator::new().expect("Failed to create generator");
 
     c.bench_function("noun_macro_generation", |b| {
-        b.iter(|| generator.generate_noun_macro(black_box("services"), black_box("Service commands")))
+        b.iter(|| {
+            generator.generate_noun_macro(black_box("services"), black_box("Service commands"))
+        })
     });
 }
 

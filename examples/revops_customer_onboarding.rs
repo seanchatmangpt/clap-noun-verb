@@ -84,9 +84,7 @@ impl CustomerOnboarding {
                 "30 days in: Are we delivering value?".to_string(),
                 "Let's define success: What does winning look like?".to_string(),
             ],
-            ("support", 7) => vec![
-                "Success plan created - tracking your goals".to_string(),
-            ],
+            ("support", 7) => vec!["Success plan created - tracking your goals".to_string()],
             ("training", 0) => vec![
                 "Welcome to Clap Certification! 🎓".to_string(),
                 "Start Lesson 1: Getting Started".to_string(),
@@ -118,10 +116,9 @@ impl CustomerOnboarding {
                 "First 10 generations free".to_string(),
                 "Tutorial: [link]".to_string(),
             ],
-            ("ggen", 1) => vec![
-                "Generated any CLIs yet?".to_string(),
-                "Try this template: [link]".to_string(),
-            ],
+            ("ggen", 1) => {
+                vec!["Generated any CLIs yet?".to_string(), "Try this template: [link]".to_string()]
+            }
             ("ggen", 7) => vec![
                 "Week 1 summary: X CLIs generated, X hours saved".to_string(),
                 "Ready to upgrade to pro plan?".to_string(),
@@ -149,7 +146,7 @@ impl CustomerOnboarding {
                     "DAY 60 CHECK: Baseline metrics + early wins".to_string(),
                     "DAY 90 CHECK: Full assessment + renewal decision".to_string(),
                 ]);
-            },
+            }
             "consulting" => {
                 plan.extend(vec![
                     "PROJECT: CLI Architecture Review & Redesign".to_string(),
@@ -161,7 +158,7 @@ impl CustomerOnboarding {
                     "MILESTONE 2 (Week 4): Draft architecture".to_string(),
                     "MILESTONE 3 (Week 8): Final delivery + training".to_string(),
                 ]);
-            },
+            }
             "training" => {
                 plan.extend(vec![
                     "GOAL 1: Get team certified".to_string(),
@@ -174,7 +171,7 @@ impl CustomerOnboarding {
                     "WEEK 3: Project work".to_string(),
                     "WEEK 4: Exam + certification".to_string(),
                 ]);
-            },
+            }
             _ => {
                 plan.push(format!("Standard success plan for {}", stream));
             }

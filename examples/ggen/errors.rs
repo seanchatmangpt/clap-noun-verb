@@ -4,7 +4,6 @@
 //! to reduce support requests and improve user experience.
 
 use std::fmt;
-use thiserror::Error;
 
 /// User-facing error with problem description and actionable recovery steps
 #[derive(Debug, Clone)]

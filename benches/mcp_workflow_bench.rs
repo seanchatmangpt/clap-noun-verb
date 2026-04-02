@@ -1,18 +1,18 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 #[cfg(feature = "rdf-composition")]
-use clap_noun_verb::rdf::turtle_parser::TurtleParser;
+use clap_noun_verb::rdf::code_generator::CliCodeGenerator;
 #[cfg(feature = "rdf-composition")]
 use clap_noun_verb::rdf::sparql_executor_oxigraph::SparqlExecutor;
 #[cfg(feature = "rdf-composition")]
-use clap_noun_verb::rdf::code_generator::CliCodeGenerator;
+use clap_noun_verb::rdf::turtle_parser::TurtleParser;
 
 /// Generate test Turtle document with N verbs
 #[cfg(feature = "rdf-composition")]
 fn generate_turtle(num_verbs: usize) -> String {
     let mut turtle = String::from(
         "@prefix cnv: <https://cnv.dev/ontology#> .\n\
-         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n"
+         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n",
     );
 
     turtle.push_str("cnv:Services a cnv:Noun ;\n    cnv:name \"services\" ;\n    rdfs:comment \"Service commands\" .\n\n");
@@ -137,9 +137,7 @@ fn end_to_end_parameterized(c: &mut Criterion) {
 /// Measure overhead of parser creation
 #[cfg(feature = "rdf-composition")]
 fn parser_creation_overhead(c: &mut Criterion) {
-    c.bench_function("turtle_parser_creation", |b| {
-        b.iter(|| TurtleParser::new())
-    });
+    c.bench_function("turtle_parser_creation", |b| b.iter(|| TurtleParser::new()));
 }
 
 /// Measure overhead of generator creation

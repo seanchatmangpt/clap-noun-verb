@@ -1,0 +1,1000 @@
+# Wizard Package - API Specification
+# OpenAPI-style specification for wizard CLI and library API
+# Project: clap-noun-verb
+# Version: 0.1.0
+
+openapi: 3.0.0
+info:
+  title: Wizard Package API
+  version: 0.1.0
+  description: |
+    AI-powered interactive CLI for clap-noun-verb framework.
+    Provides command generation, guided workflows, and context-aware assistance.
+  contact:
+    name: clap-noun-verb maintainers
+
+# CLI Command Specifications
+cli:
+  commands:
+    wizard_start:
+      command: wizard start
+      description: Initialize new wizard session
+      usage: |
+        wizard start [OPTIONS]
+
+        OPTIONS:
+          --model <MODEL>              AI model identifier [default: gpt-4]
+          --temperature <TEMP>         Temperature (0.0-2.0) [default: 0.7]
+          --max-tokens <TOKENS>        Maximum tokens [default: 2048]
+          --deterministic              Enable deterministic mode (temp=0.0)
+
+      arguments:
+        - name: model
+          type: String
+          required: false
+          default: "gpt-4"
+          description: AI model identifier
+          validation:
+            - Must be supported model
+            - Query available models with 'wizard configure list-models'
+
+        - name: temperature
+          type: f32
+          required: false
+          default: 0.7
+          range: [0.0, 2.0]
+          description: Model temperature for response randomness
+          validation:
+            - Must be in range [0.0, 2.0]
+
+        - name: max-tokens
+          type: u32
+          required: false
+          default: 2048
+          description: Maximum tokens per response
+          validation:
+            - Must be > 0
+            - Must be ≤ model's max context
+
+      outputs:
+        success:
+          type: object
+          properties:
+            session_id:
+              type: string
+              format: uuid
+              description: Unique session identifier
+            model_config:
+              type: object
+              properties:
+                model: string
+                temperature: number
+                max_tokens: integer
+            status:
+              type: string
+              enum: [active, initializing]
+          example: |
+            Session initialized successfully
+            Session ID: 550e8400-e29b-41d4-a716-446655440000
+            Model: gpt-4
+            Temperature: 0.7
+            Max Tokens: 2048
+
+        error:
+          type: object
+          properties:
+            error:
+              type: string
+            error_code:
+              type: string
+              enum: [invalid_model, configuration_error, api_key_missing, network_error]
+            suggestion:
+              type: string
+          examples:
+            invalid_model:
+              error: "Unknown model: gpt-5"
+              error_code: invalid_model
+              suggestion: "Run 'wizard configure list-models' to see available models"
+
+            api_key_missing:
+              error: "API key not configured"
+              error_code: api_key_missing
+              suggestion: "Set API key with 'wizard configure set api_key <KEY>' or WIZARD_API_KEY environment variable"
+
+      exit_codes:
+        0: Success
+        1: General error
+        2: Configuration error
+        3: API error
+        4: Timeout
+
+      performance:
+        target_latency: "≤100ms (P95)"
+        measurement: "Time from command invocation to ready state"
+
+    wizard_chat:
+      command: wizard chat
+      description: Interactive conversation with AI assistant
+      usage: |
+        wizard chat [OPTIONS] [PROMPT]
+
+        OPTIONS:
+          --session-id <UUID>          Resume existing session
+          --prompt <TEXT>              Initial prompt (script mode)
+          --mode <MODE>                Interaction mode [default: interactive]
+                                       [possible: interactive, script, one-shot]
+          --format <FORMAT>            Output format [default: text]
+                                       [possible: text, json, yaml, markdown]
+
+      arguments:
+        - name: session-id
+          type: UUID
+          required: false
+          description: Resume existing session
+          validation:
+            - Must be valid UUID
+            - Session must exist and be active/paused
+
+        - name: prompt
+          type: String
+          required: false
+          description: Initial prompt (for script mode)
+          validation:
+            - Length ≤ 10,000 characters
+            - Sanitized for prompt injection
+
+        - name: mode
+          type: InteractionMode
+          required: false
+          default: interactive
+          values: [interactive, script, one-shot]
+          description: |
+            interactive: REPL interface with history
+            script: Single prompt-response cycle
+            one-shot: Stateless single interaction
+
+      modes:
+        interactive:
+          behavior:
+            - Display REPL prompt
+            - Accept multi-line input (Ctrl+D to submit)
+            - Stream responses in real-time
+            - Maintain conversation history
+            - Support slash commands
+
+          slash_commands:
+            /exit:
+              description: Terminate session
+              aliases: [/quit, /q]
+
+            /clear:
+              description: Clear conversation history
+              confirmation: true
+
+            /history:
+              description: Show message history
+              options:
+                --limit <N>: Show last N messages
+                --json: Output as JSON
+
+            /save:
+              description: Export conversation to file
+              usage: /save <filename>
+              formats: [json, yaml, markdown, text]
+
+            /load:
+              description: Import conversation from file
+              usage: /load <filename>
+              confirmation: true
+
+            /config:
+              description: Show current configuration
+
+            /help:
+              description: Display help message
+
+          ux:
+            - Response streaming with progress indicator
+            - Color-coded output (prompts, responses, errors)
+            - Graceful terminal resize handling
+            - Unicode support
+            - Syntax highlighting for code blocks
+
+          performance:
+            first_token_latency: "≤200ms (P50)"
+            full_response: "≤5s (P95)"
+
+        script:
+          behavior:
+            - Accept prompt from --prompt argument or stdin
+            - Generate single response
+            - Exit after response
+            - Return exit code 0 on success
+
+          input_sources:
+            cli_arg: "--prompt \"text\""
+            stdin: "echo 'prompt' | wizard chat --mode script"
+            file: "wizard chat --mode script < prompt.txt"
+
+          output:
+            - Machine-readable format (json/yaml)
+            - Exit code indicates success/failure
+
+          performance:
+            total_execution: "≤5s (P95)"
+
+        one_shot:
+          behavior:
+            - Single prompt-response cycle
+            - No session persistence
+            - Stateless operation
+            - No conversation context
+
+          use_cases:
+            - Quick queries
+            - Script integration
+            - CI/CD pipelines
+
+      outputs:
+        success:
+          type: object
+          properties:
+            response:
+              type: string
+              description: AI assistant response
+            token_usage:
+              type: object
+              properties:
+                prompt_tokens: integer
+                completion_tokens: integer
+                total_tokens: integer
+            latency:
+              type: object
+              properties:
+                first_token_ms: integer
+                total_ms: integer
+            model:
+              type: string
+          example_json: |
+            {
+              "response": "To list all files with details, use: ls -la",
+              "token_usage": {
+                "prompt_tokens": 15,
+                "completion_tokens": 20,
+                "total_tokens": 35
+              },
+              "latency": {
+                "first_token_ms": 150,
+                "total_ms": 2500
+              },
+              "model": "gpt-4"
+            }
+
+      exit_codes:
+        0: Success
+        1: General error
+        3: API error
+        4: Timeout
+        5: Session not found
+
+    wizard_generate:
+      command: wizard generate
+      description: Generate command suggestions from natural language
+      usage: |
+        wizard generate [OPTIONS] <DESCRIPTION>
+
+        OPTIONS:
+          --format <FORMAT>            Output format [default: text]
+                                       [possible: text, json, yaml, shell]
+          --validate                   Validate generated commands [default: true]
+          --no-validate                Skip command validation
+          --max-alternatives <N>       Maximum alternative suggestions [default: 3]
+
+      arguments:
+        - name: description
+          type: String
+          required: true
+          description: Natural language description of desired command
+          validation:
+            - Length ≤ 1,000 characters
+            - Sanitized for injection
+          examples:
+            - "list all files sorted by size"
+            - "find all python files modified in the last week"
+            - "compress this directory to a tar.gz"
+
+        - name: format
+          type: OutputFormat
+          required: false
+          default: text
+          values: [text, json, yaml, shell]
+          description: Output format
+
+        - name: validate
+          type: bool
+          required: false
+          default: true
+          description: Validate generated commands for safety
+
+      outputs:
+        success:
+          type: object
+          properties:
+            commands:
+              type: array
+              items:
+                type: object
+                properties:
+                  command:
+                    type: string
+                    description: Generated shell command
+                  explanation:
+                    type: string
+                    description: Human-readable explanation
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0.0
+                    maximum: 1.0
+                    description: Confidence score
+                  safety_level:
+                    type: string
+                    enum: [safe, moderate, dangerous]
+                    description: Safety classification
+                  dry_run_suggested:
+                    type: boolean
+                    description: Whether dry-run is recommended
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: Safety warnings
+            alternatives:
+              type: array
+              items:
+                type: object
+                description: Alternative command suggestions
+
+          example_text: |
+            Command #1 (Confidence: 0.95, Safety: Safe)
+            ─────────────────────────────────────────────
+            $ ls -lhS
+
+            Explanation:
+            Lists all files in the current directory with detailed information (-l),
+            human-readable sizes (-h), sorted by size (-S) with largest first.
+
+            ---
+
+            Command #2 (Confidence: 0.85, Safety: Safe)
+            ─────────────────────────────────────────────
+            $ du -sh * | sort -rh
+
+            Explanation:
+            Shows disk usage of each item, sorted by size in reverse order.
+            More detailed than ls for directory sizes.
+
+          example_json: |
+            {
+              "commands": [
+                {
+                  "command": "ls -lhS",
+                  "explanation": "Lists all files with detailed info, human-readable sizes, sorted by size",
+                  "confidence": 0.95,
+                  "safety_level": "safe",
+                  "dry_run_suggested": false,
+                  "warnings": []
+                },
+                {
+                  "command": "du -sh * | sort -rh",
+                  "explanation": "Shows disk usage of each item, sorted by size",
+                  "confidence": 0.85,
+                  "safety_level": "safe",
+                  "dry_run_suggested": false,
+                  "warnings": []
+                }
+              ],
+              "alternatives": [
+                {
+                  "command": "find . -type f -exec ls -lh {} \\; | sort -k5 -rh",
+                  "explanation": "Recursive file listing sorted by size",
+                  "confidence": 0.70,
+                  "safety_level": "moderate",
+                  "dry_run_suggested": true,
+                  "warnings": ["Recursive search may be slow on large directories"]
+                }
+              ]
+            }
+
+        dangerous_command_warning:
+          example: |
+            ⚠️  WARNING: DANGEROUS COMMAND DETECTED
+
+            Command: rm -rf /
+            Safety Level: DANGEROUS
+            Confidence: 0.99
+
+            This command will DELETE ALL FILES on your system.
+
+            ❌ This command is NOT recommended and will not be executed.
+
+            If you really need to delete files, please:
+            1. Specify exact paths instead of /
+            2. Use 'rm -i' for interactive confirmation
+            3. Consider using trash/recycle bin instead
+
+      safety_classification:
+        safe:
+          description: "Read-only operations, no system modifications"
+          examples:
+            - ls, cat, grep, find (read operations)
+            - echo, printf (output only)
+
+        moderate:
+          description: "Write operations with limited scope"
+          examples:
+            - mkdir, touch (create files/dirs)
+            - cp, mv (copy/move files)
+            - chmod (change permissions)
+          warnings:
+            - "Review paths before execution"
+            - "Consider dry-run first"
+
+        dangerous:
+          description: "Destructive operations, system-wide impact"
+          examples:
+            - rm -rf (recursive deletion)
+            - dd (disk operations)
+            - mkfs (filesystem creation)
+            - shutdown, reboot
+          warnings:
+            - "⚠️  EXTREME CAUTION REQUIRED"
+            - "Dry-run STRONGLY recommended"
+            - "May cause irreversible data loss"
+
+      performance:
+        target_latency: "≤3s (P95)"
+        measurement: "Time from description to command suggestions"
+
+      exit_codes:
+        0: Success
+        1: General error
+        3: API error
+        4: Timeout
+        6: Validation failed
+
+    wizard_configure:
+      command: wizard configure
+      description: Manage wizard configuration
+      subcommands:
+        set:
+          command: wizard configure set
+          usage: wizard configure set <KEY> <VALUE>
+          description: Set configuration value
+          arguments:
+            - name: key
+              type: String
+              required: true
+              values:
+                - model
+                - temperature
+                - max_tokens
+                - api_key
+                - api_endpoint
+                - timeout
+            - name: value
+              type: String
+              required: true
+          examples:
+            - wizard configure set model gpt-4
+            - wizard configure set temperature 0.5
+            - wizard configure set api_key sk-...
+          validation:
+            - Key must be valid configuration option
+            - Value must match expected type
+            - API key stored securely (OS keyring)
+
+        get:
+          command: wizard configure get
+          usage: wizard configure get [KEY]
+          description: Get configuration value(s)
+          arguments:
+            - name: key
+              type: String
+              required: false
+              description: Specific key to retrieve (omit for all)
+          outputs:
+            single_key: |
+              model = "gpt-4"
+            all_keys: |
+              model = "gpt-4"
+              temperature = 0.7
+              max_tokens = 2048
+              api_endpoint = "https://api.openai.com/v1"
+              timeout = 30s
+              api_key = "****** (redacted)"
+
+        reset:
+          command: wizard configure reset
+          usage: wizard configure reset [--confirm]
+          description: Reset configuration to defaults
+          options:
+            - name: confirm
+              type: bool
+              description: Skip confirmation prompt
+          behavior:
+            - Prompt for confirmation (unless --confirm)
+            - Delete configuration file
+            - Clear OS keyring entries
+            - Reset to built-in defaults
+
+        list_models:
+          command: wizard configure list-models
+          usage: wizard configure list-models [--refresh]
+          description: List available AI models
+          options:
+            - name: refresh
+              type: bool
+              description: Query API for latest model list
+          outputs:
+            example: |
+              Available Models:
+
+              OpenAI:
+                • gpt-4 (default)
+                • gpt-4-turbo
+                • gpt-3.5-turbo
+
+              Anthropic:
+                • claude-3-opus
+                • claude-3-sonnet
+
+              Local (Ollama):
+                • ollama/llama2
+                • ollama/mistral
+
+              Use: wizard configure set model <MODEL>
+
+      configuration_file:
+        location: "~/.wizard.toml"
+        format: TOML
+        schema:
+          model:
+            type: string
+            default: "gpt-4"
+          temperature:
+            type: float
+            default: 0.7
+            range: [0.0, 2.0]
+          max_tokens:
+            type: integer
+            default: 2048
+            minimum: 1
+          api_endpoint:
+            type: string
+            format: url
+            default: "https://api.openai.com/v1"
+          timeout:
+            type: duration
+            default: "30s"
+        example: |
+          # Wizard Configuration
+          # ~/.wizard.toml
+
+          model = "gpt-4"
+          temperature = 0.7
+          max_tokens = 2048
+          api_endpoint = "https://api.openai.com/v1"
+          timeout = "30s"
+
+          # API key stored in OS keyring, not in this file
+
+      exit_codes:
+        0: Success
+        1: General error
+        2: Configuration error
+        7: Permission denied (keyring access)
+
+# Programmatic API (Rust Library)
+library_api:
+  client:
+    WizardClient:
+      description: Main client for wizard operations
+      type_signature: |
+        pub struct WizardClient {
+            config: ClientConfig,
+            runtime: Runtime,
+        }
+
+      constructor:
+        signature: |
+          pub async fn new(config: ClientConfig) -> Result<Self, ClientError>
+        parameters:
+          - name: config
+            type: ClientConfig
+            description: Client configuration
+        returns:
+          success: WizardClient
+          error: ClientError
+        errors:
+          - InvalidConfiguration
+          - ApiKeyMissing
+          - NetworkError
+        example: |
+          use wizard::{WizardClient, ClientConfig};
+
+          let config = ClientConfig::builder()
+              .model("gpt-4")
+              .temperature(0.7)
+              .max_tokens(2048)
+              .build()?;
+
+          let client = WizardClient::new(config).await?;
+
+      methods:
+        chat:
+          signature: |
+            pub async fn chat(
+                &self,
+                prompt: &str,
+                options: ChatOptions,
+            ) -> Result<ChatResponse, ChatError>
+
+          parameters:
+            - name: prompt
+              type: "&str"
+              description: User prompt
+              validation:
+                - Length ≤ 10,000 characters
+                - Sanitized automatically
+
+            - name: options
+              type: ChatOptions
+              description: Chat options
+              fields:
+                - session_id: Option<SessionId>
+                - stream: bool
+                - format: OutputFormat
+
+          returns:
+            type: ChatResponse
+            fields:
+              - response: String
+              - token_usage: TokenUsage
+              - latency: Duration
+              - model: String
+
+          errors:
+            - ChatError::ApiError
+            - ChatError::TimeoutError
+            - ChatError::ValidationError
+
+          example: |
+            let response = client.chat(
+                "How do I list files?",
+                ChatOptions::default(),
+            ).await?;
+
+            println!("Response: {}", response.response);
+            println!("Tokens used: {}", response.token_usage.total);
+
+        generate_command:
+          signature: |
+            pub async fn generate_command(
+                &self,
+                description: &str,
+            ) -> Result<Vec<GeneratedCommand>, GenerateError>
+
+          parameters:
+            - name: description
+              type: "&str"
+              description: Natural language command description
+
+          returns:
+            type: Vec<GeneratedCommand>
+            description: List of generated command suggestions
+
+          example: |
+            let commands = client.generate_command(
+                "list all files sorted by size"
+            ).await?;
+
+            for cmd in commands {
+                println!("Command: {}", cmd.command);
+                println!("Confidence: {}", cmd.confidence);
+                println!("Safety: {:?}", cmd.safety_level);
+            }
+
+        stream_chat:
+          signature: |
+            pub async fn stream_chat(
+                &self,
+                prompt: &str,
+            ) -> Result<impl Stream<Item = ResponseChunk>, ChatError>
+
+          parameters:
+            - name: prompt
+              type: "&str"
+              description: User prompt
+
+          returns:
+            type: impl Stream<Item = ResponseChunk>
+            description: Async stream of response chunks
+
+          example: |
+            use futures::StreamExt;
+
+            let mut stream = client.stream_chat("Tell me a story").await?;
+
+            while let Some(chunk) = stream.next().await {
+                match chunk {
+                    ResponseChunk::Content(text) => print!("{}", text),
+                    ResponseChunk::Done(metadata) => {
+                        println!("\nTokens: {}", metadata.token_usage.total);
+                    }
+                    ResponseChunk::Error(err) => {
+                        eprintln!("Stream error: {}", err);
+                        break;
+                    }
+                }
+            }
+
+  types:
+    ClientConfig:
+      description: Configuration for WizardClient
+      fields:
+        - name: model
+          type: String
+          description: AI model identifier
+          default: "gpt-4"
+
+        - name: temperature
+          type: f32
+          description: Response randomness
+          default: 0.7
+          range: [0.0, 2.0]
+
+        - name: max_tokens
+          type: u32
+          description: Maximum tokens per response
+          default: 2048
+
+        - name: api_key
+          type: SecretString
+          description: API key (from keyring or env)
+
+        - name: timeout
+          type: Duration
+          description: Request timeout
+          default: 30s
+
+      builder_pattern: true
+      example: |
+        let config = ClientConfig::builder()
+            .model("gpt-4")
+            .temperature(0.7)
+            .max_tokens(2048)
+            .timeout(Duration::from_secs(30))
+            .build()?;
+
+    ChatOptions:
+      description: Options for chat operations
+      fields:
+        - name: session_id
+          type: Option<SessionId>
+          description: Resume existing session
+
+        - name: stream
+          type: bool
+          description: Enable streaming responses
+          default: false
+
+        - name: format
+          type: OutputFormat
+          description: Response format
+          default: OutputFormat::Text
+
+        - name: deterministic
+          type: bool
+          description: Enable deterministic mode
+          default: false
+
+    ChatResponse:
+      description: Response from chat operation
+      fields:
+        - name: response
+          type: String
+          description: AI assistant response
+
+        - name: token_usage
+          type: TokenUsage
+          description: Token usage statistics
+
+        - name: latency
+          type: Duration
+          description: Response latency
+
+        - name: model
+          type: String
+          description: Model used for response
+
+    GeneratedCommand:
+      description: Generated command suggestion
+      fields:
+        - name: command
+          type: String
+          description: Shell command
+
+        - name: explanation
+          type: String
+          description: Human-readable explanation
+
+        - name: confidence
+          type: f32
+          description: Confidence score
+          range: [0.0, 1.0]
+
+        - name: safety_level
+          type: SafetyLevel
+          description: Safety classification
+
+        - name: dry_run_suggested
+          type: bool
+          description: Whether dry-run recommended
+
+        - name: warnings
+          type: Vec<String>
+          description: Safety warnings
+
+    SafetyLevel:
+      description: Command safety classification
+      enum:
+        - Safe
+        - Moderate
+        - Dangerous
+
+    SessionId:
+      description: Unique session identifier
+      type: Uuid
+
+    TokenUsage:
+      description: Token usage statistics
+      fields:
+        - name: prompt_tokens
+          type: u32
+        - name: completion_tokens
+          type: u32
+        - name: total_tokens
+          type: u32
+
+    ResponseChunk:
+      description: Streaming response chunk
+      enum:
+        - Content(String)
+        - Done(ResponseMetadata)
+        - Error(String)
+
+  errors:
+    WizardError:
+      description: Top-level error type
+      variants:
+        - InitializationError(String)
+        - ApiError(genai::Error)
+        - ConfigError(String)
+        - ValidationError(String)
+        - TimeoutError(Duration)
+        - NetworkError(reqwest::Error)
+
+      example: |
+        use wizard::WizardError;
+
+        match client.chat("test", Default::default()).await {
+            Ok(response) => println!("{}", response.response),
+            Err(WizardError::ApiError(e)) => eprintln!("API error: {}", e),
+            Err(WizardError::TimeoutError(d)) => {
+                eprintln!("Request timed out after {:?}", d);
+            }
+            Err(e) => eprintln!("Error: {}", e),
+        }
+
+# API Versioning and Stability
+versioning:
+  current_version: 0.1.0
+  stability: alpha
+  breaking_changes_allowed: true
+
+  semantic_versioning:
+    major: Breaking changes to public API
+    minor: New features, backward compatible
+    patch: Bug fixes, backward compatible
+
+  deprecation_policy:
+    - Deprecated features marked in docs
+    - Deprecation warnings in code
+    - Minimum 1 minor version before removal
+    - Migration guide provided
+
+# Performance Guarantees
+performance:
+  latency_targets:
+    session_init: "≤100ms P95"
+    first_token: "≤200ms P50"
+    full_response: "≤5s P95"
+    command_generation: "≤3s P95"
+
+  throughput_targets:
+    concurrent_sessions: "100+"
+    requests_per_second: "10 RPS per session"
+    token_throughput: "1000 tokens/sec aggregate"
+
+  resource_limits:
+    memory_per_session: "≤50MB P95"
+    total_memory: "≤500MB for 100 sessions"
+    binary_size: "≤10MB with feature"
+
+  measurement:
+    - Benchmarks with criterion
+    - Load tests with 100 concurrent sessions
+    - Memory profiling with valgrind/heaptrack
+    - CI performance regression tests
+
+# Security Guarantees
+security:
+  input_validation:
+    - All inputs sanitized
+    - Length limits enforced
+    - Injection patterns detected
+
+  api_key_management:
+    - OS keyring storage
+    - Never in plaintext files
+    - Never logged
+    - Redacted in errors
+
+  rate_limiting:
+    - 60 requests/minute
+    - 100K tokens/minute
+    - Exponential backoff on limits
+
+  data_privacy:
+    - No persistent conversation storage (v0.1.0)
+    - In-memory only
+    - Cleared on termination
+
+# Compatibility
+compatibility:
+  minimum_rust_version: 1.74
+  supported_platforms:
+    - linux (x86_64, aarch64)
+    - macos (x86_64, aarch64/M1+)
+    - windows (x86_64)
+
+  dependencies:
+    - clap-noun-verb (parent project)
+    - rust-genai 0.1+ (feature-gated)
+    - tokio 1.0+ (feature-gated)
+    - reqwest 0.11+ (feature-gated)
+
+# Testing Guarantees
+testing:
+  coverage_targets:
+    overall: "85%+"
+    critical_paths: "95%+"
+
+  test_types:
+    - Unit tests (Chicago TDD, AAA pattern)
+    - Integration tests (end-to-end)
+    - Property tests (proptest)
+    - Performance benchmarks (criterion)
+    - Snapshot tests (insta)
+
+  ci_requirements:
+    - All tests must pass
+    - Coverage targets met
+    - No performance regressions
+    - Linting (clippy) clean
+
+revision_history:
+  - version: 0.1.0
+    date: 2026-01-09
+    changes: Initial API specification

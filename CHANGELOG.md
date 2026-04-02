@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`OutputFormat::Plain`** — Human-readable `key: value` text output format.
 - **`OutputFormat::description()`** — Returns human-readable description for each format variant.
 - **Registry first-write-wins** — `register_noun()` uses `entry().or_insert()` so the first noun registration wins, preventing later verbs from overwriting the noun description.
+- **Wizard Package v2 Enhancements**
+  - TTL-to-wizard code generation system with comprehensive roadmap
+  - V2 wizard package architecture and core feature specifications
+  - 10-agent swarm coordination for wizard package development
+  - rust-genai integration for multi-provider LLM support
+  - End-to-end wizard code generation pipeline
+- **Documentation Improvements**
+  - Diataxis framework implementation for production documentation organization
+  - Comprehensive research thesis consolidating analysis and strategic insights
+  - Setup, help, and version documentation enhancements
+  - Hyper-Thesis Framework integration for defense preparation
 
 ### Removed
 
@@ -30,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`test_arg_actions_registered`** — Updated to use explicit `#[verb("set", "config")]` syntax instead of deprecated `#[noun]` + `#[verb]` combination.
+
+### Technical Details
+
+- **No breaking changes to public API** - Full backward compatibility with v5.5.x
+- **Production-ready**: Comprehensive test suite and Andon signals cleared
+- **Agent-grade quality**: Designed for trillion-agent ecosystem
+- **Wizard integration**: LLM-powered CLI generation capabilities
 
 ## [5.5.0] - 2026-01-06
 

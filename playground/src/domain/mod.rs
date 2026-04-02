@@ -22,6 +22,7 @@
 
 pub mod papers;
 pub mod thesis;
+pub mod research_thesis;
 pub mod config;
 pub mod ontology;
 pub mod introspection;
@@ -33,6 +34,7 @@ pub mod completions;
 // Re-export commonly used types (only what's actively used by CLI)
 pub use papers::{Paper, PaperFamily};
 pub use thesis::{ThesisFamily, ThesisSchedule, ThesisStructure};
+pub use research_thesis::{ResearchThesis, DefenseOutline, DefenseSlide, ThesisValidation, ValidationResult, ThesisStatus};
 pub use config::Config;
 
 // v5 feature exports - only re-export what's actually used by main.rs
