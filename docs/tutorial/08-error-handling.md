@@ -497,7 +497,7 @@ mod tests {
 
 - **[Tutorial 09: Deployment Basics](09-deployment-basics.md)** - Production deployment
 - **[Tutorial 10: Next Steps](10-next-steps.md)** - Advanced topics
-- **[How-To: Error Strategies](../howto/advanced/error-strategies.md)** - Production error patterns
+- **[Reference: Error Codes](../reference/error-codes.md)** - Standard error types
 
 **Estimated time to next tutorial:** 20 minutes
 

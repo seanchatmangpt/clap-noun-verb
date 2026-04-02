@@ -519,8 +519,8 @@ $ myapp services delete --name test-svc --confirm
 ## Next Steps
 
 - **[Tutorial 07: Async Operations](07-async-operations.md)** - Async CLI commands
-- **[AUTONOMIC.md](../../AUTONOMIC.md)** - Complete autonomic layer reference
-- **[Explanation: Agent2028](../explanation/autonomic/agent2028.md)** - Trillion-agent vision
+- **[How-To: Debugging](../howto/debugging.md)** - Debugging autonomic CLIs
+- **[Explanation: Agent Architecture](../explanation/agent-architecture.md)** - Agent system overview
 
 **Estimated time to next tutorial:** 25 minutes
 

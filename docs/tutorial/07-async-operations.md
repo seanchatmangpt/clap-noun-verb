@@ -50,8 +50,8 @@ async fn fetch_data() -> Result<Data> {
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.2"
-clap-noun-verb-macros = "5.2"
+clap-noun-verb = "5.6"
+clap-noun-verb-macros = "5.6"
 tokio = { version = "1.0", features = ["full"] }
 reqwest = { version = "0.11", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -488,7 +488,7 @@ mod tests {
 
 - **[Tutorial 08: Error Handling](08-error-handling.md)** - Comprehensive error strategies
 - **[Tutorial 09: Deployment Basics](09-deployment-basics.md)** - Production deployment
-- **[How-To: Async Patterns](../howto/advanced/async-patterns.md)** - Advanced async techniques
+- **[How-To: Performance Optimization](../howto/performance-optimization.md)** - Performance tuning
 
 **Estimated time to next tutorial:** 20 minutes
 
