@@ -559,7 +559,7 @@ fn my_verb(
 **Run CLI:**
 ```rust
 fn main() -> Result<()> {
-    run_cli()  // Auto-discovers all #[noun] and #[verb] functions
+    run_cli()  // Auto-discovers all #[verb] functions (nouns from filename)
 }
 ```
 
@@ -593,7 +593,7 @@ fn main() -> Result<()> {
 - `MetricsCollector` - Metrics collection
 
 **Macros:**
-- `#[noun]` - Define noun command
+- `#[noun]` - ~~Define noun command~~ **DEPRECATED** (v5.6.0) - nouns auto-detected from filename
 - `#[verb]` - Define verb command
 - `#[arg]` - Configure arguments
 

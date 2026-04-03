@@ -14,32 +14,16 @@ Use these guides when you:
 
 ---
 
-## Guide Categories
+## Available Guides
 
-### 🚀 Production Patterns
+### 🔧 Core Guides
 
-**Goal**: Deploy and run CLIs in production environments
-
-- **[Deploy to Production](production/deployment.md)** - Deployment strategies, cross-compilation, distribution
-- **[Monitor with OTEL](production/monitoring.md)** - OpenTelemetry integration, distributed tracing
-- **[Configure Applications](production/configuration.md)** - Config files, environment variables, secrets
-- **[Secure Your CLI](production/security.md)** - Input validation, sandboxing, credential management
-
-### 🔧 Available Guides
-
-**Additional how-to guides:**
-
-- **[Agent Integration](agent-integration.md)** - Building CLIs for AI agents
-- **[Caching](caching.md)** - Performance caching strategies
+- **[Common Mistakes](common-mistakes.md)** - Top 10 errors and how to fix them
 - **[Debugging](debugging.md)** - Debugging techniques and tools
-- **[Multi-Level CLI](multi-level-cli.md)** - Nested command structures
 - **[Performance Optimization](performance-optimization.md)** - Making CLIs fast
 - **[Setup Help and Version](setup-help-and-version.md)** --help and --version setup
-- **[SPARQL Queries](sparql-queries.md)** - Semantic queries
 - **[Testing](testing.md)** - Test strategies
 - **[Validation](validation.md)** - Input validation techniques
-
-> **Note:** Advanced guides (testing strategies, integration recipes, common patterns, troubleshooting) are planned for future releases.
 
 ---
 
@@ -51,40 +35,21 @@ Each guide follows this structure:
 2. **Solution Overview** - High-level approach
 3. **Step-by-Step Instructions** - Detailed implementation
 4. **Complete Example** - Working code you can copy
-5. **Variations** - Alternative approaches
-6. **Troubleshooting** - Common issues and fixes
-7. **Related Guides** - Where to go next
+5. **Troubleshooting** - Common issues and fixes
+6. **Related Guides** - Where to go next
 
 ---
 
 ## Finding the Right Guide
 
-### By Task
-
 | Task | Guide |
 |------|-------|
-| **Deploy my CLI** | [production/deployment.md](production/deployment.md) |
-| **Add monitoring** | [production/monitoring.md](production/monitoring.md) |
+| **Fix common errors** | [common-mistakes.md](common-mistakes.md) |
 | **Test my CLI** | [testing.md](testing.md) |
 | **Validate input** | [validation.md](validation.md) |
 | **Debug issues** | [debugging.md](debugging.md) |
 | **Optimize performance** | [performance-optimization.md](performance-optimization.md) |
-
-### By Technology
-
-| Technology | Guide |
-|------------|-------|
-| **RDF/SPARQL** | [sparql-queries.md](sparql-queries.md) |
-| **OTEL** | [production/monitoring.md](production/monitoring.md) |
-
-### By Production Concern
-
-| Concern | Guide |
-|---------|-------|
-| **Security** | [production/security.md](production/security.md) |
-| **Configuration** | [production/configuration.md](production/configuration.md) |
-| **Monitoring** | [production/monitoring.md](production/monitoring.md) |
-| **Deployment** | [production/deployment.md](production/deployment.md) |
+| **Setup --help and --version** | [setup-help-and-version.md](setup-help-and-version.md) |
 
 ---
 
@@ -92,11 +57,7 @@ Each guide follows this structure:
 
 | Category | Guides | Status |
 |----------|--------|--------|
-| **Production** | 4 guides | ✅ **Available** |
-| **General** | 9 guides | ✅ **Available** |
-| **TOTAL** | **13 guides** | ✅ **Available** |
-
-> **Planned:** Advanced testing strategies, integration recipes, common patterns, troubleshooting guides coming in future releases.
+| **Core** | 6 guides | ✅ **Available** |
 
 ---
 

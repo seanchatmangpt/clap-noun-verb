@@ -23,18 +23,15 @@ Use the reference when you:
 
 - **[#[verb] Macro](api/verb-macro.md)** - Complete macro reference with all syntax variations
 - **[#[arg] Attributes](api/arg-attributes.md)** - All argument attributes and their effects
-- **[#[noun] Macro](api/noun-macro.md)** - **DEPRECATED** - See deprecation notice
-- **[Types Catalog](api/types.md)** - All public types with descriptions and examples
+- **[API Catalog](api-catalog.md)** - Quick reference for all APIs
+- **[Types Catalog](api/types.md)** - All public types with descriptions
 - **[Errors Catalog](api/errors.md)** - Complete error type hierarchy
-- **[CLI Runner](api/cli-runner.md)** - `run()` function and entry point
-
-> **Note:** Autonomic CLI Layer API and RDF/SPARQL API documentation is planned for future releases. See [AUTONOMIC.md](../AUTONOMIC.md) for current capabilities.
+- **[Error Codes](error-codes.md)** - Common errors and solutions
 
 ### CLI Reference
 
 **Command-line interface and configuration**
 
-- **[Configuration](configuration.md)** - Config file format and schema
 - **[Performance SLOs](performance-slos.md)** - Performance targets and guarantees
 
 ---
@@ -53,26 +50,14 @@ Each reference page provides:
 
 ## Quick Lookup
 
-### By Component
-
 | Component | Reference |
 |-----------|-----------|
 | **#[verb] macro** | [api/verb-macro.md](api/verb-macro.md) |
 | **#[arg] attributes** | [api/arg-attributes.md](api/arg-attributes.md) |
-| **#[noun] macro** | [api/noun-macro.md](api/noun-macro.md) (deprecated) |
 | **Result<T,E>** | [api/types.md](api/types.md) |
 | **NounVerbError** | [api/errors.md](api/errors.md) |
 | **OutputFormat** | [api/types.md](api/types.md) |
-
-### By Use Case
-
-| Use Case | Reference |
-|----------|-----------|
-| **Define a command** | [api/verb-macro.md](api/verb-macro.md) |
-| **Parse arguments** | [api/arg-attributes.md](api/arg-attributes.md) |
-| **Handle errors** | [api/errors.md](api/errors.md) |
-| **Format output** | [api/types.md](api/types.md) |
-| **Run CLI** | [api/cli-runner.md](api/cli-runner.md) |
+| **API Catalog** | [api-catalog.md](api-catalog.md) |
 
 ---
 
@@ -81,33 +66,18 @@ Each reference page provides:
 | Section | Files | Status |
 |---------|-------|--------|
 | **Core API** | 6 files | ✅ **Available** |
-| **CLI** | 2 files | ✅ **Available** |
-| **TOTAL** | **8 files** | ✅ **Available** |
-
-> **Planned:** Autonomic API, RDF/SPARQL API coming in future releases.
+| **CLI** | 1 file | ✅ **Available** |
+| **TOTAL** | **7 files** | ✅ **Available** |
 
 ---
 
 ## API Stability Guarantees
 
-### Stable APIs (v5.1.1)
+### Stable APIs (v5.6.0)
 
 These APIs are stable and follow semantic versioning:
 - ✅ **Core API**: `#[verb]`, `#[arg]`, `Result<T,E>`, `OutputFormat`
-- ✅ **Autonomic Layer**: Introspection, effects, planes, guards, receipts
-- ✅ **RDF Layer**: Ontology, SPARQL queries, SHACL validation
-
-### Experimental APIs
-
-These APIs are experimental and may change:
-- ⚠️ **Agent2028**: Trust networks, quantum-safe crypto (simulated)
-- ⚠️ **KGC Integration**: Knowledge graph integration (partial)
-
-### Planned APIs (v5.2+)
-
-These APIs are planned for future versions:
-- ⏳ **Delegation Chains**: Capability transfer (Q1 2026)
-- ⏳ **Deterministic Execution**: Guard enforcement (Q1 2026)
+- ✅ **Autonomic Layer**: Introspection, effects, guards, receipts
 
 ---
 

@@ -30,6 +30,8 @@ pub mod workspace;
 pub mod lockfile;
 pub mod receipt_store;
 pub mod registry_client;
+pub mod config_loader;
+pub mod pack_store;
 
 // Re-export integration functions
 pub use templates::{render_paper_latex, get_template_engine};
@@ -41,3 +43,5 @@ pub use workspace::WorkspaceDetector;
 pub use lockfile::LockfileStore;
 pub use receipt_store::ReceiptStore;
 pub use registry_client::{RegistryClient, RegistrySearchResult, RegistryInfo, RegistrySource};
+pub use config_loader::{ConfigLoader, GgenConfig};
+pub use pack_store::PackStoreIntegration;

@@ -1,10 +1,13 @@
 //! Integration: Template Rendering with Tera
 //!
-//! Glue code that connects domain Paper structures to Tera templates.
+//! Glue code that connects domain Paper structures and ggen pack templates to Tera.
 //! This is the ONLY place where Tera is used - domain stays pure.
 //!
 //! Performance: Uses lazy_static to cache the Tera engine globally,
 //! avoiding 5-15ms parsing overhead on every render call.
+//!
+//! ggen pack templates use one-shot Tera instances since they come from
+//! installed packs rather than the global templates/ directory.
 
 use lazy_static::lazy_static;
 use tera::{Tera, Context};
@@ -101,6 +104,63 @@ pub fn render_paper_latex(paper: &Paper, tera: &Tera) -> Result<String, String> 
         .map_err(|e| format!("Template rendering error: {}", e))
 }
 
+/// Render a template string with variables using a one-shot Tera instance.
+///
+/// Used for ggen pack template rendering where templates come from installed packs
+/// rather than the global templates directory. Each call creates a fresh Tera
+/// instance, parses the template content, and renders it with the provided variables.
+///
+/// # Arguments
+/// * `template_content` - The raw Tera template string (e.g. from a pack's template file)
+/// * `variables` - Key-value pairs to inject into the template context
+///
+/// # Errors
+/// Returns an error if the template content fails to parse or rendering fails.
+pub fn render_template_string(
+    template_content: &str,
+    variables: &std::collections::HashMap<String, String>,
+) -> Result<String, String> {
+    let mut tera = Tera::default();
+    tera.add_raw_template("inline", template_content)
+        .map_err(|e| format!("Failed to parse template: {}", e))?;
+
+    let mut context = Context::new();
+    for (key, value) in variables {
+        context.insert(key, value);
+    }
+
+    tera.render("inline", &context)
+        .map_err(|e| format!("Template rendering error: {}", e))
+}
+
+/// Render a named ggen template from the templates/ directory using the cached engine.
+///
+/// This uses the globally cached `TERA_ENGINE` to render templates that live in
+/// the `templates/` directory (e.g. pack scaffolding templates, code generation
+/// templates registered at build time).
+///
+/// # Arguments
+/// * `template_name` - Name of the template file (e.g. `"pack_config.tera"`)
+/// * `variables` - Key-value pairs to inject into the template context
+///
+/// # Errors
+/// Returns an error if the template engine failed to initialize, the named
+/// template does not exist, or rendering fails.
+pub fn render_ggen_template(
+    template_name: &str,
+    variables: &std::collections::HashMap<String, String>,
+) -> Result<String, String> {
+    let tera = get_template_engine()?;
+
+    let mut context = Context::new();
+    for (key, value) in variables {
+        context.insert(key, value);
+    }
+
+    tera.render(template_name, &context)
+        .map_err(|e| format!("Template rendering error: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,5 +172,53 @@ mod tests {
         let result = Tera::new("nonexistent/**/*.tera");
         // Tera returns Ok even if no templates found, just empty
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_render_template_string_basic() {
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("name".to_string(), "pack_one".to_string());
+        vars.insert("version".to_string(), "1.0.0".to_string());
+
+        let result = render_template_string(
+            "// {{ name }} v{{ version }}",
+            &vars,
+        );
+        assert_eq!(result.unwrap(), "// pack_one v1.0.0");
+    }
+
+    #[test]
+    fn test_render_template_string_with_conditionals() {
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("has_auth".to_string(), "true".to_string());
+        vars.insert("module".to_string(), "auth".to_string());
+
+        let result = render_template_string(
+            "{% if has_auth == \"true\" %}mod {{ module }};{% endif %}",
+            &vars,
+        );
+        assert_eq!(result.unwrap(), "mod auth;");
+    }
+
+    #[test]
+    fn test_render_template_string_invalid_syntax() {
+        let vars = std::collections::HashMap::new();
+        let result = render_template_string("{% invalid block %}", &vars);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Failed to parse template"));
+    }
+
+    #[test]
+    fn test_render_template_string_empty() {
+        let vars = std::collections::HashMap::new();
+        let result = render_template_string("hello world", &vars);
+        assert_eq!(result.unwrap(), "hello world");
+    }
+
+    #[test]
+    fn test_render_ggen_template_missing() {
+        let vars = std::collections::HashMap::new();
+        let result = render_ggen_template("nonexistent_template.tera", &vars);
+        assert!(result.is_err());
     }
 }

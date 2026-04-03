@@ -17,20 +17,12 @@ Use explanation docs when you:
 
 ## Explanation Topics
 
-### 🏗️ Architecture & Design
+### 🏗️ Core Architecture
 
 **Understanding clap-noun-verb's architecture**
 
 - **[Architecture Overview](architecture.md)** - System architecture and component design
-- **[Agent Architecture](agent-architecture.md)** - Multi-agent system design
 - **[Design Patterns](design-patterns.md)** - Common patterns and best practices
-- **[Type Safety](type-safety.md)** - Type-driven development and invariants
-- **[Performance](performance.md)** - Performance characteristics and optimization
-- **[RDF Basics](rdf-basics.md)** - Introduction to RDF for CLIs
-- **[Semantic Web](semantic-web.md)** - Semantic web integration
-- **[AUTONOMIC.md](../AUTONOMIC.md)** - Autonomic CLI layer (main doc)
-
-> **Note:** Additional explanation topics (domain separation, type-first thinking, zero-cost abstractions, Chicago TDD rationale) are planned for future releases.
 
 ---
 
@@ -49,18 +41,10 @@ Each explanation follows this structure:
 
 ## Finding the Right Explanation
 
-### By Question
-
 | Question | Explanation |
 |----------|-------------|
 | **How does the architecture work?** | [architecture.md](architecture.md) |
-| **How do agents coordinate?** | [agent-architecture.md](agent-architecture.md) |
 | **What design patterns are used?** | [design-patterns.md](design-patterns.md) |
-| **How does type safety help?** | [type-safety.md](type-safety.md) |
-| **What about performance?** | [performance.md](performance.md) |
-| **How does RDF integration work?** | [rdf-basics.md](rdf-basics.md) |
-| **What about semantic web?** | [semantic-web.md](semantic-web.md) |
-| **What are autonomic features?** | [AUTONOMIC.md](../AUTONOMIC.md) |
 
 ---
 
@@ -68,12 +52,7 @@ Each explanation follows this structure:
 
 | Category | Files | Status |
 |----------|-------|--------|
-| **Core** | 8 files | ✅ **Available** |
-| **Architecture (docs/architecture/)** | 20+ files | ✅ **Available** |
-| **AUTONOMIC.md** | 1 file | ✅ **Available** |
-| **TOTAL** | **29+ files** | ✅ **Available** |
-
-> **Planned:** Additional topics (domain separation deep dive, type-first thinking guide, zero-cost abstractions, Chicago TDD rationale, framework comparisons) coming in future releases.
+| **Core** | 2 files | ✅ **Available** |
 
 ---
 
@@ -85,7 +64,6 @@ Each explanation follows this structure:
 2. **Type-First Thinking** - Types encode invariants, compiler as design tool
 3. **Zero-Cost Abstractions** - Performance without runtime overhead
 4. **Machine-Grade Interfaces** - CLIs as contracts, introspectable by agents
-5. **Deterministic Execution** - Same inputs → same outputs within guards
 
 ### Philosophy
 
@@ -93,7 +71,6 @@ Each explanation follows this structure:
 - **Elite API Design**: Make misuse impossible through types
 - **Production-Ready**: Chicago TDD, Lean Six Sigma quality, Poka-Yoke tests
 - **Agent-First**: Designed for trillion-agent ecosystems (Agent2028)
-- **Semantic**: RDF/SPARQL for intent-based discovery
 
 ---
 
@@ -130,4 +107,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: During migration from v4 to v5.1.1 documentation, some explanation content is scattered across AUTONOMIC.md, SEMANTIC_CLI_ARCHITECTURE.md, and other files. New explanation documentation consolidates and expands this content following Diataxis principles.
+**Note**: Explanation documentation follows Diataxis principles with validated v5.6.1 design.
