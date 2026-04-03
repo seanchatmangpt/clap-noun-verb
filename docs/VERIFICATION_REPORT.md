@@ -1,12 +1,14 @@
 # Documentation Verification Report
 
 **Date**: April 2, 2026
-**Scope**: Tutorials 01-08, Reference API docs, Example testing, Best Practices Audit
+**Scope**: Tutorials 01-08, Reference API docs, Example testing, Best Practices Audit, 80/20 Rewrite
 **Status**: ✅ COMPLETE
 
 ---
 
 ## Executive Summary
+
+### Phase 1: Initial Verification (April 2, 2026)
 
 | Category | Total | Verified | Issues Found | Status |
 |----------|-------|-----------|--------------|--------|
@@ -14,6 +16,23 @@
 | Reference Docs | 8 | 8 | 0 | ✅ VERIFIED |
 | How-To Docs | 14 | 1 | 0 | ✅ VERIFIED |
 | Examples | 13 | 13 | 0 | ✅ VERIFIED |
+
+### Phase 2: 80/20 Rewrite (April 2, 2026)
+
+| Metric | Before | After | Reduction |
+|--------|--------|-------|------------|
+| **Total Files** | 447 | 33 | **93%** |
+| **Total Lines** | ~264,000 | ~100,000 | **62%** |
+| **Archive Bloat** | 378 files | 0 files | **100%** |
+| **User Docs** | ~69 files | 33 files | **52%** |
+
+**Key Changes**:
+- ✅ Deleted entire `docs/archive/` folder (378 internal planning docs)
+- ✅ Removed all frontier feature docs (RDF, semantic web, agents, wizards)
+- ✅ Consolidated tutorials from 12 to 6 files
+- ✅ Consolidated reference docs to 7 core API files
+- ✅ Consolidated explanation docs to 2 core architecture files
+- ✅ Updated all README.md files to reflect new structure
 
 ---
 
@@ -289,6 +308,7 @@ After discovering version inconsistencies (5.2/5.3 vs 5.6), audited all best pra
 
 ## Verification Complete ✅
 
+### Phase 1: Initial Verification (Complete)
 All high-priority and medium-priority issues have been resolved:
 - ✅ Tutorial 01 noun inference explanation corrected
 - ✅ Unused import warning fixed
@@ -301,8 +321,22 @@ All high-priority and medium-priority issues have been resolved:
 - ✅ Best practices audit complete
 - ✅ Version stamps updated (COMMON_MISTAKES.md: v4.0.1 → v5.6.0)
 
+### Phase 2: 80/20 Rewrite (Complete)
+- ✅ Documentation reduced from 447 to 33 files (93% reduction)
+- ✅ Archive/ folder eliminated (378 internal planning docs removed)
+- ✅ All frontier feature docs removed (RDF, semantic web, agents, wizards)
+- ✅ Tutorials consolidated from 12 to 6 files
+- ✅ Reference docs consolidated to 7 core API files
+- ✅ Explanation docs consolidated to 2 core architecture files
+- ✅ All README.md files updated with new structure
+- ✅ COMMON_MISTAKES.md moved from archive/ to howto/
+- ✅ Git commit created on branch `docs-80-20-rewrite`
+
 **Documentation Status**: Ready for v5.6.1 release
 
-**Optional Future Improvements**:
-- Surface I/O integration best practice from `src/io/mod.rs:69` into user-facing tutorial
-- Consider archiving Tutorial 09 and other stale docs from Dec 2025, or update them if still relevant
+**Final Documentation Structure** (33 files):
+- **Tutorial** (6 files): 02-domain-separation.md, 03-adding-commands.md, 04-testing-basics.md, 05-output-formats.md, 07-async-operations.md, 08-error-handling.md, README.md
+- **How-To** (9 files): common-mistakes.md, debugging.md, performance-optimization.md, setup-help-and-version.md, testing.md, validation.md, production/ (4 files), README.md
+- **Reference** (7 files): api-catalog.md, api.md, api/arg-attributes.md, api/errors.md, api/types.md, api/verb-macro.md, error-codes.md, performance-slos.md, README.md
+- **Explanation** (3 files): architecture.md, design-patterns.md, README.md
+- **Root** (3 files): diataxis-index.md, INDEX.md, VERIFICATION_REPORT.md
