@@ -299,8 +299,10 @@ impl CommandRegistry {
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
         // Only insert if noun doesn't already exist — first registration wins.
         // This prevents later verbs from overwriting the noun description.
-        reg.nouns.entry(name.to_string()).or_insert_with(|| {
-            NounMetadata { name: name.to_string(), about: about.to_string(), long_about: None }
+        reg.nouns.entry(name.to_string()).or_insert_with(|| NounMetadata {
+            name: name.to_string(),
+            about: about.to_string(),
+            long_about: None,
         });
     }
 

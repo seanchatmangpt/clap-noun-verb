@@ -9,7 +9,7 @@ use std::fmt;
 ///
 /// Represents all possible error conditions that can occur during
 /// wizard session management, prompt processing, and AI interactions.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum WizardError {
     /// Error from the AI client
     ClientError(String),

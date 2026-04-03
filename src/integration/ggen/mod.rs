@@ -2,69 +2,31 @@
 //!
 //! Ontology-driven code generation integration for clap-noun-verb.
 //!
-//! This module provides a type-safe, ergonomic wrapper around ggen's code
-//! generation capabilities, following clap-noun-verb's API design principles:
-//!
-//! - **Type-first thinking**: Types encode invariants at compile time
-//! - **Zero-cost abstractions**: Generics and references for performance
-//! - **Result-based error handling**: No unwrap() or expect() in production
-//! - **Deterministic outputs**: Reproducible code generation with receipts
-//!
-//! ## Quick Start
-//!
-//! ```rust,no_run
-//! use clap_noun_verb::integration::ggen::GgenGenerator;
-//!
-//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let receipt = GgenGenerator::new()
-//!     .template("templates/rust-cli.tera")?
-//!     .output("output/my-cli")?
-//!     .variable("name", "my-cli")?
-//!     .generate()
-//!     .await?;
-//!
-//! println!("Generated: {}", receipt.output_hash);
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ## Modules
-//!
-//! - [`config`] - Configuration types and builders
-//! - [`error`] - Error types with Result aliases
-//! - [`generator`] - High-level generator API
-//! - [`graph`] - RDF graph integration
-//! - [`pipeline`] - Template pipeline integration
-//! - [`receipt`] - Generation receipts for determinism
+//! **NOTE**: This module is currently non-functional as the ggen_core and ggen_domain
+//! dependencies are not available. The feature exists for future integration.
 
 #![cfg(feature = "ggen")]
 
-pub mod config;
-pub mod error;
-pub mod generator;
-pub mod graph;
-pub mod pipeline;
-pub mod receipt;
+// Compile error to prevent use of non-functional ggen integration
+compile_error!("The ggen integration is not yet available. The ggen_core and ggen_domain dependencies are marked as FUTURE in Cargo.toml. Disable the 'ggen' feature or add the required dependencies.");
 
-// Re-export commonly used types for convenience
-pub use config::{GgenConfig, GgenConfigBuilder};
-pub use error::{GgenError, GgenResult};
-pub use generator::GgenGenerator;
-pub use graph::GgenGraph;
-pub use pipeline::GgenPipeline;
-pub use receipt::GenerationReceipt;
-
-/// Re-export core ggen types for advanced usage
-pub mod core {
-    pub use ggen_core::{Generator as CoreGenerator, Pipeline as CorePipeline, Template};
-}
-
-/// Re-export domain ggen types for advanced usage
-pub mod domain {
-    pub use ggen_domain::{
-        generation as domain_generation, project as domain_project, template as domain_template,
-    };
-}
+// NOTE: The following modules are commented out because they depend on ggen_core/ggen_domain
+// which are not available. When those dependencies are added, uncomment these modules.
+//
+// pub mod config;
+// pub mod error;
+// pub mod generator;
+// pub mod graph;
+// pub mod pipeline;
+// pub mod receipt;
+//
+// // Re-export commonly used types for convenience
+// pub use config::{GgenConfig, GgenConfigBuilder};
+// pub use error::{GgenError, GgenResult};
+// pub use generator::GgenGenerator;
+// pub use graph::GgenGraph;
+// pub use pipeline::GgenPipeline;
+// pub use receipt::GenerationReceipt;
 
 /// Type-state marker for GgenGenerator
 pub mod state {

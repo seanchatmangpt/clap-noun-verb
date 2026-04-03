@@ -259,18 +259,17 @@ fn json_to_yaml(value: &serde_json::Value, indent: usize) -> String {
                     .join("\n")
             }
         }
-        serde_json::Value::Object(map) => {
-            map.iter()
-                .map(|(k, v)| {
-                    if v.is_object() || v.is_array() {
-                        format!("{}{}:\n{}", prefix, k, json_to_yaml(v, indent + 1))
-                    } else {
-                        format!("{}{}: {}", prefix, k, json_to_yaml(v, indent))
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
-        }
+        serde_json::Value::Object(map) => map
+            .iter()
+            .map(|(k, v)| {
+                if v.is_object() || v.is_array() {
+                    format!("{}{}:\n{}", prefix, k, json_to_yaml(v, indent + 1))
+                } else {
+                    format!("{}{}: {}", prefix, k, json_to_yaml(v, indent))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
     }
 }
 
@@ -279,17 +278,13 @@ fn json_to_plain(value: &serde_json::Value) -> String {
     match value {
         serde_json::Value::String(s) => s.clone(),
         serde_json::Value::Array(arr) => {
-            arr.iter()
-                .map(json_to_plain)
-                .collect::<Vec<_>>()
-                .join("\n")
+            arr.iter().map(json_to_plain).collect::<Vec<_>>().join("\n")
         }
-        serde_json::Value::Object(map) => {
-            map.iter()
-                .map(|(k, v)| format!("{}: {}", k, json_to_plain(v)))
-                .collect::<Vec<_>>()
-                .join("\n")
-        }
+        serde_json::Value::Object(map) => map
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k, json_to_plain(v)))
+            .collect::<Vec<_>>()
+            .join("\n"),
         _ => value.to_string(),
     }
 }

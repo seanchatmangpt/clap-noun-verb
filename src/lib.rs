@@ -50,7 +50,6 @@
 // CORE MODULES - Always available (no feature flags)
 // =============================================================================
 
-pub mod agent_cli;
 pub mod builder;
 pub mod cli;
 pub mod error;
@@ -170,11 +169,6 @@ pub mod semantic;
 ))]
 pub mod frontier;
 
-// ggen Integration - RDF/Turtle to CLI code generation (requires "rdf" feature)
-// Provides parser, AST, and code generator for ggen specifications
-#[cfg(feature = "rdf")]
-pub mod ggen_integration;
-
 // Wizard - Interactive multi-step CLI workflows with AI assistance (requires "wizard" feature)
 #[cfg(feature = "wizard")]
 pub mod wizard;
@@ -201,7 +195,7 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 // Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
-pub use format::{OutputFormat, format_output};
+pub use format::{format_output, OutputFormat};
 
 // Re-export clap types so users don't need clap as a direct dependency
 // This follows the facade pattern used by serde, tokio, and tracing

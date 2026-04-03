@@ -561,7 +561,7 @@ macro_rules! discoverable {
         $(, conflicts: [$($conf:expr),* $(,)?])?
     ) => {
         {
-            let mut capability = $crate::macros::discovery_engine::Capability::new($name, $category);
+            let mut capability = $crate::macros_discovery_engine::Capability::new($name, $category);
 
             $(
                 $(
@@ -589,7 +589,7 @@ macro_rules! fitness_function {
         novelty: $novelty:expr,
         safety: $safety:expr
     ) => {{
-        use $crate::macros::discovery_engine::FitnessScore;
+        use $crate::macros_discovery_engine::FitnessScore;
 
         FitnessScore {
             utility: ($utility) as f64,
