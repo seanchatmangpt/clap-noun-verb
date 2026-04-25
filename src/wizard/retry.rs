@@ -124,7 +124,7 @@ impl RetryConfig {
     }
 
     /// Calculate the delay for a given attempt (with jitter)
-    fn calculate_delay(&self, attempt: usize) -> Duration {
+    pub fn calculate_delay(&self, attempt: usize) -> Duration {
         // Base exponential backoff: initial_delay * multiplier^attempt
         let base_delay_ms =
             self.initial_delay_ms as f64 * self.backoff_multiplier.powi(attempt as i32);
@@ -159,7 +159,7 @@ impl RetryContext {
         Self::default()
     }
 
-    fn record_attempt(&mut self, delay_ms: u64, error: &WizardError) {
+    pub fn record_attempt(&mut self, delay_ms: u64, error: &WizardError) {
         self.attempts += 1;
         self.total_delay_ms += delay_ms;
         self.last_error = Some(error.to_string());

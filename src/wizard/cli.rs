@@ -109,7 +109,7 @@ impl WizardCli {
     /// Run interactive session
     fn run_interactive(args: InteractiveArgs) -> Result<()> {
         let mut config = WizardConfig::new()
-            .with_model(args.model)
+            .with_model_id(args.model)
             .with_temperature(args.temperature)
             .with_verbose(args.verbose);
 
@@ -126,7 +126,7 @@ impl WizardCli {
     /// Run a single prompt
     fn run_prompt(args: RunArgs) -> Result<()> {
         let config = WizardConfig::new()
-            .with_model(args.model)
+            .with_model_id(args.model)
             .with_temperature(args.temperature)
             .with_max_tokens(args.max_tokens)
             .with_verbose(args.verbose);
@@ -140,8 +140,8 @@ impl WizardCli {
                 println!("{}", response);
             }
             OutputFormat::Json => {
-                let json =
-                    serde_json::to_string_pretty(&response).map_err(|e| WizardError::Json(e))?;
+                let json = serde_json::to_string_pretty(&response)
+                    .map_err(|e| WizardError::Json(e.to_string()))?;
                 println!("{}", json);
             }
         }

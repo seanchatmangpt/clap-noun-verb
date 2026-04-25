@@ -15,7 +15,7 @@ pub struct InteractiveHelp {
 }
 
 /// Menu option
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub struct MenuOption {
     /// Option key (e.g., "1", "2")
     pub key: String,
@@ -26,7 +26,7 @@ pub struct MenuOption {
 }
 
 /// Menu action
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
 pub enum MenuAction {
     /// Show category commands
     ShowCategory(CommandCategory),
@@ -310,7 +310,7 @@ impl Default for InteractiveHelp {
 }
 
 /// Interactive output structure
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, serde::Deserialize)]
 pub struct InteractiveOutput {
     /// Menu title
     pub title: String,

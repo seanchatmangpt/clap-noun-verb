@@ -9,7 +9,10 @@
 //! ```
 
 #[cfg(feature = "wizard")]
-use clap_noun_verb::wizard::{WizardBuilder, WizardConfig};
+use clap_noun_verb::wizard::{
+    config::{Model, OpenAIModel},
+    WizardBuilder, WizardConfig,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Wizard Basic Example ===\n");
@@ -17,13 +20,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 1: Using default configuration
     println!("Example 1: Default Configuration");
     let wizard = WizardBuilder::new().build()?;
-    println!("Created wizard with model: {}", wizard.config().model);
+    println!("Created wizard with model: {:?}", wizard.config().model_config.model);
     println!();
 
     // Example 2: Custom configuration with builder
     println!("Example 2: Custom Configuration");
     let wizard = WizardBuilder::new()
-        .with_model("gpt-4")
+        .with_model(Model::OpenAI(OpenAIModel::Gpt4))
         .with_temperature(0.8)
         .with_max_tokens(1024)
         .build()?;
@@ -35,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 3: Configuration from WizardConfig
     println!("Example 3: WizardConfig Builder");
     let config = WizardConfig::new()
-        .with_model("claude-3-sonnet")
+        .with_model_id("anthropic:claude-3-sonnet")
         .with_temperature(0.7)
         .with_system_prompt("You are a helpful programming assistant.");
 
@@ -48,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 4: With context
     println!("Example 4: With Context");
     let wizard = WizardBuilder::new()
-        .with_model("gpt-3.5-turbo")
+        .with_model(Model::OpenAI(OpenAIModel::Gpt35Turbo))
         .with_context("User is learning Rust")
         .build()?;
 

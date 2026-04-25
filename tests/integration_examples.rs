@@ -101,7 +101,7 @@ fn test_services_example_logs() -> Result<()> {
 #[test]
 fn test_collector_example() -> Result<()> {
     // Test collector example
-    let (output, _code) = run_example("collector", vec!["collector", "status"])?;
+    let (output, _code) = run_example("ref_collector", vec!["collector", "status"])?;
 
     // Should produce JSON output
     assert!(
@@ -166,7 +166,7 @@ fn test_validation_example() -> Result<()> {
 #[test]
 fn test_nested_example() -> Result<()> {
     // Test nested example
-    let (output, _code) = run_example("nested", vec!["test", "run"])?;
+    let (output, _code) = run_example("ref_nested", vec!["test", "run"])?;
 
     // Should produce JSON output
     assert!(

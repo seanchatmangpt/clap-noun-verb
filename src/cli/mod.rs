@@ -14,6 +14,12 @@ pub mod router;
 pub mod validator;
 pub(crate) mod value_parser;
 
+// Scaffolding and project initialization
+#[cfg(feature = "config-formats")]
+pub mod config_cmd;
+pub mod doctor_cmd;
+pub mod init;
+
 // New in v5.0 - Enhanced help system for improved usability
 pub mod discovery;
 pub mod examples;
@@ -21,9 +27,14 @@ pub mod help;
 pub mod interactive;
 
 pub use builder::CliBuilder;
+pub use doctor_cmd::{doctor_command, handle_doctor_command};
+pub use init::scaffold_config;
 pub use registry::CommandRegistry;
 pub use router::CommandRouter;
 pub use validator::ArgValidator;
+
+#[cfg(feature = "config-formats")]
+pub use config_cmd::{config_subcommand, handle_config_subcommand};
 
 // Re-export help system components
 pub use discovery::{CommandDiscovery, SearchResult};

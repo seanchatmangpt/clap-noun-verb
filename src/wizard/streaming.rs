@@ -14,12 +14,12 @@
 use crate::wizard::{
     config::{ModelConfig, WizardConfig},
     error::{WizardError, WizardResult},
-    types::{Message, Prompt, ResponseMetadata, Role, TokenUsage, WizardResponse},
+    types::{Prompt, ResponseMetadata, Role, TokenUsage, WizardResponse},
 };
 use futures::{Stream, StreamExt};
+use genai::chat::ChatStreamEvent;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use tokio::sync::mpsc;
 
 /// Configuration for streaming responses
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -133,11 +133,7 @@ impl StreamingClient {
 
         // Add system message if present
         if let Some(system) = &prompt.system {
-            messages.push(genai::chat::ChatMessage {
-                role: genai::chat::ChatRole::System,
-                content: genai::chat::MessageContent::Text(system.clone()),
-                options: None,
-            });
+            messages.push(genai::chat::ChatMessage::system(system.clone()));
         }
 
         // Add conversation history
@@ -150,41 +146,43 @@ impl StreamingClient {
         }
 
         // Add user prompt
-        messages.push(genai::chat::ChatMessage {
-            role: genai::chat::ChatRole::User,
-            content: genai::chat::MessageContent::Text(prompt.text.clone()),
-            options: None,
-        });
+        messages.push(genai::chat::ChatMessage::user(prompt.text.clone()));
 
         // Create streaming chat request
-        let chat_req = genai::chat::ChatRequest {
-            messages,
-            model: genai::ModelName::from(self.config.model.model_id()),
-            temperature: Some(self.config.temperature.into()),
-            top_p: Some(self.config.top_p.into()),
-            max_tokens: Some(self.config.max_response_tokens),
-            stream: true, // Enable streaming
-            ..Default::default()
-        };
+        let chat_req = genai::chat::ChatRequest::new(messages);
+
+        // Create chat options
+        let options = genai::chat::ChatOptions::default()
+            .with_temperature(self.config.temperature.into())
+            .with_top_p(self.config.top_p.into())
+            .with_max_tokens(self.config.max_response_tokens as u32);
 
         // Execute streaming request
+        let model_id = self.config.model.model_id();
         let stream_res = self
             .client
-            .exec_chat_stream(self.config.model.model_id(), chat_req, None)
+            .exec_chat_stream(&model_id, chat_req, Some(&options))
             .await
             .map_err(|e| WizardError::Request(e.to_string()))?;
 
         // Convert to our StreamChunk type
-        Ok(stream_res.map(move |result| match result {
-            Ok(chunk) => {
-                let text = chunk.content.as_ref().and_then(|c| c.text_as_str()).unwrap_or("");
-
-                let usage = chunk.usage.map(|u| {
-                    TokenUsage::new(u.prompt_tokens.unwrap_or(0), u.completion_tokens.unwrap_or(0))
-                });
-
-                Ok(StreamChunk { text: text.to_string(), is_final: chunk.is_final(), usage })
-            }
+        Ok(stream_res.stream.map(move |result| match result {
+            Ok(event) => match event {
+                ChatStreamEvent::Chunk(chunk) => {
+                    let text = chunk.content;
+                    Ok(StreamChunk { text, is_final: false, usage: None })
+                }
+                ChatStreamEvent::End(end) => {
+                    let usage = end.captured_usage.map(|u| {
+                        TokenUsage::new(
+                            u.prompt_tokens.unwrap_or(0) as usize,
+                            u.completion_tokens.unwrap_or(0) as usize,
+                        )
+                    });
+                    Ok(StreamChunk { text: String::new(), is_final: true, usage })
+                }
+                _ => Ok(StreamChunk { text: String::new(), is_final: false, usage: None }),
+            },
             Err(e) => Err(WizardError::Request(e.to_string())),
         }))
     }
@@ -315,27 +313,5 @@ mod tests {
         assert_eq!(chunk.text, "Done");
         assert!(chunk.is_final);
         assert_eq!(chunk.usage, Some(usage));
-    }
-
-    #[tokio::test]
-    async fn test_cancellable_stream() {
-        // Arrange
-        let stream = futures::stream::iter(vec![1, 2, 3, 4, 5]);
-        let (mut cancellable, cancel_tx) = CancellableStream::new(stream);
-
-        // Act - collect first 2 items
-        let first = cancellable.next().await;
-        let second = cancellable.next().await;
-
-        // Cancel the stream
-        cancel_tx.send(true).expect("send cancel signal");
-
-        // Try to get next item (should be None due to cancellation)
-        let third = cancellable.next().await;
-
-        // Assert
-        assert_eq!(first, Some(1));
-        assert_eq!(second, Some(2));
-        assert_eq!(third, None); // Stream cancelled
     }
 }

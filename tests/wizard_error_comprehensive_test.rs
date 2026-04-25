@@ -114,7 +114,7 @@ fn test_io_error_variant() {
     let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
 
     // Act
-    let error = WizardError::IoError(io_err);
+    let error = WizardError::IoError(io_err.to_string());
 
     // Assert
     assert!(matches!(error, WizardError::IoError(_)));
@@ -129,7 +129,7 @@ fn test_io_short_form_variant() {
     let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "access denied");
 
     // Act
-    let error = WizardError::Io(io_err);
+    let error = WizardError::Io(io_err.to_string());
 
     // Assert
     assert!(matches!(error, WizardError::Io(_)));
@@ -143,7 +143,7 @@ fn test_serde_error_variant() {
     let json_err = serde_json::from_str::<serde_json::Value>("{invalid json}").unwrap_err();
 
     // Act
-    let error = WizardError::SerdeError(json_err);
+    let error = WizardError::SerdeError(json_err.to_string());
 
     // Assert
     assert!(matches!(error, WizardError::SerdeError(_)));
@@ -157,7 +157,7 @@ fn test_json_short_form_variant() {
     let json_err = serde_json::from_str::<serde_json::Value>("{bad: json}").unwrap_err();
 
     // Act
-    let error = WizardError::Json(json_err);
+    let error = WizardError::Json(json_err.to_string());
 
     // Assert
     assert!(matches!(error, WizardError::Json(_)));
@@ -170,7 +170,7 @@ fn test_env_var_error_variant() {
     let env_err = std::env::var("NONEXISTENT_VAR_XYZ_123").unwrap_err();
 
     // Act
-    let error = WizardError::EnvVarError(env_err);
+    let error = WizardError::EnvVarError(env_err.to_string());
 
     // Assert
     assert!(matches!(error, WizardError::EnvVarError(_)));
@@ -291,7 +291,7 @@ fn test_from_env_var_error_conversion() {
 fn test_error_source_for_io_error() {
     // Arrange
     let io_err = io::Error::new(io::ErrorKind::NotFound, "not found");
-    let error = WizardError::IoError(io_err);
+    let error = WizardError::IoError(io_err.to_string());
 
     // Act
     let source = std::error::Error::source(&error);
@@ -305,7 +305,7 @@ fn test_error_source_for_io_error() {
 fn test_error_source_for_serde_error() {
     // Arrange
     let json_err = serde_json::from_str::<serde_json::Value>("{invalid}").unwrap_err();
-    let error = WizardError::SerdeError(json_err);
+    let error = WizardError::SerdeError(json_err.to_string());
 
     // Act
     let source = std::error::Error::source(&error);

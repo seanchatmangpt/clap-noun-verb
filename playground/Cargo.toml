@@ -1,5 +1,5 @@
 [package]
-name = "playground-cli"
+name = "mcpp-cli"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.74"
@@ -60,11 +60,11 @@ default = []
 # marketplace = ["reqwest"]         # Optional marketplace (requires reqwest optional=true)
 
 [lib]
-name = "playground_cli"
+name = "mcpp_cli"
 path = "src/lib.rs"
 
 [[bin]]
-name = "playground"
+name = "mcpp"
 path = "src/main.rs"
 
 [[example]]

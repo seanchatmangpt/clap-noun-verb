@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create wizard with custom configuration
     let wizard = WizardBuilder::new()
-        .with_model("gpt-4")
+        .with_model(clap_noun_verb::wizard::config::Model::OpenAI(clap_noun_verb::wizard::config::OpenAIModel::Gpt4))
         .with_temperature(0.7)
         .with_system_prompt(
             "You are a helpful Rust programming assistant. Provide clear, concise answers.",
@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     // Create interactive session
-    let mut session = InteractiveSession::new(wizard).with_prompt_prefix("🧙 > ");
+    let mut session = InteractiveSession::new(wizard);
 
     // Run the interactive REPL
     session.run()?;
@@ -50,7 +50,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[cfg(not(feature = "wizard"))]
-fn main() {
-    println!("This example requires the 'wizard' feature to be enabled.");
-    println!("Run with: cargo run --example wizard_interactive --features wizard");
-}
+fn main() {}

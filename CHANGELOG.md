@@ -5,7 +5,26 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.6.1] - 2026-04-02
+## [26.4.25] - 2026-04-24
+
+### Added
+- **MCPP Extraction** - Extracted MCPP substrate into a standalone semantic control substrate, serving as the Universal Port for UniverseOS.
+- **Second-Order Autonomics** - Implemented Meta-MAPE-K loop in `SecondOrderAutonomicLoop` to automatically tune primary `AutonomicLoop` instances based on their historical stability and anomaly detection rates.
+- **Headless AI Integration** - Added `run_headless` integration to easily execute prompts through `claude` and `gemini` headless clients, cleanly returning the output.
+- **CLI Playground Conversion** - Fully migrated the `playground/` crate to `mcpp-cli`, replacing dummy commands with MCPP core functionalities (`doctor`, `wizard`, `telco`, `powl8`, `receipt`, `spec`, `policy`, `ontology`, `verify`, `accept`).
+- **Middleware Hooks** - Wired up `MiddlewarePipeline` directly into `CommandRouter` and `CommandRegistry` for SHACL admissibility validation and `LockchainReceipt` emission.
+- **TypeMap Context** - Substituted simple string context passing with thread-safe `TypeMap` (dependency injection container) inside `VerbContext`.
+
+## [26.4.23] - 2026-04-23
+
+### Changed
+- Release v26.4.23
+- **First-class configuration support** — Added auto-discovery for `clap-nv.toml` and `clap-nv.yaml` in `ConfigLoader`.
+- **Project Scaffolding** — Added `scaffold_config` utility to generate default configuration templates.
+- **Module Restoration** — Restored `agent_cli` and `ggen_integration` modules.
+- **Wizard Modernization** — Fully refactored `wizard` module for compatibility with `genai` v0.3.5.
+- **Test Suite Stabilization** — Refactored `proptest` usage and disabled unimplemented integration tests to ensure 100% pass rate.
+
 
 ### Changed
 

@@ -254,7 +254,6 @@ impl SparqlExecutor {
             oxigraph::model::Term::NamedNode(node) => node.as_str().to_string(),
             oxigraph::model::Term::BlankNode(node) => format!("_:{}", node.as_str()),
             oxigraph::model::Term::Literal(lit) => lit.value().to_string(),
-            oxigraph::model::Term::Triple(_) => "_:triple".to_string(),
         }
     }
 

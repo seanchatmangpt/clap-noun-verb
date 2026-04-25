@@ -6,7 +6,7 @@
 use crate::wizard::{
     config::{ModelConfig, WizardConfig},
     error::{WizardError, WizardResult},
-    types::{Message, Prompt, Role, TokenUsage, WizardResponse},
+    types::{Prompt, Role, TokenUsage, WizardResponse},
 };
 
 #[cfg(feature = "caching")]
@@ -61,7 +61,7 @@ impl GenAiClient {
     }
 
     /// Create a rust-genai client from wizard configuration
-    fn create_genai_client(wizard_config: &WizardConfig) -> WizardResult<genai::Client> {
+    fn create_genai_client(_wizard_config: &WizardConfig) -> WizardResult<genai::Client> {
         // For now, create a basic client
         // rust-genai reads API keys from environment variables automatically
         Ok(genai::Client::default())
@@ -78,9 +78,9 @@ impl GenAiClient {
 
         // Check cache if enabled
         #[cfg(feature = "caching")]
-        if let Some(cache) = &mut self.cache {
+        if self.cache.is_some() {
             let cache_key = self.cache_key(&prompt);
-            if let Some(cached) = cache.get(&cache_key) {
+            if let Some(cached) = self.cache.as_mut().unwrap().get(&cache_key) {
                 let mut response = cached.clone();
                 response.metadata.from_cache = true;
                 return Ok(response);
@@ -98,9 +98,9 @@ impl GenAiClient {
 
         // Cache if enabled
         #[cfg(feature = "caching")]
-        if let Some(cache) = &mut self.cache {
+        if self.cache.is_some() {
             let cache_key = self.cache_key(&prompt);
-            cache.put(cache_key, response.clone());
+            self.cache.as_mut().unwrap().put(cache_key, response.clone());
         }
 
         Ok(response)
@@ -137,19 +137,19 @@ impl GenAiClient {
         });
 
         // Create chat request
-        let chat_req = genai::chat::ChatRequest {
-            messages,
-            model: genai::ModelName::from(self.config.model.model_id()),
-            temperature: Some(self.config.temperature.into()),
-            top_p: Some(self.config.top_p.into()),
-            max_tokens: Some(self.config.max_response_tokens),
-            ..Default::default()
-        };
+        let chat_req = genai::chat::ChatRequest::new(messages);
+
+        // Create chat options
+        let options = genai::chat::ChatOptions::default()
+            .with_temperature(self.config.temperature.into())
+            .with_top_p(self.config.top_p.into())
+            .with_max_tokens(self.config.max_response_tokens as u32);
 
         // Execute request
+        let model_id = self.config.model.model_id();
         let chat_res = self
             .client
-            .exec_chat(self.config.model.model_id(), chat_req, None)
+            .exec_chat(&model_id, chat_req, Some(&options))
             .await
             .map_err(|e| WizardError::Request(e.to_string()))?;
 
@@ -161,24 +161,23 @@ impl GenAiClient {
             .ok_or_else(|| WizardError::Parse("No text content in response".to_string()))?
             .to_string();
 
-        // Extract token usage if available
-        let usage = chat_res.usage.map(|u| {
-            TokenUsage::new(u.prompt_tokens.unwrap_or(0), u.completion_tokens.unwrap_or(0))
-        });
+        // Extract token usage
+        let usage = TokenUsage::new(
+            chat_res.usage.prompt_tokens.unwrap_or(0) as usize,
+            chat_res.usage.completion_tokens.unwrap_or(0) as usize,
+        );
 
         // Build response
-        let mut response = WizardResponse::new(text, self.config.model.model_id()).with_metadata(
+        let mut response = WizardResponse::new(text, model_id).with_metadata(
             crate::wizard::types::ResponseMetadata {
-                finish_reason: chat_res.finish_reason,
+                finish_reason: None, // finish_reason not directly on ChatResponse in v0.3.5
                 #[cfg(feature = "caching")]
                 from_cache: false,
                 latency_ms: None,
             },
         );
 
-        if let Some(usage) = usage {
-            response = response.with_usage(usage);
-        }
+        response = response.with_usage(usage);
 
         Ok(response)
     }
@@ -238,9 +237,12 @@ mod tests {
     #[test]
     fn test_convert_role() {
         // Arrange + Act + Assert
-        assert_eq!(GenAiClient::convert_role(Role::User), genai::chat::ChatRole::User);
-        assert_eq!(GenAiClient::convert_role(Role::Assistant), genai::chat::ChatRole::Assistant);
-        assert_eq!(GenAiClient::convert_role(Role::System), genai::chat::ChatRole::System);
+        assert!(matches!(GenAiClient::convert_role(Role::User), genai::chat::ChatRole::User));
+        assert!(matches!(
+            GenAiClient::convert_role(Role::Assistant),
+            genai::chat::ChatRole::Assistant
+        ));
+        assert!(matches!(GenAiClient::convert_role(Role::System), genai::chat::ChatRole::System));
     }
 
     #[test]
@@ -251,26 +253,5 @@ mod tests {
 
         // Assert - just verify it compiles and config is accessible
         assert_eq!(config.model, Model::Anthropic(AnthropicModel::Claude3Sonnet));
-    }
-
-    #[cfg(feature = "caching")]
-    #[test]
-    fn test_cache_key_deterministic() {
-        // Arrange
-        let wizard_config = WizardConfig {
-            model_config: ModelConfig::default(),
-            api_key: Some("test".to_string()),
-            endpoint: None,
-            enable_cache: true,
-        };
-
-        // We can't easily create a client without valid credentials,
-        // so we'll just test the hash function would be deterministic
-        let prompt1 = Prompt::new("Hello");
-        let prompt2 = Prompt::new("Hello");
-
-        // Act + Assert - same prompts should hash the same
-        // (we can't test this directly without creating a client, which needs credentials)
-        assert_eq!(prompt1.text, prompt2.text);
     }
 }

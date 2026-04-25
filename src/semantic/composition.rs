@@ -7,8 +7,8 @@ use thiserror::Error;
 #[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub enum CompositionError {
     /// Type mismatch between capabilities
-    #[error("Type mismatch: {source} outputs {source_type}, but {target} expects {target_type}")]
-    TypeMismatch { source: String, source_type: String, target: String, target_type: String },
+    #[error("Type mismatch: {source_id} outputs {source_type}, but {target} expects {target_type}")]
+    TypeMismatch { source_id: String, source_type: String, target: String, target_type: String },
 
     /// SPARQL constraint violation
     #[error("Constraint violation: {0}")]
@@ -118,13 +118,13 @@ impl CompositionValidator {
         match (source_output, target_input) {
             (Some(output), Some(input)) if output == input => Ok(()),
             (Some(output), Some(input)) => Err(CompositionError::TypeMismatch {
-                source: source.uri.to_string(),
+                source_id: source.uri.to_string(),
                 source_type: output,
                 target: target.uri.to_string(),
                 target_type: input,
             }),
             _ if self.strict => Err(CompositionError::TypeMismatch {
-                source: source.uri.to_string(),
+                source_id: source.uri.to_string(),
                 source_type: "unknown".to_string(),
                 target: target.uri.to_string(),
                 target_type: "unknown".to_string(),
@@ -277,13 +277,13 @@ mod tests {
     fn test_validator_permissive_mode() {
         // Arrange: Missing type information, permissive validator
         let validator = CompositionValidator::permissive();
-        let cap1 = Box::leak(Box::new(CapabilityMetadata {
+        let cap1: &CapabilityMetadata = Box::leak(Box::new(CapabilityMetadata {
             uri: "urn:test:cap1",
             function_name: "test",
             rdf_metadata: "no types here",
             mcp_descriptor: "{}",
         }));
-        let cap2 = Box::leak(Box::new(CapabilityMetadata {
+        let cap2: &CapabilityMetadata = Box::leak(Box::new(CapabilityMetadata {
             uri: "urn:test:cap2",
             function_name: "test2",
             rdf_metadata: "no types here either",

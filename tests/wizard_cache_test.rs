@@ -58,7 +58,7 @@ async fn test_cache_hit_on_duplicate_request() {
     // Assert: Second response from cache
     assert!(!response1.metadata.from_cache);
     assert!(response2.metadata.from_cache);
-    assert_eq!(response1.content, response2.content);
+    assert_eq!(response1.text, response2.text);
 }
 
 #[cfg(feature = "wizard")]
@@ -256,8 +256,8 @@ async fn test_cache_clear() {
 fn test_prompt_consistency_for_caching() {
     // Arrange: Create prompt
     let original = Prompt::new("Test").with_system("System").with_history(vec![
-        crate::wizard::types::Message {
-            role: crate::wizard::types::Role::User,
+        clap_noun_verb::wizard::types::Message {
+            role: clap_noun_verb::wizard::types::Role::User,
             content: "History 1".to_string(),
         },
     ]);
@@ -357,7 +357,7 @@ fn test_cache_warmup_with_common_prompts() {
     ];
 
     // Act: Create prompts (would be used for cache warmup)
-    let prompts: Vec<_> = common_prompts.iter().map(|text| Prompt::new(text)).collect();
+    let prompts: Vec<_> = common_prompts.iter().map(|text| Prompt::new(*text)).collect();
 
     // Assert: All prompts created
     assert_eq!(prompts.len(), 5);
@@ -403,10 +403,11 @@ fn test_prompt_with_history_affects_cache() {
     let base_prompt = "What is Rust?";
 
     let prompt1 = Prompt::new(base_prompt);
-    let prompt2 = Prompt::new(base_prompt).with_history(vec![crate::wizard::types::Message {
-        role: crate::wizard::types::Role::User,
-        content: "Previous question".to_string(),
-    }]);
+    let prompt2 =
+        Prompt::new(base_prompt).with_history(vec![clap_noun_verb::wizard::types::Message {
+            role: clap_noun_verb::wizard::types::Role::User,
+            content: "Previous question".to_string(),
+        }]);
 
     // Act & Assert: Different prompts (different cache keys)
     assert_eq!(prompt1.text, prompt2.text);

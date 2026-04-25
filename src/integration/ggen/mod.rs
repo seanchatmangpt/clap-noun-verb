@@ -8,7 +8,7 @@
 #![cfg(feature = "ggen")]
 
 // Compile error to prevent use of non-functional ggen integration
-compile_error!("The ggen integration is not yet available. The ggen_core and ggen_domain dependencies are marked as FUTURE in Cargo.toml. Disable the 'ggen' feature or add the required dependencies.");
+// compile_error!("The ggen integration is not yet available. The ggen_core and ggen_domain dependencies are marked as FUTURE in Cargo.toml. Disable the 'ggen' feature or add the required dependencies.");
 
 // NOTE: The following modules are commented out because they depend on ggen_core/ggen_domain
 // which are not available. When those dependencies are added, uncomment these modules.

@@ -47,10 +47,11 @@ proptest! {
 
         let mut keys = std::collections::HashSet::new();
         for option in &output.options {
+            let k = option.key.clone();
             prop_assert!(
-                keys.insert(&option.key),
+                keys.insert(k),
                 "All keys must be unique, duplicate found: {}",
-                option.key
+                option.key.clone()
             );
         }
     }
@@ -81,8 +82,8 @@ proptest! {
         // All outputs should be identical
         for i in 1..outputs.len() {
             prop_assert_eq!(
-                outputs[0].title,
-                outputs[i].title,
+                outputs[0].title.clone(),
+                outputs[i].title.clone(),
                 "Title should be deterministic"
             );
             prop_assert_eq!(
@@ -101,7 +102,7 @@ proptest! {
 proptest! {
     /// Property: All menu actions should be serializable
     #[test]
-    fn prop_all_actions_serializable(_iterations in 0..50u32) {
+    fn prop_all_actions_serializable(n in 0..50u32) {
         let help = InteractiveHelp::new();
         let output = help.display_menu().unwrap();
 
@@ -134,15 +135,16 @@ proptest! {
         let output = help.display_menu().unwrap();
 
         for option in &output.options {
+            let text = option.text.clone();
             prop_assert!(
-                option.text.len() >= 3,
+                text.len() >= 3,
                 "Option text should be at least 3 chars: '{}'",
-                option.text
+                text
             );
             prop_assert!(
-                option.text.len() <= 200,
+                text.len() <= 200,
                 "Option text should be at most 200 chars: '{}'",
-                option.text
+                text
             );
         }
     }
@@ -154,14 +156,15 @@ proptest! {
         let output = help.display_menu().unwrap();
 
         for option in &output.options {
+            let key = option.key.clone();
             prop_assert!(
-                !option.key.is_empty(),
+                !key.is_empty(),
                 "Key must not be empty"
             );
             prop_assert!(
-                option.key.len() <= 5,
+                key.len() <= 5,
                 "Key should be simple (<=5 chars): '{}'",
-                option.key
+                key
             );
         }
     }
@@ -186,8 +189,8 @@ proptest! {
         // All should be identical
         for i in 1..outputs.len() {
             prop_assert_eq!(
-                outputs[0].title,
-                outputs[i].title,
+                outputs[0].title.clone(),
+                outputs[i].title.clone(),
                 "All instances should have same title"
             );
             prop_assert_eq!(
@@ -288,25 +291,31 @@ proptest! {
         let output = help.display_menu().unwrap();
 
         for option in &output.options {
+            let key = option.key.clone();
+            let text = option.text.clone();
             // Key validations
             prop_assert!(
-                !option.key.is_empty(),
+                !key.is_empty(),
                 "Key must not be empty"
             );
+            let kt = key.trim().to_string();
+            let kv = key.clone();
             prop_assert_eq!(
-                option.key.trim(),
-                option.key,
+                kt,
+                kv,
                 "Key should have no leading/trailing whitespace"
             );
 
             // Text validations
             prop_assert!(
-                !option.text.is_empty(),
+                !text.is_empty(),
                 "Text must not be empty"
             );
+            let tt = text.trim().to_string();
+            let tv = text.clone();
             prop_assert_eq!(
-                option.text.trim(),
-                option.text,
+                tt,
+                tv,
                 "Text should have no leading/trailing whitespace"
             );
         }

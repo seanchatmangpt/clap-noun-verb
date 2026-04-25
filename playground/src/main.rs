@@ -26,21 +26,12 @@
 //! - **Middleware**: Logging, profiling, rate-limiting
 //! - **Telemetry**: Execution receipts and metrics
 
-// Domain imports - pure business logic (NO I/O, NO CLI)
-mod domain;
-
-// Integration imports - glue code with side effects
-mod integration;
-
-// CLI commands - thin validation layer
-mod commands;
-
-// Output types for JSON serialization
-mod outputs;
-
 use clap_noun_verb::Result;
 
 fn main() -> Result<()> {
+    // Ensure all commands are linked
+    mcpp_cli::init();
+    
     // Auto-discover all #[verb] commands and run
     clap_noun_verb::run()
 }

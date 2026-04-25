@@ -2,7 +2,38 @@
 
 use crate::error::Result;
 use clap::{ArgMatches, Command};
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::sync::Arc;
+
+/// Type-safe state map for dependency injection
+#[derive(Default, Clone)]
+pub struct TypeMap {
+    map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
+}
+
+impl TypeMap {
+    /// Create a new empty type map
+    pub fn new() -> Self {
+        Self { map: HashMap::new() }
+    }
+
+    /// Insert a value into the map
+    pub fn insert<T: Send + Sync + 'static>(&mut self, val: T) {
+        self.map.insert(TypeId::of::<T>(), Arc::new(val));
+    }
+
+    /// Get a reference to a value
+    pub fn get<T: Send + Sync + 'static>(&self) -> Option<&T> {
+        self.map.get(&TypeId::of::<T>()).and_then(|arc| arc.downcast_ref::<T>())
+    }
+}
+
+impl std::fmt::Debug for TypeMap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypeMap").field("keys", &self.map.keys().len()).finish()
+    }
+}
 
 /// Context information passed to verb commands
 #[derive(Debug, Clone)]
@@ -13,12 +44,14 @@ pub struct VerbContext {
     pub noun: Option<String>,
     /// Additional context data
     pub data: HashMap<String, String>,
+    /// Typed context extensions
+    pub extensions: TypeMap,
 }
 
 impl VerbContext {
     /// Create a new verb context
     pub fn new(verb: impl Into<String>) -> Self {
-        Self { verb: verb.into(), noun: None, data: HashMap::new() }
+        Self { verb: verb.into(), noun: None, data: HashMap::new(), extensions: TypeMap::new() }
     }
 
     /// Set the noun this verb belongs to
@@ -33,14 +66,25 @@ impl VerbContext {
         self
     }
 
+    /// Add typed extension data
+    pub fn with_extension<T: Send + Sync + 'static>(mut self, val: T) -> Self {
+        self.extensions.insert(val);
+        self
+    }
+
     /// Get context data
     pub fn get_data(&self, key: &str) -> Option<&String> {
         self.data.get(key)
     }
+
+    /// Get typed extension data
+    pub fn get_extension<T: Send + Sync + 'static>(&self) -> Option<&T> {
+        self.extensions.get::<T>()
+    }
 }
 
 /// Arguments passed to a verb command
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct VerbArgs {
     /// The raw clap matches for this verb
     pub matches: ArgMatches,

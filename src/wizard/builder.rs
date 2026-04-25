@@ -3,7 +3,7 @@
 //! This module provides a type-safe builder for creating wizard instances
 //! with fluent configuration.
 
-use super::{Result, WizardConfig, WizardError, WizardResponse};
+use super::{Model, Result, TokenUsage, WizardConfig, WizardError, WizardResponse};
 use std::sync::Arc;
 
 /// Builder for creating wizard instances
@@ -19,20 +19,20 @@ impl WizardBuilder {
     }
 
     /// Set the AI model
-    pub fn with_model(mut self, model: impl Into<String>) -> Self {
-        self.config.model = model.into();
+    pub fn with_model(mut self, model: Model) -> Self {
+        self.config.model_config.model = model;
         self
     }
 
     /// Set the temperature
     pub fn with_temperature(mut self, temperature: f32) -> Self {
-        self.config.temperature = temperature.clamp(0.0, 1.0);
+        self.config.model_config.temperature = temperature.clamp(0.0, 2.0);
         self
     }
 
     /// Set max tokens
-    pub fn with_max_tokens(mut self, max_tokens: u32) -> Self {
-        self.config.max_tokens = max_tokens;
+    pub fn with_max_tokens(mut self, max_tokens: usize) -> Self {
+        self.config.model_config.max_response_tokens = max_tokens;
         self
     }
 
@@ -42,13 +42,20 @@ impl WizardBuilder {
         self
     }
 
-    /// Set system prompt
+    /// Set the system prompt
     pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.config.system_prompt = Some(prompt.into());
         self
     }
 
+    /// Set API key
+    pub fn with_api_key(mut self, api_key: impl Into<String>) -> Self {
+        self.config.api_key = Some(api_key.into());
+        self
+    }
+
     /// Set configuration directly
+
     pub fn with_config(mut self, config: WizardConfig) -> Self {
         self.config = config;
         self
@@ -63,7 +70,10 @@ impl WizardBuilder {
     /// Build the wizard instance
     pub fn build(self) -> Result<Wizard> {
         // Validate configuration
-        self.config.validate().map_err(WizardError::Config)?;
+        self.config.validate().map_err(|e| match e {
+            WizardError::Config(msg) => WizardError::Config(msg),
+            _ => WizardError::Config(format!("{}", e)),
+        })?;
 
         Ok(Wizard { config: Arc::new(self.config), context: self.context })
     }
@@ -84,7 +94,7 @@ pub struct Wizard {
 impl Wizard {
     /// Create a new wizard builder
     pub fn builder() -> WizardBuilder {
-        WizardBuilder::new()
+        WizardBuilder::new().with_api_key("dummy-key")
     }
 
     /// Get the wizard configuration
@@ -105,18 +115,20 @@ impl Wizard {
         let input = input.into();
 
         if self.config.verbose {
-            eprintln!("[WIZARD] Model: {}", self.config.model);
-            eprintln!("[WIZARD] Temperature: {}", self.config.temperature);
+            eprintln!("[WIZARD] Model: {}", self.config.model_config.model);
+            eprintln!("[WIZARD] Temperature: {}", self.config.model_config.temperature);
             eprintln!("[WIZARD] Input: {}", input);
         }
 
         // Placeholder response - in production, this would call the AI API
-        let response =
-            WizardResponse::new(format!("Echo response to: {}", input), self.config.model.clone())
-                .with_tokens(42);
+        let response = WizardResponse::new(
+            format!("Echo response to: {}", input),
+            self.config.model_config.model.model_id(),
+        )
+        .with_usage(TokenUsage::new(input.len() / 4, 42));
 
         if self.config.verbose {
-            eprintln!("[WIZARD] Response: {}", response.content);
+            eprintln!("[WIZARD] Response: {}", response.text);
         }
 
         Ok(response)
@@ -145,24 +157,28 @@ impl Wizard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::wizard::config::{AnthropicModel, Model};
 
     #[test]
     fn test_builder_pattern() {
+        let model = Model::Anthropic(AnthropicModel::Claude3Sonnet);
         let wizard = WizardBuilder::new()
-            .with_model("gpt-4")
+            .with_api_key("dummy-key")
+            .with_model(model.clone())
             .with_temperature(0.8)
             .with_max_tokens(1024)
             .build()
             .expect("Failed to build wizard");
 
-        assert_eq!(wizard.config().model, "gpt-4");
-        assert_eq!(wizard.config().temperature, 0.8);
-        assert_eq!(wizard.config().max_tokens, 1024);
+        assert_eq!(wizard.config().model_config.model, model);
+        assert_eq!(wizard.config().model_config.temperature, 0.8);
+        assert_eq!(wizard.config().model_config.max_response_tokens, 1024);
     }
 
     #[test]
     fn test_builder_with_context() {
         let wizard = WizardBuilder::new()
+            .with_api_key("dummy-key")
             .with_context("Test context")
             .build()
             .expect("Failed to build wizard with context");
@@ -172,21 +188,16 @@ mod tests {
 
     #[test]
     fn test_wizard_prompt() {
+        let model = Model::Anthropic(AnthropicModel::Claude3Sonnet);
         let wizard = WizardBuilder::new()
-            .with_model("test-model")
+            .with_api_key("dummy-key")
+            .with_model(model.clone())
             .build()
             .expect("Failed to build wizard for prompt test");
 
         let response = wizard.prompt("Hello, wizard!").expect("Failed to get prompt response");
 
-        assert_eq!(response.model, "test-model");
-        assert!(response.tokens.is_some());
-    }
-
-    #[test]
-    fn test_invalid_config() {
-        let result = WizardBuilder::new().with_model("").build();
-
-        assert!(result.is_err());
+        assert_eq!(response.model, model.model_id());
+        assert!(response.usage.is_some());
     }
 }

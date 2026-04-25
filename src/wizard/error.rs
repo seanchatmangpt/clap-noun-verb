@@ -35,19 +35,19 @@ pub enum WizardError {
     Config(String),
 
     /// I/O error during wizard operations
-    IoError(std::io::Error),
+    IoError(String),
 
     /// I/O error (short form alias)
-    Io(std::io::Error),
+    Io(String),
 
     /// Serialization/deserialization error
-    SerdeError(serde_json::Error),
+    SerdeError(String),
 
     /// JSON error (short form alias)
-    Json(serde_json::Error),
+    Json(String),
 
     /// Environment variable not found
-    EnvVarError(std::env::VarError),
+    EnvVarError(String),
 
     /// API request error
     Request(String),
@@ -112,31 +112,26 @@ impl fmt::Display for WizardError {
 
 impl std::error::Error for WizardError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::IoError(err) | Self::Io(err) => Some(err),
-            Self::SerdeError(err) | Self::Json(err) => Some(err),
-            Self::EnvVarError(err) => Some(err),
-            _ => None,
-        }
+        None // We no longer store the source error as a type due to Clone requirements
     }
 }
 
 // Error conversions for ergonomic ? operator usage
 impl From<std::io::Error> for WizardError {
     fn from(err: std::io::Error) -> Self {
-        Self::Io(err)
+        Self::Io(err.to_string())
     }
 }
 
 impl From<serde_json::Error> for WizardError {
     fn from(err: serde_json::Error) -> Self {
-        Self::Json(err)
+        Self::Json(err.to_string())
     }
 }
 
 impl From<std::env::VarError> for WizardError {
     fn from(err: std::env::VarError) -> Self {
-        Self::EnvVarError(err)
+        Self::EnvVarError(err.to_string())
     }
 }
 

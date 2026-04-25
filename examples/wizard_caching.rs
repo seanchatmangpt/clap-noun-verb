@@ -96,10 +96,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Cache size before pruning: {}", client.cache_size());
     client.prune_expired();
     println!("Cache size after pruning: {}", client.cache_size());
+// Clear cache
+client.clear_cache();
+println!("Cache size after clearing: {}", client.cache_size());
 
-    // Clear cache
-    client.clear_cache();
-    println!("Cache size after clearing: {}", client.cache_size());
-
-    Ok(())
+Ok(())
 }

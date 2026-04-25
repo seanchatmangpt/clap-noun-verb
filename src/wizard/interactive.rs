@@ -1,12 +1,12 @@
-//! Interactive session handler for wizard CLI
+//! Interactive session management for REPL-style interaction
 //!
-//! This module provides a REPL-style interface for interactive
-//! AI conversations with session history management.
+//! This module provides the `InteractiveSession` struct which manages
+//! a conversation history and handles user input/output in a REPL loop.
 
 use super::{Result, Wizard, WizardError, WizardResponse};
 use std::io::{self, BufRead, Write};
 
-/// Interactive session for wizard interactions
+/// An interactive wizard session
 pub struct InteractiveSession {
     wizard: Wizard,
     history: Vec<(String, WizardResponse)>,
@@ -19,13 +19,7 @@ impl InteractiveSession {
         Self { wizard, history: Vec::new(), prompt_prefix: "> ".to_string() }
     }
 
-    /// Set custom prompt prefix
-    pub fn with_prompt_prefix(mut self, prefix: impl Into<String>) -> Self {
-        self.prompt_prefix = prefix.into();
-        self
-    }
-
-    /// Get session history
+    /// Get the session history
     pub fn history(&self) -> &[(String, WizardResponse)] {
         &self.history
     }
@@ -41,7 +35,7 @@ impl InteractiveSession {
     /// and displays responses. Type 'exit' or 'quit' to end the session.
     pub fn run(&mut self) -> Result<()> {
         println!("Wizard Interactive Session");
-        println!("Model: {}", self.wizard.config().model);
+        println!("Model: {}", self.wizard.config().model_config.model);
         println!("Type 'exit' or 'quit' to end session");
         println!("Type 'clear' to clear history");
         println!("Type 'history' to show conversation history");
@@ -53,12 +47,12 @@ impl InteractiveSession {
         loop {
             // Display prompt
             print!("{}", self.prompt_prefix);
-            stdout.flush().map_err(|e| WizardError::Io(e))?;
+            stdout.flush().map_err(|e| WizardError::Io(e.to_string()))?;
 
             // Read user input
             let mut input = String::new();
             let mut handle = stdin.lock();
-            handle.read_line(&mut input).map_err(|e| WizardError::Io(e))?;
+            handle.read_line(&mut input).map_err(|e| WizardError::Io(e.to_string()))?;
 
             let input = input.trim();
 
@@ -112,7 +106,7 @@ impl InteractiveSession {
         } else {
             for (i, (input, response)) in self.history.iter().enumerate() {
                 println!("\n[{}] User: {}", i + 1, input);
-                println!("    Wizard: {}", response.content);
+                println!("    Wizard: {}", response.text);
             }
         }
         println!("===========================\n");
@@ -120,7 +114,7 @@ impl InteractiveSession {
 
     /// Export history as JSON
     pub fn export_history_json(&self) -> Result<String> {
-        serde_json::to_string_pretty(&self.history).map_err(|e| WizardError::Json(e))
+        serde_json::to_string_pretty(&self.history).map_err(|e| WizardError::Json(e.to_string()))
     }
 
     /// Get history count
@@ -136,8 +130,10 @@ mod tests {
 
     #[test]
     fn test_session_creation() {
-        let wizard =
-            WizardBuilder::new().build().expect("Failed to build wizard for session creation test");
+        let wizard = WizardBuilder::new()
+            .with_api_key("dummy-key")
+            .build()
+            .expect("Failed to build wizard for session creation test");
         let session = InteractiveSession::new(wizard);
 
         assert_eq!(session.history().len(), 0);
@@ -146,7 +142,10 @@ mod tests {
 
     #[test]
     fn test_session_prompt() {
-        let wizard = WizardBuilder::new().build().expect("Failed to build wizard for prompt test");
+        let wizard = WizardBuilder::new()
+            .with_api_key("dummy-key")
+            .build()
+            .expect("Failed to build wizard for prompt test");
         let mut session = InteractiveSession::new(wizard);
 
         let result = session.prompt("Test input".to_string());
@@ -156,8 +155,10 @@ mod tests {
 
     #[test]
     fn test_clear_history() {
-        let wizard =
-            WizardBuilder::new().build().expect("Failed to build wizard for clear history test");
+        let wizard = WizardBuilder::new()
+            .with_api_key("dummy-key")
+            .build()
+            .expect("Failed to build wizard for clear history test");
         let mut session = InteractiveSession::new(wizard);
 
         let _response = session.prompt("Test".to_string());
@@ -169,8 +170,10 @@ mod tests {
 
     #[test]
     fn test_export_history() {
-        let wizard =
-            WizardBuilder::new().build().expect("Failed to build wizard for export history test");
+        let wizard = WizardBuilder::new()
+            .with_api_key("dummy-key")
+            .build()
+            .expect("Failed to build wizard for export history test");
         let mut session = InteractiveSession::new(wizard);
 
         let _response = session.prompt("Test".to_string());

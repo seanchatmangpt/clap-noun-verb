@@ -13,7 +13,7 @@
 //! - Behavior verification (test observable outputs)
 //! - AAA pattern (Arrange-Act-Assert)
 
-use clap_noun_verb::cli::examples::{Example, ExampleVariation, ExamplesRegistry};
+use clap_noun_verb::cli::examples::{Example, ExamplesRegistry, Variation};
 
 // =============================================================================
 // EXAMPLE REGISTRY TESTS
@@ -463,10 +463,11 @@ fn test_example_json_serialization() {
         description: "A test example".to_string(),
         command: "test command".to_string(),
         expected_output: "output".to_string(),
-        variations: vec![ExampleVariation {
+        variations: vec![Variation {
             description: "variation".to_string(),
             command: "variation command".to_string(),
         }],
+        tags: Vec::new(),
     };
 
     // Act
@@ -485,7 +486,7 @@ fn test_example_json_serialization() {
 #[test]
 fn test_example_variation_json_serialization() {
     // Arrange
-    let variation = ExampleVariation {
+    let variation = Variation {
         description: "Test variation".to_string(),
         command: "test command".to_string(),
     };
@@ -494,7 +495,7 @@ fn test_example_variation_json_serialization() {
     let json = serde_json::to_string(&variation);
 
     // Assert
-    assert!(json.is_ok(), "ExampleVariation should serialize to JSON");
+    assert!(json.is_ok(), "Variation should serialize to JSON");
 
     let json_str = json.unwrap();
     assert!(json_str.contains("description"));

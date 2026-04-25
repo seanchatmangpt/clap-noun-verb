@@ -148,5 +148,11 @@ impl NounVerbError {
     }
 }
 
+impl From<std::io::Error> for NounVerbError {
+    fn from(err: std::io::Error) -> Self {
+        Self::ExecutionError { message: err.to_string() }
+    }
+}
+
 /// Result type alias for noun-verb operations
 pub type Result<T> = std::result::Result<T, NounVerbError>;

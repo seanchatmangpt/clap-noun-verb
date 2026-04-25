@@ -32,6 +32,7 @@ pub mod receipt_store;
 pub mod registry_client;
 pub mod config_loader;
 pub mod pack_store;
+pub mod agent;
 
 // Re-export integration functions
 pub use templates::{render_paper_latex, get_template_engine};

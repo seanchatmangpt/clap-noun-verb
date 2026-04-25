@@ -228,6 +228,12 @@ impl CliBuilder {
             .try_get_matches_from(args)
             .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
 
+        if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
+            if subcommand_name == "doctor" {
+                return crate::cli::doctor_cmd::handle_doctor_command(sub_matches);
+            }
+        }
+
         let mut router = CommandRouter::new();
         for (_, noun) in self.nouns {
             router.register_noun(noun);
@@ -247,7 +253,7 @@ impl CliBuilder {
         let name: &'static str = Box::leak(self.name.clone().into_boxed_str());
         let about: &'static str = Box::leak(self.about.clone().into_boxed_str());
 
-        let mut cmd = Command::new(name);
+        let mut cmd = Command::new(name).subcommand(crate::cli::doctor_cmd::doctor_command());
 
         if !self.about.is_empty() {
             cmd = cmd.about(about);

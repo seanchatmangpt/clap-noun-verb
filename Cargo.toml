@@ -4,7 +4,7 @@ exclude = ["playground", "vendors"]
 
 [package]
 name = "clap-noun-verb"
-version = "5.6.2"
+version = "26.4.25"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -24,7 +24,7 @@ path = "src/lib.rs"
 [features]
 # Default features - truly minimal for basic noun-verb CLI (10 dependencies)
 # Telemetry is now optional - add "autonomic" feature if you need it
-default = []
+default = ["wizard"]
 
 # Full feature set - all optional modules enabled
 full = ["async", "io", "crypto", "observability", "validators", "agent2028", "rdf", "kernel", "autonomic", "completions", "mangen", "config-formats", "templates", "caching", "concurrency"]
@@ -69,6 +69,9 @@ templates = ["dep:handlebars"]
 
 # Configuration formats (yaml, toml)
 config-formats = ["dep:serde_yaml", "dep:toml"]
+
+# Hot reloading configuration
+hot-reload = ["dep:notify"]
 
 # Shell completion generation
 completions = ["dep:clap_complete"]
@@ -154,7 +157,7 @@ tokio = ["async"]
 [dependencies]
 # CLI Framework (REQUIRED - this is what we wrap)
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb-macros = { version = "5.6.2", path = "clap-noun-verb-macros" }
+clap-noun-verb-macros = { version = "26.4.25", path = "clap-noun-verb-macros" }
 
 # Auto-discovery (REQUIRED - distributed slices for #[noun]/#[verb])
 linkme = "0.3"
@@ -231,6 +234,9 @@ handlebars = { version = "5.1", optional = true }
 # Caching (optional - for hot-path optimization)
 lru = { version = "0.12", optional = true }
 ahash = { version = "0.8", optional = true }
+
+# File watching (optional - for hot-reload)
+notify = { version = "6.1", optional = true }
 
 # =============================================================================
 # FRONTIER OPTIONAL DEPENDENCIES - 10 Advanced Agent-Grade Packages
@@ -377,6 +383,10 @@ path = "examples/howto/arg_actions.rs"
 [[example]]
 name = "howto_deprecation"
 path = "examples/howto/deprecation.rs"
+
+[[example]]
+name = "config_file"
+path = "examples/howto/config_file.rs"
 
 # =============================================================================
 # REFERENCE EXAMPLES - Complete API demonstrations

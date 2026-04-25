@@ -108,6 +108,12 @@ impl Model {
     }
 }
 
+impl std::fmt::Display for Model {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.model_id())
+    }
+}
+
 /// OpenAI model variants
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -257,6 +263,14 @@ pub struct WizardConfig {
     pub api_key: Option<String>,
     /// Custom API endpoint (if applicable)
     pub endpoint: Option<String>,
+    /// System prompt
+    pub system_prompt: Option<String>,
+    /// Request timeout
+    pub timeout: std::time::Duration,
+    /// Enable verbose logging
+    pub verbose: bool,
+    /// Custom parameters
+    pub parameters: std::collections::HashMap<String, serde_json::Value>,
     /// Enable caching (requires "caching" feature)
     #[cfg(feature = "caching")]
     pub enable_cache: bool,
@@ -279,6 +293,10 @@ impl Default for WizardConfig {
             model_config: ModelConfig::default(),
             api_key: None,
             endpoint: None,
+            system_prompt: None,
+            timeout: std::time::Duration::from_secs(60),
+            verbose: false,
+            parameters: std::collections::HashMap::new(),
             #[cfg(feature = "caching")]
             enable_cache: false,
             #[cfg(feature = "wizard")]
@@ -297,8 +315,46 @@ impl Default for WizardConfig {
 
 impl WizardConfig {
     /// Create a new configuration with the specified model
-    pub fn new(model: Model) -> Self {
-        Self { model_config: ModelConfig::new(model), ..Default::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the model
+    pub fn with_model(mut self, model: Model) -> Self {
+        self.model_config.model = model;
+        self
+    }
+
+    /// Set the model by ID string
+    pub fn with_model_id(mut self, model_id: impl Into<String>) -> Self {
+        if let Some(m) = Self::parse_model_string(&model_id.into()) {
+            self.model_config.model = m;
+        }
+        self
+    }
+
+    /// Set the temperature
+    pub fn with_temperature(mut self, temperature: f32) -> Self {
+        self.model_config.temperature = temperature;
+        self
+    }
+
+    /// Set max tokens
+    pub fn with_max_tokens(mut self, max_tokens: u32) -> Self {
+        self.model_config.max_response_tokens = max_tokens as usize;
+        self
+    }
+
+    /// Set verbose
+    pub fn with_verbose(mut self, verbose: bool) -> Self {
+        self.verbose = verbose;
+        self
+    }
+
+    /// Set system prompt
+    pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
+        self.system_prompt = Some(prompt.into());
+        self
     }
 
     /// Load configuration from environment variables
@@ -334,6 +390,10 @@ impl WizardConfig {
             model_config: ModelConfig::new(model),
             api_key,
             endpoint,
+            system_prompt: None,
+            timeout: std::time::Duration::from_secs(60),
+            verbose: false,
+            parameters: std::collections::HashMap::new(),
             #[cfg(feature = "caching")]
             enable_cache: std::env::var("WIZARD_ENABLE_CACHE")
                 .ok()

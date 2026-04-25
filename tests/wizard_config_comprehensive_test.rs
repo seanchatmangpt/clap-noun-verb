@@ -347,7 +347,7 @@ fn test_wizard_config_new() {
     let model = Model::OpenAI(OpenAIModel::Gpt4Turbo);
 
     // Act
-    let config = WizardConfig::new(model.clone());
+    let config = WizardConfig::new().with_model(model.clone());
 
     // Assert
     assert_eq!(config.model_config.model, model);
@@ -357,7 +357,7 @@ fn test_wizard_config_new() {
 #[test]
 fn test_wizard_config_validation_missing_api_key() {
     // Arrange
-    let mut config = WizardConfig::new(Model::OpenAI(OpenAIModel::Gpt4));
+    let mut config = WizardConfig::new().with_model(Model::OpenAI(OpenAIModel::Gpt4));
     config.api_key = None;
 
     // Act
@@ -371,10 +371,8 @@ fn test_wizard_config_validation_missing_api_key() {
 #[test]
 fn test_wizard_config_validation_ollama_no_api_key() {
     // Arrange
-    let mut config = WizardConfig::new(Model::Custom {
-        provider: "ollama".to_string(),
-        model: "llama2".to_string(),
-    });
+    let mut config = WizardConfig::new()
+        .with_model(Model::Custom { provider: "ollama".to_string(), model: "llama2".to_string() });
     config.api_key = None;
 
     // Act
@@ -389,7 +387,8 @@ fn test_wizard_config_validation_ollama_no_api_key() {
 #[test]
 fn test_wizard_config_with_api_key() {
     // Arrange
-    let mut config = WizardConfig::new(Model::Anthropic(AnthropicModel::Claude3Sonnet));
+    let mut config =
+        WizardConfig::new().with_model(Model::Anthropic(AnthropicModel::Claude3Sonnet));
     config.api_key = Some("test-api-key".to_string());
 
     // Act

@@ -63,10 +63,10 @@ pub mod streaming;
 pub use builder::{Wizard, WizardBuilder};
 pub use cli::{InteractiveArgs, OutputFormat, RunArgs, WizardCli, WizardCommand};
 pub use client::GenAiClient;
-pub use config::{ModelConfig, WizardConfig};
+pub use config::{Model, ModelConfig, WizardConfig};
 pub use error::{Result, WizardError, WizardResult};
 pub use interactive::InteractiveSession;
-pub use types::{Prompt, WizardResponse};
+pub use types::{Prompt, TokenUsage, WizardResponse};
 
 // Re-export v2 features when enabled
 #[cfg(feature = "wizard")]

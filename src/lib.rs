@@ -220,3 +220,4 @@ pub use completion::{generate_completion, print_completion, Shell};
 pub use builder::CliBuilder as Cli;
 pub use registry::CommandRegistry as Registry;
 pub use tree::CommandTree as Tree;
+pub mod agent_cli;

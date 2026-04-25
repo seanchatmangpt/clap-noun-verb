@@ -90,13 +90,13 @@ impl RuntimeBuilder {
 
         // Create base command
         let mut cmd = if let Some(name) = self.name {
-            Command::new(Box::leak(name.into_boxed_str()))
+            Command::new(&*Box::leak(name.into_boxed_str()))
         } else {
             Command::new("semantic-cli")
         };
 
         if let Some(version) = self.version {
-            cmd = cmd.version(Box::leak(version.into_boxed_str()));
+            cmd = cmd.version(&*Box::leak(version.into_boxed_str()));
         }
 
         // Add subcommand for each capability

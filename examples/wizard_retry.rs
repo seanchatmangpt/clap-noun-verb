@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5: Show retry delay calculations
     println!("\n\nExample 5: Retry delay calculations");
 
-    let retry_config = RetryConfig::new(5, 1000).with_multiplier(2.0).with_jitter(0.0); // No jitter for predictable output
+    let _retry_config = RetryConfig::new(5, 1000).with_multiplier(2.0).with_jitter(0.0); // No jitter for predictable output
 
     println!("Config: initial=1000ms, multiplier=2.0, no jitter");
     println!("Expected delays:");

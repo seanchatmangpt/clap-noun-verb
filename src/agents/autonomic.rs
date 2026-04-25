@@ -37,7 +37,7 @@ use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{NounVerbError, Result};
+use crate::error::Result;
 
 // =============================================================================
 // Metric - System metric with timestamp
@@ -591,6 +591,150 @@ impl Default for AutonomicLoop {
 }
 
 // =============================================================================
+// Second-Order Autonomic Loop (Meta-Autonomics)
+// =============================================================================
+
+/// Metrics about a first-order autonomic loop's performance
+#[derive(Debug, Clone)]
+pub struct LoopMetrics {
+    /// Number of anomalies detected
+    pub anomalies_detected: usize,
+    /// Number of actions executed
+    pub actions_executed: usize,
+    /// Average parameter stability across all parameters
+    pub avg_stability: f64,
+}
+
+/// Second-order autonomic loop that manages first-order autonomic loops (Meta-MAPE-K)
+#[derive(Debug, Clone)]
+pub struct SecondOrderAutonomicLoop {
+    /// Target stability for first-order loops (lower is more stable)
+    pub target_stability: f64,
+    /// History of loop metrics
+    metrics_history: HashMap<String, Vec<LoopMetrics>>,
+}
+
+impl SecondOrderAutonomicLoop {
+    /// Create new second-order autonomic loop
+    pub fn new(target_stability: f64) -> Self {
+        Self {
+            target_stability,
+            metrics_history: HashMap::new(),
+        }
+    }
+
+    /// Monitor a first-order loop and record its metrics
+    ///
+    /// # Arguments
+    ///
+    /// * `loop_id` - Identifier for the first-order loop
+    /// * `autonomic_loop` - The first-order loop being monitored
+    /// * `anomalies_detected` - Number of anomalies detected in the last cycle
+    /// * `actions_executed` - Number of actions executed in the last cycle
+    pub fn monitor_loop(
+        &mut self,
+        loop_id: &str,
+        autonomic_loop: &AutonomicLoop,
+        anomalies_detected: usize,
+        actions_executed: usize,
+    ) {
+        let stability: f64 = if autonomic_loop.parameters.is_empty() {
+            0.0
+        } else {
+            autonomic_loop.parameters.values().map(|p| p.stability()).sum::<f64>()
+                / autonomic_loop.parameters.len() as f64
+        };
+
+        let metrics = LoopMetrics {
+            anomalies_detected,
+            actions_executed,
+            avg_stability: stability,
+        };
+
+        let history = self.metrics_history.entry(loop_id.to_string()).or_insert_with(Vec::new);
+        history.push(metrics);
+
+        // Keep bounded
+        if history.len() > 100 {
+            history.remove(0);
+        }
+    }
+
+    /// Analyze and tune a first-order loop's parameters (meta-adaptation)
+    ///
+    /// # Arguments
+    ///
+    /// * `loop_id` - Identifier for the first-order loop
+    /// * `autonomic_loop` - The first-order loop to tune
+    ///
+    /// # Returns
+    ///
+    /// True if parameters were tuned, false otherwise
+    pub fn tune_loop(&self, loop_id: &str, autonomic_loop: &mut AutonomicLoop) -> bool {
+        if let Some(history) = self.metrics_history.get(loop_id) {
+            if history.len() < 5 {
+                return false; // Not enough data
+            }
+
+            let recent = &history[history.len() - 5..];
+            let avg_anomalies = recent.iter().map(|m| m.anomalies_detected).sum::<usize>() as f64 / 5.0;
+            let avg_stability = recent.iter().map(|m| m.avg_stability).sum::<f64>() / 5.0;
+
+            let mut tuned = false;
+
+            // Tune detection threshold based on anomaly frequency
+            // If too many anomalies, maybe threshold is too low (too sensitive)
+            if avg_anomalies > 10.0 {
+                let new_threshold = (autonomic_loop.detector.threshold * 1.1).min(10.0); // Max 10.0 sigma
+                if (new_threshold - autonomic_loop.detector.threshold).abs() > 0.01 {
+                    autonomic_loop.detector.threshold = new_threshold;
+                    tuned = true;
+                }
+            }
+            // If zero anomalies for a long time, maybe threshold is too high (too insensitive)
+            else if avg_anomalies == 0.0 {
+                let new_threshold = (autonomic_loop.detector.threshold * 0.9).max(1.0); // Min 1.0 sigma
+                if (new_threshold - autonomic_loop.detector.threshold).abs() > 0.01 {
+                    autonomic_loop.detector.threshold = new_threshold;
+                    tuned = true;
+                }
+            }
+
+            // Tune learning rates based on stability
+            if avg_stability > self.target_stability {
+                // Too unstable, reduce learning rates
+                for param in autonomic_loop.parameters.values_mut() {
+                    let new_lr = (param.learning_rate * 0.9).max(0.001); // Minimum learning rate bound
+                    if (new_lr - param.learning_rate).abs() > 0.0001 {
+                        param.learning_rate = new_lr;
+                        tuned = true;
+                    }
+                }
+            } else if avg_stability < self.target_stability * 0.1 {
+                // Very stable, can afford to learn faster
+                for param in autonomic_loop.parameters.values_mut() {
+                    let new_lr = (param.learning_rate * 1.1).min(1.0); // Max 1.0 learning rate
+                    if (new_lr - param.learning_rate).abs() > 0.0001 {
+                        param.learning_rate = new_lr;
+                        tuned = true;
+                    }
+                }
+            }
+
+            return tuned;
+        }
+
+        false
+    }
+}
+
+impl Default for SecondOrderAutonomicLoop {
+    fn default() -> Self {
+        Self::new(2.0) // Default target stability variance
+    }
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -760,5 +904,42 @@ mod tests {
 
         // Medium should trigger parameter adjustment
         assert_eq!(actions[2].action_type, ActionType::AdjustParameter);
+    }
+
+    #[test]
+    fn test_second_order_autonomic_loop() {
+        // Arrange
+        let mut meta_loop = SecondOrderAutonomicLoop::new(2.0);
+        let mut first_order = AutonomicLoop::new();
+        first_order.add_parameter("max_connections", 50.0, 10.0, 100.0);
+
+        let initial_threshold = first_order.detector.threshold;
+        let initial_lr = first_order.parameters.get("max_connections").unwrap().learning_rate;
+
+        // Act: Simulate too many anomalies over 5 cycles
+        for _ in 0..5 {
+            meta_loop.monitor_loop("test-loop", &first_order, 15, 5); // 15 anomalies is > 10 (avg_anomalies condition)
+        }
+        
+        let tuned = meta_loop.tune_loop("test-loop", &mut first_order);
+
+        // Assert
+        assert!(tuned);
+        // threshold should have increased to become less sensitive (x 1.1)
+        assert!(first_order.detector.threshold > initial_threshold);
+        
+        // Let's test stability condition. Very stable -> learning rate increases
+        let mut meta_loop_stable = SecondOrderAutonomicLoop::new(2.0);
+        for _ in 0..5 {
+            // 0 anomalies, 0 actions, avg stability 0 (perfectly stable)
+            meta_loop_stable.monitor_loop("test-loop-2", &first_order, 0, 0); 
+        }
+
+        let tuned_stable = meta_loop_stable.tune_loop("test-loop-2", &mut first_order);
+        assert!(tuned_stable);
+        
+        // threshold should decrease
+        // learning rate should increase
+        assert!(first_order.parameters.get("max_connections").unwrap().learning_rate > initial_lr);
     }
 }

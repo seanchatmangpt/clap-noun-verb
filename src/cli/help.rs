@@ -11,7 +11,7 @@ use serde::Serialize;
 use std::fmt;
 
 /// Command category for organizing help output
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
 pub enum CommandCategory {
     /// Pack management commands
     Pack,

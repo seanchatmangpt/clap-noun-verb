@@ -418,7 +418,8 @@ impl CommandRegistry {
     pub fn build_command(&self) -> clap::Command {
         let mut cmd = clap::Command::new("cli")
             .version(env!("CARGO_PKG_VERSION"))
-            .arg_required_else_help(true);
+            .arg_required_else_help(true)
+            .subcommand(crate::cli::doctor_cmd::doctor_command());
 
         // Add root-level verbs directly as subcommands
         for (verb_name, verb_meta) in &self.root_verbs {
@@ -785,6 +786,10 @@ impl CommandRegistry {
 
         // Route command
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
+            if subcommand_name == "doctor" {
+                return crate::cli::doctor_cmd::handle_doctor_command(sub_matches);
+            }
+
             // First check if this is a root-level verb
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
                 // Execute root verb directly
@@ -884,5 +889,51 @@ impl CommandRegistry {
             .ok_or_else(|| crate::error::NounVerbError::command_not_found(verb_name))?;
 
         (verb.handler_fn)(input)
+    }
+
+    /// Validate a configuration against registered commands
+    #[cfg(feature = "config-formats")]
+    pub fn validate_config(&self, config: &crate::config::Config) {
+        let cmd = self.build_command();
+        let flat_map = config.to_flat_map();
+
+        // Collect all valid long argument names from the command tree
+        let mut valid_args = std::collections::HashSet::new();
+        self.collect_valid_args(&cmd, &mut valid_args, "");
+
+        for key in flat_map.keys() {
+            if !valid_args.contains(key) {
+                eprintln!("Warning: Unknown configuration key '{}' found. It might be misspelled or unsupported.", key);
+            }
+        }
+    }
+
+    #[cfg(feature = "config-formats")]
+    fn collect_valid_args(
+        &self,
+        cmd: &clap::Command,
+        valid_args: &mut std::collections::HashSet<String>,
+        prefix: &str,
+    ) {
+        for arg in cmd.get_arguments() {
+            if let Some(long) = arg.get_long() {
+                let key = if prefix.is_empty() {
+                    long.to_string()
+                } else {
+                    format!("{}.{}", prefix, long)
+                };
+                valid_args.insert(key);
+            }
+        }
+
+        for sub in cmd.get_subcommands() {
+            let sub_name = sub.get_name();
+            let new_prefix = if prefix.is_empty() {
+                sub_name.to_string()
+            } else {
+                format!("{}.{}", prefix, sub_name)
+            };
+            self.collect_valid_args(sub, valid_args, &new_prefix);
+        }
     }
 }

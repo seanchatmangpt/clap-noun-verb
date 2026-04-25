@@ -16,8 +16,9 @@
 
 #[cfg(feature = "wizard")]
 use clap_noun_verb::wizard::{
-    GenAiClient, Message, Model, ModelConfig, Prompt, Role, WizardConfig,
+    GenAiClient, Model, ModelConfig, Prompt, WizardConfig,
 };
+use clap_noun_verb::wizard::types::{Message, Role};
 
 #[cfg(feature = "wizard")]
 #[test]

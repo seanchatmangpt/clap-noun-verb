@@ -81,3 +81,4 @@ claude-flow
 hive-mind-prompt-*.txt
 vendors/
 vendors/
+clap-nv.toml
