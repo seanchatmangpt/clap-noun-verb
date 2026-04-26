@@ -1,0 +1,23 @@
+[mcpp]
+name = "unibit-executor"
+version = "0.1.0"
+description = "Unified POWL64 Executor Substrate for UniverseOS"
+
+[grammar]
+discipline = "noun-verb"
+enforcement = "strict"
+
+[[nouns]]
+name = "powl64"
+description = "Kinetic execution of the POWL64 ISA."
+capabilities = ["lower", "compile", "execute"]
+
+[[nouns]]
+name = "receipt"
+description = "Causal chain extraction and verification."
+capabilities = ["emit", "verify"]
+
+[[nouns]]
+name = "doctor"
+description = "Kernel integrity and autonomic baseline."
+capabilities = ["run"]

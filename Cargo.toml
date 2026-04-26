@@ -1,4 +1,5 @@
 [workspace]
+members = ["unibit-cli"]
 # Exclude standalone playground CLI (uses published crates.io version) and vendors directory
 exclude = ["playground", "vendors"]
 
