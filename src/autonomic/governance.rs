@@ -167,7 +167,12 @@ impl GovernanceLedger {
 
         // Write to storage if available
         if let Some(storage) = &self.storage {
-            let _ = storage.append(&event);
+            storage.append(&event).map_err(|e| {
+                StructuredError::new(
+                    super::errors::ErrorKind::InternalError,
+                    format!("Failed to write to governance storage: {}", e),
+                )
+            })?;
         }
 
         // Add to in-memory events
@@ -655,7 +660,7 @@ mod tests {
     fn test_replay_engine() {
         let ledger = Arc::new(GovernanceLedger::new());
 
-        ledger.record_policy_decision(
+        let _ = ledger.record_policy_decision(
             PolicyDecision::Allow,
             CapabilityId::from_path("test.cmd"),
             "test command",

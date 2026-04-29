@@ -210,12 +210,9 @@ impl SemanticDiscoveryOxigraph {
     }
 }
 
-#[cfg(feature = "rdf-composition")]
-impl Default for SemanticDiscoveryOxigraph {
-    fn default() -> Self {
-        Self::new().unwrap_or_else(|_| panic!("Failed to create default SemanticDiscoveryOxigraph"))
-    }
-}
+// Note: `Default` cannot be implemented for `SemanticDiscoveryOxigraph` because
+// construction is fallible (oxigraph `Store::new()` returns a `Result`).
+// Use `SemanticDiscoveryOxigraph::new()` directly and handle the `Result`.
 
 // =============================================================================
 // Unit Tests - Chicago TDD

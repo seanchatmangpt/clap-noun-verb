@@ -4,6 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::fs;
 
 /// Doctor diagnostic engine
 ///
@@ -75,6 +76,11 @@ impl Doctor {
         // Check 4: Policy conflicts
         checks.push(self.run_check("policy-conflicts")?);
 
+        // Check 5: Ralph Plan validation (if exists)
+        if self.workspace_root.join("ralph_plan.json").exists() {
+            checks.push(self.run_check("ralph-plan-validation")?);
+        }
+
         Ok(checks)
     }
 
@@ -85,6 +91,7 @@ impl Doctor {
             "lockfile-exists" => Ok(self.check_lockfile()),
             "pack-integrity" => Ok(self.check_packs()),
             "policy-conflicts" => Ok(self.check_policy()),
+            "ralph-plan-validation" => Ok(self.check_ralph_plan()),
             _ => Err(format!("Unknown check: {}", check_name)),
         }
     }
@@ -102,6 +109,36 @@ impl Doctor {
     }
 
     // Individual check implementations
+
+    fn check_ralph_plan(&self) -> DiagnosticCheck {
+        let plan_path = self.workspace_root.join("ralph_plan.json");
+        let content = match fs::read_to_string(&plan_path) {
+            Ok(c) => c,
+            Err(e) => return DiagnosticCheck {
+                name: "ralph-plan-validation".to_string(),
+                passed: false,
+                output: format!("Failed to read ralph_plan.json: {}", e),
+                suggestions: vec!["Ensure ralph_plan.json exists and is readable".to_string()],
+            },
+        };
+
+        let passed = content.contains("\"goal\"") && content.contains("\"steps\"");
+
+        DiagnosticCheck {
+            name: "ralph-plan-validation".to_string(),
+            passed,
+            output: if passed {
+                "RalphPlan structure validated".to_string()
+            } else {
+                "RalphPlan missing required fields (goal, steps)".to_string()
+            },
+            suggestions: if !passed {
+                vec!["Re-run `ralph run` to generate a valid plan".to_string()]
+            } else {
+                Vec::new()
+            },
+        }
+    }
 
     fn check_workspace_integrity(&self) -> DiagnosticCheck {
         let workspace = self.workspace_root.display().to_string();

@@ -69,6 +69,31 @@ impl RdfValue {
     pub fn is_literal(&self) -> bool {
         matches!(self, Self::Literal(_) | Self::TypedLiteral { .. } | Self::LangLiteral { .. })
     }
+
+    /// Convert to oxigraph Term
+    #[cfg(feature = "rdf-composition")]
+    pub fn to_oxigraph_term(&self) -> Result<oxigraph::model::Term, String> {
+        use oxigraph::model::{Literal, NamedNode, Term};
+
+        match self {
+            Self::Uri(uri) => {
+                let node = NamedNode::new(uri.clone()).map_err(|e| e.to_string())?;
+                Ok(Term::NamedNode(node))
+            }
+            Self::Literal(lit) => Ok(Term::Literal(Literal::new_simple_literal(lit.clone()))),
+            Self::TypedLiteral { value, datatype } => {
+                let dt = NamedNode::new(datatype.clone()).map_err(|e| e.to_string())?;
+                Ok(Term::Literal(Literal::new_typed_literal(value.clone(), dt)))
+            }
+            Self::LangLiteral { value, lang } => {
+                Ok(Term::Literal(Literal::new_language_tagged_literal(value.clone(), lang.clone()).map_err(|e| e.to_string())?))
+            }
+            Self::BlankNode(id) => {
+                let node = oxigraph::model::BlankNode::new(id.clone()).map_err(|e| e.to_string())?;
+                Ok(Term::BlankNode(node))
+            }
+        }
+    }
 }
 
 /// A structured invocation request from an agent

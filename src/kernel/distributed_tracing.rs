@@ -266,11 +266,17 @@ impl InMemoryExporter {
     }
 
     pub fn get_spans(&self) -> Vec<Span> {
-        self.spans.lock().unwrap().clone()
+        match self.spans.lock() {
+            Ok(g) => g.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        }
     }
 
     pub fn clear(&self) {
-        self.spans.lock().unwrap().clear();
+        match self.spans.lock() {
+            Ok(mut g) => g.clear(),
+            Err(poisoned) => poisoned.into_inner().clear(),
+        }
     }
 }
 
@@ -282,7 +288,10 @@ impl Default for InMemoryExporter {
 
 impl SpanExporter for InMemoryExporter {
     fn export(&self, spans: Vec<Span>) -> Result<(), String> {
-        let mut all_spans = self.spans.lock().unwrap();
+        let mut all_spans = self
+            .spans
+            .lock()
+            .map_err(|e| format!("InMemoryExporter spans lock poisoned: {e}"))?;
         all_spans.extend(spans);
         Ok(())
     }
@@ -323,13 +332,19 @@ impl TracingProvider {
             trace_flags: TraceFlags::default(),
             baggage: HashMap::new(),
         }) {
-            let mut spans = self.active_spans.lock().unwrap();
+            let mut spans = match self.active_spans.lock() {
+                Ok(g) => g,
+                Err(poisoned) => poisoned.into_inner(),
+            };
             spans.push(span);
         }
     }
 
     pub fn end_span(&self, span_id: &str) {
-        let mut spans = self.active_spans.lock().unwrap();
+        let mut spans = match self.active_spans.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        };
         if let Some(pos) = spans.iter().position(|s| s.span_id == span_id) {
             let mut span = spans.remove(pos);
             span.end();
@@ -339,7 +354,11 @@ impl TracingProvider {
     }
 
     pub fn flush(&self) -> Result<(), String> {
-        let spans = self.active_spans.lock().unwrap().clone();
+        let spans = self
+            .active_spans
+            .lock()
+            .map_err(|e| format!("active_spans lock poisoned: {e}"))?
+            .clone();
         if !spans.is_empty() {
             self.exporter.export(spans)?;
         }

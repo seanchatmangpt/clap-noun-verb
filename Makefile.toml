@@ -39,6 +39,13 @@ command = "cargo"
 args = ["test", "--quiet"]
 description = "Run tests (quiet mode)"
 
+[tasks.test-timeout]
+description = "Run tests with 10ms cap using timeout enforcer"
+script_runner = "@shell"
+script = '''
+./scripts/test_timeout.sh . 0.01s
+'''
+
 [tasks.test-lib-deterministic]
 command = "cargo"
 args = ["test", "--lib", "--quiet"]

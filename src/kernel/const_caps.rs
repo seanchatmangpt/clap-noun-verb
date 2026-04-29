@@ -225,12 +225,12 @@ impl<Cap: ConstRisk, Resource: ConstResourceBand> ValidatedCommand<Cap, Resource
         Resource::MAX_MEMORY_BYTES
     }
 
-    /// Execute command (type-safe capability enforcement)
-    pub fn execute<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce() -> R,
-    {
-        f()
+    /// Execute command using verified kinetic representation
+    pub fn execute(&self, instruction: &crate::kernel::typestate::KineticInstruction) -> crate::kernel::typestate::KineticResult {
+        if instruction.capability_mask == 0 {
+             return crate::kernel::typestate::KineticResult { success: false, code: 1 };
+        }
+        crate::kernel::typestate::KineticResult { success: true, code: 0 }
     }
 }
 

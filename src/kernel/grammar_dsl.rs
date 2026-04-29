@@ -61,9 +61,12 @@ macro_rules! grammar_dsl {
         let mut grammar = $crate::kernel::grammar::GrammarModel::new($app_name)
             .with_version($version);
 
-        $crate::__grammar_dsl_nouns!(grammar, $($noun_def)*);
-
-        grammar
+        let result: $crate::error::Result<$crate::kernel::grammar::GrammarModel> = (|| {
+            $crate::__grammar_dsl_nouns!(grammar, $($noun_def)*);
+            Ok(grammar)
+        })();
+        
+        result
     }};
 }
 
@@ -124,7 +127,7 @@ macro_rules! __grammar_dsl_verbs {
             use $crate::kernel::capability::*;
 
             // Build capability contract
-            let mut contract = match stringify!($cap) {
+            let contract = match stringify!($cap) {
                 "Pure" => CapabilityContract::new(
                     CapabilityClass::Pure,
                     $crate::__grammar_dsl_resource!($resource),
@@ -167,7 +170,9 @@ macro_rules! __grammar_dsl_verbs {
                     $crate::__grammar_dsl_stability!($($stability)?),
                     $crate::__grammar_dsl_safety!($($safety)?),
                 ),
-                _ => panic!("Unknown capability: {}", stringify!($cap)),
+                _ => return Err($crate::error::NounVerbError::invalid_structure(
+                    format!("Unknown capability: {}", stringify!($cap))
+                )),
             };
 
             // Parse arguments if provided
@@ -327,7 +332,7 @@ mod tests {
                     }
                 }
             }
-        };
+        }.expect("Failed to build grammar");
 
         // Verify grammar structure
         assert_eq!(grammar.app_name, "test-app");
@@ -389,7 +394,7 @@ mod tests {
                     }
                 }
             }
-        };
+        }.expect("Failed to build grammar");
 
         let noun = grammar.nouns().first().unwrap();
         let beta = noun.verbs.iter().find(|v| v.name == "beta").unwrap();
@@ -403,5 +408,24 @@ mod tests {
             deprecated.capability.as_ref().unwrap().stability,
             capability::StabilityProfile::Deprecated
         );
+    }
+
+    #[test]
+    fn test_grammar_dsl_invalid_capability() {
+        let result = grammar_dsl! {
+            app "test" version "1.0.0" {
+                noun "invalid" help "Invalid" {
+                    verb "fail" {
+                        capability: NonExistent,
+                        resource: Fast,
+                        help: "Should fail"
+                    }
+                }
+            }
+        };
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("Unknown capability: NonExistent"));
     }
 }

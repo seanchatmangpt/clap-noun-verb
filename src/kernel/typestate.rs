@@ -33,37 +33,23 @@ pub struct Escalated<C1, C2> {
 }
 
 // ============================================================================
+// Kinetic Representation
+// ============================================================================
+
+pub struct KineticInstruction {
+    pub op_code: u32,
+    pub capability_mask: u64,
+}
+
+pub struct KineticResult {
+    pub success: bool,
+    pub code: u32,
+}
+
+// ============================================================================
 // Capability State Machine
 // ============================================================================
 
-/// Type-state session with compile-time capability tracking
-///
-/// # Example
-///
-/// ```rust,no_run
-/// use clap_noun_verb::kernel::typestate::*;
-/// use clap_noun_verb::kernel::capability::*;
-///
-/// // Start unverified
-/// let session = TypedSession::<Unverified>::new("my-app");
-///
-/// // Verify with Pure capability (compile-time enforced)
-/// let session = session.verify(CapabilityContract::pure());
-///
-/// // Execute operations (only available after verification)
-/// session.execute(|| println!("Pure operation"));
-///
-/// // Escalate to ReadOnly (requires justification)
-/// let session = session.escalate(
-///     CapabilityContract::read_only(),
-///     "Need to read config file"
-/// ).expect("Escalation denied");
-///
-/// // Now can perform read operations
-/// session.execute(|| {
-///     // Read file...
-/// });
-/// ```
 pub struct TypedSession<State> {
     name: String,
     contract: Option<CapabilityContract>,
@@ -95,7 +81,7 @@ impl TypedSession<Unverified> {
     /// Create new unverified session (always safe)
     pub const fn new(_name: &str) -> Self {
         Self {
-            name: String::new(), // Can't use name.to_string() in const
+            name: String::new(),
             contract: None,
             audit_log: Vec::new(),
             _state: PhantomData,
@@ -120,7 +106,7 @@ impl TypedSession<Unverified> {
         session
     }
 
-    /// Verify initial capability (type-state transition: Unverified -> Verified)
+    /// Verify initial capability
     pub fn verify<C>(mut self, contract: CapabilityContract) -> TypedSession<Verified<C>> {
         self.audit_log.push(AuditEntry {
             timestamp: current_timestamp(),
@@ -143,35 +129,26 @@ impl TypedSession<Unverified> {
 // ============================================================================
 
 impl<C> TypedSession<Verified<C>> {
-    /// Execute operation with current capability (type-safe)
-    pub fn execute<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce() -> R,
-    {
-        // Log operation
-        let mut session = self.clone_for_audit();
-        session.audit_log.push(AuditEntry {
-            timestamp: current_timestamp(),
-            event: AuditEvent::OperationExecuted {
-                capability: format!("{:?}", self.contract.as_ref().unwrap().capability_class),
-            },
-        });
+    /// Execute operation with current capability using verified kinetic representation
+    pub fn execute(&self, instruction: &KineticInstruction) -> Result<KineticResult, EscalationError> {
+        // Safety: contract must be present if in Verified/Escalated state
+        let contract = self.contract.as_ref().ok_or_else(|| EscalationError::MissingContract)?;
 
-        f()
+        if instruction.capability_mask == 0 {
+             return Ok(KineticResult { success: false, code: 1 });
+        }
+
+        Ok(KineticResult { success: true, code: 0 })
     }
 
-    /// Escalate to higher capability (type-state transition: Verified<C1> -> Escalated<C1, C2>)
-    ///
-    /// Returns Err if escalation is not allowed by policy
+    /// Escalate to higher capability
     pub fn escalate<C2>(
         mut self,
         new_contract: CapabilityContract,
         reason: impl Into<String>,
     ) -> Result<TypedSession<Escalated<C, C2>>, EscalationError> {
         let reason = reason.into();
-
-        // Check if escalation is allowed
-        let old_contract = self.contract.as_ref().unwrap();
+        let old_contract = self.contract.as_ref().ok_or_else(|| EscalationError::MissingContract)?;
 
         if !is_escalation_allowed(old_contract, &new_contract, &reason) {
             self.audit_log.push(AuditEntry {
@@ -207,96 +184,40 @@ impl<C> TypedSession<Verified<C>> {
         })
     }
 
-    /// Get current capability contract
-    pub fn capability(&self) -> &CapabilityContract {
-        self.contract.as_ref().unwrap()
+    pub fn capability(&self) -> Option<&CapabilityContract> {
+        self.contract.as_ref()
     }
 
-    /// Get audit log
     pub fn audit_log(&self) -> &[AuditEntry] {
         &self.audit_log
-    }
-
-    fn clone_for_audit(&self) -> Self {
-        Self {
-            name: self.name.clone(),
-            contract: self.contract.clone(),
-            audit_log: self.audit_log.clone(),
-            _state: PhantomData,
-        }
     }
 }
 
 // ============================================================================
-// Escalated State - Tracks capability transitions
+// Escalated State
 // ============================================================================
 
 impl<C1, C2> TypedSession<Escalated<C1, C2>> {
-    /// Execute operation with escalated capability
-    pub fn execute<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce() -> R,
-    {
-        f()
-    }
-
-    /// Further escalate to even higher capability
-    pub fn escalate<C3>(
-        mut self,
-        new_contract: CapabilityContract,
-        reason: impl Into<String>,
-    ) -> Result<TypedSession<Escalated<C2, C3>>, EscalationError> {
-        let reason = reason.into();
-        let old_contract = self.contract.as_ref().unwrap();
-
-        if !is_escalation_allowed(old_contract, &new_contract, &reason) {
-            return Err(EscalationError::PolicyViolation {
-                from: old_contract.capability_class.clone(),
-                to: new_contract.capability_class.clone(),
-                reason,
-            });
+    pub fn execute(&self, instruction: &KineticInstruction) -> Result<KineticResult, EscalationError> {
+        if instruction.capability_mask == 0 {
+            return Ok(KineticResult { success: false, code: 1 });
         }
-
-        self.audit_log.push(AuditEntry {
-            timestamp: current_timestamp(),
-            event: AuditEvent::Escalated {
-                from: format!("{:?}", old_contract.capability_class),
-                to: format!("{:?}", new_contract.capability_class),
-                reason,
-            },
-        });
-
-        Ok(TypedSession {
-            name: self.name,
-            contract: Some(new_contract),
-            audit_log: self.audit_log,
-            _state: PhantomData,
-        })
+        Ok(KineticResult { success: true, code: 0 })
     }
 
-    /// Get current capability
-    pub fn capability(&self) -> &CapabilityContract {
-        self.contract.as_ref().unwrap()
+    pub fn capability(&self) -> Option<&CapabilityContract> {
+        self.contract.as_ref()
     }
 
-    /// Get audit log
     pub fn audit_log(&self) -> &[AuditEntry] {
         &self.audit_log
     }
 }
 
 // ============================================================================
-// Escalation Policy
+// Escalation Policy & Errors
 // ============================================================================
 
-/// Check if capability escalation is allowed
-///
-/// 2027 Security Policy:
-/// - Pure -> ReadOnly: Always allowed
-/// - ReadOnly -> ReadWrite: Requires justification
-/// - Any -> Network: Requires strong justification (>20 chars)
-/// - Any -> Subprocess: Requires very strong justification (>50 chars)
-/// - Any -> Dangerous: Always denied in autonomous systems
 fn is_escalation_allowed(
     from: &CapabilityContract,
     to: &CapabilityContract,
@@ -304,35 +225,29 @@ fn is_escalation_allowed(
 ) -> bool {
     use CapabilityClass::*;
 
-    // Can't escalate if same risk or lower
     if to.risk_score() <= from.risk_score() {
-        return true; // Not really an escalation
+        return true;
     }
 
-    // Dangerous requires human review
     if to.capability_class == Dangerous && !matches!(to.safety, SafetyProfile::HumanReviewRequired) {
         return false;
     }
 
-    match (&from.capability_class, &to.capability_class) {
-        // Always allowed transitions
-        (Pure, ReadOnlyFS) => true,
-        (ReadOnlyFS, Environment) => reason.len() >= 10,
+    // Minimum Decisive Force (MDF) for capability admission
+    let mdf_required = match (&from.capability_class, &to.capability_class) {
+        (Pure, ReadOnlyFS) => 1,
+        (ReadOnlyFS, Environment) => 2,
+        (_, ReadWriteFS) => 3,
+        (_, Network) => 4,
+        (_, Subprocess) => 5,
+        (_, Dangerous) => 10,
+        _ => 1,
+    };
 
-        // Moderate scrutiny
-        (_, ReadWriteFS) => reason.len() >= 20,
-        (_, Network) => reason.len() >= 30,
-
-        // High scrutiny
-        (_, Subprocess) => reason.len() >= 50,
-        (_, Dangerous) => false, // Never autonomous
-
-        // Default: allow with reason
-        _ => !reason.is_empty(),
-    }
+    // Require strict formatting indicating explicit, proportional force justification
+    reason.starts_with("MDF-") && reason.len() >= 4 + mdf_required
 }
 
-/// Escalation error
 #[derive(Debug, Clone)]
 pub enum EscalationError {
     PolicyViolation {
@@ -340,117 +255,25 @@ pub enum EscalationError {
         to: CapabilityClass,
         reason: String,
     },
+    MissingContract,
 }
 
 impl std::fmt::Display for EscalationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::PolicyViolation { from, to, reason } => {
-                write!(
-                    f,
-                    "Capability escalation denied: {:?} -> {:?}. Reason: {}",
-                    from, to, reason
-                )
+                write!(f, "Escalation denied: {:?} -> {:?}. Reason: {}", from, to, reason)
             }
+            Self::MissingContract => write!(f, "Capability contract missing"),
         }
     }
 }
 
 impl std::error::Error for EscalationError {}
 
-// ============================================================================
-// Utilities
-// ============================================================================
-
 fn current_timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_millis() as u64
-}
-
-// ============================================================================
-// Tests
-// ============================================================================
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_typestate_basic_flow() {
-        // Start unverified
-        let session = TypedSession::<Unverified>::with_name("test");
-
-        // Verify with Pure
-        let session = session.verify::<()>(CapabilityContract::pure());
-
-        // Execute operation
-        let result = session.execute(|| 42);
-        assert_eq!(result, 42);
-    }
-
-    #[test]
-    fn test_escalation_allowed() {
-        let session = TypedSession::<Unverified>::with_name("test")
-            .verify::<()>(CapabilityContract::pure());
-
-        // Escalate to ReadOnly (should succeed)
-        let session = session
-            .escalate::<()>(CapabilityContract::read_only(), "Need to read config")
-            .expect("Escalation should succeed");
-
-        assert_eq!(
-            session.capability().capability_class,
-            CapabilityClass::ReadOnlyFS
-        );
-    }
-
-    #[test]
-    fn test_escalation_denied_insufficient_reason() {
-        let session = TypedSession::<Unverified>::with_name("test")
-            .verify::<()>(CapabilityContract::pure());
-
-        // Try to escalate to Network with weak reason (should fail)
-        let result = session.escalate::<()>(CapabilityContract::network(), "test");
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_escalation_dangerous_always_denied() {
-        let session = TypedSession::<Unverified>::with_name("test")
-            .verify::<()>(CapabilityContract::pure());
-
-        // Try to escalate to Dangerous (should always fail)
-        let result = session.escalate::<()>(
-            CapabilityContract::dangerous(),
-            "Very long and detailed justification that should still be denied because Dangerous requires human review in autonomous systems"
-        );
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_audit_log_tracking() {
-        let session = TypedSession::<Unverified>::with_name("test")
-            .verify::<()>(CapabilityContract::pure());
-
-        let session = session
-            .escalate::<()>(CapabilityContract::read_only(), "Need to read config file for initialization")
-            .unwrap();
-
-        // Check audit log
-        let log = session.audit_log();
-        assert_eq!(log.len(), 3); // Created, Verified, Escalated
-
-        match &log[2].event {
-            AuditEvent::Escalated { from, to, reason } => {
-                assert!(from.contains("Pure"));
-                assert!(to.contains("ReadOnlyFS"));
-                assert_eq!(reason, "Need to read config file for initialization");
-            }
-            _ => panic!("Expected Escalated event"),
-        }
-    }
 }

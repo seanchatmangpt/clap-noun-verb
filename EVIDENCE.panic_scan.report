@@ -1,0 +1,315 @@
+src/kernel/schema_registry.rs:399:        registry.register_schema(entry.clone()).unwrap();
+src/kernel/schema_registry.rs:428:        registry.register_schema(entry).unwrap();
+src/kernel/deterministic_execution.rs:354:        let idx = trail.record(instr.clone()).unwrap();
+src/kernel/deterministic_execution.rs:363:        let _result = exec.clock_read().unwrap();
+src/kernel/deterministic_execution.rs:373:        trail1.record(instr.clone()).unwrap();
+src/kernel/deterministic_execution.rs:374:        trail2.record(instr).unwrap();
+src/kernel/simd.rs:101:/// let bytes_written = serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/simd.rs:379:        let bytes = serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/simd.rs:383:        let deserialized = serializer.deserialize(buffer.as_slice()).unwrap();
+src/kernel/simd.rs:407:        serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/simd.rs:408:        let deserialized = serializer.deserialize(buffer.as_slice()).unwrap();
+src/kernel/simd.rs:415:            _ => panic!("Wrong payload type"),
+src/kernel/simd.rs:436:        serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/simd.rs:437:        let deserialized = serializer.deserialize(buffer.as_slice()).unwrap();
+src/kernel/simd.rs:444:            _ => panic!("Wrong payload type"),
+src/kernel/simd.rs:473:        let total_bytes = processor.serialize_batch(&frames).unwrap();
+src/kernel/simd.rs:497:            serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/simd.rs:503:            serializer.serialize(&frame, &mut buffer).unwrap();
+src/kernel/contract_runtime_view.rs:203:            _ => panic!("Expected RuntimeExceeded"),
+src/kernel/session_streaming.rs:362:            .unwrap();
+src/kernel/session_streaming.rs:386:            .unwrap();
+src/kernel/session_streaming.rs:393:        let session = handler.get_session("session-1").await.unwrap();
+src/kernel/version.rs:759:        let delta = GrammarDelta::compute(&v1, &v2).ok().unwrap();
+src/kernel/concurrent.rs:427:            handle.join().unwrap();
+src/kernel/concurrent.rs:453:        queue.enqueue(frame.clone()).unwrap();
+src/kernel/concurrent.rs:456:        let dequeued = queue.dequeue().unwrap();
+src/kernel/concurrent.rs:481:            queue.enqueue(frame).unwrap();
+src/kernel/execution_receipts.rs:381:        assert_eq!(store.get_receipt("r1").unwrap().unwrap().receipt_id, "r1");
+src/kernel/execution_receipts.rs:407:        store.store_receipt(receipt).unwrap();
+src/kernel/execution_receipts.rs:408:        let stats = store.get_usage_stats("t1").unwrap();
+src/kernel/distributed_tracing.rs:476:        exporter.export(vec![span]).unwrap();
+src/kernel/test_harness.rs:21://!     let harness = TestHarness::new().unwrap();
+src/kernel/test_harness.rs:31://!     let harness = TestHarness::new().unwrap();
+src/kernel/output.rs:435:        assert!(output.unwrap().contains("\"value\""));
+src/kernel/grammar_dsl.rs:335:        }.expect("Failed to build grammar");
+src/kernel/grammar_dsl.rs:343:        let file_noun = grammar.nouns().iter().find(|n| n.name == "file").unwrap();
+src/kernel/grammar_dsl.rs:347:        let read_verb = file_noun.verbs.iter().find(|v| v.name == "read").unwrap();
+src/kernel/grammar_dsl.rs:348:        let read_cap = read_verb.capability.as_ref().unwrap();
+src/kernel/grammar_dsl.rs:353:        let write_verb = file_noun.verbs.iter().find(|v| v.name == "write").unwrap();
+src/kernel/grammar_dsl.rs:354:        let write_cap = write_verb.capability.as_ref().unwrap();
+src/kernel/grammar_dsl.rs:365:        let network_noun = grammar.nouns().iter().find(|n| n.name == "network").unwrap();
+src/kernel/grammar_dsl.rs:368:        let fetch_verb = network_noun.verbs.iter().find(|v| v.name == "fetch").unwrap();
+src/kernel/grammar_dsl.rs:369:        let fetch_cap = fetch_verb.capability.as_ref().unwrap();
+src/kernel/grammar_dsl.rs:397:        }.expect("Failed to build grammar");
+src/kernel/grammar_dsl.rs:399:        let noun = grammar.nouns().first().unwrap();
+src/kernel/grammar_dsl.rs:400:        let beta = noun.verbs.iter().find(|v| v.name == "beta").unwrap();
+src/kernel/grammar_dsl.rs:401:        let deprecated = noun.verbs.iter().find(|v| v.name == "deprecated").unwrap();
+src/kernel/grammar_dsl.rs:404:            beta.capability.as_ref().unwrap().stability,
+src/kernel/grammar_dsl.rs:408:            deprecated.capability.as_ref().unwrap().stability,
+src/kernel/session_log.rs:933:        let f = frame.unwrap();
+src/kernel/session_log.rs:1016:        ).unwrap();
+src/kernel/session_log.rs:1027:            panic!("Expected TamperedContentHash error");
+src/kernel/session_log.rs:1049:        ).unwrap();
+src/kernel/session_log.rs:1067:        ).unwrap();
+src/kernel/session_log.rs:1074:            panic!("Expected NonMonotonicFrameIndex error");
+src/kernel/session_log.rs:1096:        ).unwrap();
+src/kernel/session_log.rs:1114:        ).unwrap();
+src/kernel/session_log.rs:1121:            panic!("Expected ClockRegression error");
+src/kernel/session_log.rs:1143:        ).unwrap();
+src/kernel/session_log.rs:1161:        ).unwrap();
+src/kernel/session_log.rs:1168:            panic!("Expected ExcessiveClockSkew error");
+src/kernel/session_log.rs:1192:        ).unwrap();
+src/kernel/session_log.rs:1218:        ).unwrap();
+src/kernel/session_log.rs:1236:        ).unwrap();
+src/kernel/session_log.rs:1262:        ).unwrap();
+src/kernel/session_log.rs:1265:        let hash2 = frame1.compute_canonical_hash().unwrap();
+src/kernel/advanced_quota_enforcement.rs:279:        bucket.try_reserve(500, 512 * 1024, 50, 5_000_000).unwrap();
+src/kernel/advanced_quota_enforcement.rs:288:            let _guard = bucket.try_reserve(500, 512 * 1024, 50, 5_000_000).unwrap();
+src/kernel/replay_engine.rs:565:        ).unwrap()
+src/kernel/replay_engine.rs:616:        let e = engine.unwrap();
+src/kernel/replay_engine.rs:630:        let engine = AuditReplayEngine::from_frame(&frame).unwrap();
+src/kernel/replay_engine.rs:673:        match engine.unwrap() {
+src/kernel/replay_engine.rs:675:            _ => panic!("Expected Verify engine"),
+src/kernel/replay_engine.rs:704:        let batch_result = result.unwrap();
+src/kernel/introspection.rs:383:        let output = handler.explain_capability("dangerous").unwrap();
+src/rdf/sparql_executor_oxigraph.rs:374:        TurtleParser::new().parse(turtle).unwrap()
+src/rdf/sparql_executor_oxigraph.rs:393:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:409:        let query_result = result.unwrap();
+src/rdf/sparql_executor_oxigraph.rs:418:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:425:        let classes = result.unwrap();
+src/rdf/sparql_executor_oxigraph.rs:435:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:442:        let properties = result.unwrap();
+src/rdf/sparql_executor_oxigraph.rs:451:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:467:        let query_result = result.unwrap();
+src/rdf/sparql_executor_oxigraph.rs:476:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:492:        let query_result = result.unwrap();
+src/rdf/sparql_executor_oxigraph.rs:501:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:514:            other => panic!("Expected QueryParseError, got {:?}", other),
+src/rdf/sparql_executor_oxigraph.rs:522:        let executor = SparqlExecutor::new(&ontology).unwrap();
+src/rdf/sparql_executor_oxigraph.rs:537:        let query_result = result.unwrap();
+src/kernel/pluggable_persistence.rs:165:        let id = backend.store("test_item".to_string()).unwrap();
+src/kernel/pluggable_persistence.rs:166:        let item = backend.get(&id).unwrap();
+src/kernel/pluggable_persistence.rs:173:        backend.store("apple".to_string()).unwrap();
+src/kernel/pluggable_persistence.rs:174:        backend.store("apricot".to_string()).unwrap();
+src/kernel/pluggable_persistence.rs:175:        backend.store("banana".to_string()).unwrap();
+src/kernel/pluggable_persistence.rs:177:        let results = backend.query(|item| item.starts_with('a')).unwrap();
+src/kernel/pluggable_persistence.rs:184:        let id = backend.store("test".to_string()).unwrap();
+src/kernel/pluggable_persistence.rs:185:        assert!(backend.delete(&id).unwrap());
+src/kernel/pluggable_persistence.rs:186:        assert!(!backend.delete(&id).unwrap());
+src/kernel/clnrm.rs:429:        budget.record_cpu(500_000).unwrap();
+src/kernel/clnrm.rs:431:        budget.record_cpu(500_000).unwrap(); // Should succeed (now 1M exactly)
+src/rdf/lockchain_receipt.rs:79:        let json = serde_json::to_string(&metadata).unwrap();
+src/rdf/lockchain_receipt.rs:80:        let deserialized: ReceiptMetadata = serde_json::from_str(&json).unwrap();
+src/rdf/kgc_integration.rs:203:        let chain_hash = shard.record_execution(receipt.clone()).unwrap();
+src/rdf/kgc_integration.rs:218:        shard.record_execution(receipt).unwrap();
+src/rdf/kgc_integration.rs:250:        shard.record_execution(receipt1).unwrap();
+src/rdf/kgc_integration.rs:251:        shard.record_execution(receipt2).unwrap();
+src/rdf/kgc_integration.rs:271:        shard.record_execution(receipt1).unwrap();
+src/rdf/kgc_integration.rs:272:        shard.record_execution(receipt2).unwrap();
+src/rdf/kgc_integration.rs:286:        shard.record_execution(receipt).unwrap();
+src/rdf/kgc_integration.rs:305:        shard.record_execution(receipt1).unwrap();
+src/rdf/kgc_integration.rs:306:        let hash2 = shard.record_execution(receipt2).unwrap();
+src/rdf/kgc_integration.rs:322:        lockchain.append(receipt).unwrap();
+src/rdf/kgc_integration.rs:343:        let json = serde_json::to_string(&entry).unwrap();
+src/rdf/kgc_integration.rs:344:        let deserialized: AuditEntry = serde_json::from_str(&json).unwrap();
+src/rdf/kgc_integration.rs:365:        let json = serde_json::to_string(&metadata).unwrap();
+src/rdf/kgc_integration.rs:366:        let deserialized: KgcMetadata = serde_json::from_str(&json).unwrap();
+src/rdf/sparql_parser.rs:609:        let parsed = SparqlParser::parse(query).unwrap();
+src/rdf/sparql_parser.rs:619:        let parsed = SparqlParser::parse(query).unwrap();
+src/rdf/sparql_parser.rs:630:            _ => panic!("Expected Contains filter"),
+src/rdf/sparql_parser.rs:637:        let parsed = SparqlParser::parse(query).unwrap();
+src/rdf/sparql_parser.rs:646:                    _ => panic!("Expected ZeroOrMore path"),
+src/rdf/sparql_parser.rs:649:            _ => panic!("Expected PropertyPath pattern"),
+src/rdf/sparql_parser.rs:656:        let parsed = SparqlParser::parse(query).unwrap();
+src/rdf/sparql_parser.rs:667:            _ => panic!("Expected Count aggregation"),
+src/rdf/sparql_executor.rs:631:        let results = executor.scan_and_bind(&pattern, bindings).unwrap();
+src/rdf/code_generator.rs:735:        TurtleParser::new().parse(turtle).expect("Failed to parse test ontology")
+src/rdf/code_generator.rs:753:        let executor = SparqlExecutor::new(&ontology).expect("Failed to create executor");
+src/rdf/code_generator.rs:754:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:761:        let noun_list = nouns.unwrap();
+src/rdf/code_generator.rs:771:        let executor = SparqlExecutor::new(&ontology).expect("Failed to create executor");
+src/rdf/code_generator.rs:772:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:779:        let verb_list = verbs.unwrap();
+src/rdf/code_generator.rs:789:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:796:        let tokens = result.unwrap();
+src/rdf/code_generator.rs:806:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:813:        let tokens = result.unwrap();
+src/rdf/code_generator.rs:825:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:832:        let generated = result.unwrap();
+src/rdf/code_generator.rs:842:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:845:        let generated = generator.generate_from_ontology(&ontology).expect("Generation failed");
+src/rdf/code_generator.rs:857:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:860:        let generated = generator.generate_from_ontology(&ontology).expect("Generation failed");
+src/rdf/code_generator.rs:872:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:884:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:899:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:907:        let code = result.unwrap();
+src/rdf/code_generator.rs:916:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:931:        let ontology = TurtleParser::new().parse(turtle).expect("Failed to parse empty ontology");
+src/rdf/code_generator.rs:932:        let generator = CliCodeGenerator::new().expect("Failed to create generator");
+src/rdf/code_generator.rs:943:            other => panic!("Expected InvalidOntology error, got {:?}", other),
+src/rdf/code_generator.rs:1007:        assert_eq!(noun.unwrap().name, "services");
+src/rdf/validation.rs:290:        validator.add_shape(shape).expect("Failed to add shape");
+src/rdf/validation.rs:298:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:309:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:320:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:331:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:342:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:357:        validator.add_shape(shape).expect("add shape");
+src/rdf/validation.rs:368:        validator.add_shape(shape).expect("add shape");
+src/rdf/sparql.rs:476:            .expect("add command");
+src/rdf/sparql.rs:479:            .expect("add command");
+src/rdf/sparql.rs:480:        builder.add_command("config-set", "config", "set", "Set config").expect("add command");
+src/rdf/sparql.rs:482:        Arc::new(builder.build().expect("build ontology"))
+src/rdf/sparql.rs:497:        let results = planner.query(QueryPattern::ListNouns).expect("list nouns");
+src/rdf/sparql.rs:509:            .expect("list verbs");
+src/rdf/sparql.rs:524:            .expect("find command");
+src/rdf/sparql.rs:534:        let results = planner.query(QueryPattern::FindReadOnlyCommands).expect("find read-only");
+src/rdf/sparql.rs:546:        let results1 = planner.query(QueryPattern::ListNouns).expect("query");
+src/rdf/sparql.rs:550:        let results2 = planner.query(QueryPattern::ListNouns).expect("query");
+src/rdf/sparql.rs:560:        planner.query(QueryPattern::ListNouns).expect("query");
+src/rdf/mcp_server.rs:461:        let response = server.list_resources(&request).unwrap();
+src/rdf/mcp_server.rs:464:        let resources = response["resources"].as_array().unwrap();
+src/rdf/mcp_server.rs:488:        let response = server.call_tool(&request).unwrap();
+src/rdf/mcp_server.rs:510:        let response = server.call_tool(&request).unwrap();
+src/rdf/mcp_server.rs:533:        let response = server.call_tool(&request).unwrap();
+src/rdf/mcp_server.rs:537:        assert_eq!(response["errors"].as_array().unwrap().len(), 0);
+src/rdf/mcp_server.rs:563:        let response = server.call_tool(&request).unwrap();
+src/rdf/mcp_server.rs:586:        let response = server.read_resource(&request).unwrap();
+src/rdf/mcp_server.rs:589:        let types = response["types"].as_array().unwrap();
+src/rdf/mcp_server.rs:611:        lockchain.append(receipt).unwrap();
+src/rdf/mcp_server.rs:620:        let response = server.read_resource(&request).unwrap();
+src/rdf/mcp_server.rs:623:        let receipts = response["receipts"].as_array().unwrap();
+src/rdf/invocation.rs:303:        let inv = result.expect("parse");
+src/rdf/invocation.rs:319:        let inv = result.expect("parse");
+src/rdf/invocation.rs:365:        let uri = parser.parse_object("<http://example.org/test>").expect("parse uri");
+src/rdf/invocation.rs:368:        let literal = parser.parse_object("\"hello\"").expect("parse literal");
+src/rdf/invocation.rs:373:            .expect("parse typed");
+src/rdf/macro_integration.rs:402:        let triples = registry.parse_simple_turtle(ttl).expect("parse");
+src/rdf/macro_integration.rs:413:        let uri = registry.parse_object("<http://example.org>").expect("parse uri");
+src/rdf/macro_integration.rs:416:        let literal = registry.parse_object("\"hello\"").expect("parse literal");
+src/rdf/macro_integration.rs:419:        let boolean = registry.parse_object("true").expect("parse bool");
+src/rdf/macro_integration.rs:426:        let ontology = registry.build_ontology().expect("build ontology");
+src/rdf/macro_integration.rs:433:        let validator = registry.build_shape_validator().expect("build validator");
+src/rdf/turtle_parser.rs:312:        let parsed = result.unwrap();
+src/rdf/turtle_parser.rs:331:        let parsed = parser.parse(turtle).unwrap();
+src/rdf/turtle_parser.rs:336:        let prefix_map = prefixes.unwrap();
+src/rdf/turtle_parser.rs:354:        let parsed = parser.parse(turtle).unwrap();
+src/rdf/turtle_parser.rs:380:        let parsed = result.unwrap();
+src/rdf/turtle_parser.rs:404:            other => panic!("Expected ParseError, got {:?}", other),
+src/rdf/turtle_parser.rs:420:        let parsed = result.unwrap();
+src/rdf/turtle_parser.rs:437:        let parsed = parser.parse(turtle).unwrap();
+src/rdf/guard_validation.rs:402:        assert_eq!(parsed.expect("parse").command, "test-cmd");
+src/rdf/sparql_optimizer.rs:342:                    _ => panic!("Expected constant predicate"),
+src/rdf/sparql_optimizer.rs:345:            _ => panic!("Expected Simple pattern"),
+src/rdf/sparql_optimizer.rs:351:        let query = SparqlParser::parse("SELECT ?verb WHERE { ?verb a cnv:Verb }").unwrap();
+src/rdf/sparql_optimizer.rs:364:        ).unwrap();
+src/rdf/sparql_optimizer.rs:382:            JoinMethod::NestedLoop => panic!("Expected hash join for large dataset"),
+src/rdf/receipt.rs:282:            .expect("build receipt");
+src/rdf/receipt.rs:310:            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
+src/rdf/receipt.rs:321:            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
+src/rdf/receipt.rs:323:        let triples = ReceiptGenerator::to_rdf_triples(&receipt).expect("to rdf");
+src/rdf/receipt.rs:331:            ReceiptGenerator::new().with_invocation(&inv).with_timestamp().build().expect("build");
+src/rdf/receipt.rs:333:        let turtle = ReceiptGenerator::to_turtle(&receipt).expect("to turtle");
+src/rdf/receipt.rs:355:            .expect("build");
+src/rdf/receipt.rs:369:            .expect("build");
+src/rdf/turtle_tools.rs:299:        let output = result.unwrap();
+src/rdf/turtle_tools.rs:322:            other => panic!("Expected InvalidInput, got {:?}", other),
+src/rdf/turtle_tools.rs:341:        let parsed = parser.parse(turtle).unwrap();
+src/rdf/turtle_tools.rs:360:        let output = result.unwrap();
+src/rdf/turtle_tools.rs:381:        let parsed = parser.parse(turtle).unwrap();
+src/rdf/turtle_tools.rs:401:        let output = result.unwrap();
+src/rdf/turtle_tools.rs:434:            other => panic!("Expected ExportNotImplemented, got {:?}", other),
+src/rdf/rmcp_handler.rs:200:            .expect("add command");
+src/rdf/rmcp_handler.rs:202:        Arc::new(builder.build().expect("build ontology"))
+src/rdf/rmcp_handler.rs:219:        assert!(result.unwrap().valid);
+src/rdf/rmcp_handler.rs:229:        assert!(!result.unwrap().valid);
+src/rdf/rmcp_handler.rs:239:        let discovery = result.unwrap();
+src/rdf/rmcp_handler.rs:250:        let receipt = result.unwrap();
+src/rdf/blake3_hash.rs:87:        let parsed = Blake3Hash::from_hex(&hex).unwrap();
+src/frontier/executable_specs.rs:74:/// }).expect("Validation failed");
+src/frontier/executable_specs.rs:277:            .expect("Validation failed");
+src/rdf/lockchain.rs:183:        let chain_hash = chain.append(receipt.clone()).unwrap();
+src/rdf/lockchain.rs:190:        let entry = chain.latest().unwrap();
+src/rdf/lockchain.rs:206:        let hash1 = chain.append(receipt1).unwrap();
+src/rdf/lockchain.rs:207:        let hash2 = chain.append(receipt2).unwrap();
+src/rdf/lockchain.rs:208:        let hash3 = chain.append(receipt3).unwrap();
+src/rdf/lockchain.rs:242:        chain.append(receipt1).unwrap();
+src/rdf/lockchain.rs:243:        chain.append(receipt2).unwrap();
+src/rdf/lockchain.rs:244:        chain.append(receipt3).unwrap();
+src/rdf/lockchain.rs:257:        chain.append(receipt1).unwrap();
+src/rdf/lockchain.rs:258:        chain.append(receipt2).unwrap();
+src/rdf/lockchain.rs:262:            let mut entries = chain.entries.lock().unwrap();
+src/rdf/lockchain.rs:277:        chain.append(receipt1.clone()).unwrap();
+src/rdf/lockchain.rs:278:        chain.append(receipt2.clone()).unwrap();
+src/rdf/lockchain.rs:281:        let entry0 = chain.get_entry(0).unwrap();
+src/rdf/lockchain.rs:285:        let entry1 = chain.get_entry(1).unwrap();
+src/rdf/lockchain.rs:300:        let hash1 = chain1.append(receipt.clone()).unwrap();
+src/rdf/lockchain.rs:301:        let hash2 = chain2.append(receipt).unwrap();
+src/rdf/lockchain.rs:315:        let hash1 = chain.append(receipt1).unwrap();
+src/rdf/lockchain.rs:316:        let hash2 = chain.append(receipt2).unwrap();
+src/rdf/lockchain.rs:331:        chain1.append(receipt1.clone()).unwrap();
+src/rdf/lockchain.rs:332:        let hash1 = chain1.append(receipt2.clone()).unwrap();
+src/rdf/lockchain.rs:334:        chain2.append(receipt2).unwrap();
+src/rdf/lockchain.rs:335:        let hash2 = chain2.append(receipt1).unwrap();
+src/rdf/lockchain.rs:350:        chain.append(receipt1).unwrap();
+src/rdf/lockchain.rs:352:        chain.append(receipt2).unwrap();
+src/frontier/rdf_composition.rs:238:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:251:        let count = discovery.triple_count().unwrap();
+src/frontier/rdf_composition.rs:258:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:265:        discovery.register_capability(&cap).unwrap();
+src/frontier/rdf_composition.rs:273:        let results = results.unwrap();
+src/frontier/rdf_composition.rs:280:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:288:            .unwrap();
+src/frontier/rdf_composition.rs:306:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:314:            .unwrap();
+src/frontier/rdf_composition.rs:321:        let json_str = json_ld.unwrap();
+src/frontier/rdf_composition.rs:329:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:332:        let initial_count = discovery.triple_count().unwrap();
+src/frontier/rdf_composition.rs:342:            .unwrap();
+src/frontier/rdf_composition.rs:344:        let final_count = discovery.triple_count().unwrap();
+src/frontier/rdf_composition.rs:354:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:362:            .unwrap();
+src/frontier/rdf_composition.rs:369:        let count = discovery.triple_count().unwrap();
+src/frontier/rdf_composition.rs:376:        let discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:385:            _ => panic!("Expected Sparql error"),
+src/frontier/rdf_composition.rs:392:        let mut discovery = SemanticDiscoveryOxigraph::new().unwrap();
+src/frontier/rdf_composition.rs:407:            _ => panic!("Expected InvalidIri error"),
+src/rdf/builder.rs:176:            .expect("Failed to add command");
+src/rdf/builder.rs:178:        let ontology = builder.build().expect("Failed to build ontology");
+src/rdf/builder.rs:188:            .expect("Failed to add command");
+src/rdf/builder.rs:191:            .expect("Failed to add argument");
+src/rdf/builder.rs:193:        let ontology = builder.build().expect("Failed to build ontology");
+src/rdf/builder.rs:203:            .expect("Failed to add shape");
+src/rdf/builder.rs:205:        let ontology = builder.build().expect("Failed to build ontology");
+src/rdf/builder.rs:215:            .expect("add command")
+src/rdf/builder.rs:217:            .expect("add argument")
+src/rdf/builder.rs:219:            .expect("add shape");
+src/rdf/builder.rs:221:        let ontology = builder.build().expect("build");
+src/frontier/error.rs:132:            _ => panic!("Expected serialization error"),
+src/frontier/meta_framework.rs:243:        let triples = triples.unwrap();
+src/frontier/meta_framework.rs:285:        let triples = result.unwrap();
+src/frontier/meta_framework.rs:315:        let json_str = json.unwrap();
+src/frontier/meta_framework.rs:336:            _ => panic!("Expected InvalidIri error"),
+src/frontier/federated_network.rs:148:        // swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse().unwrap())?;
+src/frontier/federated_network.rs:278:        let network = FederatedNetwork::new("node1").expect("Failed to create network");
+src/frontier/federated_network.rs:292:        let network = FederatedNetwork::new("node1").expect("Failed to create network");
+src/frontier/federated_network.rs:293:        let peers = network.discover_peers().await.expect("Discovery failed");
+src/frontier/federated_network.rs:300:        let network = FederatedNetwork::new("node1").expect("Failed to create network");
+src/frontier/federated_network.rs:314:            .expect("Consensus failed");
+src/frontier/federated_network.rs:322:        let network = FederatedNetwork::new("node1").expect("Failed to create network");
+src/frontier/quantum_ready.rs:190:        let decrypted = key.decrypt(&encrypted).unwrap();
+src/frontier/quantum_ready.rs:214:        let new_id = manager.rotate_key(&key_id).unwrap();
+src/frontier/fractal_patterns.rs:141:/// let composed = domain.compose(noun).expect("Composition failed");
+src/frontier/fractal_patterns.rs:254:        let composed = domain.compose(noun).expect("Composition failed");
+src/frontier/economic_sim.rs:111:/// let outcome = auction.run_auction(&bids).expect("Auction failed");
+src/frontier/economic_sim.rs:208:/// }).expect("Failed to add agent");
+src/frontier/economic_sim.rs:215:/// }).expect("Failed to add task");
+src/frontier/economic_sim.rs:218:/// sim.step().expect("Simulation step failed");
+src/frontier/economic_sim.rs:333:        let outcome = auction.run_auction(&bids).expect("Auction failed");
+src/frontier/economic_sim.rs:347:        let outcome = auction.run_auction(&bids).expect("Auction failed");
+src/frontier/economic_sim.rs:364:        sim.add_agent(agent).expect("Failed to add agent");
+src/frontier/economic_sim.rs:378:        .expect("Failed to add agent");
+src/frontier/economic_sim.rs:385:        .expect("Failed to add task");
+src/frontier/economic_sim.rs:387:        sim.step().expect("Simulation step failed");

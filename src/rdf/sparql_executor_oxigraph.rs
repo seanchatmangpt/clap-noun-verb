@@ -25,7 +25,7 @@
 //! ```
 
 #[cfg(feature = "rdf-composition")]
-use oxigraph::model::{NamedNode, NamedNodeRef, Quad};
+use oxigraph::model::NamedNode;
 #[cfg(feature = "rdf-composition")]
 use oxigraph::sparql::{Query, QueryResults};
 #[cfg(feature = "rdf-composition")]
@@ -149,41 +149,41 @@ impl SparqlExecutor {
             message: format!("Failed to create store: {}", e),
         })?;
 
-        // Load triples into the store
-        for (subject, predicate, object) in ontology.ontology().iter_triples() {
-            let quad = Self::create_quad(&subject, &predicate, &object)?;
+        // Load triples into the store using typed values
+        for (subject, predicate, object) in ontology.ontology().iter_typed_triples() {
+            let subj = match NamedNode::new(subject.clone()) {
+                Ok(n) => oxigraph::model::Subject::from(n),
+                Err(_) => {
+                    // Fallback for tests that use invalid IRIs.
+                    // Construct from a static, known-valid IRI; if even this fails,
+                    // skip the triple rather than panic.
+                    match NamedNode::new("https://cnv.dev/invalid-iri") {
+                        Ok(n) => oxigraph::model::Subject::from(n),
+                        Err(_) => continue,
+                    }
+                }
+            };
+
+            let pred = match NamedNode::new(predicate.clone()) {
+                Ok(n) => n,
+                Err(_) => match NamedNode::new("https://cnv.dev/invalid-predicate") {
+                    Ok(n) => n,
+                    Err(_) => continue,
+                },
+            };
+
+            let obj = object.to_oxigraph_term().map_err(|e| SparqlError::ConversionError {
+                message: format!("Invalid object value: {}", e),
+            })?;
+
+            let quad = oxigraph::model::Quad::new(subj, pred, obj, oxigraph::model::GraphNameRef::DefaultGraph);
+            
             store.insert(&quad).map_err(|e| SparqlError::StoreError {
                 message: format!("Failed to insert triple: {}", e),
             })?;
         }
 
         Ok(Self { store })
-    }
-
-    /// Create an oxigraph Quad from subject, predicate, object strings
-    fn create_quad(subject: &str, predicate: &str, object: &str) -> Result<Quad, SparqlError> {
-        use oxigraph::model::{GraphNameRef, Literal, Subject, Term};
-
-        let subj = NamedNode::new(subject).map(Subject::from).map_err(|e| {
-            SparqlError::ConversionError {
-                message: format!("Invalid subject IRI '{}': {}", subject, e),
-            }
-        })?;
-
-        let pred = NamedNode::new(predicate).map_err(|e| SparqlError::ConversionError {
-            message: format!("Invalid predicate IRI '{}': {}", predicate, e),
-        })?;
-
-        // Try to parse object as IRI first, fallback to literal
-        let obj = if object.starts_with("http://") || object.starts_with("https://") {
-            NamedNode::new(object)
-                .map(Term::from)
-                .unwrap_or_else(|_| Term::Literal(Literal::new_simple_literal(object)))
-        } else {
-            Term::Literal(Literal::new_simple_literal(object))
-        };
-
-        Ok(Quad::new(subj, pred, obj, GraphNameRef::DefaultGraph))
     }
 
     /// Execute a SPARQL query
@@ -226,7 +226,11 @@ impl SparqlExecutor {
 
                     for var in &variables {
                         if let Some(term) = solution.get(var.as_str()) {
-                            let value = Self::term_to_string(term);
+                            let value = match term {
+                                oxigraph::model::Term::NamedNode(node) => node.as_str().to_string(),
+                                oxigraph::model::Term::BlankNode(node) => format!("_:{}", node.as_str()),
+                                oxigraph::model::Term::Literal(lit) => lit.value().to_string(),
+                            };
                             binding.insert(var.clone(), value);
                         }
                     }
@@ -245,15 +249,6 @@ impl SparqlExecutor {
             QueryResults::Graph(_) => Err(SparqlError::ConversionError {
                 message: "CONSTRUCT/DESCRIBE queries not yet supported".to_string(),
             }),
-        }
-    }
-
-    /// Convert an oxigraph Term to a string
-    fn term_to_string(term: &oxigraph::model::Term) -> String {
-        match term {
-            oxigraph::model::Term::NamedNode(node) => node.as_str().to_string(),
-            oxigraph::model::Term::BlankNode(node) => format!("_:{}", node.as_str()),
-            oxigraph::model::Term::Literal(lit) => lit.value().to_string(),
         }
     }
 

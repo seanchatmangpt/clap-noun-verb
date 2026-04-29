@@ -144,7 +144,9 @@ impl VickreyAuction {
 
         // Sort bids by value (descending)
         let mut sorted_bids = bids.to_vec();
-        sorted_bids.sort_by(|a, b| b.bid_value.partial_cmp(&a.bid_value).unwrap());
+        // Use `total_cmp` so NaN bids sort deterministically (treated as smaller)
+        // instead of triggering an `unwrap` panic on `partial_cmp`.
+        sorted_bids.sort_by(|a, b| b.bid_value.total_cmp(&a.bid_value));
 
         // Winner is highest bidder
         let winner = sorted_bids[0].agent_id;

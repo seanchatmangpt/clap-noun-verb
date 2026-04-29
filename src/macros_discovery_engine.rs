@@ -41,7 +41,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "tokio")]
-use tokio::sync::mpsc;
+use tokio::sync::mpsc as _mpsc;
 
 #[cfg(feature = "agent2028")]
 use rand;

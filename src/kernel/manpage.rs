@@ -218,7 +218,7 @@ impl ManpageGenerator {
             writeln!(file, ".SH SEE ALSO")?;
             for noun in &grammar.nouns {
                 write!(file, ".BR {}-{} ({})", self.app_name, noun.name, self.config.section.number())?;
-                if noun != grammar.nouns.last().unwrap() {
+                if Some(noun) != grammar.nouns.last() {
                     write!(file, ",")?;
                 }
                 writeln!(file)?;
@@ -286,7 +286,7 @@ impl ManpageGenerator {
             for verb in &noun_data.verbs {
                 write!(file, ".BR {}-{}-{} ({})",
                     self.app_name, noun, verb.name, self.config.section.number())?;
-                if verb != noun_data.verbs.last().unwrap() {
+                if Some(verb) != noun_data.verbs.last() {
                     write!(file, ",")?;
                 }
                 writeln!(file)?;

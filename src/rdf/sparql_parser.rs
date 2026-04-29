@@ -374,7 +374,12 @@ impl SparqlParser {
             if next == "*" || next == "+" || next == "?" {
                 // Property path
                 self.advance();
-                let modifier = self.current_token().unwrap().clone();
+                let modifier = self
+                    .current_token()
+                    .ok_or_else(|| ParseError::UnexpectedEndOfInput {
+                        expected: "property path modifier".to_string(),
+                    })?
+                    .clone();
                 self.advance();
 
                 let base_path = PropertyPath::Direct(token);

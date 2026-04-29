@@ -152,7 +152,10 @@ impl SchemaRegistry {
             return Err("Schema integrity check failed".to_string());
         }
 
-        let mut entries = self.entries.write().unwrap();
+        let mut entries = self
+            .entries
+            .write()
+            .map_err(|e| format!("schema_registry entries lock poisoned: {e}"))?;
 
         // Check if version already registered (immutable)
         if entries.contains_key(&entry.version) {
@@ -161,7 +164,8 @@ impl SchemaRegistry {
 
         entries.insert(entry.version.clone(), entry);
 
-        // Recompute merkle root
+        // Drop the write lock before recomputing merkle root (which also acquires locks)
+        drop(entries);
         self.update_merkle_root();
 
         Ok(())
@@ -169,18 +173,16 @@ impl SchemaRegistry {
 
     /// Get schema entry by version
     pub fn get_schema(&self, version: &SchemaVersion) -> Option<SchemaEntry> {
-        self.entries.read().unwrap().get(version).cloned()
+        self.entries.read().ok().and_then(|e| e.get(version).cloned())
     }
 
     /// List all registered schema versions
     pub fn list_versions(&self) -> Vec<SchemaVersion> {
-        let mut versions: Vec<_> = self
-            .entries
-            .read()
-            .unwrap()
-            .keys()
-            .cloned()
-            .collect();
+        let guard = match self.entries.read() {
+            Ok(g) => g,
+            Err(_) => return Vec::new(),
+        };
+        let mut versions: Vec<_> = guard.keys().cloned().collect();
         versions.sort_by(|a, b| {
             (b.major, b.minor, b.patch).cmp(&(a.major, a.minor, a.patch))
         });
@@ -196,7 +198,10 @@ impl SchemaRegistry {
             return Err("Incompatible evolution must be marked as Breaking".to_string());
         }
 
-        let mut rules = self.evolution_rules.write().unwrap();
+        let mut rules = self
+            .evolution_rules
+            .write()
+            .map_err(|e| format!("schema_registry evolution_rules lock poisoned: {e}"))?;
         rules.push(rule);
         Ok(())
     }
@@ -207,7 +212,7 @@ impl SchemaRegistry {
         from: &SchemaVersion,
         to: &SchemaVersion,
     ) -> Option<CompatibilityType> {
-        let rules = self.evolution_rules.read().unwrap();
+        let rules = self.evolution_rules.read().ok()?;
 
         for rule in rules.iter() {
             if rule.from_version == *from && rule.to_version == *to {
@@ -235,7 +240,7 @@ impl SchemaRegistry {
         from: &SchemaVersion,
         to: &SchemaVersion,
     ) -> Option<Vec<EvolutionRule>> {
-        let rules = self.evolution_rules.read().unwrap();
+        let rules = self.evolution_rules.read().ok()?;
 
         // Simple path finding (could be enhanced with graph algorithms)
         let mut path = Vec::new();
@@ -270,14 +275,22 @@ impl SchemaRegistry {
 
     /// Get merkle root for verification
     pub fn merkle_root(&self) -> Option<String> {
-        self.merkle_root.read().unwrap().as_ref().map(|n| n.root_hash().to_string())
+        self.merkle_root
+            .read()
+            .ok()
+            .and_then(|guard| guard.as_ref().map(|n| n.root_hash().to_string()))
     }
 
     fn update_merkle_root(&self) {
-        let entries = self.entries.read().unwrap();
+        let entries = match self.entries.read() {
+            Ok(g) => g,
+            Err(_) => return,
+        };
 
         if entries.is_empty() {
-            *self.merkle_root.write().unwrap() = None;
+            if let Ok(mut root) = self.merkle_root.write() {
+                *root = None;
+            }
             return;
         }
 
@@ -289,13 +302,19 @@ impl SchemaRegistry {
         let mut tree = vec![MerkleNode::new_leaf(hashes[0].clone())];
 
         for hash in hashes.iter().skip(1) {
-            let prev = tree.pop().unwrap();
+            // Safe: tree always has at least one node from the seed above
+            let prev = match tree.pop() {
+                Some(p) => p,
+                None => return,
+            };
             let curr = MerkleNode::new_leaf(hash.to_string());
             tree.push(MerkleNode::new_branch(prev, curr));
         }
 
         if tree.len() == 1 {
-            *self.merkle_root.write().unwrap() = tree.pop();
+            if let Ok(mut root) = self.merkle_root.write() {
+                *root = tree.pop();
+            }
         }
     }
 }

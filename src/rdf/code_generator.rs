@@ -31,7 +31,6 @@ use crate::rdf::sparql_executor_oxigraph::SparqlExecutor;
 use crate::rdf::turtle_parser::ParsedTurtle;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use std::collections::HashMap;
 use thiserror::Error;
 
 /// Errors that can occur during code generation
@@ -323,11 +322,14 @@ impl CliCodeGenerator {
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-            SELECT ?verb ?name ?description ?noun WHERE {
+            SELECT ?verb ?name ?description ?noun_name WHERE {
                 ?verb rdf:type cnv:Verb .
                 ?verb cnv:name ?name .
                 OPTIONAL { ?verb rdfs:label ?description }
-                OPTIONAL { ?verb cnv:hasNoun ?noun }
+                OPTIONAL { 
+                    ?verb cnv:hasNoun ?noun .
+                    ?noun cnv:name ?noun_name .
+                }
             }
         "#;
 
@@ -353,7 +355,7 @@ impl CliCodeGenerator {
 
             let description = binding.get("description").unwrap_or(&name).to_string();
 
-            let noun = binding.get("noun").map(|s| s.to_string());
+            let noun = binding.get("noun_name").map(|s| s.to_string());
 
             // Validate name is a valid Rust identifier
             self.validate_identifier(&name)?;
@@ -517,7 +519,7 @@ impl CliCodeGenerator {
     pub fn generate_noun_macro(
         &self,
         noun_name: &str,
-        description: &str,
+        _description: &str,
     ) -> Result<TokenStream, CodeGenError> {
         // Validate identifier
         self.validate_identifier(noun_name)?;
@@ -646,7 +648,12 @@ impl CliCodeGenerator {
 #[cfg(feature = "rdf-composition")]
 impl Default for CliCodeGenerator {
     fn default() -> Self {
-        Self::new().expect("Failed to create default CliCodeGenerator")
+        // `new()` is infallible at present; construct fields directly to avoid
+        // any forbidden `unwrap`/`expect` if `new()`'s signature evolves.
+        Self {
+            default_cli_name: "generated_cli".to_string(),
+            default_version: "0.1.0".to_string(),
+        }
     }
 }
 

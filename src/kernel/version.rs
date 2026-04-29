@@ -362,12 +362,9 @@ impl GrammarDelta {
                     name: (*name).clone(),
                     noun: to_noun.name.clone(),
                     argument_changes: Vec::new(),
-                    capability_changes: if verb.capability.is_some() {
-                        vec![CapabilityChange::Added {
-                            capability: verb.capability.clone().unwrap(),
-                        }]
-                    } else {
-                        Vec::new()
+                    capability_changes: match verb.capability.clone() {
+                        Some(cap) => vec![CapabilityChange::Added { capability: cap }],
+                        None => Vec::new(),
                     },
                     help_changed: false,
                 });

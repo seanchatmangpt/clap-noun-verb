@@ -66,14 +66,16 @@ fn test_complete_swarm_native_execution_flow() {
     println!("  ✓ Delegation chain verified: Alice -> Bob (read-only)");
 
     // Record delegation in governance ledger
-    ledger.record_policy_decision(
-        PolicyDecision::Allow,
-        CapabilityId::from_path("user.read"),
-        "Delegation created",
-        bob.agent.clone(),
-        bob.tenant.clone(),
-        "delegation-init",
-    );
+    ledger
+        .record_policy_decision(
+            PolicyDecision::Allow,
+            CapabilityId::from_path("user.read"),
+            "Delegation created",
+            bob.agent.clone(),
+            bob.tenant.clone(),
+            "delegation-init",
+        )
+        .expect("Failed to record policy decision");
 
     // ========== Track 4: Graph - Build Capability Composition ==========
     println!("\nTrack 4 (Graph): Building capability graph...");
@@ -241,14 +243,16 @@ fn test_complete_swarm_native_execution_flow() {
     println!("    Correlation ID: {}", cert.correlation_id);
 
     // Record in governance ledger
-    ledger.record_policy_decision(
-        PolicyDecision::Allow,
-        capability_id.clone(),
-        "user.read --user-id 123",
-        bob.agent.clone(),
-        bob.tenant.clone(),
-        "swarm-request-42",
-    );
+    ledger
+        .record_policy_decision(
+            PolicyDecision::Allow,
+            capability_id.clone(),
+            "user.read --user-id 123",
+            bob.agent.clone(),
+            bob.tenant.clone(),
+            "swarm-request-42",
+        )
+        .expect("Failed to record policy decision");
 
     // ========== Track 3: Hot Path - Zero-Allocation Execution ==========
     println!("\nTrack 3 (Hot Path): Executing via hot path...");
@@ -424,14 +428,16 @@ fn test_hot_path_with_governance() {
         queue.try_push(ctx).ok();
 
         // Log to governance
-        ledger.record_policy_decision(
-            PolicyDecision::Allow,
-            CapabilityId::from_path(&format!("cmd{}", i)),
-            &format!("Hot path invocation {}", i),
-            AgentIdentity::anonymous(),
-            TenantIdentity::default_tenant(),
-            format!("hotpath-{}", i),
-        );
+        ledger
+            .record_policy_decision(
+                PolicyDecision::Allow,
+                CapabilityId::from_path(&format!("cmd{}", i)),
+                &format!("Hot path invocation {}", i),
+                AgentIdentity::anonymous(),
+                TenantIdentity::default_tenant(),
+                format!("hotpath-{}", i),
+            )
+            .expect("Failed to record policy decision");
     }
 
     // THEN: All invocations are queued

@@ -5,7 +5,6 @@
 //! Following domain separation: CLI validates, domain computes, integration connects.
 //! Each module contains thin CLI wrappers that delegate to domain logic.
 
-pub mod doctor;
 pub mod wizard;
 pub mod telco;
 pub mod powl8;

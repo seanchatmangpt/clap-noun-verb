@@ -12,7 +12,7 @@ fn add_pack(
     version: Option<String>,
     force: bool,
 ) -> Result<PackAddedOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let pack = store.resolve(&identifier, version.as_deref())
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
@@ -33,7 +33,7 @@ fn remove_pack(
     identifier: String,
     force: bool,
 ) -> Result<PackRemovedOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     store.remove(&identifier, force)
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
@@ -47,7 +47,7 @@ fn remove_pack(
 /// List installed packs
 #[verb("list")]
 fn list_packs() -> Result<PackListOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let packs = store.list_all()
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
@@ -63,7 +63,7 @@ fn list_packs() -> Result<PackListOutput> {
 /// Show pack details
 #[verb("show")]
 fn show_pack(identifier: String) -> Result<PackShowOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let details = store.show(&identifier)
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
@@ -80,7 +80,7 @@ fn show_pack(identifier: String) -> Result<PackShowOutput> {
 /// Verify pack integrity
 #[verb("verify")]
 fn verify_pack(identifier: String) -> Result<PackVerifyOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let result = store.verify(&identifier)
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
@@ -99,7 +99,7 @@ fn verify_pack(identifier: String) -> Result<PackVerifyOutput> {
 fn graph_packs(
     dot_format: bool,
 ) -> Result<PackGraphOutput> {
-    let graph = DependencyGraph::load()
+    let graph = DependencyGraph::load(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     Ok(PackGraphOutput {
         graph: graph.to_dot_format(),
@@ -111,7 +111,7 @@ fn graph_packs(
 fn update_packs(
     dry_run: bool,
 ) -> Result<PackUpdateOutput> {
-    let store = PackStore::new()
+    let store = PackStore::new(".mcpp_packs")
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;
     let updates = store.check_updates()
         .map_err(|e| NounVerbError::ExecutionError { message: e })?;

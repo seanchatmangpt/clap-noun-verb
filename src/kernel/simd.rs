@@ -183,9 +183,10 @@ impl FrameSerializer {
         }
 
         // Parse header (SIMD-optimized for aligned buffers)
-        let session_id = SessionId::from_uuid(
-            uuid::Uuid::from_bytes(buffer[0..16].try_into().unwrap())
-        );
+        let uuid_bytes: [u8; 16] = buffer[0..16].try_into().map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("uuid slice: {e}"))
+        })?;
+        let session_id = SessionId::from_uuid(uuid::Uuid::from_bytes(uuid_bytes));
 
         let stream_id = match buffer[16] {
             0 => StreamId::Stdout,
@@ -196,8 +197,14 @@ impl FrameSerializer {
             id => StreamId::Custom(id),
         };
 
-        let sequence = u64::from_le_bytes(buffer[24..32].try_into().unwrap());
-        let timestamp_ms = u64::from_le_bytes(buffer[32..40].try_into().unwrap());
+        let seq_bytes: [u8; 8] = buffer[24..32].try_into().map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("seq slice: {e}"))
+        })?;
+        let sequence = u64::from_le_bytes(seq_bytes);
+        let ts_bytes: [u8; 8] = buffer[32..40].try_into().map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("ts slice: {e}"))
+        })?;
+        let timestamp_ms = u64::from_le_bytes(ts_bytes);
 
         // Parse payload
         let payload = self.deserialize_payload(&buffer[40..])?;
@@ -230,7 +237,10 @@ impl FrameSerializer {
                     ));
                 }
 
-                let len = u32::from_le_bytes(data[1..5].try_into().unwrap()) as usize;
+                let len_bytes: [u8; 4] = data[1..5].try_into().map_err(|e| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, format!("len slice: {e}"))
+                })?;
+                let len = u32::from_le_bytes(len_bytes) as usize;
                 if data.len() < 5 + len {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,

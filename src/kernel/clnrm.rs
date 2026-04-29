@@ -141,14 +141,19 @@ impl HermeticContainer {
 
     /// Record a span (called by instrumented code)
     pub fn record_span(&self, span: RecordedSpan) {
-        let mut spans = self.spans.lock().unwrap();
+        let mut spans = match self.spans.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        };
         spans.push(span);
     }
 
     /// Get all recorded spans
     pub fn recorded_spans(&self) -> Vec<RecordedSpan> {
-        let spans = self.spans.lock().unwrap();
-        spans.clone()
+        match self.spans.lock() {
+            Ok(g) => g.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        }
     }
 
     /// Record an external call (increments counter)
@@ -157,8 +162,13 @@ impl HermeticContainer {
     }
 
     /// Get quota budget
+    ///
+    /// Returns the inner guard even on poison so observability isn't lost.
     pub fn quota(&self) -> std::sync::MutexGuard<'_, QuotaBudget> {
-        self.quota.lock().unwrap()
+        match self.quota.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        }
     }
 
     /// Verify the test execution was hermetic

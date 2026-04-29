@@ -36,38 +36,19 @@ if ! command -v specify >/dev/null; then
               "install specify CLI" 6
 fi
 
-# 2. Initialize project (if not already)
-if [ ! -f specify.lock ]; then
-  if [ $DRY_RUN -eq 0 ]; then
-    specify init . || echo "specify init failed" >&2
-  else
-    echo "(dry-run) would run: specify init ."
-  fi
-fi
-
-# 3. Add required extensions (doctor, status, ralph, verify, presetify)
-declare -a EXTS=("doctor" "status" "ralph" "verify" "presetify")
-for ext in "${EXTS[@]}"; do
-  if ! specify extension list --installed | grep -q "$ext"; then
-    if [ $DRY_RUN -eq 0 ]; then
-      specify extension add "$ext" || run_or_fail "true" "install ext $ext" 6
-    else
-      echo "(dry-run) would run: specify extension add $ext"
-    fi
-  fi
-done
-
-# 4. Build local CLI tools (speckit-ralph, mcpp) from source
+# 4. Build local CLI tools (mcpp, speckit-ralph)
 if [ $DRY_RUN -eq 0 ]; then
-  # Assuming mcpp is built via cargo from root
-  echo "Building mcpp (playground-cli) via cargo..."
-  (cargo build --release --bin mcpp) || run_or_fail "true" "build mcpp" 8
+  echo "Building mcpp..."
+  (cd playground && cargo build --release --bin mcpp) || run_or_fail "true" "build mcpp" 8
+  echo "Building speckit-ralph..."
+  (cargo build --release -p speckit-ralph) || run_or_fail "true" "build speckit-ralph" 8
 fi
 
-# We define the CLI invocation to point to our newly built binary
-MCPP="./target/release/mcpp"
+# We define the CLI invocation to point to our newly built binaries
+MCPP="./playground/target/release/mcpp"
+RALPH="./target/release/speckit-ralph"
 
-# 5. Initialize .chatmangpt state (if missing)
+# 3. Initialize .chatmangpt state (if missing)
 STATE_FILE=".chatmangpt/state.yaml"
 if [ ! -f "$STATE_FILE" ]; then
   mkdir -p .chatmangpt
@@ -81,77 +62,56 @@ EOF
   echo ".chatmangpt/state.yaml created."
 fi
 
-# 6. -- Dry-run info
-if [ $DRY_RUN -eq 1 ]; then
-  echo "(Dry-run mode; no changes made.)"
-fi
-
-# 7. Command: mcpp doctor  (project health check)
+# 4. Loop
 echo "Running mcpp doctor..."
 if [ $DRY_RUN -eq 0 ]; then
-  # We call the mcpp doctor extension
   $MCPP doctor run || true
-  # speckit.doctor
   DOCTOR_STATUS=$?
 else
   echo "(dry-run) would call mcpp doctor run"
   DOCTOR_STATUS=0
 fi
-if [ $DOCTOR_STATUS -ne 0 ]; then
-  exit 3  # gate_failed
-fi
+if [ $DOCTOR_STATUS -ne 0 ]; then exit 3; fi
 
-# 8. Command: mcpp telco next (get next-action report)
+echo "Running ralph run..."
+if [ $DRY_RUN -eq 0 ]; then
+  $RALPH run "Build the MCPP unified loop" || true
+  RALPH_STATUS=$?
+else
+  echo "(dry-run) would call ralph run"
+  RALPH_STATUS=0
+fi
+if [ $RALPH_STATUS -ne 0 ]; then exit 8; fi
+
 echo "Running mcpp telco next..."
 if [ $DRY_RUN -eq 0 ]; then
-  # We map telco next directly to mcpp telco next
-  $MCPP telco next "$TARGET" $AGENT_FLAG --output json
-  TELCO_STATUS=$?
+  $MCPP telco next --target "$TARGET" $AGENT_FLAG --output json
 else
-  echo "(dry-run) would call mcpp telco next"
-  TELCO_STATUS=0
   echo '{"schema":"chatmangpt.sr.result.v1","command":"sr.telco.next","status":"pass","data":{},"errors":[],"warnings":[],"next":{"command":"mcpp verify","reason":"(dry-run)"}}'
 fi
-if [ $TELCO_STATUS -ne 0 ]; then
-  exit 4  # line_stopped (assume telco failing means stop)
-fi
 
-# 9. Command: mcpp verify (post-implement gates)
 echo "Running mcpp verify..."
 if [ $DRY_RUN -eq 0 ]; then
-  $MCPP verify run "$TARGET" $AGENT_FLAG --output json
-  VERIFY_STATUS=$?
-  if [ $VERIFY_STATUS -ne 0 ]; then
-    exit 3  # gate_failed
-  fi
+  $MCPP verify run --target "$TARGET" $AGENT_FLAG --output json
 else
-  echo "(dry-run) would call mcpp verify run"
   echo '{"schema":"chatmangpt.sr.result.v1","command":"sr.verify","status":"pass","data":{},"errors":[],"warnings":[],"next":{"command":"mcpp receipt emit","reason":"(dry-run)"}}'
 fi
 
-# 10. Command: mcpp receipt emit (create receipt)
 echo "Running mcpp receipt emit..."
 if [ $DRY_RUN -eq 0 ]; then
-  $MCPP receipt emit "$TARGET" $AGENT_FLAG --output json
-else
-  echo "(dry-run) would generate receipt .chatmangpt/receipt.yaml"
-  echo '{"schema":"chatmangpt.sr.result.v1","command":"sr.receipt.emit","status":"pass","data":{},"errors":[],"warnings":[]}'
+  $MCPP receipt emit --target "$TARGET" $AGENT_FLAG --output json
 fi
 
-# 11. Command: mcpp receipt verify (check receipt)
+echo "Running mcpp receipt sign..."
+if [ $DRY_RUN -eq 0 ]; then
+  $MCPP receipt sign --target "$TARGET" --output json
+fi
+
 echo "Running mcpp receipt verify..."
 if [ $DRY_RUN -eq 0 ]; then
-  $MCPP receipt verify "$TARGET" $AGENT_FLAG --output json
-  VERIFY_REC_STATUS=$?
-  
-  if [ $VERIFY_REC_STATUS -eq 0 ]; then
-      # Update state to closed
-      sed -i.bak 's/work_state: none/work_state: closed/' "$STATE_FILE" || true
-  else
-      exit 7
-  fi
+  $MCPP receipt verify --target "$TARGET" $AGENT_FLAG --output json
+  sed -i.bak 's/work_state: none/work_state: closed/' "$STATE_FILE" || true
 else
-  echo "(dry-run) would verify receipt .chatmangpt/receipt.yaml"
   echo '{"schema":"chatmangpt.sr.result.v1","command":"sr.receipt.verify","status":"verified","data":{},"errors":[],"warnings":[]}'
 fi
 

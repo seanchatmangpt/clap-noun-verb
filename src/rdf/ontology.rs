@@ -168,6 +168,15 @@ impl Ontology {
             .map(|t| (t.subject.clone(), t.predicate.clone(), t.object.as_str().to_string()))
             .collect()
     }
+
+    /// Iterate over all triples with full type information
+    pub fn iter_typed_triples(&self) -> Vec<(String, String, RdfValue)> {
+        self.triples
+            .values()
+            .flatten()
+            .map(|t| (t.subject.clone(), t.predicate.clone(), t.object.clone()))
+            .collect()
+    }
 }
 
 impl Default for Ontology {

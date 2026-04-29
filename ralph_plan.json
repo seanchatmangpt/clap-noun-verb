@@ -1,0 +1,19 @@
+{
+  "goal": "Implement Ralph Loop",
+  "id": "plan-1777242258",
+  "status": "candidate",
+  "steps": [
+    {
+      "action": "specify init",
+      "depends_on": [],
+      "name": "Init"
+    },
+    {
+      "action": "mcpp powl64 execute",
+      "depends_on": [
+        "Init"
+      ],
+      "name": "Implement"
+    }
+  ]
+}
