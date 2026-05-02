@@ -984,9 +984,12 @@ fn generate_verb_registration(
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_flag {
-                // Boolean flags
+                // Boolean flags — the registry stores SetTrue flags in `args`
+                // (always as "true" when present), never in `opts`. Read from
+                // `args` first, fall back to `opts` for compatibility.
                 arg_extractions.push(quote! {
-                    let #arg_name = __handler_input.opts.get(#arg_name_str)
+                    let #arg_name = __handler_input.args.get(#arg_name_str)
+                        .or_else(|| __handler_input.opts.get(#arg_name_str))
                         .map(|v| v.parse::<bool>().unwrap_or(false))
                         .unwrap_or(false);
                 });
