@@ -1,0 +1,20 @@
+[project]
+name = "clap-noun-verb-cli"
+version = "0.1.0"
+
+[ontology]
+source = "ontology/cli_schema.ttl"
+format = "turtle"
+
+[generation]
+output_dir = "src/cli"
+
+[[generation.rules]]
+name = "verbs"
+template = "templates/unrdf/verbs.njk"
+output_file = "generated_verbs.rs"
+
+[[generation.rules]]
+name = "traits"
+template = "templates/unrdf/domain_traits.njk"
+output_file = "domain_traits.rs"

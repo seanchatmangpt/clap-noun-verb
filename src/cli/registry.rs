@@ -418,8 +418,11 @@ impl CommandRegistry {
     pub fn build_command(&self) -> clap::Command {
         let mut cmd = clap::Command::new("cli")
             .version(env!("CARGO_PKG_VERSION"))
-            .arg_required_else_help(true)
-            .subcommand(crate::cli::doctor_cmd::doctor_command());
+            .arg_required_else_help(true);
+            
+        if !self.nouns.contains_key("doctor") && !self.root_verbs.contains_key("doctor") {
+            cmd = cmd.subcommand(crate::cli::doctor_cmd::doctor_command());
+        }
 
         // Add root-level verbs directly as subcommands
         for (verb_name, verb_meta) in &self.root_verbs {
@@ -786,7 +789,7 @@ impl CommandRegistry {
 
         // Route command
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
-            if subcommand_name == "doctor" {
+            if subcommand_name == "doctor" && !self.nouns.contains_key("doctor") && !self.root_verbs.contains_key("doctor") {
                 return crate::cli::doctor_cmd::handle_doctor_command(sub_matches);
             }
 
