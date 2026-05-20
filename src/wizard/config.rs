@@ -272,18 +272,12 @@ pub struct WizardConfig {
     /// Custom parameters
     pub parameters: std::collections::HashMap<String, serde_json::Value>,
     /// Enable caching (requires "caching" feature)
-    #[cfg(feature = "caching")]
     pub enable_cache: bool,
     /// v2 feature configs
-    #[cfg(feature = "wizard")]
     pub streaming_config: Option<crate::wizard::streaming::StreamingConfig>,
-    #[cfg(feature = "wizard")]
     pub cache_config: Option<crate::wizard::cache::CacheConfig>,
-    #[cfg(feature = "wizard")]
     pub rate_limit_config: Option<crate::wizard::rate_limit::RateLimitConfig>,
-    #[cfg(feature = "wizard")]
     pub retry_config: Option<crate::wizard::retry::RetryConfig>,
-    #[cfg(feature = "wizard")]
     pub fallback_config: Option<crate::wizard::fallback::FallbackConfig>,
 }
 
@@ -297,17 +291,11 @@ impl Default for WizardConfig {
             timeout: std::time::Duration::from_secs(60),
             verbose: false,
             parameters: std::collections::HashMap::new(),
-            #[cfg(feature = "caching")]
             enable_cache: false,
-            #[cfg(feature = "wizard")]
             streaming_config: None,
-            #[cfg(feature = "wizard")]
             cache_config: None,
-            #[cfg(feature = "wizard")]
             rate_limit_config: None,
-            #[cfg(feature = "wizard")]
             retry_config: None,
-            #[cfg(feature = "wizard")]
             fallback_config: None,
         }
     }
@@ -394,20 +382,14 @@ impl WizardConfig {
             timeout: std::time::Duration::from_secs(60),
             verbose: false,
             parameters: std::collections::HashMap::new(),
-            #[cfg(feature = "caching")]
             enable_cache: std::env::var("WIZARD_ENABLE_CACHE")
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(false),
-            #[cfg(feature = "wizard")]
             streaming_config: None,
-            #[cfg(feature = "wizard")]
             cache_config: None,
-            #[cfg(feature = "wizard")]
             rate_limit_config: None,
-            #[cfg(feature = "wizard")]
             retry_config: None,
-            #[cfg(feature = "wizard")]
             fallback_config: None,
         })
     }

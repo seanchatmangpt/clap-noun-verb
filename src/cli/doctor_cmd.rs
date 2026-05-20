@@ -5,7 +5,6 @@
 //! reproducible, and lawful. It implements a medical pathology and diagnostic model.
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-#[cfg(feature = "config-formats")]
 use crate::config::ConfigLoader;
 use crate::error::{NounVerbError, Result};
 use serde::Serialize;
@@ -237,7 +236,6 @@ pub fn handle_doctor_command(matches: &ArgMatches) -> Result<()> {
     let mut engine = DiagnosticEngine::new(fix, is_json);
 
     // 1. CONFIGURATION CHECKS (ConfigDrift, UnmappedKeys)
-    #[cfg(feature = "config-formats")]
     check_configuration(&mut engine, fix);
 
     // 2. ENVIRONMENT CHECKS (EnvMissing)
@@ -252,7 +250,6 @@ pub fn handle_doctor_command(matches: &ArgMatches) -> Result<()> {
     }
 
     // 5. AI/WIZARD INTEGRATION (AiUnreachable)
-    #[cfg(feature = "wizard")]
     check_ai_integration(&mut engine);
 
     // Report results
@@ -280,7 +277,6 @@ pub fn handle_doctor_command(matches: &ArgMatches) -> Result<()> {
 // SPECIFIC CHECK IMPLEMENTATIONS
 // ============================================================================
 
-#[cfg(feature = "config-formats")]
 fn check_configuration(engine: &mut DiagnosticEngine, _fix: bool) {
     engine.log("🔍 Scanning Configuration...");
     let loader = ConfigLoader::new();
@@ -342,7 +338,6 @@ fn check_configuration(engine: &mut DiagnosticEngine, _fix: bool) {
     }
 }
 
-#[cfg(feature = "config-formats")]
 fn collect_valid_args(
     cmd: &clap::Command,
     valid_args: &mut std::collections::HashSet<String>,
@@ -477,7 +472,6 @@ fn check_source_truth(engine: &mut DiagnosticEngine, fix: bool) {
     }
 }
 
-#[cfg(feature = "wizard")]
 fn check_ai_integration(engine: &mut DiagnosticEngine) {
     engine.log("🔍 Scanning AI Ecosystem Integration...");
     let keys_to_check = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY"];

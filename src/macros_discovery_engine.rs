@@ -40,10 +40,8 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
-#[cfg(feature = "tokio")]
 use tokio::sync::mpsc as _mpsc;
 
-#[cfg(feature = "agent2028")]
 use rand;
 
 /// Type-level marker for capability states
@@ -389,7 +387,6 @@ impl SwarmOptimizer {
     }
 
     /// Initialize particles in search space
-    #[cfg(feature = "agent2028")]
     pub fn initialize(&mut self, space: &SearchSpace) {
         let capabilities: Vec<_> = space.capabilities.keys().cloned().collect();
 

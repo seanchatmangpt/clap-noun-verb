@@ -14,7 +14,6 @@
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
 use crate::verb::{VerbArgs, VerbContext, TypeMap};
-#[cfg(feature = "full")]
 use crate::middleware::MiddlewarePipeline;
 use clap::{ArgMatches, Command};
 use std::collections::HashMap;
@@ -34,7 +33,6 @@ pub struct CommandRegistry {
     /// Typed context extensions shared across all commands
     extensions: TypeMap,
     /// Middleware pipeline
-    #[cfg(feature = "full")]
     pipeline: Option<MiddlewarePipeline>,
 }
 
@@ -72,7 +70,6 @@ impl CommandRegistry {
             nouns: HashMap::new(), 
             config: RegistryConfig::default(),
             extensions: TypeMap::new(),
-            #[cfg(feature = "full")]
             pipeline: None,
         }
     }
@@ -83,7 +80,6 @@ impl CommandRegistry {
             nouns: HashMap::new(), 
             config,
             extensions: TypeMap::new(),
-            #[cfg(feature = "full")]
             pipeline: None,
         }
     }
@@ -94,7 +90,6 @@ impl CommandRegistry {
         self
     }
 
-    #[cfg(feature = "full")]
     /// Set the middleware pipeline
     pub fn with_pipeline(mut self, pipeline: MiddlewarePipeline) -> Self {
         self.pipeline = Some(pipeline);
@@ -324,7 +319,6 @@ impl CommandRegistry {
                     .with_parent(root_matches.clone())
                     .with_context(context);
 
-                #[cfg(feature = "full")]
                 if let Some(pipeline) = &self.pipeline {
                     let mut req = crate::middleware::MiddlewareRequest::new(sub_name);
                     for arg in sub_matches.ids() {
@@ -341,7 +335,6 @@ impl CommandRegistry {
 
                 let result = verb.run(&args);
 
-                #[cfg(feature = "full")]
                 if let Some(pipeline) = &self.pipeline {
                     match &result {
                         Ok(_) => {

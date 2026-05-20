@@ -32,7 +32,6 @@
 
 use std::marker::PhantomData;
 
-#[cfg(feature = "crypto")]
 use sha3::{Digest, Sha3_256};
 
 use crate::error::{NounVerbError, Result};
@@ -145,7 +144,6 @@ impl AgentState<Registered> {
     /// # Returns
     ///
     /// Verified agent state
-    #[cfg(feature = "crypto")]
     pub fn verify(self, proof: &[u8]) -> AgentState<Verified> {
         let mut hasher = Sha3_256::new();
         hasher.update(proof);

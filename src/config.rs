@@ -388,18 +388,14 @@ impl Default for Config {
     }
 }
 
-#[cfg(feature = "hot-reload")]
 use notify::{Event, RecursiveMode, Watcher};
-#[cfg(feature = "hot-reload")]
 use std::sync::{Arc, Mutex};
 
-#[cfg(feature = "hot-reload")]
 pub struct ConfigWatcher {
     loader: ConfigLoader,
     callbacks: Arc<Mutex<Vec<Box<dyn Fn(Config) + Send + Sync>>>>,
 }
 
-#[cfg(feature = "hot-reload")]
 impl ConfigWatcher {
     /// Create a new configuration watcher
     pub fn new(loader: ConfigLoader) -> Self {

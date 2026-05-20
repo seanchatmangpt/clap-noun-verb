@@ -15,18 +15,15 @@
 
 pub mod state;
 
-#[cfg(feature = "rdf")]
 pub mod semantic;
 
 pub mod swarm;
 
-#[cfg(feature = "autonomic")]
 pub mod autonomic;
 
 // Re-exports for convenience
 pub use state::{AgentState, Escalated, Registered, Trusted, Unregistered, Verified};
 
-#[cfg(feature = "rdf")]
 pub use semantic::{Capability, SemanticDiscovery, SparqlQueryBuilder};
 
 pub use swarm::{
@@ -34,7 +31,6 @@ pub use swarm::{
     TrustScore,
 };
 
-#[cfg(feature = "autonomic")]
 pub use autonomic::{
     AdaptiveParameter, AnomalyDetector, AutonomicLoop, MapekPhase, SelfHealingAction,
 };

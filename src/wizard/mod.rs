@@ -49,15 +49,10 @@ pub mod interactive;
 pub mod types;
 
 // v2 features (feature-gated)
-#[cfg(feature = "wizard")]
 pub mod cache;
-#[cfg(feature = "wizard")]
 pub mod fallback;
-#[cfg(feature = "wizard")]
 pub mod rate_limit;
-#[cfg(feature = "wizard")]
 pub mod retry;
-#[cfg(feature = "wizard")]
 pub mod streaming;
 
 pub use builder::{Wizard, WizardBuilder};
@@ -69,13 +64,8 @@ pub use interactive::InteractiveSession;
 pub use types::{Prompt, TokenUsage, WizardResponse};
 
 // Re-export v2 features when enabled
-#[cfg(feature = "wizard")]
 pub use cache::{CacheConfig, CacheStats, CachedClient};
-#[cfg(feature = "wizard")]
 pub use fallback::{FallbackClient, FallbackConfig, FallbackStats};
-#[cfg(feature = "wizard")]
 pub use rate_limit::{RateLimitConfig, RateLimitStrategy, RateLimitedClient};
-#[cfg(feature = "wizard")]
 pub use retry::{RetryClient, RetryConfig, RetryContext};
-#[cfg(feature = "wizard")]
 pub use streaming::{CancellableStream, StreamChunk, StreamingClient, StreamingConfig};

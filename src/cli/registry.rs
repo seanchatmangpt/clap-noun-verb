@@ -895,7 +895,6 @@ impl CommandRegistry {
     }
 
     /// Validate a configuration against registered commands
-    #[cfg(feature = "config-formats")]
     pub fn validate_config(&self, config: &crate::config::Config) {
         let cmd = self.build_command();
         let flat_map = config.to_flat_map();
@@ -911,7 +910,6 @@ impl CommandRegistry {
         }
     }
 
-    #[cfg(feature = "config-formats")]
     fn collect_valid_args(
         &self,
         cmd: &clap::Command,

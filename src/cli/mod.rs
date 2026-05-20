@@ -15,7 +15,6 @@ pub mod validator;
 pub(crate) mod value_parser;
 
 // Scaffolding and project initialization
-#[cfg(feature = "config-formats")]
 pub mod config_cmd;
 pub mod doctor_cmd;
 pub mod init;
@@ -33,7 +32,6 @@ pub use registry::CommandRegistry;
 pub use router::CommandRouter;
 pub use validator::ArgValidator;
 
-#[cfg(feature = "config-formats")]
 pub use config_cmd::{config_subcommand, handle_config_subcommand};
 
 // Re-export help system components

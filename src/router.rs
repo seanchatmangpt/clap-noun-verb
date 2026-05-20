@@ -3,7 +3,6 @@
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
 use crate::verb::{VerbArgs, VerbContext, TypeMap};
-#[cfg(feature = "full")]
 use crate::middleware::{MiddlewarePipeline, MiddlewareRequest, MiddlewareResponse};
 use clap::{ArgMatches, Command};
 use std::collections::HashMap;
@@ -12,7 +11,6 @@ use std::collections::HashMap;
 pub struct CommandRouter {
     nouns: HashMap<String, Box<dyn NounCommand>>,
     extensions: TypeMap,
-    #[cfg(feature = "full")]
     pipeline: Option<MiddlewarePipeline>,
 }
 
@@ -22,7 +20,6 @@ impl CommandRouter {
         Self { 
             nouns: HashMap::new(),
             extensions: TypeMap::new(),
-            #[cfg(feature = "full")]
             pipeline: None,
         }
     }
@@ -38,7 +35,6 @@ impl CommandRouter {
         self.nouns.insert(noun.name().to_string(), noun);
     }
 
-    #[cfg(feature = "full")]
     /// Set the middleware pipeline
     pub fn with_pipeline(mut self, pipeline: MiddlewarePipeline) -> Self {
         self.pipeline = Some(pipeline);
@@ -80,7 +76,6 @@ impl CommandRouter {
                     .with_parent(root_matches.clone())
                     .with_context(context);
 
-                #[cfg(feature = "full")]
                 if let Some(pipeline) = &self.pipeline {
                     let mut req = MiddlewareRequest::new(sub_name);
                     for arg in sub_matches.ids() {
@@ -97,7 +92,6 @@ impl CommandRouter {
 
                 let result = verb.run(&args);
 
-                #[cfg(feature = "full")]
                 if let Some(pipeline) = &self.pipeline {
                     match &result {
                         Ok(_) => {

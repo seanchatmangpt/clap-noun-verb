@@ -9,9 +9,7 @@ use crate::wizard::{
     types::{Prompt, Role, TokenUsage, WizardResponse},
 };
 
-#[cfg(feature = "caching")]
 use lru::LruCache;
-#[cfg(feature = "caching")]
 use std::num::NonZeroUsize;
 
 /// GenAI client wrapper
@@ -24,7 +22,6 @@ pub struct GenAiClient {
     /// Model configuration
     config: ModelConfig,
     /// Optional response cache (feature-gated)
-    #[cfg(feature = "caching")]
     cache: Option<LruCache<String, WizardResponse>>,
 }
 
@@ -45,7 +42,6 @@ impl GenAiClient {
         Ok(Self {
             client,
             config: wizard_config.model_config,
-            #[cfg(feature = "caching")]
             cache: if wizard_config.enable_cache {
                 // Default cache size: 100 entries
                 // SAFETY: 100 is a compile-time constant that is non-zero
@@ -77,7 +73,6 @@ impl GenAiClient {
         let prompt = prompt.into();
 
         // Check cache if enabled
-        #[cfg(feature = "caching")]
         if self.cache.is_some() {
             let cache_key = self.cache_key(&prompt);
             if let Some(cached) = self.cache.as_mut().unwrap().get(&cache_key) {
@@ -97,7 +92,6 @@ impl GenAiClient {
         response.metadata.latency_ms = Some(latency_ms);
 
         // Cache if enabled
-        #[cfg(feature = "caching")]
         if self.cache.is_some() {
             let cache_key = self.cache_key(&prompt);
             self.cache.as_mut().unwrap().put(cache_key, response.clone());
@@ -171,7 +165,6 @@ impl GenAiClient {
         let mut response = WizardResponse::new(text, model_id).with_metadata(
             crate::wizard::types::ResponseMetadata {
                 finish_reason: None, // finish_reason not directly on ChatResponse in v0.3.5
-                #[cfg(feature = "caching")]
                 from_cache: false,
                 latency_ms: None,
             },
@@ -192,7 +185,6 @@ impl GenAiClient {
     }
 
     /// Generate a cache key from a prompt
-    #[cfg(feature = "caching")]
     fn cache_key(&self, prompt: &Prompt) -> String {
         use std::hash::{Hash, Hasher};
 
@@ -212,7 +204,6 @@ impl GenAiClient {
     }
 
     /// Clear the cache (if caching is enabled)
-    #[cfg(feature = "caching")]
     pub fn clear_cache(&mut self) {
         if let Some(cache) = &mut self.cache {
             cache.clear();
@@ -220,7 +211,6 @@ impl GenAiClient {
     }
 
     /// Get cache statistics (if caching is enabled)
-    #[cfg(feature = "caching")]
     pub fn cache_stats(&self) -> Option<(usize, usize)> {
         self.cache.as_ref().map(|c| (c.len(), c.cap().get()))
     }

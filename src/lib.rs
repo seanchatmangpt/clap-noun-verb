@@ -63,7 +63,6 @@ pub mod tree;
 pub mod verb;
 
 // Capability Discovery Engine (requires agent2028 feature for swarm optimization)
-#[cfg(feature = "agent2028")]
 pub mod macros_discovery_engine;
 
 // =============================================================================
@@ -71,15 +70,12 @@ pub mod macros_discovery_engine;
 // =============================================================================
 
 // Async verb support (requires "async" feature)
-#[cfg(feature = "async")]
 pub mod async_verb;
 
 // Shell completion generation (requires "completions" feature)
-#[cfg(feature = "completions")]
 pub mod completion;
 
 // Configuration formats (requires "config-formats" feature)
-#[cfg(feature = "config-formats")]
 pub mod config;
 
 // Execution context
@@ -92,85 +88,62 @@ pub mod deprecation;
 pub mod format;
 
 // Man page generation (requires "mangen" feature)
-#[cfg(feature = "mangen")]
 pub mod mangen;
 
 // Shell utilities
 pub mod shell;
 
 // URL/Regex validators (requires "validators" feature)
-#[cfg(feature = "validators")]
 pub mod validators;
 
 // Autonomic CLI Layer (requires "autonomic" feature)
-#[cfg(feature = "autonomic")]
 pub mod autonomic;
 
 // CNV Kernel Capabilities (requires "kernel" feature)
-#[cfg(feature = "kernel")]
 pub mod kernel;
 
 // I/O Integration (requires "io" feature)
-#[cfg(feature = "io")]
 pub mod io;
 
 // Advanced clap Integration
 pub mod clap_ext;
 
 // Plugin System (requires "full" feature)
-#[cfg(feature = "full")]
 pub mod plugin;
 
 // Middleware System (requires "full" feature)
-#[cfg(feature = "full")]
 pub mod middleware;
 
 // Telemetry & Observability (requires "observability" feature)
-#[cfg(feature = "observability")]
 pub mod telemetry;
 
 // Integration Layer (requires "full" feature)
-#[cfg(feature = "full")]
 pub mod integration;
 
 // Production Plugins (requires "full" feature)
-#[cfg(feature = "full")]
 pub mod plugins;
 
 // Agent2028 - Trillion-Agent Ecosystems (requires "agent2028" feature)
-#[cfg(feature = "agent2028")]
 pub mod agent2028;
 
-// RDF/Ontology Control Layer (requires "rdf" feature)
-#[cfg(feature = "rdf")]
-pub mod rdf;
-
-// Semantic Agent Coordinator (requires "agent2028" feature + optional "rdf", "autonomic")
-#[cfg(feature = "agent2028")]
+// Semantic Agent Coordinator (requires "agent2028" feature + optional "autonomic")
 pub mod agents;
 
-// Semantic CLI Composition (requires "rdf" feature for SPARQL and RDF metadata)
-#[cfg(feature = "rdf")]
-pub mod semantic;
-
 // Frontier Packages - 10 Advanced Agent-Grade Packages (v5.4+)
-// Requires any frontier feature (meta-framework, rdf-composition, etc.)
+// Requires any frontier feature (meta-framework, etc.)
 #[cfg(any(
     feature = "meta-framework",
-    feature = "rdf-composition",
     feature = "executable-specs",
     feature = "fractal-patterns",
     feature = "discovery-engine",
     feature = "federated-network",
-    feature = "learning-trajectories",
-    feature = "reflexive-testing",
+    feature = "learning-trajectories",    feature = "reflexive-testing",
     feature = "economic-sim",
     feature = "quantum-ready"
 ))]
 pub mod frontier;
 
 // Wizard - Interactive multi-step CLI workflows with AI assistance (requires "wizard" feature)
-#[cfg(feature = "wizard")]
 pub mod wizard;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
@@ -207,11 +180,9 @@ pub use clap::{Arg, ArgAction, ArgMatches, Command};
 // =============================================================================
 
 // Async support (requires "async" feature)
-#[cfg(feature = "async")]
 pub use async_verb::{create_runtime, run_async};
 
 // Shell completion (requires "completions" feature)
-#[cfg(feature = "completions")]
 pub use completion::{generate_completion, print_completion, Shell};
 
 // Macros are exported at crate root via #[macro_export]

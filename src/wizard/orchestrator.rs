@@ -110,17 +110,11 @@ impl Orchestrator {
                 model_config: model_config.clone(),
                 api_key: None, // API keys loaded from environment
                 endpoint: None,
-                #[cfg(feature = "caching")]
                 enable_cache: false,
-                #[cfg(feature = "wizard")]
                 streaming_config: None,
-                #[cfg(feature = "wizard")]
                 cache_config: None,
-                #[cfg(feature = "wizard")]
                 rate_limit_config: None,
-                #[cfg(feature = "wizard")]
                 retry_config: Some(self.retry_config),
-                #[cfg(feature = "wizard")]
                 fallback_config: None,
             };
 

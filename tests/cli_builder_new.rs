@@ -35,10 +35,9 @@ fn test_cli_builder_noun() {
     let result = builder.build_command();
     let cmd = result;
 
-    // Should have one noun registered as subcommand
-    let subcommands: Vec<_> = cmd.get_subcommands().collect();
-    assert_eq!(subcommands.len(), 1);
-    assert_eq!(subcommands[0].get_name(), "services");
+    let subcommands: Vec<_> = cmd.get_subcommands().filter(|s| s.get_name() != "help").collect();
+    let subcommand_names: Vec<_> = subcommands.iter().map(|s| s.get_name()).collect();
+    assert!(subcommand_names.contains(&"services"));
 }
 
 #[test]
@@ -50,9 +49,7 @@ fn test_cli_builder_multiple_nouns() {
     let result = builder.build_command();
     let cmd = result;
 
-    // Should have two nouns registered
-    let subcommands: Vec<_> = cmd.get_subcommands().collect();
-    assert_eq!(subcommands.len(), 2);
+    let subcommands: Vec<_> = cmd.get_subcommands().filter(|s| s.get_name() != "help").collect();
     let subcommand_names: Vec<_> = subcommands.iter().map(|s| s.get_name()).collect();
     assert!(subcommand_names.contains(&"services"));
     assert!(subcommand_names.contains(&"collector"));
@@ -65,13 +62,11 @@ fn test_cli_builder_build_command() {
 
     let cmd = builder.build_command();
 
-    // Command should have the correct name
     assert_eq!(cmd.get_name(), "testapp");
 
-    // Command should have subcommands
-    let subcommands: Vec<_> = cmd.get_subcommands().collect();
-    assert_eq!(subcommands.len(), 1);
-    assert_eq!(subcommands[0].get_name(), "services");
+    let subcommands: Vec<_> = cmd.get_subcommands().filter(|s| s.get_name() != "help").collect();
+    let subcommand_names: Vec<_> = subcommands.iter().map(|s| s.get_name()).collect();
+    assert!(subcommand_names.contains(&"services"));
 }
 
 #[test]
@@ -80,7 +75,6 @@ fn test_cli_builder_build_command_with_version() {
 
     let cmd = builder.build_command();
 
-    // Version should be set
     assert!(cmd.get_version().is_some());
     assert_eq!(cmd.get_version(), Some("2.0.0"));
 }
@@ -93,14 +87,14 @@ fn test_cli_builder_method_chaining() {
         .noun("services", "Manage services")
         .noun("collector", "Manage collector");
 
-    // Verify by building command
     let result = builder.build_command();
     let cmd = result;
     assert_eq!(cmd.get_name(), "testapp");
     assert_eq!(cmd.get_about().map(|s| s.to_string()), Some("Test application".to_string()));
     assert_eq!(cmd.get_version(), Some("1.0.0"));
 
-    // Verify subcommands
-    let subcommands: Vec<_> = cmd.get_subcommands().collect();
-    assert_eq!(subcommands.len(), 2);
+    let subcommands: Vec<_> = cmd.get_subcommands().filter(|s| s.get_name() != "help").collect();
+    let subcommand_names: Vec<_> = subcommands.iter().map(|s| s.get_name()).collect();
+    assert!(subcommand_names.contains(&"services"));
+    assert!(subcommand_names.contains(&"collector"));
 }

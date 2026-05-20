@@ -29,7 +29,6 @@
 //! ```
 
 // Re-export from semantic module if available, otherwise define inline
-// #[cfg(feature = "rdf")]
 // pub use crate::semantic::agent_builder::*;
 
 // #[cfg(not(feature = "rdf"))]

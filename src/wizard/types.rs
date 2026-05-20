@@ -166,7 +166,6 @@ pub struct ResponseMetadata {
     /// Finish reason (e.g., "stop", "length", "content_filter")
     pub finish_reason: Option<String>,
     /// Whether the response was retrieved from cache
-    #[cfg(feature = "caching")]
     pub from_cache: bool,
     /// Response latency in milliseconds
     pub latency_ms: Option<u64>,
