@@ -22,7 +22,6 @@ use crate::cli::CommandRouter;
 use crate::error::{NounVerbError, Result};
 use crate::logic::{HandlerInput, HandlerOutput};
 use crate::noun::NounCommand;
-use crate::runtime::Executor;
 use clap::Command;
 use std::collections::HashMap;
 
@@ -61,9 +60,6 @@ pub struct CliBuilder {
     version: Option<String>,
     /// Nouns registered with the CLI
     nouns: HashMap<String, Box<dyn NounCommand>>,
-    /// Executor for running commands
-    #[allow(dead_code)] // Reserved for future use
-    executor: Executor,
 }
 
 impl CliBuilder {
@@ -86,7 +82,6 @@ impl CliBuilder {
             about: String::new(),
             version: None,
             nouns: HashMap::new(),
-            executor: Executor::new(),
         }
     }
 
@@ -228,12 +223,6 @@ impl CliBuilder {
             .try_get_matches_from(args)
             .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
 
-        if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
-            if subcommand_name == "doctor" {
-                return crate::cli::doctor_cmd::handle_doctor_command(sub_matches);
-            }
-        }
-
         let mut router = CommandRouter::new();
         for (_, noun) in self.nouns {
             router.register_noun(noun);
@@ -253,7 +242,7 @@ impl CliBuilder {
         let name: &'static str = Box::leak(self.name.clone().into_boxed_str());
         let about: &'static str = Box::leak(self.about.clone().into_boxed_str());
 
-        let mut cmd = Command::new(name).subcommand(crate::cli::doctor_cmd::doctor_command());
+        let mut cmd = Command::new(name);
 
         if !self.about.is_empty() {
             cmd = cmd.about(about);

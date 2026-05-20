@@ -252,13 +252,7 @@ struct VerbMetadata {
 impl CommandRegistry {
     /// Initialize the registry (called once during first access)
     pub fn init() -> &'static Mutex<CommandRegistry> {
-        // Use get_or_init to create and store the registry
-        // During initialization, we'll run registration functions
-        // which will call register_noun/register_verb_with_args
-        // These will call REGISTRY.get() which will return None
-        // until initialization completes, so we need a different approach
         let registry = REGISTRY.get_or_init(|| {
-            // Create empty registry
             Mutex::new(CommandRegistry {
                 nouns: HashMap::new(),
                 verbs: HashMap::new(),
@@ -266,8 +260,6 @@ impl CommandRegistry {
             })
         });
 
-        // After registry is stored, run registration functions
-        // Now REGISTRY.get() will return the stored value
         for init_fn in __NOUN_REGISTRY {
             init_fn();
         }
@@ -275,7 +267,6 @@ impl CommandRegistry {
             init_fn();
         }
 
-        // Return the stored registry (get_or_init guarantees it's Some)
         registry
     }
 
@@ -286,8 +277,6 @@ impl CommandRegistry {
 
     /// Register a noun (called by macro-generated code)
     pub fn register_noun(name: &'static str, about: &'static str) {
-        // Get the registry - this will initialize it if needed
-        // During initialization, this will wait until init() completes
         let registry = REGISTRY.get_or_init(|| {
             Mutex::new(CommandRegistry {
                 nouns: HashMap::new(),
@@ -295,10 +284,7 @@ impl CommandRegistry {
                 root_verbs: HashMap::new(),
             })
         });
-        // Lock poisoning should not happen in practice, but handle it gracefully
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
-        // Only insert if noun doesn't already exist — first registration wins.
-        // This prevents later verbs from overwriting the noun description.
         reg.nouns.entry(name.to_string()).or_insert_with(|| NounMetadata {
             name: name.to_string(),
             about: about.to_string(),
@@ -319,9 +305,6 @@ impl CommandRegistry {
     }
 
     /// Register a verb with argument metadata
-    ///
-    /// If noun_name is empty (""), the verb is registered as a root-level verb
-    /// that appears directly under the CLI binary (e.g., `ggen sync` instead of `ggen noun sync`)
     pub fn register_verb_with_args<F>(
         noun_name: &'static str,
         verb_name: &'static str,
@@ -331,8 +314,6 @@ impl CommandRegistry {
     ) where
         F: Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync + 'static,
     {
-        // Get the registry - this will initialize it if needed
-        // During initialization, this will wait until init() completes
         let registry = REGISTRY.get_or_init(|| {
             Mutex::new(CommandRegistry {
                 nouns: HashMap::new(),
@@ -340,7 +321,6 @@ impl CommandRegistry {
                 root_verbs: HashMap::new(),
             })
         });
-        // Lock poisoning should not happen in practice, but handle it gracefully
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
 
         let verb_metadata = VerbMetadata {
@@ -351,7 +331,6 @@ impl CommandRegistry {
             handler_fn: Box::new(handler),
         };
 
-        // If noun_name is empty, register as root verb
         if noun_name.is_empty() {
             reg.root_verbs.insert(verb_name.to_string(), verb_metadata);
         } else {
@@ -420,10 +399,6 @@ impl CommandRegistry {
             .version(env!("CARGO_PKG_VERSION"))
             .arg_required_else_help(true);
             
-        if !self.nouns.contains_key("doctor") && !self.root_verbs.contains_key("doctor") {
-            cmd = cmd.subcommand(crate::cli::doctor_cmd::doctor_command());
-        }
-
         // Add root-level verbs directly as subcommands
         for (verb_name, verb_meta) in &self.root_verbs {
             let verb_cmd = self.build_verb_command(verb_name, verb_meta);
@@ -440,23 +415,16 @@ impl CommandRegistry {
     }
 
     /// Build a noun command with all its verb subcommands
-    ///
-    /// Note: Uses Box::leak to convert owned strings to &'static str required by clap.
-    /// This is acceptable for CLI apps - see module documentation for details.
     fn build_noun_command(&self, noun_name: &str, noun_meta: &NounMetadata) -> clap::Command {
-        // Box::leak: Converts dynamic String to &'static str for clap's Command::new()
-        // This is necessary because clap requires static lifetimes for performance
         let noun_name_static: &'static str = Box::leak(noun_name.to_string().into_boxed_str());
         let about: &'static str = Box::leak(noun_meta.about.clone().into_boxed_str());
         let mut noun_cmd = clap::Command::new(noun_name_static).about(about);
 
-        // Apply long_about if available
         if let Some(ref long_about) = noun_meta.long_about {
             let long_about_static: &'static str = Box::leak(long_about.clone().into_boxed_str());
             noun_cmd = noun_cmd.long_about(long_about_static);
         }
 
-        // Add verbs as subcommands
         if let Some(verbs) = self.verbs.get(noun_name) {
             for (verb_name, verb_meta) in verbs {
                 let verb_cmd = self.build_verb_command(verb_name, verb_meta);
@@ -468,16 +436,11 @@ impl CommandRegistry {
     }
 
     /// Build a verb command with all its arguments
-    ///
-    /// Note: Uses Box::leak to convert owned strings to &'static str required by clap.
-    /// This is acceptable for CLI apps - see module documentation for details.
     fn build_verb_command(&self, verb_name: &str, verb_meta: &VerbMetadata) -> clap::Command {
-        // Box::leak: Converts dynamic String to &'static str for clap's Command::new()
         let verb_name_static: &'static str = Box::leak(verb_name.to_string().into_boxed_str());
         let about: &'static str = Box::leak(verb_meta.about.clone().into_boxed_str());
         let mut verb_cmd = clap::Command::new(verb_name_static).about(about);
 
-        // Add argument groups and arguments
         verb_cmd = self.add_arg_groups(verb_cmd, verb_meta);
         verb_cmd = self.add_arguments(verb_cmd, verb_meta);
 
@@ -490,23 +453,20 @@ impl CommandRegistry {
         mut verb_cmd: clap::Command,
         verb_meta: &VerbMetadata,
     ) -> clap::Command {
-        // Collect argument groups first with exclusivity info
         let mut groups: std::collections::HashMap<String, (bool, Vec<String>)> =
             std::collections::HashMap::new();
         for arg_meta in &verb_meta.args {
             if let Some(ref group_name) = arg_meta.group {
-                let exclusive = arg_meta.exclusive.unwrap_or(true); // Default to exclusive
+                let exclusive = arg_meta.exclusive.unwrap_or(true);
                 let entry =
                     groups.entry(group_name.clone()).or_insert_with(|| (exclusive, Vec::new()));
                 entry.1.push(arg_meta.name.clone());
-                // If any arg in group is exclusive, mark group as exclusive
                 if !exclusive {
                     entry.0 = false;
                 }
             }
         }
 
-        // Create ArgGroup for each group with proper exclusivity
         for (group_name, (exclusive, arg_names)) in &groups {
             if arg_names.len() > 1 {
                 let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
@@ -538,18 +498,11 @@ impl CommandRegistry {
     }
 
     /// Build a single argument
-    ///
-    /// Note: Uses multiple Box::leak calls to convert argument metadata strings to
-    /// &'static str references required by clap's builder API. This is the expected
-    /// pattern for dynamic argument configuration in CLI applications.
     fn build_argument(&self, arg_meta: &ArgMetadata) -> clap::Arg {
-        // Box::leak: Convert argument name to static string for clap::Arg::new()
         let arg_name: &'static str = Box::leak(arg_meta.name.clone().into_boxed_str());
-        // Generate uppercase variant for value_name display (e.g., "FILE", "PORT")
         let default_value_name: &'static str =
             Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
 
-        // Create argument - positional args use index(), others use long()
         let mut arg = if let Some(index) = arg_meta.positional {
             let mut pos_arg = clap::Arg::new(arg_name).index(index);
             if arg_meta.trailing_vararg {
@@ -560,32 +513,27 @@ impl CommandRegistry {
             clap::Arg::new(arg_name).long(arg_name)
         };
 
-        // Apply short flag if specified (only for non-positional args)
         if arg_meta.positional.is_none() {
             if let Some(short_char) = arg_meta.short {
                 arg = arg.short(short_char);
             }
 
-            // Apply aliases if specified (only for non-positional args)
             for alias in &arg_meta.aliases {
                 let alias_static: &'static str = Box::leak(alias.clone().into_boxed_str());
                 arg = arg.alias(alias_static);
             }
         }
 
-        // Apply environment variable if specified
         if let Some(ref env_var) = arg_meta.env {
             let env_static: &'static str = Box::leak(env_var.clone().into_boxed_str());
             arg = arg.env(env_static);
         }
 
-        // Apply default value if specified
         if let Some(ref default_val) = arg_meta.default_value {
             let default_static: &'static str = Box::leak(default_val.clone().into_boxed_str());
             arg = arg.default_value(default_static);
         }
 
-        // Apply custom action if specified, otherwise use defaults
         if let Some(action) = &arg_meta.action {
             arg = arg.action(action.clone());
         } else if arg_meta.is_flag {
@@ -613,68 +561,56 @@ impl CommandRegistry {
             }
         }
 
-        // Apply help text
         if let Some(help_text) = &arg_meta.help {
             let help: &'static str = Box::leak(help_text.clone().into_boxed_str());
             arg = arg.help(help);
         }
 
-        // Apply long_help if specified
         if let Some(long_help_text) = &arg_meta.long_help {
             let long_help: &'static str = Box::leak(long_help_text.clone().into_boxed_str());
             arg = arg.long_help(long_help);
         }
 
-        // Apply next_line_help if specified
         if arg_meta.next_line_help {
             arg = arg.next_line_help(true);
         }
 
-        // Apply display_order if specified
         if let Some(order) = arg_meta.display_order {
             arg = arg.display_order(order);
         }
 
-        // Apply requires
         for req in &arg_meta.requires {
             let req_static: &'static str = Box::leak(req.clone().into_boxed_str());
             arg = arg.requires(req_static);
         }
 
-        // Apply conflicts_with
         for conflict in &arg_meta.conflicts_with {
             let conflict_static: &'static str = Box::leak(conflict.clone().into_boxed_str());
             arg = arg.conflicts_with(conflict_static);
         }
 
-        // Apply group membership
         if let Some(ref group_name) = arg_meta.group {
             let group_static: &'static str = Box::leak(group_name.clone().into_boxed_str());
             arg = arg.group(group_static);
         }
 
-        // Apply hide if specified
         if arg_meta.hide {
             arg = arg.hide(true);
         }
 
-        // Apply help_heading if specified
         if let Some(ref heading) = arg_meta.next_help_heading {
             let heading_static: &'static str = Box::leak(heading.clone().into_boxed_str());
             arg = arg.help_heading(heading_static);
         }
 
-        // Apply value_hint for shell completion
         if let Some(ref hint) = arg_meta.value_hint {
             arg = arg.value_hint(parse_value_hint(hint));
         }
 
-        // Apply global flag - propagates to subcommands
         if arg_meta.global {
             arg = arg.global(true);
         }
 
-        // Apply exclusive if specified (cannot be used with any other args)
         if let Some(true) = arg_meta.exclusive {
             arg = arg.exclusive(true);
         }
@@ -683,14 +619,8 @@ impl CommandRegistry {
     }
 
     /// Extract a value from ArgMatches as a string
-    ///
-    /// Uses get_raw() to get the original CLI string value, avoiding type mismatch
-    /// panics that occur when value_parser stores values as numeric types.
     fn extract_value_as_string(verb_matches: &clap::ArgMatches, arg_name: &str) -> Option<String> {
-        // Use get_raw() to get the original string value from CLI
-        // This works regardless of what value_parser was used
         if let Some(raw_values) = verb_matches.get_raw(arg_name) {
-            // get_raw returns an iterator of OsStrings, take the first one
             if let Some(os_str) = raw_values.into_iter().next() {
                 return os_str.to_str().map(|s| s.to_string());
             }
@@ -709,14 +639,11 @@ impl CommandRegistry {
         for arg_meta in &verb_meta.args {
             let arg_name = &arg_meta.name;
 
-            // Handle positional arguments differently
             if let Some(_index) = arg_meta.positional {
-                // For positional args, clap extracts by name automatically
                 if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
                     args_map.insert(arg_name.clone(), value);
                 }
             } else if let Some(action) = &arg_meta.action {
-                // Handle custom actions
                 match action {
                     clap::ArgAction::Count => {
                         let count = verb_matches.get_count(arg_name);
@@ -728,33 +655,27 @@ impl CommandRegistry {
                         }
                     }
                     clap::ArgAction::SetFalse => {
-                        // SetFalse is handled differently - need to check if present
-                        // Note: clap doesn't have get_flag for SetFalse, so we check presence
                         if verb_matches.contains_id(arg_name) {
                             args_map.insert(arg_name.clone(), "false".to_string());
                         }
                     }
                     clap::ArgAction::Append => {
-                        // Append collects multiple values
                         if let Some(values) = verb_matches.get_many::<String>(arg_name) {
                             let values_vec: Vec<String> = values.cloned().collect();
                             args_map.insert(arg_name.clone(), values_vec.join(","));
                         }
                     }
                     _ => {
-                        // For Set and other actions, try type-aware extraction
                         if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
                             args_map.insert(arg_name.clone(), value);
                         }
                     }
                 }
             } else if arg_meta.is_flag {
-                // For flags, check if they're set
                 if verb_matches.get_flag(arg_name) {
                     args_map.insert(arg_name.clone(), "true".to_string());
                 }
             } else {
-                // For regular named arguments - use type-aware extraction
                 if let Some(value) = Self::extract_value_as_string(verb_matches, arg_name) {
                     args_map.insert(arg_name.clone(), value);
                 }
@@ -770,15 +691,11 @@ impl CommandRegistry {
         let matches = match cmd.try_get_matches_from(args) {
             Ok(m) => m,
             Err(e) => {
-                // Clap returns an error for help/version, but with exit code 0
-                // In this case, we should print it and exit successfully
                 let exit_code = e.exit_code();
                 let help_or_version_msg = e.to_string();
 
-                // Print the message (help or version)
                 print!("{}", help_or_version_msg);
 
-                // Exit with the code clap wants (0 for help/version, non-0 for errors)
                 if exit_code == 0 {
                     return Ok(());
                 } else {
@@ -787,15 +704,8 @@ impl CommandRegistry {
             }
         };
 
-        // Route command
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
-            if subcommand_name == "doctor" && !self.nouns.contains_key("doctor") && !self.root_verbs.contains_key("doctor") {
-                return crate::cli::doctor_cmd::handle_doctor_command(sub_matches);
-            }
-
-            // First check if this is a root-level verb
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
-                // Execute root verb directly
                 let args_map = self.extract_args(verb_meta, sub_matches);
 
                 let input = crate::logic::HandlerInput {
@@ -808,9 +718,7 @@ impl CommandRegistry {
                 let json = output.to_json()?;
                 println!("{}", json);
             } else if let Some((verb_name, verb_matches)) = sub_matches.subcommand() {
-                // This is a noun with a verb subcommand
                 let noun_name = subcommand_name;
-                // Execute verb - extract arguments from matches
                 let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
                     if let Some(verb_meta) = verbs.get(verb_name) {
                         self.extract_args(verb_meta, verb_matches)
@@ -831,7 +739,6 @@ impl CommandRegistry {
                 let json = output.to_json()?;
                 println!("{}", json);
             } else {
-                // No verb specified - show help for the noun
                 let noun_name = subcommand_name;
                 if let Some(noun_meta) = self.nouns.get(noun_name) {
                     let noun_name_static: &'static str =
@@ -841,14 +748,12 @@ impl CommandRegistry {
 
                     let mut noun_cmd = clap::Command::new(noun_name_static).about(about_static);
 
-                    // Apply long_about if available
                     if let Some(ref long_about) = noun_meta.long_about {
                         let long_about_static: &'static str =
                             Box::leak(long_about.clone().into_boxed_str());
                         noun_cmd = noun_cmd.long_about(long_about_static);
                     }
 
-                    // Add verbs as subcommands for help display
                     if let Some(verbs) = self.verbs.get(noun_name) {
                         for (verb_name, verb_meta) in verbs {
                             let verb_name_static: &'static str =
@@ -874,7 +779,6 @@ impl CommandRegistry {
                 }
             }
         } else {
-            // No noun specified - show root help
             let mut cmd = self.build_command();
             cmd.print_help().map_err(|e| {
                 crate::error::NounVerbError::execution_error(format!("Failed to print help: {}", e))
@@ -892,49 +796,5 @@ impl CommandRegistry {
             .ok_or_else(|| crate::error::NounVerbError::command_not_found(verb_name))?;
 
         (verb.handler_fn)(input)
-    }
-
-    /// Validate a configuration against registered commands
-    pub fn validate_config(&self, config: &crate::config::Config) {
-        let cmd = self.build_command();
-        let flat_map = config.to_flat_map();
-
-        // Collect all valid long argument names from the command tree
-        let mut valid_args = std::collections::HashSet::new();
-        self.collect_valid_args(&cmd, &mut valid_args, "");
-
-        for key in flat_map.keys() {
-            if !valid_args.contains(key) {
-                eprintln!("Warning: Unknown configuration key '{}' found. It might be misspelled or unsupported.", key);
-            }
-        }
-    }
-
-    fn collect_valid_args(
-        &self,
-        cmd: &clap::Command,
-        valid_args: &mut std::collections::HashSet<String>,
-        prefix: &str,
-    ) {
-        for arg in cmd.get_arguments() {
-            if let Some(long) = arg.get_long() {
-                let key = if prefix.is_empty() {
-                    long.to_string()
-                } else {
-                    format!("{}.{}", prefix, long)
-                };
-                valid_args.insert(key);
-            }
-        }
-
-        for sub in cmd.get_subcommands() {
-            let sub_name = sub.get_name();
-            let new_prefix = if prefix.is_empty() {
-                sub_name.to_string()
-            } else {
-                format!("{}.{}", prefix, sub_name)
-            };
-            self.collect_valid_args(sub, valid_args, &new_prefix);
-        }
     }
 }

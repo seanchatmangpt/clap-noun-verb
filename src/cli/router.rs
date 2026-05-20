@@ -5,7 +5,6 @@
 
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
-use crate::runtime::Executor;
 use crate::verb::VerbCommand as LegacyVerbCommand;
 use clap::ArgMatches;
 use std::collections::HashMap;
@@ -17,20 +16,12 @@ use std::collections::HashMap;
 pub struct CommandRouter {
     /// Nouns registered with the router
     nouns: HashMap<String, Box<dyn NounCommand>>,
-    /// Executor for running commands with interceptors
-    #[allow(dead_code)] // Reserved for future use
-    executor: Executor,
 }
 
 impl CommandRouter {
     /// Create a new command router
     pub fn new() -> Self {
-        Self { nouns: HashMap::new(), executor: Executor::new() }
-    }
-
-    /// Create a router with custom executor
-    pub fn with_executor(executor: Executor) -> Self {
-        Self { nouns: HashMap::new(), executor }
+        Self { nouns: HashMap::new() }
     }
 
     /// Register a noun command

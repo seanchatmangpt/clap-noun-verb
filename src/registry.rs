@@ -14,7 +14,6 @@
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
 use crate::verb::{VerbArgs, VerbContext, TypeMap};
-use crate::middleware::MiddlewarePipeline;
 use clap::{ArgMatches, Command};
 use std::collections::HashMap;
 
@@ -32,8 +31,6 @@ pub struct CommandRegistry {
     config: RegistryConfig,
     /// Typed context extensions shared across all commands
     extensions: TypeMap,
-    /// Middleware pipeline
-    pipeline: Option<MiddlewarePipeline>,
 }
 
 /// Configuration for the command registry
@@ -70,7 +67,6 @@ impl CommandRegistry {
             nouns: HashMap::new(), 
             config: RegistryConfig::default(),
             extensions: TypeMap::new(),
-            pipeline: None,
         }
     }
 
@@ -80,19 +76,12 @@ impl CommandRegistry {
             nouns: HashMap::new(), 
             config,
             extensions: TypeMap::new(),
-            pipeline: None,
         }
     }
 
     /// Add a typed extension to the global context
     pub fn with_extension<T: Send + Sync + 'static>(mut self, val: T) -> Self {
         self.extensions.insert(val);
-        self
-    }
-
-    /// Set the middleware pipeline
-    pub fn with_pipeline(mut self, pipeline: MiddlewarePipeline) -> Self {
-        self.pipeline = Some(pipeline);
         self
     }
 
@@ -319,37 +308,7 @@ impl CommandRegistry {
                     .with_parent(root_matches.clone())
                     .with_context(context);
 
-                if let Some(pipeline) = &self.pipeline {
-                    let mut req = crate::middleware::MiddlewareRequest::new(sub_name);
-                    for arg in sub_matches.ids() {
-                        if let Some(vals) = sub_matches.get_many::<String>(arg.as_str()) {
-                            for val in vals {
-                                req = req.with_arg(val);
-                            }
-                        }
-                    }
-                    if let Err(e) = pipeline.execute_before(&req) {
-                        return Err(NounVerbError::execution_error(format!("Middleware rejected request: {}", e)));
-                    }
-                }
-
-                let result = verb.run(&args);
-
-                if let Some(pipeline) = &self.pipeline {
-                    match &result {
-                        Ok(_) => {
-                            let _ = pipeline.execute_after(&crate::middleware::MiddlewareResponse::success("Success"));
-                        }
-                        Err(e) => {
-                            let _ = pipeline.execute_after(&crate::middleware::MiddlewareResponse::failure(e.to_string()));
-                            if let Ok(Some(_)) = pipeline.handle_error(e) {
-                                // If middleware recovered, we could theoretically return Ok(())
-                            }
-                        }
-                    }
-                }
-
-                result
+                verb.run(&args)
             } else if let Some(sub_noun) = noun.sub_nouns().iter().find(|n| n.name() == sub_name) {
                 // Recursively route to sub-noun, passing root matches for global args
                 self.route_recursive(sub_noun.as_ref(), sub_name, sub_matches, root_matches)

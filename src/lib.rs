@@ -57,26 +57,12 @@ pub mod logic;
 pub mod macros;
 pub mod noun;
 pub mod registry;
-pub mod router;
-pub mod runtime;
 pub mod tree;
 pub mod verb;
-
-// Capability Discovery Engine (requires agent2028 feature for swarm optimization)
-pub mod macros_discovery_engine;
 
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
 // =============================================================================
-
-// Async verb support (requires "async" feature)
-pub mod async_verb;
-
-// Shell completion generation (requires "completions" feature)
-pub mod completion;
-
-// Configuration formats (requires "config-formats" feature)
-pub mod config;
 
 // Execution context
 pub mod context;
@@ -87,64 +73,11 @@ pub mod deprecation;
 // Output formatting
 pub mod format;
 
-// Man page generation (requires "mangen" feature)
-pub mod mangen;
-
 // Shell utilities
 pub mod shell;
 
-// URL/Regex validators (requires "validators" feature)
-pub mod validators;
-
-// Autonomic CLI Layer (requires "autonomic" feature)
-pub mod autonomic;
-
-// CNV Kernel Capabilities (requires "kernel" feature)
-pub mod kernel;
-
-// I/O Integration (requires "io" feature)
-pub mod io;
-
 // Advanced clap Integration
 pub mod clap_ext;
-
-// Plugin System (requires "full" feature)
-pub mod plugin;
-
-// Middleware System (requires "full" feature)
-pub mod middleware;
-
-// Telemetry & Observability (requires "observability" feature)
-pub mod telemetry;
-
-// Integration Layer (requires "full" feature)
-pub mod integration;
-
-// Production Plugins (requires "full" feature)
-pub mod plugins;
-
-// Agent2028 - Trillion-Agent Ecosystems (requires "agent2028" feature)
-pub mod agent2028;
-
-// Semantic Agent Coordinator (requires "agent2028" feature + optional "autonomic")
-pub mod agents;
-
-// Frontier Packages - 10 Advanced Agent-Grade Packages (v5.4+)
-// Requires any frontier feature (meta-framework, etc.)
-#[cfg(any(
-    feature = "meta-framework",
-    feature = "executable-specs",
-    feature = "fractal-patterns",
-    feature = "discovery-engine",
-    feature = "federated-network",
-    feature = "learning-trajectories",    feature = "reflexive-testing",
-    feature = "economic-sim",
-    feature = "quantum-ready"
-))]
-pub mod frontier;
-
-// Wizard - Interactive multi-step CLI workflows with AI assistance (requires "wizard" feature)
-pub mod wizard;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
@@ -161,7 +94,6 @@ pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
 pub use error::{NounVerbError, Result};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
-pub use router::CommandRouter;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
@@ -179,16 +111,9 @@ pub use clap::{Arg, ArgAction, ArgMatches, Command};
 // FEATURE-GATED RE-EXPORTS
 // =============================================================================
 
-// Async support (requires "async" feature)
-pub use async_verb::{create_runtime, run_async};
-
-// Shell completion (requires "completions" feature)
-pub use completion::{generate_completion, print_completion, Shell};
-
 // Macros are exported at crate root via #[macro_export]
 
 // Framework-level re-exports for easy composition
 pub use builder::CliBuilder as Cli;
 pub use registry::CommandRegistry as Registry;
 pub use tree::CommandTree as Tree;
-pub mod agent_cli;

@@ -47,6 +47,17 @@ once_cell = "1.19"
 lazy_static = "1.4"
 atty = "0.2"
 
+# Configuration formats
+serde_yaml = "0.9"
+toml = "0.8"
+
+# File watching
+notify = "6.1"
+
+# Validators
+regex = "1.10"
+url = "2.5"
+
 # =============================================================================
 # DEV DEPENDENCIES - For tests, examples, and benchmarks
 # =============================================================================
