@@ -4,14 +4,15 @@
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust
 //! use clap_noun_verb::validators::validate_port;
 //!
-//! fn handler(port: u16) -> Result<()> {
-//!     validate_port(port)?;
-//!     println!("Valid port: {}", port);
-//!     Ok(())
-//! }
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let port = 8080;
+//! validate_port(port)?;
+//! println!("Valid port: {}", port);
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::Result;
@@ -23,9 +24,13 @@ use url::Url;
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use clap_noun_verb::validators::validate_port;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_port(8080)?;  // OK
-/// validate_port(65536)?; // Error
+/// assert!(validate_port(0).is_err()); // Error
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_port(port: u16) -> Result<()> {
     if port == 0 {
@@ -48,13 +53,15 @@ pub fn validate_port(port: u16) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_url;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_url;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_url("https://example.com")?;      // OK
 /// validate_url("http://localhost:8080")?;    // OK
 /// validate_url("ftp://files.example.org")?;  // OK
-/// validate_url("not a url")?;                // Error: invalid URL
+/// assert!(validate_url("not a url").is_err()); // Error
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_url(url_str: &str) -> Result<()> {
     Url::parse(url_str)
@@ -73,14 +80,16 @@ pub fn validate_url(url_str: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_ipv4;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_ipv4;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_ipv4("192.168.1.1")?;      // OK - private network
 /// validate_ipv4("127.0.0.1")?;        // OK - loopback
 /// validate_ipv4("255.255.255.255")?;  // OK - broadcast
-/// validate_ipv4("999.999.999.999")?;  // Error - octets out of range
-/// validate_ipv4("192.168.1")?;        // Error - only 3 octets
+/// assert!(validate_ipv4("999.999.999.999").is_err());  // Error - octets out of range
+/// assert!(validate_ipv4("192.168.1").is_err());        // Error - only 3 octets
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_ipv4(ip: &str) -> Result<()> {
     let parts: Vec<&str> = ip.split('.').collect();
@@ -112,14 +121,16 @@ pub fn validate_ipv4(ip: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_ipv6;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_ipv6;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_ipv6("2001:db8::1")?;                // OK - compressed
 /// validate_ipv6("::1")?;                        // OK - loopback
 /// validate_ipv6("fe80::1")?;                    // OK - link-local
 /// validate_ipv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334")?; // OK - full
-/// validate_ipv6("gggg::1")?;                    // Error - invalid characters
+/// assert!(validate_ipv6("gggg::1").is_err());                    // Error - invalid characters
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_ipv6(ip: &str) -> Result<()> {
     ip.parse::<std::net::Ipv6Addr>()
@@ -139,13 +150,15 @@ pub fn validate_ipv6(ip: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_path_exists;
-///
-/// validate_path_exists("/etc/hosts")?;      // OK - file exists
-/// validate_path_exists("/home")?;           // OK - directory exists
-/// validate_path_exists("/nonexistent")?;    // Error - path doesn't exist
-/// validate_path_exists("/tmp/missing.txt")? // Error - file doesn't exist
+/// ```rust
+/// # use clap_noun_verb::validators::validate_path_exists;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// validate_path_exists("Cargo.toml")?;      // OK - file exists
+/// validate_path_exists("src")?;             // OK - directory exists
+/// assert!(validate_path_exists("nonexistent").is_err());    // Error - path doesn't exist
+/// assert!(validate_path_exists("missing.txt").is_err()); // Error - file doesn't exist
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_path_exists(path_str: &str) -> Result<()> {
     if !Path::new(path_str).exists() {
@@ -169,12 +182,14 @@ pub fn validate_path_exists(path_str: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_path_creatable;
-///
-/// validate_path_creatable("/tmp/newfile.txt")?;    // OK - /tmp exists
-/// validate_path_creatable("/home/user/file.txt")?; // OK - /home/user exists
-/// validate_path_creatable("/missing/dir/file.txt")? // Error - /missing doesn't exist
+/// ```rust
+/// # use clap_noun_verb::validators::validate_path_creatable;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// validate_path_creatable("Cargo.toml")?;    // OK - parent (current dir) exists
+/// validate_path_creatable("src/newfile.txt")?; // OK - src exists
+/// assert!(validate_path_creatable("nonexistent_dir/file.txt").is_err()); // Error - parent doesn't exist
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_path_creatable(path_str: &str) -> Result<()> {
     let path = Path::new(path_str);
@@ -201,15 +216,17 @@ pub fn validate_path_creatable(path_str: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_email;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_email;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_email("user@example.com")?;         // OK
 /// validate_email("john.doe+tag@domain.co.uk")?; // OK
 /// validate_email("admin@localhost")?;          // OK
-/// validate_email("invalid")?;                  // Error
-/// validate_email("user@")?;                    // Error
-/// validate_email("@domain.com")?;              // Error
+/// assert!(validate_email("invalid").is_err());                  // Error
+/// assert!(validate_email("user@").is_err());                    // Error
+/// assert!(validate_email("@domain.com").is_err());              // Error
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_email(email: &str) -> Result<()> {
     // Simple email validation regex (RFC 5322 simplified)
@@ -233,13 +250,15 @@ pub fn validate_email(email: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_not_empty;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_not_empty;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_not_empty("hello")?;        // OK
 /// validate_not_empty("   hello   ")?;  // OK - contains non-whitespace
-/// validate_not_empty("")?;             // Error - empty string
-/// validate_not_empty("   ")?;          // Error - whitespace only
+/// assert!(validate_not_empty("").is_err());             // Error - empty string
+/// assert!(validate_not_empty("   ").is_err());          // Error - whitespace only
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_not_empty(value: &str) -> Result<()> {
     if value.trim().is_empty() {
@@ -265,12 +284,14 @@ pub fn validate_not_empty(value: &str) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_length;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_length;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// validate_length("hello", 1, 10)?;        // OK - 5 bytes, in range [1, 10]
-/// validate_length("hi", 3, 10)?;           // Error - 2 bytes, less than min (3)
-/// validate_length("verylongstring", 1, 5)?; // Error - 14 bytes, more than max (5)
+/// assert!(validate_length("hi", 3, 10).is_err());           // Error - 2 bytes, less than min (3)
+/// assert!(validate_length("verylongstring", 1, 5).is_err()); // Error - 14 bytes, more than max (5)
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_length(value: &str, min: usize, max: usize) -> Result<()> {
     let len = value.len();
@@ -305,15 +326,17 @@ pub fn validate_length(value: &str, min: usize, max: usize) -> Result<()> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// use clap_noun_verb::validators::validate_regex;
-///
+/// ```rust
+/// # use clap_noun_verb::validators::validate_regex;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// // Match alphanumeric strings only
 /// validate_regex("hello123", r"^[a-zA-Z0-9]+$")?;  // OK
-/// validate_regex("hello!", r"^[a-zA-Z0-9]+$")?;    // Error - contains !
+/// assert!(validate_regex("hello!", r"^[a-zA-Z0-9]+$").is_err());    // Error - contains !
 ///
 /// // Match email pattern
 /// validate_regex("user@example.com", r"^[\w\.-]+@[\w\.-]+\.\w+$")?; // OK
+/// # Ok(())
+/// # }
 /// ```
 pub fn validate_regex(value: &str, pattern: &str) -> Result<()> {
     let regex = Regex::new(pattern).map_err(|e| {

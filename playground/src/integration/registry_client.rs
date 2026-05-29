@@ -122,6 +122,33 @@ impl RegistryClient {
         category: Option<&str>,
         limit: usize,
     ) -> Result<Vec<RegistrySearchResult>, String> {
+        #[cfg(feature = "agent-sandbox")]
+        {
+            let is_active = {
+                if let Ok(db) = crate::integration::sandbox::MOCK_REGISTRY.lock() {
+                    db.active
+                } else {
+                    false
+                }
+            };
+            if is_active {
+                let db = crate::integration::sandbox::MOCK_REGISTRY.lock().map_err(|e| e.to_string())?;
+                let mut results = Vec::new();
+                for pkg in db.packages.values() {
+                    if pkg.name.contains(query) || pkg.description.contains(query) {
+                        results.push(RegistrySearchResult {
+                            name: pkg.name.clone(),
+                            version: pkg.latest_version.clone(),
+                            description: pkg.description.clone(),
+                            category: None,
+                        });
+                    }
+                }
+                results.truncate(limit);
+                return Ok(results);
+            }
+        }
+
         #[cfg(feature = "reqwest")]
         {
             let cache_key = format!("search:{}:{}", query, category.unwrap_or(""));
@@ -160,6 +187,25 @@ impl RegistryClient {
 
     /// Get detailed information about a specific pack
     pub fn get_info(&self, identifier: &str) -> Result<RegistryInfo, String> {
+        #[cfg(feature = "agent-sandbox")]
+        {
+            let is_active = {
+                if let Ok(db) = crate::integration::sandbox::MOCK_REGISTRY.lock() {
+                    db.active
+                } else {
+                    false
+                }
+            };
+            if is_active {
+                let db = crate::integration::sandbox::MOCK_REGISTRY.lock().map_err(|e| e.to_string())?;
+                if let Some(info) = db.packages.get(identifier) {
+                    return Ok(info.clone());
+                } else {
+                    return Err(format!("Package not found in mock registry: {}", identifier));
+                }
+            }
+        }
+
         #[cfg(feature = "reqwest")]
         {
             let cache_key = format!("info:{}", identifier);
@@ -201,6 +247,21 @@ impl RegistryClient {
 
     /// List configured registry sources
     pub fn list_sources(&self) -> Result<Vec<RegistrySource>, String> {
+        #[cfg(feature = "agent-sandbox")]
+        {
+            let is_active = {
+                if let Ok(db) = crate::integration::sandbox::MOCK_REGISTRY.lock() {
+                    db.active
+                } else {
+                    false
+                }
+            };
+            if is_active {
+                let db = crate::integration::sandbox::MOCK_REGISTRY.lock().map_err(|e| e.to_string())?;
+                return Ok(db.sources.clone());
+            }
+        }
+
         #[cfg(feature = "reqwest")]
         {
             let cache_key = "sources".to_string();
@@ -238,6 +299,25 @@ impl RegistryClient {
 
     /// Download pack from registry
     pub fn download_pack(&self, identifier: &str, version: &str) -> Result<Vec<u8>, String> {
+        #[cfg(feature = "agent-sandbox")]
+        {
+            let is_active = {
+                if let Ok(db) = crate::integration::sandbox::MOCK_REGISTRY.lock() {
+                    db.active
+                } else {
+                    false
+                }
+            };
+            if is_active {
+                let db = crate::integration::sandbox::MOCK_REGISTRY.lock().map_err(|e| e.to_string())?;
+                if db.packages.contains_key(identifier) {
+                    return Ok(b"MOCK_PACK_BYTES".to_vec());
+                } else {
+                    return Err(format!("Package not found in mock registry: {}", identifier));
+                }
+            }
+        }
+
         #[cfg(feature = "reqwest")]
         {
             // Build request URL
@@ -258,6 +338,25 @@ impl RegistryClient {
 
     /// Check registry health/status
     pub fn health_check(&self) -> Result<RegistryHealth, String> {
+        #[cfg(feature = "agent-sandbox")]
+        {
+            let is_active = {
+                if let Ok(db) = crate::integration::sandbox::MOCK_REGISTRY.lock() {
+                    db.active
+                } else {
+                    false
+                }
+            };
+            if is_active {
+                let db = crate::integration::sandbox::MOCK_REGISTRY.lock().map_err(|e| e.to_string())?;
+                return Ok(RegistryHealth {
+                    healthy: db.healthy,
+                    version: "0.1.0-mock".to_string(),
+                    latency_ms: 1,
+                });
+            }
+        }
+
         #[cfg(feature = "reqwest")]
         {
             let url = format!("{}/health", self.base_url);
@@ -415,6 +514,21 @@ pub struct RegistryHealth {
     pub version: String,
     #[serde(default)]
     pub latency_ms: u64,
+}
+
+pub fn search(query: &str, category: Option<&str>, limit: usize) -> Result<Vec<RegistrySearchResult>, String> {
+    let client = RegistryClient::new()?;
+    client.search(query, category, limit)
+}
+
+pub fn info(name: &str) -> Result<RegistryInfo, String> {
+    let client = RegistryClient::new()?;
+    client.get_info(name)
+}
+
+pub fn list_sources() -> Result<Vec<RegistrySource>, String> {
+    let client = RegistryClient::new()?;
+    client.list_sources()
 }
 
 #[cfg(test)]

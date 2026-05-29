@@ -53,9 +53,9 @@ fn create_server_config(
 /// ```
 ///
 /// # Arguments
-/// * `port` - Server port (env: SERVER_PORT, default: 8080)
-/// * `host` - Server host (env: SERVER_HOST, default: localhost)
-/// * `timeout` - Request timeout in seconds (env: SERVER_TIMEOUT, optional)
+/// * `port` - Server port [env: SERVER_PORT] [default: 8080]
+/// * `host` - Server host [env: SERVER_HOST] [default: localhost]
+/// * `timeout` - Request timeout in seconds [env: SERVER_TIMEOUT]
 /// * `debug` - Enable debug mode (no env var)
 ///
 /// **Note**: In v3.2.0, you can use `#[arg(env = "...")]` attributes on parameters:
@@ -66,11 +66,11 @@ fn create_server_config(
 /// The environment variable will be read if set, with CLI arguments taking precedence.
 #[verb("config", "server")]
 fn server_config(
-    // In v3.2.0: #[arg(env = "SERVER_PORT", default_value = "8080")] - Server port (env: SERVER_PORT, default: 8080)
+    #[arg(env = "SERVER_PORT", default_value = "8080")]
     port: u16,
-    // In v3.2.0: #[arg(env = "SERVER_HOST", default_value = "localhost")] - Server host (env: SERVER_HOST, default: localhost)
+    #[arg(env = "SERVER_HOST", default_value = "localhost")]
     host: String,
-    // In v3.2.0: #[arg(env = "SERVER_TIMEOUT")] - Request timeout in seconds (env: SERVER_TIMEOUT)
+    #[arg(env = "SERVER_TIMEOUT")]
     timeout: Option<u64>,
     // Enable debug mode
     debug: bool,

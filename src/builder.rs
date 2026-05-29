@@ -84,6 +84,12 @@ impl CliBuilder {
         self
     }
 
+    /// Register a dynamic shell completions subcommand (`completions`)
+    pub fn with_completions_subcommand(mut self) -> Self {
+        self.registry = self.registry.with_completions_subcommand();
+        self
+    }
+
     /// Run the CLI application
     pub fn run(self) -> Result<()> {
         self.registry.run()
@@ -147,6 +153,27 @@ where
 }
 
 /// Convenience function to build a CLI and get the command structure
+///
+/// # Examples
+///
+/// ```rust
+/// use clap_noun_verb::{build_cli, noun, verb, VerbArgs};
+///
+/// let (command, structure) = build_cli(|builder| {
+///     builder
+///         .name("myapp")
+///         .about("My application")
+///         .noun(noun!("services", "Manage services", [
+///             verb!("status", "Show status", |_args: &VerbArgs| {
+///                 println!("Services are running");
+///                 Ok(())
+///             }),
+///         ]))
+/// });
+///
+/// assert_eq!(command.get_name(), "myapp");
+/// assert!(structure.contains_key("services"));
+/// ```
 pub fn build_cli<F>(builder: F) -> (Command, std::collections::HashMap<String, Vec<String>>)
 where
     F: FnOnce(CliBuilder) -> CliBuilder,

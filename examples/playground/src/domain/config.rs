@@ -53,17 +53,20 @@ impl ConfigKey {
 /// Configuration state
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    values: HashMap<String, String>,
+    pub output_dir: String,
+    pub default_family: String,
+    pub latex_engine: String,
+    pub ontology_path: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let mut values = HashMap::new();
-        values.insert("output_dir".to_string(), "output".to_string());
-        values.insert("default_family".to_string(), "IMRaD".to_string());
-        values.insert("latex_engine".to_string(), "pdflatex".to_string());
-        values.insert("ontology_path".to_string(), "../thesis-ontology.ttl".to_string());
-        Self { values }
+        Self {
+            output_dir: "output".to_string(),
+            default_family: "IMRaD".to_string(),
+            latex_engine: "pdflatex".to_string(),
+            ontology_path: "../thesis-ontology.ttl".to_string(),
+        }
     }
 }
 
@@ -75,31 +78,47 @@ impl Config {
 
     /// Get a configuration value
     pub fn get(&self, key: &str) -> Option<&str> {
-        self.values.get(key).map(|s| s.as_str())
+        match key {
+            "output_dir" => Some(self.output_dir.as_str()),
+            "default_family" => Some(self.default_family.as_str()),
+            "latex_engine" => Some(self.latex_engine.as_str()),
+            "ontology_path" => Some(self.ontology_path.as_str()),
+            _ => None,
+        }
     }
 
     /// Get a configuration value with default
     /// FUTURE: Used for fallback configuration
     #[allow(dead_code)]
     pub fn get_or_default(&self, key: &str, default: &str) -> String {
-        self.values.get(key).cloned().unwrap_or_else(|| default.to_string())
+        self.get(key).unwrap_or(default).to_string()
     }
 
     /// Set a configuration value (returns new Config - immutable)
     /// FUTURE: Used for config set persistence
     #[allow(dead_code)]
     pub fn with_value(&self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let mut new_values = self.values.clone();
-        new_values.insert(key.into(), value.into());
-        Self { values: new_values }
+        let mut new_config = self.clone();
+        let key_str = key.into();
+        let value_str = value.into();
+        match key_str.as_str() {
+            "output_dir" => new_config.output_dir = value_str,
+            "default_family" => new_config.default_family = value_str,
+            "latex_engine" => new_config.latex_engine = value_str,
+            "ontology_path" => new_config.ontology_path = value_str,
+            _ => {}
+        }
+        new_config
     }
 
     /// Get all configuration entries
     pub fn all_entries(&self) -> Vec<(&str, &str)> {
-        self.values
-            .iter()
-            .map(|(k, v)| (k.as_str(), v.as_str()))
-            .collect()
+        vec![
+            ("output_dir", self.output_dir.as_str()),
+            ("default_family", self.default_family.as_str()),
+            ("latex_engine", self.latex_engine.as_str()),
+            ("ontology_path", self.ontology_path.as_str()),
+        ]
     }
 
     /// Validate a configuration key

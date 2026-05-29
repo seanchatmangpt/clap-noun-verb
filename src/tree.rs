@@ -114,12 +114,14 @@ impl CommandTree {
             .subcommand()
             .ok_or_else(|| NounVerbError::invalid_structure("No subcommand found"))?;
 
-        // Find the root command
         let root = self
             .roots
             .iter()
             .find(|n| n.name == cmd_name)
-            .ok_or_else(|| NounVerbError::command_not_found(cmd_name))?;
+            .ok_or_else(|| {
+                let candidates: Vec<&str> = self.roots.iter().map(|n| n.name.as_str()).collect();
+                NounVerbError::command_not_found_with_candidates(cmd_name, &candidates)
+            })?;
 
         // Route recursively
         self.route_recursive(root, cmd_matches)
@@ -129,12 +131,14 @@ impl CommandTree {
     #[allow(clippy::only_used_in_recursion)]
     fn route_recursive(&self, node: &TreeNode, matches: &ArgMatches) -> Result<()> {
         if let Some((child_name, child_matches)) = matches.subcommand() {
-            // Find the child command
             let child = node
                 .children
                 .iter()
                 .find(|n| n.name == child_name)
-                .ok_or_else(|| NounVerbError::command_not_found(child_name))?;
+                .ok_or_else(|| {
+                    let candidates: Vec<&str> = node.children.iter().map(|n| n.name.as_str()).collect();
+                    NounVerbError::command_not_found_with_candidates(child_name, &candidates)
+                })?;
 
             // Recursively route
             self.route_recursive(child, child_matches)

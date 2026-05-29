@@ -81,7 +81,7 @@ fn show_logs(service: String) -> Result<Logs> {
 ///
 /// # Arguments
 /// * `service` - Service name to restart
-#[verb] // Verb name "restart" auto-inferred, noun "services" auto-inferred from filename
+#[verb("restart")] // Verb name "restart" explicitly set, noun "services" auto-inferred from filename
 fn restart_service_cmd(service: String) -> Result<RestartResult> {
     Ok(restart_service(service))
 }

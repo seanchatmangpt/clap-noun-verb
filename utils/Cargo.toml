@@ -1,0 +1,22 @@
+[package]
+name = "clap-noun-verb-utils"
+version = "26.5.19"
+edition = "2021"
+rust-version = "1.74"
+
+[dependencies]
+clap = { workspace = true }
+clap_complete = "4.5"
+clap_mangen = "0.2"
+clap-num = "1.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+toml = { workspace = true }
+num-traits = "0.2"
+clap-noun-verb = { workspace = true }
+
+[lints]
+workspace = true
+

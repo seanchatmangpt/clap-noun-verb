@@ -6,7 +6,7 @@
 use std::process::Command;
 
 fn playground() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_playground"))
+    Command::new(env!("CARGO_BIN_EXE_mcpp"))
 }
 
 fn run_cmd(args: &[&str]) -> String {
@@ -208,7 +208,7 @@ fn test_version() {
     let combined = format!("{}{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr));
-    assert!(combined.contains("2.0.0") || combined.contains("playground"), "Should show version");
+    assert!(combined.contains("26.5.19") || combined.contains("cli"), "Should show version");
 }
 
 // ============================================================================

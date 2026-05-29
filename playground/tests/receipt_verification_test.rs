@@ -2,7 +2,7 @@
 //!
 //! Tests Ed25519 signature verification and SHA-256 hashing.
 
-use playground_cli::domain::receipt::{Receipt, ReceiptAgent, ReceiptOperation, OperationResult, ReceiptVerifier};
+use mcpp_cli::domain::receipt::{Receipt, ReceiptAgent, ReceiptOperation, OperationResult, ReceiptVerifier};
 use ed25519_dalek::SigningKey;
 
 #[test]
@@ -77,7 +77,7 @@ fn test_receipt_signature_verification() {
     receipt.finalize(&signing_key).expect("Finalization failed");
 
     // Verify with public key
-    let verifier = ReceiptVerifier::with_public_key(*public_key);
+    let verifier = ReceiptVerifier::with_public_key(public_key);
     let result = verifier.verify(&receipt).expect("Verification failed");
 
     // Should be valid (signature matches)
@@ -103,7 +103,7 @@ fn test_receipt_tampering_detection() {
     receipt.content_hash = "tampered_hash".to_string();
 
     // Verify with public key
-    let verifier = ReceiptVerifier::with_public_key(*public_key);
+    let verifier = ReceiptVerifier::with_public_key(public_key);
     let result = verifier.verify(&receipt).expect("Verification failed");
 
     // Should be invalid (hash mismatch)

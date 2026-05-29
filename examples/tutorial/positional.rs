@@ -51,9 +51,9 @@ fn clone_repository(url: String, destination: Option<String>) -> Repo {
 /// This makes arguments positional (accessed by position rather than name).
 #[verb("clone", "git")]
 fn clone_repo(
-    // In v3.2.0: #[arg(index = 0)] - Repository URL (first positional argument)
+    #[arg(index = 0)]
     url: String,
-    // In v3.2.0: #[arg(index = 1)] - Destination directory (second positional argument, optional)
+    #[arg(index = 1)]
     destination: Option<String>,
 ) -> Result<Repo> {
     Ok(clone_repository(url, destination))

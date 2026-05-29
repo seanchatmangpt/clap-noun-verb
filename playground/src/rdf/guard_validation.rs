@@ -236,7 +236,7 @@ pub fn recover_from_error(
     middleware: &GuardValidationMiddleware,
 ) -> Result<Option<String>> {
     match error {
-        NounVerbError::CommandNotFound { noun } => {
+        NounVerbError::CommandNotFound { noun, .. } => {
             let suggestions = middleware.suggest_similar_commands(noun)?;
             if !suggestions.is_empty() {
                 Ok(Some(format!(
@@ -248,7 +248,7 @@ pub fn recover_from_error(
                 Ok(None)
             }
         }
-        NounVerbError::VerbNotFound { noun, verb } => {
+        NounVerbError::VerbNotFound { noun, verb, .. } => {
             let commands = middleware.find_commands_by_noun(noun)?;
             if !commands.is_empty() {
                 Ok(Some(format!(

@@ -13,6 +13,7 @@ pub mod registry;
 pub mod router;
 pub mod validator;
 pub(crate) mod value_parser;
+pub mod preprocessor;
 
 // Scaffolding and project initialization
 pub mod init;

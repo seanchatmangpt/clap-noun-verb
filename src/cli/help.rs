@@ -137,7 +137,7 @@ impl HelpSystem {
     /// Get top N most popular commands
     pub fn popular_commands(&self, n: usize) -> Vec<&CommandInfo> {
         let mut sorted = self.commands.iter().collect::<Vec<_>>();
-        sorted.sort_by(|a, b| b.popularity.cmp(&a.popularity));
+        sorted.sort_by_key(|b| std::cmp::Reverse(b.popularity));
         sorted.into_iter().take(n).collect()
     }
 
@@ -179,7 +179,10 @@ impl HelpSystem {
 
     /// Generate detailed help for a command
     pub fn generate_command_help(&self, name: &str) -> Result<CommandHelp> {
-        let cmd = self.find_command(name).ok_or_else(|| NounVerbError::command_not_found(name))?;
+        let cmd = self.find_command(name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.commands.iter().map(|c| c.name.as_str()).collect();
+            NounVerbError::command_not_found_with_candidates(name, &candidates)
+        })?;
 
         Ok(CommandHelp {
             name: cmd.name.clone(),

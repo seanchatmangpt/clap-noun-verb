@@ -13,7 +13,7 @@
 
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
-use crate::verb::{VerbArgs, VerbContext, TypeMap};
+use crate::verb::{TypeMap, VerbArgs, VerbContext};
 use clap::{ArgMatches, Command};
 use std::collections::HashMap;
 
@@ -31,6 +31,8 @@ pub struct CommandRegistry {
     config: RegistryConfig,
     /// Typed context extensions shared across all commands
     extensions: TypeMap,
+    /// Add completions subcommand
+    pub has_completions_subcommand: bool,
 }
 
 /// Configuration for the command registry
@@ -63,20 +65,23 @@ impl Default for RegistryConfig {
 impl CommandRegistry {
     /// Create a new command registry
     pub fn new() -> Self {
-        Self { 
-            nouns: HashMap::new(), 
+        Self {
+            nouns: HashMap::new(),
             config: RegistryConfig::default(),
             extensions: TypeMap::new(),
+            has_completions_subcommand: false,
         }
     }
 
     /// Create a new registry with configuration
     pub fn with_config(config: RegistryConfig) -> Self {
-        Self { 
-            nouns: HashMap::new(), 
-            config,
-            extensions: TypeMap::new(),
-        }
+        Self { nouns: HashMap::new(), config, extensions: TypeMap::new(), has_completions_subcommand: false }
+    }
+
+    /// Enable fluent completions subcommand
+    pub fn with_completions_subcommand(mut self) -> Self {
+        self.has_completions_subcommand = true;
+        self
     }
 
     /// Add a typed extension to the global context
@@ -265,9 +270,23 @@ impl CommandRegistry {
             cmd = cmd.arg(arg.clone());
         }
 
+        // Add global --introspect flag
+        cmd = cmd.arg(
+            clap::Arg::new("introspect")
+                .long("introspect")
+                .action(clap::ArgAction::SetTrue)
+                .global(true)
+                .help("Introspect CLI capabilities as JSON Schema array for LLM tool-calling"),
+        );
+
         // Add noun subcommands
         for noun in self.nouns.values() {
             cmd = cmd.subcommand(noun.build_command());
+        }
+
+        if self.has_completions_subcommand {
+            let completions_noun = self.build_completions_noun();
+            cmd = cmd.subcommand(completions_noun.build_command());
         }
 
         cmd
@@ -280,9 +299,17 @@ impl CommandRegistry {
             .subcommand()
             .ok_or_else(|| NounVerbError::invalid_structure("No subcommand found"))?;
 
+        if noun_name == "completions" && self.has_completions_subcommand {
+            let noun = self.build_completions_noun();
+            return self.route_recursive(&noun, noun_name, noun_matches, matches);
+        }
+
         // Find the noun command
         let noun =
-            self.nouns.get(noun_name).ok_or_else(|| NounVerbError::command_not_found(noun_name))?;
+            self.nouns.get(noun_name).ok_or_else(|| {
+                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+                NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+            })?;
 
         // Route the command recursively with root matches for global args access
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)
@@ -314,7 +341,9 @@ impl CommandRegistry {
                 self.route_recursive(sub_noun.as_ref(), sub_name, sub_matches, root_matches)
             } else {
                 // Neither verb nor sub-noun found
-                Err(NounVerbError::verb_not_found(noun_name, sub_name))
+                let mut candidates: Vec<&str> = noun.verbs().iter().map(|v| v.name()).collect();
+                candidates.extend(noun.sub_nouns().iter().map(|n| n.name()));
+                Err(NounVerbError::verb_not_found_with_candidates(noun_name, sub_name, &candidates))
             }
         } else {
             // No subcommand, try direct noun execution
@@ -328,26 +357,78 @@ impl CommandRegistry {
 
     /// Run the CLI with the current process arguments
     pub fn run(self) -> Result<()> {
+        let args: Vec<String> = std::env::args().collect();
+        self.run_with_args(args)
+    }
+
+    /// Run the CLI with custom arguments
+    pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
         // Auto-validate if enabled
         if self.config.auto_validate {
             self.validate()?;
         }
 
-        let cmd = self.build_command();
-        let matches =
-            cmd.try_get_matches().map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+        if args.is_empty() {
+            return Err(NounVerbError::argument_error("No arguments provided"));
+        }
 
-        self.route(&matches)
-    }
+        // Split args by "++"
+        let mut steps = Vec::new();
+        let mut current_step = Vec::new();
+        let binary_name = args[0].clone();
 
-    /// Run the CLI with custom arguments
-    pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
-        let cmd = self.build_command();
-        let matches = cmd
-            .try_get_matches_from(args)
-            .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+        for arg in args.into_iter().skip(1) {
+            if arg == "++" {
+                if !current_step.is_empty() {
+                    steps.push(current_step);
+                    current_step = Vec::new();
+                }
+            } else {
+                current_step.push(arg);
+            }
+        }
+        if !current_step.is_empty() {
+            steps.push(current_step);
+        }
 
-        self.route(&matches)
+        if steps.is_empty() {
+            let cmd = self.build_command();
+            let matches = cmd.clone()
+                .try_get_matches_from(vec![binary_name])
+                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+
+            if matches.get_flag("introspect") {
+                let tools = collect_tools_from_cmd(&cmd, "");
+                println!("{}", serde_json::to_string_pretty(&tools).map_err(|e| NounVerbError::execution_error(e.to_string()))?);
+                return Ok(());
+            }
+            return self.route(&matches);
+        }
+
+        let stdin_val = crate::cli::preprocessor::read_stdin_if_needed(&steps);
+        let mut step_results: Vec<serde_json::Value> = Vec::new();
+
+        for step in steps {
+            let mut step_args = vec![binary_name.clone()];
+            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            step_args.extend(processed_args);
+
+            let cmd = self.build_command();
+            let matches = cmd.clone()
+                .try_get_matches_from(step_args)
+                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+
+            if matches.get_flag("introspect") {
+                let tools = collect_tools_from_cmd(&cmd, "");
+                println!("{}", serde_json::to_string_pretty(&tools).map_err(|e| NounVerbError::execution_error(e.to_string()))?);
+                return Ok(());
+            }
+
+            self.route(&matches)?;
+            step_results.push(serde_json::Value::Null);
+        }
+
+        Ok(())
     }
 
     /// Get the built command for testing or manual execution
@@ -360,4 +441,339 @@ impl Default for CommandRegistry {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Dynamically generated completions noun command
+pub struct CompletionsNoun {
+    app_name: String,
+    app_version: Option<String>,
+    commands: Vec<String>,
+    options: Vec<String>,
+}
+
+impl CompletionsNoun {
+    pub fn new(
+        app_name: String,
+        app_version: Option<String>,
+        commands: Vec<String>,
+        options: Vec<String>,
+    ) -> Self {
+        Self { app_name, app_version, commands, options }
+    }
+}
+
+impl NounCommand for CompletionsNoun {
+    fn name(&self) -> &'static str {
+        "completions"
+    }
+
+    fn about(&self) -> &'static str {
+        "Generate shell completion scripts"
+    }
+
+    fn verbs(&self) -> Vec<Box<dyn crate::verb::VerbCommand>> {
+        vec![
+            Box::new(CompletionsVerb {
+                name: "bash",
+                about: "Generate completion script for bash",
+                shell: crate::clap_ext::completions::Shell::Bash,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "zsh",
+                about: "Generate completion script for zsh",
+                shell: crate::clap_ext::completions::Shell::Zsh,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "fish",
+                about: "Generate completion script for fish",
+                shell: crate::clap_ext::completions::Shell::Fish,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "powershell",
+                about: "Generate completion script for PowerShell",
+                shell: crate::clap_ext::completions::Shell::PowerShell,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+        ]
+    }
+
+    fn build_command(&self) -> Command {
+        let mut cmd = Command::new(self.name())
+            .about(self.about())
+            .arg(
+                clap::Arg::new("shell")
+                    .short('s')
+                    .long("shell")
+                    .help("The shell to generate completions for")
+                    .value_parser(["bash", "zsh", "fish", "powershell"])
+            );
+
+        for verb in self.verbs() {
+            cmd = cmd.subcommand(verb.build_command());
+        }
+
+        cmd
+    }
+
+    fn handle_direct(&self, args: &crate::verb::VerbArgs) -> Result<()> {
+        let shell_str = if let Some(s) = args.get_one_str_opt("shell") {
+            s
+        } else if let Some(detected) = crate::shell::detect_shell() {
+            match detected {
+                crate::shell::ShellType::Bash => "bash".to_string(),
+                crate::shell::ShellType::Zsh => "zsh".to_string(),
+                crate::shell::ShellType::Fish => "fish".to_string(),
+                crate::shell::ShellType::PowerShell => "powershell".to_string(),
+                _ => "bash".to_string(),
+            }
+        } else {
+            "bash".to_string()
+        };
+
+        let shell = match shell_str.as_str() {
+            "bash" => crate::clap_ext::completions::Shell::Bash,
+            "zsh" => crate::clap_ext::completions::Shell::Zsh,
+            "fish" => crate::clap_ext::completions::Shell::Fish,
+            "powershell" => crate::clap_ext::completions::Shell::PowerShell,
+            _ => crate::clap_ext::completions::Shell::Bash,
+        };
+
+        let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
+            .with_version(self.app_version.as_deref().unwrap_or("1.0.0"))
+            .with_commands(self.commands.clone());
+        
+        let mut gen = generator;
+        for opt in &self.options {
+            gen = gen.with_option(opt);
+        }
+        
+        let script = gen.generate(shell)?;
+        print!("{}", script);
+        Ok(())
+    }
+}
+
+struct CompletionsVerb {
+    name: &'static str,
+    about: &'static str,
+    shell: crate::clap_ext::completions::Shell,
+    app_name: String,
+    app_version: String,
+    commands: Vec<String>,
+    options: Vec<String>,
+}
+
+impl crate::verb::VerbCommand for CompletionsVerb {
+    fn name(&self) -> &'static str {
+        self.name
+    }
+
+    fn about(&self) -> &'static str {
+        self.about
+    }
+
+    fn run(&self, _args: &crate::verb::VerbArgs) -> Result<()> {
+        let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
+            .with_version(&self.app_version)
+            .with_commands(self.commands.clone());
+        
+        let mut gen = generator;
+        for opt in &self.options {
+            gen = gen.with_option(opt);
+        }
+        
+        let script = gen.generate(self.shell)?;
+        print!("{}", script);
+        Ok(())
+    }
+}
+
+impl CommandRegistry {
+    fn build_completions_noun(&self) -> CompletionsNoun {
+        let app_name = self.config.name.clone();
+        let app_version = self.config.version.clone();
+        
+        let mut commands = Vec::new();
+        let mut options = Vec::new();
+        
+        // Collect all nouns and their verbs/subnouns
+        for (noun_name, noun) in &self.nouns {
+            commands.push(noun_name.clone());
+            for verb in noun.verbs() {
+                commands.push(format!("{} {}", noun_name, verb.name()));
+            }
+            for sub_noun in noun.sub_nouns() {
+                commands.push(format!("{} {}", noun_name, sub_noun.name()));
+            }
+        }
+        
+        // Collect options
+        for arg in &self.config.global_args {
+            if let Some(long) = arg.get_long() {
+                options.push(format!("--{}", long));
+            }
+            if let Some(short) = arg.get_short() {
+                options.push(format!("-{}", short));
+            }
+        }
+        
+        for noun in self.nouns.values() {
+            for verb in noun.verbs() {
+                for arg in verb.additional_args() {
+                    if let Some(long) = arg.get_long() {
+                        options.push(format!("--{}", long));
+                    }
+                    if let Some(short) = arg.get_short() {
+                        options.push(format!("-{}", short));
+                    }
+                }
+            }
+        }
+        
+        CompletionsNoun {
+            app_name,
+            app_version,
+            commands,
+            options,
+        }
+    }
+}
+
+/// JSON Schema representation for LLM tool-calling capability
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct ToolDefinition {
+    pub name: String,
+    pub description: String,
+    pub parameters: ToolParameters,
+}
+
+/// Parameters schema inside ToolDefinition
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct ToolParameters {
+    #[serde(rename = "type")]
+    pub param_type: String,
+    pub properties: std::collections::BTreeMap<String, PropertySchema>,
+    pub required: Vec<String>,
+}
+
+/// Standard JSON Schema property descriptor
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct PropertySchema {
+    #[serde(rename = "type")]
+    pub prop_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "items")]
+    pub items: Option<Box<PropertySchema>>,
+}
+
+/// Recursively collect executable tools (commands without subcommands) from a clap command tree
+pub fn collect_tools_from_cmd(cmd: &clap::Command, prefix: &str) -> Vec<ToolDefinition> {
+    let mut tools = Vec::new();
+    let current_name = if prefix.is_empty() {
+        cmd.get_name().to_string()
+    } else {
+        format!("{}_{}", prefix, cmd.get_name())
+    };
+
+    let subcommands: Vec<&clap::Command> = cmd.get_subcommands().collect();
+    if subcommands.is_empty() {
+        let mut properties = std::collections::BTreeMap::new();
+        let mut required = Vec::new();
+
+        for arg in cmd.get_arguments() {
+            let arg_id = arg.get_id().as_str();
+            if arg_id == "help" || arg_id == "version" || arg_id == "introspect" {
+                continue;
+            }
+
+            let name = arg_id.to_string();
+            let help = arg.get_help().map(|s| s.to_string());
+
+            let is_flag = matches!(
+                arg.get_action(),
+                clap::ArgAction::SetTrue | clap::ArgAction::SetFalse | clap::ArgAction::Count
+            );
+            let multiple = matches!(
+                arg.get_action(),
+                clap::ArgAction::Append | clap::ArgAction::Count
+            );
+
+            let prop_type = if is_flag {
+                "boolean".to_string()
+            } else if multiple {
+                "array".to_string()
+            } else {
+                "string".to_string()
+            };
+
+            let items = if multiple {
+                Some(Box::new(PropertySchema {
+                    prop_type: "string".to_string(),
+                    description: None,
+                    default: None,
+                    items: None,
+                }))
+            } else {
+                None
+            };
+
+            let default = arg.get_default_values()
+                .first()
+                .map(|v| serde_json::Value::String(v.to_string_lossy().to_string()));
+
+            if arg.is_required_set() {
+                required.push(name.clone());
+            }
+
+            properties.insert(name, PropertySchema {
+                prop_type,
+                description: help,
+                default,
+                items,
+            });
+        }
+
+        tools.push(ToolDefinition {
+            name: current_name,
+            description: cmd.get_about().map(|s| s.to_string()).unwrap_or_default(),
+            parameters: ToolParameters {
+                param_type: "object".to_string(),
+                properties,
+                required,
+            },
+        });
+    } else {
+        let pass_prefix = if prefix.is_empty() {
+            if cmd.get_name() == "cli" || cmd.get_name() == "myapp" {
+                "".to_string()
+            } else {
+                cmd.get_name().to_string()
+            }
+        } else {
+            current_name
+        };
+        for sub in subcommands {
+            tools.extend(collect_tools_from_cmd(sub, &pass_prefix));
+        }
+    }
+
+    tools
 }

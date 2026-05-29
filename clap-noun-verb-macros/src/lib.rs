@@ -975,6 +975,12 @@ fn generate_verb_registration(
                 is_usize_type && !is_option
             };
 
+            let has_set_false_action = if let Some(config) = &arg_config {
+                config.action.as_ref().map(|a| a == "set_false").unwrap_or(false)
+            } else {
+                false
+            };
+
             if is_count_action {
                 // Count action - extract count from __handler_input
                 arg_extractions.push(quote! {
@@ -987,11 +993,16 @@ fn generate_verb_registration(
                 // Boolean flags — the registry stores SetTrue flags in `args`
                 // (always as "true" when present), never in `opts`. Read from
                 // `args` first, fall back to `opts` for compatibility.
+                let default_val = if has_set_false_action {
+                    quote! { true }
+                } else {
+                    quote! { false }
+                };
                 arg_extractions.push(quote! {
                     let #arg_name = __handler_input.args.get(#arg_name_str)
                         .or_else(|| __handler_input.opts.get(#arg_name_str))
-                        .map(|v| v.parse::<bool>().unwrap_or(false))
-                        .unwrap_or(false);
+                        .map(|v| v.parse::<bool>().unwrap_or(#default_val))
+                        .unwrap_or(#default_val);
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_vec {
@@ -1566,9 +1577,6 @@ fn generate_verb_registration(
     let noun_name_str = noun_name.as_deref().unwrap_or("__auto__");
     let about_str = about.as_deref().unwrap_or("");
 
-    // Remove #[noun] attribute from output (it's been processed)
-    // Keep #[arg] attributes - they're handled by the #[arg] proc macro (pass-through)
-    // The #[verb] macro parses them from pat_type.attrs before output
     let mut output_fn = input_fn.clone();
     output_fn.attrs.retain(|attr| {
         let is_noun = attr.path().is_ident("noun")
@@ -1576,8 +1584,18 @@ fn generate_verb_registration(
         !is_noun
     });
 
-    // Keep #[arg] attributes on parameters - the #[arg] proc macro will handle them
-    // and the #[verb] macro has already parsed them for metadata generation
+    // Strip #[arg] and #[validate] attributes from parameters in output_fn
+    for input in &mut output_fn.sig.inputs {
+        if let syn::FnArg::Typed(pat_type) = input {
+            pat_type.attrs.retain(|attr| {
+                let is_arg = attr.path().is_ident("arg")
+                    || attr.path().segments.last().map(|seg| seg.ident == "arg").unwrap_or(false);
+                let is_validate = attr.path().is_ident("validate")
+                    || attr.path().segments.last().map(|seg| seg.ident == "validate").unwrap_or(false);
+                !is_arg && !is_validate
+            });
+        }
+    }
 
     let expanded = quote! {
         #output_fn

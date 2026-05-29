@@ -22,6 +22,7 @@ use crate::cli::CommandRouter;
 use crate::error::{NounVerbError, Result};
 use crate::logic::{HandlerInput, HandlerOutput};
 use crate::noun::NounCommand;
+use crate::registry::CompletionsNoun;
 use clap::Command;
 use std::collections::HashMap;
 
@@ -60,6 +61,8 @@ pub struct CliBuilder {
     version: Option<String>,
     /// Nouns registered with the CLI
     nouns: HashMap<String, Box<dyn NounCommand>>,
+    /// Add completions subcommand
+    has_completions_subcommand: bool,
 }
 
 impl CliBuilder {
@@ -82,6 +85,7 @@ impl CliBuilder {
             about: String::new(),
             version: None,
             nouns: HashMap::new(),
+            has_completions_subcommand: false,
         }
     }
 
@@ -128,6 +132,12 @@ impl CliBuilder {
         // Create a simple noun implementation with opinionated defaults
         let noun = SimpleNoun::new(name.into(), about.into());
         self.nouns.insert(noun.name().to_string(), Box::new(noun));
+        self
+    }
+
+    /// Add a completions subcommand
+    pub fn with_completions_subcommand(mut self) -> Self {
+        self.has_completions_subcommand = true;
         self
     }
 
@@ -206,29 +216,71 @@ impl CliBuilder {
         self.run_with_args(args)
     }
 
-    /// Run the CLI with custom arguments
-    ///
-    /// This is useful for testing.
-    ///
-    /// # Arguments
-    ///
-    /// * `args` - Arguments to use instead of process arguments
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if execution fails.
     pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
+        if args.is_empty() {
+            return Err(NounVerbError::argument_error("No arguments provided"));
+        }
+
         let cmd = self.build_command();
-        let matches = cmd
-            .try_get_matches_from(args)
-            .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+
+        // Split args by "++"
+        let mut steps = Vec::new();
+        let mut current_step = Vec::new();
+        let binary_name = args[0].clone();
+
+        for arg in args.into_iter().skip(1) {
+            if arg == "++" {
+                if !current_step.is_empty() {
+                    steps.push(current_step);
+                    current_step = Vec::new();
+                }
+            } else {
+                current_step.push(arg);
+            }
+        }
+        if !current_step.is_empty() {
+            steps.push(current_step);
+        }
+
+        let completions_noun = if self.has_completions_subcommand {
+            Some(self.build_completions_noun())
+        } else {
+            None
+        };
 
         let mut router = CommandRouter::new();
         for (_, noun) in self.nouns {
             router.register_noun(noun);
         }
 
-        router.route(&matches)
+        if let Some(cn) = completions_noun {
+            router.register_noun(Box::new(cn));
+        }
+
+        if steps.is_empty() {
+            let matches = cmd.clone()
+                .try_get_matches_from(vec![binary_name])
+                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+            return router.route(&matches);
+        }
+
+        let stdin_val = crate::cli::preprocessor::read_stdin_if_needed(&steps);
+        let mut step_results: Vec<serde_json::Value> = Vec::new();
+
+        for step in steps {
+            let mut step_args = vec![binary_name.clone()];
+            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            step_args.extend(processed_args);
+
+            let matches = cmd.clone()
+                .try_get_matches_from(step_args)
+                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+
+            router.route(&matches)?;
+            step_results.push(serde_json::Value::Null);
+        }
+
+        Ok(())
     }
 
     /// Build the clap command structure
@@ -258,7 +310,52 @@ impl CliBuilder {
             cmd = cmd.subcommand(noun.build_command());
         }
 
+        if self.has_completions_subcommand {
+            let completions_noun = self.build_completions_noun();
+            cmd = cmd.subcommand(completions_noun.build_command());
+        }
+
         cmd
+    }
+
+    fn build_completions_noun(&self) -> CompletionsNoun {
+        let app_name = self.name.clone();
+        let app_version = self.version.clone();
+        
+        let mut commands = Vec::new();
+        let mut options = Vec::new();
+        
+        // Collect all nouns and their verbs/subnouns
+        for (noun_name, noun) in &self.nouns {
+            commands.push(noun_name.clone());
+            for verb in noun.verbs() {
+                commands.push(format!("{} {}", noun_name, verb.name()));
+            }
+            for sub_noun in noun.sub_nouns() {
+                commands.push(format!("{} {}", noun_name, sub_noun.name()));
+            }
+        }
+        
+        // Collect options from verb arguments
+        for noun in self.nouns.values() {
+            for verb in noun.verbs() {
+                for arg in verb.additional_args() {
+                    if let Some(long) = arg.get_long() {
+                        options.push(format!("--{}", long));
+                    }
+                    if let Some(short) = arg.get_short() {
+                        options.push(format!("-{}", short));
+                    }
+                }
+            }
+        }
+        
+        CompletionsNoun::new(
+            app_name,
+            app_version,
+            commands,
+            options,
+        )
     }
 }
 

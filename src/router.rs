@@ -50,7 +50,10 @@ impl CommandRouter {
 
         // Find the noun command
         let noun =
-            self.nouns.get(noun_name).ok_or_else(|| NounVerbError::command_not_found(noun_name))?;
+            self.nouns.get(noun_name).ok_or_else(|| {
+                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+                NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+            })?;
 
         // Route the command recursively with root matches for global args
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)
@@ -113,7 +116,9 @@ impl CommandRouter {
                 self.route_recursive(sub_noun.as_ref(), sub_name, sub_matches, root_matches)
             } else {
                 // Neither verb nor sub-noun found
-                Err(NounVerbError::verb_not_found(noun_name, sub_name))
+                let mut candidates: Vec<&str> = noun.verbs().iter().map(|v| v.name()).collect();
+                candidates.extend(noun.sub_nouns().iter().map(|n| n.name()));
+                Err(NounVerbError::verb_not_found_with_candidates(noun_name, sub_name, &candidates))
             }
         } else {
             // No subcommand, try direct noun execution
@@ -144,7 +149,10 @@ impl CommandRouter {
     /// Get verbs for a specific noun
     pub fn get_verbs(&self, noun_name: &str) -> Result<Vec<String>> {
         let noun =
-            self.nouns.get(noun_name).ok_or_else(|| NounVerbError::command_not_found(noun_name))?;
+            self.nouns.get(noun_name).ok_or_else(|| {
+                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+                NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+            })?;
 
         Ok(noun.verbs().iter().map(|v| v.name().to_string()).collect())
     }

@@ -315,3 +315,49 @@ fn test_docstring_help_generation() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_introspect_schema_generation() -> Result<()> {
+    let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
+    let registry = registry.lock().map_err(|e| {
+        clap_noun_verb::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {}",
+            e
+        ))
+    })?;
+
+    let cmd = registry.build_command();
+    
+    // Test collecting tools from the command structure
+    let tools = clap_noun_verb::registry::collect_tools_from_cmd(&cmd, "");
+    
+    // We should have some tools registered
+    assert!(!tools.is_empty(), "Should find registered tools");
+    
+    // One of the tools should be "services_logs" (or similar from show_logs)
+    let logs_tool = tools.iter().find(|t| t.name == "services_logs");
+    assert!(logs_tool.is_some(), "Should find services_logs tool");
+    
+    let logs_tool = logs_tool.unwrap();
+    assert!(logs_tool.description.contains("Show logs for a service") || !logs_tool.description.is_empty());
+    
+    // Check parameters
+    assert_eq!(logs_tool.parameters.param_type, "object");
+    assert!(logs_tool.parameters.properties.contains_key("service"));
+    assert!(logs_tool.parameters.properties.contains_key("lines"));
+    
+    // service parameter should be string
+    let service_prop = &logs_tool.parameters.properties["service"];
+    assert_eq!(service_prop.prop_type, "string");
+    
+    // lines parameter should be string (since it's a clap arg mapped as string by default if not marked flag/multiple)
+    let lines_prop = &logs_tool.parameters.properties["lines"];
+    assert_eq!(lines_prop.prop_type, "string");
+    
+    // Verify JSON serialization compiles to a valid JSON array
+    let json_str = serde_json::to_string(&tools).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+    assert!(parsed.is_array());
+
+    Ok(())
+}

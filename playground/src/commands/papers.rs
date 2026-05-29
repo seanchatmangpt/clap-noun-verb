@@ -28,18 +28,20 @@ fn emit_deprecation(message: &str) {
 /// * `output` - Output file path [value_hint: FilePath]
 #[verb("generate")]
 fn generate_paper(
+    #[arg(index = 1)]
     family: Option<String>,
+    #[arg(index = 2)]
     output: Option<String>,
 ) -> Result<PaperGeneratedOutput> {
     emit_deprecation("Paper generation is now a pack. Use: ggen pack add paper-family && ggen sync");
 
     // 1. Validate inputs (CLI validates)
     let family_str = family.unwrap_or_else(|| "IMRaD".to_string());
-    let family = PaperFamily::from_str(&family_str)
-        .ok_or_else(|| NounVerbError::validation_error(
+    let family = PaperFamily::from_str_validated(&family_str)
+        .map_err(|e| NounVerbError::validation_error(
             "family".to_string(),
             family_str.clone(),
-            Some(&format!("Valid options: {}", PaperFamily::valid_values().join(", ")))
+            Some(&e)
         ))?;
 
     // 2. Call domain logic (pure, testable)
@@ -112,7 +114,12 @@ fn list_families(format: Option<String>) -> Result<()> {
 /// * `file` - Paper file to validate [default: output/imrad-paper.tex] [value_hint: FilePath]
 /// * `format` - Output format (json, yaml, table, plain) [default: json-pretty]
 #[verb("validate")]
-fn validate_paper(file: Option<String>, format: Option<String>) -> Result<()> {
+fn validate_paper(
+    #[arg(index = 1)]
+    file: Option<String>,
+    #[arg(index = 2)]
+    format: Option<String>,
+) -> Result<()> {
     emit_deprecation("Validation is now a diagnostic. Use: ggen doctor check paper");
 
     // Default to sample file if none provided

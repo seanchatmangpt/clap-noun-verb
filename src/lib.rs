@@ -59,6 +59,9 @@ pub mod noun;
 pub mod registry;
 pub mod tree;
 pub mod verb;
+pub mod async_verb;
+pub mod telemetry;
+
 
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
@@ -79,6 +82,9 @@ pub mod shell;
 // Advanced clap Integration
 pub mod clap_ext;
 
+// Interactive REPL shell
+pub mod repl;
+
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
 
@@ -91,7 +97,7 @@ pub use cli::run;
 
 // Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
-pub use error::{NounVerbError, Result};
+pub use error::{NounVerbError, Result, StructuredError, ErrorKind, Severity, ActionTemplate};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
@@ -100,7 +106,12 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 // Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
-pub use format::{format_output, OutputFormat};
+pub use format::{format_output, OutputFormat, register_output_validation_hook, clear_output_validation_hooks, OutputValidationHook};
+pub mod validators;
+pub use validators::{
+    validate_email, validate_ipv4, validate_ipv6, validate_length, validate_not_empty,
+    validate_path_creatable, validate_path_exists, validate_port, validate_regex, validate_url,
+};
 
 // Re-export clap types so users don't need clap as a direct dependency
 // This follows the facade pattern used by serde, tokio, and tracing
@@ -112,6 +123,8 @@ pub use clap::{Arg, ArgAction, ArgMatches, Command};
 // =============================================================================
 
 // Macros are exported at crate root via #[macro_export]
+
+pub use repl::Repl;
 
 // Framework-level re-exports for easy composition
 pub use builder::CliBuilder as Cli;

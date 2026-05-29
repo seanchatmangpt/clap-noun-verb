@@ -34,6 +34,10 @@ pub mod config_loader;
 pub mod pack_store;
 pub mod agent;
 
+#[cfg(feature = "agent-sandbox")]
+pub mod sandbox;
+
+
 // Re-export integration functions
 pub use templates::{render_paper_latex, get_template_engine};
 pub use io::{write_paper, ensure_output_dir};

@@ -17,7 +17,7 @@ impl WorkspaceDetector {
     ///
     /// # Examples
     /// ```
-    /// use crate::integration::workspace::WorkspaceDetector;
+    /// use mcpp_cli::integration::workspace::WorkspaceDetector;
     ///
     /// let root = WorkspaceDetector::find_workspace_root().unwrap();
     /// println!("Workspace root: {:?}", root);

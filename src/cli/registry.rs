@@ -59,6 +59,10 @@ use linkme::distributed_slice;
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
+thread_local! {
+    pub static ACTIVE_COMMAND: std::cell::RefCell<Option<clap::Command>> = std::cell::RefCell::new(None);
+}
+
 /// Apply validation constraints and auto-inferred parsers to a clap Arg
 ///
 /// This function applies min/max value and length validators based on the
@@ -384,11 +388,17 @@ impl CommandRegistry {
         let verbs = self
             .verbs
             .get(noun_name)
-            .ok_or_else(|| crate::error::NounVerbError::command_not_found(noun_name))?;
+            .ok_or_else(|| {
+                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+                crate::error::NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+            })?;
 
         let verb = verbs
             .get(verb_name)
-            .ok_or_else(|| crate::error::NounVerbError::verb_not_found(noun_name, verb_name))?;
+            .ok_or_else(|| {
+                let candidates: Vec<&str> = verbs.keys().map(|s| s.as_str()).collect();
+                crate::error::NounVerbError::verb_not_found_with_candidates(noun_name, verb_name, &candidates)
+            })?;
 
         (verb.handler_fn)(input)
     }
@@ -397,8 +407,32 @@ impl CommandRegistry {
     pub fn build_command(&self) -> clap::Command {
         let mut cmd = clap::Command::new("cli")
             .version(env!("CARGO_PKG_VERSION"))
-            .arg_required_else_help(true);
-            
+            .arg_required_else_help(true)
+            .arg(clap::Arg::new("format")
+                .long("format")
+                .global(true)
+                .value_parser(clap::builder::PossibleValuesParser::new(crate::format::OutputFormat::available_formats()))
+                .help("Output format"))
+            .arg(clap::Arg::new("select")
+                .long("select")
+                .global(true)
+                .help("Select/project nested JSON output using JSONPath, key selection, or JMESPath query projections"))
+            .arg(clap::Arg::new("introspect")
+                .long("introspect")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help("Introspect CLI capabilities as JSON Schema array for LLM tool-calling"))
+            .arg(clap::Arg::new("structured-errors")
+                .long("structured-errors")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help("Output errors using StructuredError format"))
+            .arg(clap::Arg::new("autonomic")
+                .long("autonomic")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help("Enable autonomic features and output structured errors"));
+
         // Add root-level verbs directly as subcommands
         for (verb_name, verb_meta) in &self.root_verbs {
             let verb_cmd = self.build_verb_command(verb_name, verb_meta);
@@ -410,6 +444,10 @@ impl CommandRegistry {
             let noun_cmd = self.build_noun_command(noun_name, noun_meta);
             cmd = cmd.subcommand(noun_cmd);
         }
+
+        ACTIVE_COMMAND.with(|cell| {
+            *cell.borrow_mut() = Some(cmd.clone());
+        });
 
         cmd
     }
@@ -510,7 +548,13 @@ impl CommandRegistry {
             }
             pos_arg
         } else {
-            clap::Arg::new(arg_name).long(arg_name)
+            if matches!(arg_meta.action.as_ref(), Some(clap::ArgAction::SetFalse)) {
+                let long_name = format!("no-{}", arg_name.replace('_', "-"));
+                let long_static: &'static str = Box::leak(long_name.into_boxed_str());
+                clap::Arg::new(arg_name).long(long_static)
+            } else {
+                clap::Arg::new(arg_name).long(arg_name)
+            }
         };
 
         if arg_meta.positional.is_none() {
@@ -655,7 +699,9 @@ impl CommandRegistry {
                         }
                     }
                     clap::ArgAction::SetFalse => {
-                        if verb_matches.contains_id(arg_name) {
+                        if verb_matches.get_flag(arg_name) {
+                            args_map.insert(arg_name.clone(), "true".to_string());
+                        } else {
                             args_map.insert(arg_name.clone(), "false".to_string());
                         }
                     }
@@ -687,22 +733,156 @@ impl CommandRegistry {
 
     /// Run CLI with auto-discovered commands
     pub fn run(&self, args: Vec<String>) -> Result<()> {
+        if args.is_empty() {
+            return Err(crate::error::NounVerbError::argument_error("No arguments provided"));
+        }
+
+        // Split args by "++"
+        let mut steps = Vec::new();
+        let mut current_step = Vec::new();
+        let binary_name = args[0].clone();
+
+        for arg in args.into_iter().skip(1) {
+            if arg == "++" {
+                if !current_step.is_empty() {
+                    steps.push(current_step);
+                    current_step = Vec::new();
+                }
+            } else {
+                current_step.push(arg);
+            }
+        }
+        if !current_step.is_empty() {
+            steps.push(current_step);
+        }
+
+        // If no steps, run default help
+        if steps.is_empty() {
+            let mut cmd = self.build_command();
+            cmd.print_help().map_err(|e| {
+                crate::error::NounVerbError::execution_error(format!("Failed to print help: {}", e))
+            })?;
+            return Ok(());
+        }
+
+        // Read stdin once if needed by any step
+        let stdin_val = crate::cli::preprocessor::read_stdin_if_needed(&steps);
+        let mut step_results: Vec<serde_json::Value> = Vec::new();
+
+        for step in steps {
+            let mut step_args = vec![binary_name.clone()];
+            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            step_args.extend(processed_args);
+
+            let output = self.execute_single_step(step_args)?;
+            step_results.push(output.data);
+        }
+
+        Ok(())
+    }
+
+    /// Execute a single CLI command step and return the handler output
+    pub fn execute_single_step(&self, args: Vec<String>) -> Result<HandlerOutput> {
         let cmd = self.build_command();
-        let matches = match cmd.try_get_matches_from(args) {
+        
+        let requested = args.iter().any(|arg| arg == "--structured-errors" || arg == "--autonomic")
+            || std::env::var("STRUCTURED_ERRORS").is_ok()
+            || std::env::var("AUTONOMIC").is_ok();
+
+        let matches = match cmd.clone().try_get_matches_from(args) {
             Ok(m) => m,
             Err(e) => {
                 let exit_code = e.exit_code();
                 let help_or_version_msg = e.to_string();
 
+                if requested {
+                    let err = crate::error::NounVerbError::argument_error(help_or_version_msg.clone());
+                    let structured = crate::error::StructuredError::from_error(&err);
+                    let formatted = serde_json::to_string_pretty(&serde_json::json!({ "error": structured })).unwrap();
+                    eprintln!("{}", formatted);
+                    return Err(err);
+                }
+
                 print!("{}", help_or_version_msg);
 
                 if exit_code == 0 {
-                    return Ok(());
+                    return Ok(HandlerOutput {
+                        data: serde_json::Value::Null,
+                        message: Some(help_or_version_msg),
+                    });
                 } else {
                     return Err(crate::error::NounVerbError::argument_error(help_or_version_msg));
                 }
             }
         };
+
+        if matches.get_flag("introspect") {
+            let tools = crate::registry::collect_tools_from_cmd(&cmd, "");
+            let json_str = serde_json::to_string_pretty(&tools)
+                .map_err(|e| crate::error::NounVerbError::execution_error(e.to_string()))?;
+            println!("{}", json_str);
+            return Ok(HandlerOutput {
+                data: serde_json::Value::Null,
+                message: Some(json_str),
+            });
+        }
+
+        let format_str = matches.get_one::<String>("format")
+            .cloned()
+            .or_else(|| {
+                if let Some((_, sub_matches)) = matches.subcommand() {
+                    sub_matches.get_one::<String>("format").cloned().or_else(|| {
+                        if let Some((_, verb_matches)) = sub_matches.subcommand() {
+                            verb_matches.get_one::<String>("format").cloned()
+                        } else {
+                            None
+                        }
+                    })
+                } else {
+                    None
+                }
+            });
+
+        let output_format = format_str
+            .as_deref()
+            .and_then(|s| s.parse::<crate::format::OutputFormat>().ok())
+            .unwrap_or(crate::format::OutputFormat::JsonPretty);
+
+        let flag_requested = matches.get_flag("structured-errors") || matches.get_flag("autonomic");
+
+        let result = self.execute_step_internal(&matches, output_format);
+        if let Err(ref e) = result {
+            if requested || flag_requested {
+                let structured = crate::error::StructuredError::from_error(e);
+                let formatted = match output_format {
+                    crate::format::OutputFormat::Json => serde_json::to_string(&serde_json::json!({ "error": structured })).unwrap(),
+                    crate::format::OutputFormat::Yaml => {
+                        format!("error:\n  kind: {:?}\n  severity: {:?}\n  message: \"{}\"\n", structured.kind, structured.severity, structured.message)
+                    }
+                    _ => serde_json::to_string_pretty(&serde_json::json!({ "error": structured })).unwrap(),
+                };
+                eprintln!("{}", formatted);
+            }
+        }
+        result
+    }
+
+    fn execute_step_internal(&self, matches: &clap::ArgMatches, output_format: crate::format::OutputFormat) -> Result<HandlerOutput> {
+        let select_str = matches.get_one::<String>("select")
+            .cloned()
+            .or_else(|| {
+                if let Some((_, sub_matches)) = matches.subcommand() {
+                    sub_matches.get_one::<String>("select").cloned().or_else(|| {
+                        if let Some((_, verb_matches)) = sub_matches.subcommand() {
+                            verb_matches.get_one::<String>("select").cloned()
+                        } else {
+                            None
+                        }
+                    })
+                } else {
+                    None
+                }
+            });
 
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
@@ -714,9 +894,17 @@ impl CommandRegistry {
                     context: crate::logic::HandlerContext::new(subcommand_name),
                 };
 
-                let output = self.execute_root_verb(subcommand_name, input)?;
-                let json = output.to_json()?;
-                println!("{}", json);
+                let mut output = self.execute_root_verb(subcommand_name, input)?;
+                if let Some(ref select_expr) = select_str {
+                    output.data = apply_select(&output.data, select_expr)
+                        .map_err(|e| crate::error::NounVerbError::execution_error(format!("Selection error: {}", e)))?;
+                }
+                let formatted = output_format.format(&output.data)
+                    .map_err(|e| crate::error::NounVerbError::execution_error(format!("Format error: {}", e)))?;
+                if output_format != crate::format::OutputFormat::Quiet {
+                    println!("{}", formatted);
+                }
+                Ok(output)
             } else if let Some((verb_name, verb_matches)) = sub_matches.subcommand() {
                 let noun_name = subcommand_name;
                 let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
@@ -735,9 +923,17 @@ impl CommandRegistry {
                     context: crate::logic::HandlerContext::new(verb_name).with_noun(noun_name),
                 };
 
-                let output = self.execute_verb(noun_name, verb_name, input)?;
-                let json = output.to_json()?;
-                println!("{}", json);
+                let mut output = self.execute_verb(noun_name, verb_name, input)?;
+                if let Some(ref select_expr) = select_str {
+                    output.data = apply_select(&output.data, select_expr)
+                        .map_err(|e| crate::error::NounVerbError::execution_error(format!("Selection error: {}", e)))?;
+                }
+                let formatted = output_format.format(&output.data)
+                    .map_err(|e| crate::error::NounVerbError::execution_error(format!("Format error: {}", e)))?;
+                if output_format != crate::format::OutputFormat::Quiet {
+                    println!("{}", formatted);
+                }
+                Ok(output)
             } else {
                 let noun_name = subcommand_name;
                 if let Some(noun_meta) = self.nouns.get(noun_name) {
@@ -772,10 +968,14 @@ impl CommandRegistry {
                             e
                         ))
                     })?;
+                    Ok(HandlerOutput {
+                        data: serde_json::Value::Null,
+                        message: None,
+                    })
                 } else {
-                    return Err(crate::error::NounVerbError::invalid_structure(
+                    Err(crate::error::NounVerbError::invalid_structure(
                         "No verb specified",
-                    ));
+                    ))
                 }
             }
         } else {
@@ -783,9 +983,11 @@ impl CommandRegistry {
             cmd.print_help().map_err(|e| {
                 crate::error::NounVerbError::execution_error(format!("Failed to print help: {}", e))
             })?;
+            Ok(HandlerOutput {
+                data: serde_json::Value::Null,
+                message: None,
+            })
         }
-
-        Ok(())
     }
 
     /// Execute a root-level verb handler (verbs without a noun)
@@ -793,8 +995,39 @@ impl CommandRegistry {
         let verb = self
             .root_verbs
             .get(verb_name)
-            .ok_or_else(|| crate::error::NounVerbError::command_not_found(verb_name))?;
+            .ok_or_else(|| {
+                let mut candidates: Vec<&str> = self.root_verbs.keys().map(|s| s.as_str()).collect();
+                candidates.extend(self.nouns.keys().map(|s| s.as_str()));
+                crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
+            })?;
 
         (verb.handler_fn)(input)
     }
+}
+
+fn apply_select(value: &serde_json::Value, expr: &str) -> std::result::Result<serde_json::Value, String> {
+    let clean_expr = if expr == "$" || expr == "@" {
+        "@"
+    } else if expr.starts_with("$.") {
+        &expr[2..]
+    } else if expr.starts_with("$[") {
+        &expr[1..]
+    } else {
+        expr
+    };
+
+    if clean_expr == "@" {
+        return Ok(value.clone());
+    }
+
+    let compiled = jmespath::compile(clean_expr)
+        .map_err(|e| format!("Invalid query expression '{}': {}", expr, e))?;
+    
+    let result = compiled.search(value)
+        .map_err(|e| format!("Failed to evaluate query '{}': {}", expr, e))?;
+
+    let json_val = serde_json::to_value(&*result)
+        .map_err(|e| format!("Serialization error: {}", e))?;
+
+    Ok(json_val)
 }

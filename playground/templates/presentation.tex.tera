@@ -19,8 +19,8 @@
   frame=single
 }
 
-\title{{{ thesis.title }}}
-\author{{{ thesis.author }}}
+\title{ {{ thesis.title }} }
+\author{ {{ thesis.author }} }
 \date{2025}
 
 \begin{document}
@@ -42,7 +42,7 @@
 {% for chapter in defense_outline.chapters -%}
 \section{Chapter {{ chapter.chapter_number }}: {{ chapter.title }}}
 
-\begin{frame}{{{ chapter.title }}}
+\begin{frame}{ {{ chapter.title }} }
   \begin{block}{Key Findings}
     \begin{itemize}
 {% for finding in chapter.key_findings -%}

@@ -115,7 +115,9 @@ pub trait NounCommand: Send + Sync {
     fn handle_verb(&self, verb_name: &str, args: &VerbArgs) -> Result<()> {
         let verb =
             self.verbs().into_iter().find(|v| v.name() == verb_name).ok_or_else(|| {
-                crate::error::NounVerbError::verb_not_found(self.name(), verb_name)
+                let mut candidates: Vec<&str> = self.verbs().iter().map(|v| v.name()).collect();
+                candidates.extend(self.sub_nouns().iter().map(|n| n.name()));
+                crate::error::NounVerbError::verb_not_found_with_candidates(self.name(), verb_name, &candidates)
             })?;
 
         verb.run(args)
@@ -127,13 +129,38 @@ pub trait NounCommand: Send + Sync {
             .sub_nouns()
             .into_iter()
             .find(|n| n.name() == sub_noun_name)
-            .ok_or_else(|| crate::error::NounVerbError::command_not_found(sub_noun_name))?;
+            .ok_or_else(|| {
+                let mut candidates: Vec<&str> = self.sub_nouns().iter().map(|n| n.name()).collect();
+                candidates.extend(self.verbs().iter().map(|v| v.name()));
+                crate::error::NounVerbError::command_not_found_with_candidates(sub_noun_name, &candidates)
+            })?;
 
         sub_noun.handle_direct(args)
     }
 }
 
 /// Helper trait for creating compound commands (nouns that contain other nouns)
+///
+/// # Examples
+///
+/// ```rust
+/// use clap_noun_verb::{NounCommand, CompoundNounCommand, VerbCommand, VerbArgs, Result};
+///
+/// struct MyCompoundCommand;
+///
+/// impl NounCommand for MyCompoundCommand {
+///     fn name(&self) -> &'static str { "system" }
+///     fn about(&self) -> &'static str { "System commands" }
+///     fn verbs(&self) -> Vec<Box<dyn VerbCommand>> {
+///         vec![]
+///     }
+/// }
+///
+/// impl CompoundNounCommand for MyCompoundCommand {}
+///
+/// let cmd = MyCompoundCommand;
+/// assert_eq!(cmd.all_nouns(), vec!["system".to_string()]);
+/// ```
 pub trait CompoundNounCommand: NounCommand {
     /// Get all nested nouns recursively
     fn all_nouns(&self) -> Vec<String> {

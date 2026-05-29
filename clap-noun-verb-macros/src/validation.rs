@@ -51,19 +51,20 @@ pub fn validate_return_type(return_type: &ReturnType, fn_name: &syn::Ident) -> s
 fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) -> syn::Result<()> {
     match ty {
         Type::Path(type_path) => {
+            let last_segment = type_path.path.segments.last();
             let type_name =
-                type_path.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
+                last_segment.map(|s| s.ident.to_string()).unwrap_or_default();
 
             // Special handling for Result<T, E> and Option<T>
             match type_name.as_str() {
                 "Result" => {
                     // Extract T from Result<T, E>
-                    if let syn::PathArguments::AngleBracketed(args) =
-                        &type_path.path.segments.last().unwrap().arguments
-                    {
-                        if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
-                            // Recursively validate T
-                            return validate_type_is_serializable(inner_ty, fn_name);
+                    if let Some(segment) = last_segment {
+                        if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                            if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
+                                // Recursively validate T
+                                return validate_type_is_serializable(inner_ty, fn_name);
+                            }
                         }
                     }
                     Err(syn::Error::new(
@@ -81,12 +82,12 @@ fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) -> syn::Result
                 }
                 "Option" => {
                     // Extract T from Option<T>
-                    if let syn::PathArguments::AngleBracketed(args) =
-                        &type_path.path.segments.last().unwrap().arguments
-                    {
-                        if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
-                            // Recursively validate T
-                            return validate_type_is_serializable(inner_ty, fn_name);
+                    if let Some(segment) = last_segment {
+                        if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                            if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
+                                // Recursively validate T
+                                return validate_type_is_serializable(inner_ty, fn_name);
+                            }
                         }
                     }
                     Err(syn::Error::new(
@@ -318,6 +319,52 @@ pub fn generate_serialize_check(_return_type: &Type, fn_name: &syn::Ident) -> To
     }
 }
 
+/// Allowed parameters in #[arg] attributes
+const ALLOWED_ARG_KEYS: &[&str] = &[
+    "short",
+    "default_value",
+    "env",
+    "multiple",
+    "value_name",
+    "aliases",
+    "alias",
+    "index",
+    "positional",
+    "action",
+    "group",
+    "requires",
+    "conflicts_with",
+    "value_parser",
+    "help",
+    "long_help",
+    "display_order",
+    "exclusive",
+    "trailing_vararg",
+    "allow_negative_numbers",
+    "next_line_help",
+];
+
+/// Helper to calculate Levenshtein distance between two strings for typo suggestions
+fn levenshtein_distance(a: &str, b: &str) -> usize {
+    let a_len = a.chars().count();
+    let b_len = b.chars().count();
+    if a_len == 0 { return b_len; }
+    if b_len == 0 { return a_len; }
+    let mut dp = vec![vec![0; b_len + 1]; a_len + 1];
+    for i in 0..=a_len { dp[i][0] = i; }
+    for j in 0..=b_len { dp[0][j] = j; }
+    for (i, ca) in a.chars().enumerate() {
+        for (j, cb) in b.chars().enumerate() {
+            let cost = if ca == cb { 0 } else { 1 };
+            dp[i + 1][j + 1] = std::cmp::min(
+                std::cmp::min(dp[i][j + 1] + 1, dp[i + 1][j] + 1),
+                dp[i][j] + cost,
+            );
+        }
+    }
+    dp[a_len][b_len]
+}
+
 /// Validate #[arg] attribute syntax on function parameters
 pub fn validate_arg_attribute_syntax(attrs: &[syn::Attribute]) -> syn::Result<()> {
     for attr in attrs {
@@ -327,28 +374,69 @@ pub fn validate_arg_attribute_syntax(attrs: &[syn::Attribute]) -> syn::Result<()
                 // Try parsing the tokens
                 let parser =
                     syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated;
-                if let Err(e) = parser.parse2(list.tokens.clone()) {
-                    return Err(syn::Error::new(
-                        attr.span(),
-                        format!(
-                            "Invalid #[arg] attribute syntax\n\
-                             \n\
-                             Parse error: {}\n\
-                             \n\
-                             Expected patterns:\n\
-                             - #[arg(short = 'v')]\n\
-                             - #[arg(env = \"PORT\", default_value = \"8080\")]\n\
-                             - #[arg(action = \"count\")]\n\
-                             \n\
-                             Common mistakes:\n\
-                             - Missing quotes: env = PORT should be env = \"PORT\"\n\
-                             - Wrong quotes: short = \"v\" should be short = 'v'\n\
-                             - Missing =: #[arg(short)] should be #[arg(short = 'v')]\n\
-                             \n\
-                             Hint: Use key = value pairs with proper quoting",
-                            e
-                        ),
-                    ));
+                match parser.parse2(list.tokens.clone()) {
+                    Ok(meta_list) => {
+                        for meta in meta_list {
+                            let path = meta.path();
+                            if let Some(ident) = path.get_ident() {
+                                let key = ident.to_string();
+                                if !ALLOWED_ARG_KEYS.contains(&key.as_str()) {
+                                    let mut best_suggestion = None;
+                                    let mut min_distance = usize::MAX;
+                                    for &allowed_key in ALLOWED_ARG_KEYS {
+                                        let dist = levenshtein_distance(&key, allowed_key);
+                                        if dist < min_distance {
+                                            min_distance = dist;
+                                            best_suggestion = Some(allowed_key);
+                                        }
+                                    }
+
+                                    let error_msg = if min_distance <= 3 {
+                                        format!(
+                                            "Unknown argument parameter `{}` in `#[arg]`. Did you mean `{}`?\n\
+                                             \n\
+                                             Valid parameters are: {}",
+                                            key,
+                                            best_suggestion.unwrap(),
+                                            ALLOWED_ARG_KEYS.join(", ")
+                                        )
+                                    } else {
+                                        format!(
+                                            "Unknown argument parameter `{}` in `#[arg]`.\n\
+                                             \n\
+                                             Valid parameters are: {}",
+                                            key,
+                                            ALLOWED_ARG_KEYS.join(", ")
+                                        )
+                                    };
+                                    return Err(syn::Error::new(path.span(), error_msg));
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Err(syn::Error::new(
+                            attr.span(),
+                            format!(
+                                "Invalid #[arg] attribute syntax\n\
+                                 \n\
+                                 Parse error: {}\n\
+                                 \n\
+                                 Expected patterns:\n\
+                                 - #[arg(short = 'v')]\n\
+                                 - #[arg(env = \"PORT\", default_value = \"8080\")]\n\
+                                 - #[arg(action = \"count\")]\n\
+                                 \n\
+                                 Common mistakes:\n\
+                                 - Missing quotes: env = PORT should be env = \"PORT\"\n\
+                                 - Wrong quotes: short = \"v\" should be short = 'v'\n\
+                                 - Missing =: #[arg(short)] should be #[arg(short = 'v')]\n\
+                                 \n\
+                                 Hint: Use key = value pairs with proper quoting",
+                                e
+                            ),
+                        ));
+                    }
                 }
             }
         }
@@ -768,5 +856,37 @@ mod tests {
         let err_msg = result.unwrap_err().to_string();
         assert!(err_msg.contains("too complex"));
         assert!(err_msg.contains("FM-1.1"));
+    }
+
+    #[test]
+    fn test_validate_arg_attribute_syntax_valid() {
+        let attrs: Vec<syn::Attribute> = parse_quote! {
+            #[arg(short = 'v', default_value = "8080", env = "PORT")]
+        };
+        assert!(validate_arg_attribute_syntax(&attrs).is_ok());
+    }
+
+    #[test]
+    fn test_validate_arg_attribute_syntax_invalid_typo() {
+        let attrs: Vec<syn::Attribute> = parse_quote! {
+            #[arg(shrt = 'v')]
+        };
+        let result = validate_arg_attribute_syntax(&attrs);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Unknown argument parameter `shrt`"));
+        assert!(err_msg.contains("Did you mean `short`?"));
+    }
+
+    #[test]
+    fn test_validate_arg_attribute_syntax_invalid_no_typo() {
+        let attrs: Vec<syn::Attribute> = parse_quote! {
+            #[arg(xyzzy = "test")]
+        };
+        let result = validate_arg_attribute_syntax(&attrs);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Unknown argument parameter `xyzzy`"));
+        assert!(err_msg.contains("Valid parameters are:"));
     }
 }

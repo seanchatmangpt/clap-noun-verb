@@ -5,7 +5,6 @@
 //!
 //! Declared with: `#[verb("sync", "root")]`
 
-use clap_noun_verb::cli::registry::CommandRegistry;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
@@ -25,20 +24,8 @@ fn sync() -> clap_noun_verb::Result<SyncOutput> {
 }
 
 fn main() {
-    // Initialize registry and run
-    let registry = CommandRegistry::get();
-    let reg = registry.lock().unwrap();
-
-    // Get args - use --help to show structure
-    let args: Vec<String> = std::env::args().collect();
-
-    // Release lock before run
-    drop(reg);
-
-    // Run with the collected args
-    let registry = CommandRegistry::get();
-    let reg = registry.lock().unwrap();
-    if let Err(e) = reg.run(args) {
+    // Run the CLI using the run utility
+    if let Err(e) = clap_noun_verb::run() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }

@@ -22,7 +22,9 @@ use crate::outputs::PaperGeneratedOutput;
 /// * `output` - Output file path [value_hint: FilePath]
 #[verb("generate")]
 fn generate_paper(
+    #[arg(index = 1)]
     family: Option<String>,
+    #[arg(index = 2)]
     output: Option<String>,
 ) -> Result<PaperGeneratedOutput> {
     // 1. Validate inputs (CLI validates)
@@ -33,16 +35,16 @@ fn generate_paper(
             family_str.clone(),
             Some(&format!("Valid options: {}", PaperFamily::valid_values().join(", ")))
         ))?;
-
+ 
     // 2. Call domain logic (pure, testable)
     let paper = Paper::new(family.clone(), None, None);
-
+ 
     // 3. Call integration layer (I/O side effects)
     let tera = get_template_engine()
         .map_err(|e| NounVerbError::execution_error(e))?;
     let latex = render_paper_latex(&paper, tera)
         .map_err(|e| NounVerbError::execution_error(e))?;
-
+ 
     // 4. Determine output path
     let path = if let Some(output_path) = output {
         output_path
@@ -51,10 +53,10 @@ fn generate_paper(
             .map_err(|e| NounVerbError::execution_error(e))?;
         format!("output/{}-paper.tex", family.name().to_lowercase())
     };
-
+ 
     write_paper(&path, &latex)
         .map_err(|e| NounVerbError::execution_error(e))?;
-
+ 
     // 5. Return structured output
     Ok(PaperGeneratedOutput {
         family: family.name().to_string(),
@@ -102,7 +104,12 @@ fn list_families(format: Option<String>) -> Result<()> {
 /// * `file` - Paper file to validate [default: output/imrad-paper.tex] [value_hint: FilePath]
 /// * `format` - Output format (json, yaml, table, plain) [default: json-pretty]
 #[verb("validate")]
-fn validate_paper(file: Option<String>, format: Option<String>) -> Result<()> {
+fn validate_paper(
+    #[arg(index = 1)]
+    file: Option<String>,
+    #[arg(index = 2)]
+    format: Option<String>,
+) -> Result<()> {
     // Default to sample file if none provided
     let file_path = file.unwrap_or_else(|| "output/imrad-paper.tex".to_string());
 

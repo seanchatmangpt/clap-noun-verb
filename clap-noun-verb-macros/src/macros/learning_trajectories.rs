@@ -543,7 +543,7 @@ impl ConsensusValidator {
 
         // Sort scores for median calculation
         let mut scores: Vec<f64> = votes.iter().map(|v| v.score).collect();
-        scores.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        scores.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Calculate median
         let median = if scores.len() % 2 == 0 {
