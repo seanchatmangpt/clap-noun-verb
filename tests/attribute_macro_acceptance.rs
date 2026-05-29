@@ -6,6 +6,9 @@
 //! These tests verify the high-level behavior of the attribute macro API.
 //! Following London TDD (outside-in), we start with these acceptance tests.
 
+mod common;
+use common::test_prelude::*;
+
 use clap_noun_verb::error::Result;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
@@ -176,7 +179,7 @@ fn test_separation_of_concerns() -> Result<()> {
     let status = get_service_status();
 
     // Assert: Business logic works independently
-    assert_eq!(status.healthy, true);
+    assert!(status.healthy);
     assert_eq!(status.services.len(), 2);
 
     // Verify CLI function delegates correctly
@@ -341,7 +344,7 @@ fn test_introspect_schema_generation() -> Result<()> {
     let logs_tool = tools.iter().find(|t| t.name == "services_logs");
     assert!(logs_tool.is_some(), "Should find services_logs tool");
 
-    let logs_tool = logs_tool.unwrap();
+    let logs_tool = logs_tool.test_some("services_logs tool");
     assert!(
         logs_tool.description.contains("Show logs for a service")
             || !logs_tool.description.is_empty()
@@ -361,8 +364,8 @@ fn test_introspect_schema_generation() -> Result<()> {
     assert_eq!(lines_prop.prop_type, "string");
 
     // Verify JSON serialization compiles to a valid JSON array
-    let json_str = serde_json::to_string(&tools).unwrap();
-    let parsed: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+    let json_str = serde_json::to_string(&tools).test_unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&json_str).test_unwrap();
     assert!(parsed.is_array());
 
     Ok(())

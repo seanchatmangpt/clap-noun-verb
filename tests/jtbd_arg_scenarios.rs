@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Jobs-To-Be-Done (JTBD) Scenario Tests for Argument Handling
 //!
 //! These tests validate complex, real-world argument handling scenarios that users

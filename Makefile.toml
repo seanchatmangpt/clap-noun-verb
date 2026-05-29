@@ -40,6 +40,29 @@ command = "cargo"
 args = ["test", "--quiet"]
 description = "Run tests (quiet mode)"
 
+[tasks.test-default]
+workspace = false
+command = "cargo"
+args = ["test", "--workspace", "--quiet"]
+description = "Run tests with default features"
+
+[tasks.test-no-features]
+workspace = false
+command = "cargo"
+args = ["test", "--no-default-features", "--workspace", "--quiet"]
+description = "Run tests with no features"
+
+[tasks.test-repl]
+workspace = false
+command = "cargo"
+args = ["test", "--no-default-features", "--features", "repl", "--workspace", "--quiet"]
+description = "Run tests with only the repl feature enabled"
+
+[tasks.test-feature-combinations]
+workspace = false
+dependencies = ["test-no-features", "test-default", "test-repl"]
+description = "Run tests under different feature flag combinations (no features, default features, repl feature)"
+
 [tasks.test-timeout]
 description = "Run tests with 10ms cap using timeout enforcer"
 script_runner = "@shell"
@@ -122,6 +145,7 @@ dependencies = ["format-check", "clippy", "test-timeout"]
 dependencies = [
     "format-check",
     "clippy",
+    "test-feature-combinations",
     "test-unfailable",
     "build-examples",
     "check-all",
@@ -319,18 +343,18 @@ args = ["test", "--all-features", "--quiet"]
 description = "Run all tests with all frontier features enabled"
 
 [tasks.test-frontier-matrix]
-description = "Run tests across all 21 feature combinations (Tier 0-4)"
+description = "Run tests across all 23 feature combinations (Tier 0-4)"
 script_runner = "@shell"
 script = '''
 #!/bin/bash
 set -e
 
 echo "════════════════════════════════════════════════════════════════"
-echo "  FRONTIER FEATURE MATRIX TEST - 21 Combinations"
+echo "  FRONTIER FEATURE MATRIX TEST - 23 Combinations"
 echo "════════════════════════════════════════════════════════════════"
 
 # Counter for progress
-TOTAL=21
+TOTAL=23
 CURRENT=0
 
 # Function to run tests with features
@@ -342,6 +366,8 @@ test_features() {
 
     if [ -z "$1" ]; then
         cargo test --quiet
+    elif [ "$1" = "no-default" ]; then
+        cargo test --no-default-features --quiet
     else
         cargo test --features "$1" --quiet
     fi
@@ -382,10 +408,12 @@ test_features "executable-specs"
 
 # Tier 4: Extremes
 test_features "frontier-all"
+test_features "no-default"
+test_features "repl"
 
 echo ""
 echo "════════════════════════════════════════════════════════════════"
-echo "  ✅ ALL 21 FEATURE COMBINATIONS PASSED"
+echo "  ✅ ALL 23 FEATURE COMBINATIONS PASSED"
 echo "════════════════════════════════════════════════════════════════"
 '''
 

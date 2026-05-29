@@ -51,9 +51,10 @@ jobs:
           - "economic-sim,learning-trajectories"
           - "executable-specs"
 
-          # Tier 4: Extremes (2 endpoints)
+          # Tier 4: Extremes (3 endpoints)
           - "frontier-all"
           - "no-features"
+          - "repl"
 
     steps:
       - name: Checkout code
@@ -71,6 +72,8 @@ jobs:
         run: |
           if [ -z "${{ matrix.features }}" ]; then
             cargo check
+          elif [ "${{ matrix.features }}" = "no-features" ]; then
+            cargo check --no-default-features
           else
             cargo check --features "${{ matrix.features }}"
           fi
@@ -80,6 +83,8 @@ jobs:
         run: |
           if [ -z "${{ matrix.features }}" ]; then
             cargo test --quiet
+          elif [ "${{ matrix.features }}" = "no-features" ]; then
+            cargo test --no-default-features --quiet
           else
             cargo test --features "${{ matrix.features }}" --quiet
           fi
@@ -89,6 +94,8 @@ jobs:
         run: |
           if [ -z "${{ matrix.features }}" ]; then
             cargo clippy -- -D warnings
+          elif [ "${{ matrix.features }}" = "no-features" ]; then
+            cargo clippy --no-default-features -- -D warnings
           else
             cargo clippy --features "${{ matrix.features }}" -- -D warnings
           fi
@@ -98,6 +105,8 @@ jobs:
         run: |
           if [ -z "${{ matrix.features }}" ]; then
             cargo build --release
+          elif [ "${{ matrix.features }}" = "no-features" ]; then
+            cargo build --release --no-default-features
           else
             cargo build --release --features "${{ matrix.features }}"
           fi

@@ -9,16 +9,13 @@ use clap_noun_verb::error::{NounVerbError, Result};
 
 #[test]
 fn test_validator_new() {
-    let validator = ArgValidator::new();
-    // Validator construction succeeds (zero-sized type)
-    drop(validator);
+    let _validator = ArgValidator::new();
 }
 
 #[test]
+#[allow(clippy::default_constructed_unit_structs)]
 fn test_validator_default() {
-    let validator = ArgValidator::default();
-    // Default trait implementation works
-    drop(validator);
+    let _validator = ArgValidator::default();
 }
 
 #[test]

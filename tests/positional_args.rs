@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Tests for positional argument support
 //!
 //! These tests verify that arguments with `#[arg(index = N)]` attributes

@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Common test utilities for clap-noun-verb tests
 pub mod test_prelude;
 /// Assertion helpers for command structure verification
@@ -108,7 +110,7 @@ impl OutputCapture {
     }
     pub fn capture<F>(f: F) -> String
     where
-        F: FnOnce() -> (),
+        F: FnOnce(),
     {
         // Placeholder - will implement actual stdout capture
         f();

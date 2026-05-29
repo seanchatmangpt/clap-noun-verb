@@ -6,6 +6,9 @@
 //! These tests verify that arguments with `#[arg(env = "...")]` attributes
 //! correctly read values from environment variables.
 
+mod common;
+use common::test_prelude::*;
+
 use clap_noun_verb::error::Result;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
@@ -38,18 +41,18 @@ fn test_env_var_support_registered() -> Result<()> {
 
     // Arrange: set_config has arguments with env attributes
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().test_unwrap();
     let cmd = registry.build_command();
 
     // Act: Find config -> set command
     let config_cmd = cmd.get_subcommands().find(|s| s.get_name() == "config");
     assert!(config_cmd.is_some(), "config noun should be registered");
 
-    let set_cmd = config_cmd.unwrap().get_subcommands().find(|s| s.get_name() == "set");
+    let set_cmd = config_cmd.test_some("config subcommand").get_subcommands().find(|s| s.get_name() == "set");
     assert!(set_cmd.is_some(), "set verb should be registered");
 
     // Assert: Arguments should exist
-    let set_cmd = set_cmd.unwrap();
+    let set_cmd = set_cmd.test_some("set subcommand");
     let args: Vec<_> = set_cmd.get_arguments().collect();
 
     let port_arg = args.iter().find(|a| a.get_id().as_str() == "port");
@@ -69,7 +72,7 @@ fn test_env_var_metadata_stored() -> Result<()> {
 
     // Act: Get registry and verify metadata
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let registry = registry.lock().unwrap();
+    let registry = registry.lock().test_unwrap();
 
     // Assert: Commands are registered with env metadata
     let cmd = registry.build_command();
@@ -78,3 +81,4 @@ fn test_env_var_metadata_stored() -> Result<()> {
 
     Ok(())
 }
+

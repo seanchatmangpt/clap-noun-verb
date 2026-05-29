@@ -1,6 +1,8 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! E2E tests for the global `--select` projection option
 //!
 //! Executes the compiled example binaries directly to validate global JSON path,
@@ -13,7 +15,7 @@ fn test_select_projection_basic_status() {
     // Test default output (no select)
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
-    let output = cmd.args(&["services", "status"]).output().expect("failed to execute process");
+    let output = cmd.args(["services", "status"]).output().expect("failed to execute process");
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
@@ -25,7 +27,7 @@ fn test_select_projection_basic_status() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--select", "all_running", "services", "status"])
+        .args(["--select", "all_running", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -38,7 +40,7 @@ fn test_select_projection_basic_status() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--select", "services", "services", "status"])
+        .args(["--select", "services", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -51,7 +53,7 @@ fn test_select_projection_basic_status() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--select", "services[0]", "services", "status"])
+        .args(["--select", "services[0]", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -64,7 +66,7 @@ fn test_select_projection_basic_status() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--select", "$.all_running", "services", "status"])
+        .args(["--select", "$.all_running", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -77,7 +79,7 @@ fn test_select_projection_basic_status() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--select", "$.services[1]", "services", "status"])
+        .args(["--select", "$.services[1]", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -92,7 +94,7 @@ fn test_select_projection_with_yaml_format() {
     let mut cmd =
         Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
     let output = cmd
-        .args(&["--format", "yaml", "--select", "services[0]", "services", "status"])
+        .args(["--format", "yaml", "--select", "services[0]", "services", "status"])
         .output()
         .expect("failed to execute process");
 

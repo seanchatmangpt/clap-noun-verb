@@ -285,12 +285,7 @@ pub fn generate_duplicate_detection(
         // another function tries to register the same noun+verb combination
         #[doc(hidden)]
         #[allow(non_upper_case_globals)]
-        const #duplicate_check_ident: () = {
-            // This empty tuple serves as a marker that this noun+verb combination
-            // has been registered. If another function tries to register the same
-            // combination, the compiler will error with "duplicate definitions"
-            ()
-        };
+        const #duplicate_check_ident: () = ();
     }
 }
 

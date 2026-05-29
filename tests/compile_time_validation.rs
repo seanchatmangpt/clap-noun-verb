@@ -12,9 +12,12 @@
 //! Note: Most of these are compile-fail tests that should be run with trybuild.
 //! For now, we demonstrate correct usage that SHOULD compile.
 
+mod common;
+
 use clap_noun_verb::Result;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
+
 
 // ============================================================================
 // GAP 3: Return Type Validation - CORRECT EXAMPLES (should compile)
@@ -102,18 +105,18 @@ fn second_unique_verb() -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::test_prelude::*;
 
     #[test]
     fn test_correct_types_compile() {
         // If this compiles, all the correct examples above are valid
-        assert!(true);
     }
 
     #[test]
     fn test_return_types_are_serializable() {
         // Verify that our types actually implement Serialize
         let status = ValidStatus { running: true, uptime: 100 };
-        let json = serde_json::to_string(&status).unwrap();
+        let json = serde_json::to_string(&status).test_unwrap();
         assert!(json.contains("running"));
         assert!(json.contains("uptime"));
     }
