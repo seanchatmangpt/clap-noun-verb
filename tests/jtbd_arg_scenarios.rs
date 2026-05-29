@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Jobs-To-Be-Done (JTBD) Scenario Tests for Argument Handling
 //!
 //! These tests validate complex, real-world argument handling scenarios that users

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Shell environment detection and utilities
 //!
 //! This module detects the user's shell and provides shell-specific utilities.

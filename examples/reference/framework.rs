@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Framework-level composition example using v3 attribute macro API
 //!
 //! This example demonstrates how to use clap-noun-verb v3's attribute macro API

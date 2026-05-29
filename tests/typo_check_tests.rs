@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap::Command;
 use clap_noun_verb::error::Result;
 use clap_noun_verb::noun::NounCommand;

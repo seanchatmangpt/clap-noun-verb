@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Macro modules for clap-noun-verb-macros
 //!
 //! This module contains additional macro implementations and utilities.

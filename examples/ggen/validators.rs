@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Input validation helpers for ggen CLI
 //!
 //! Provides validation functions that return user-friendly errors

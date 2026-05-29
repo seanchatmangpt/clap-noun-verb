@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Enhanced ArgAction Support
 //!
 //! This example demonstrates enhanced ArgAction support in v3.2.0:

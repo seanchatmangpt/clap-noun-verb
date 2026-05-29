@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RDF ontology storage and querying
 
 use crate::rdf::types::{RdfTriple, RdfValue};

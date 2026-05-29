@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # Performance Validation Script for ggen-clap-noun-verb Integration
 # Measures compilation time, execution time, memory usage, and SLO compliance
 

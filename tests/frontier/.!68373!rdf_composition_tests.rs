@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for rdf_composition module
 //!
 //! These tests verify SPARQL 1.1 compliance and oxigraph integration.

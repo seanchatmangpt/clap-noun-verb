@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Positional Arguments
 //!
 //! This example demonstrates how to use positional arguments in CLI commands.

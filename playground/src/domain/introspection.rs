@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Domain Logic: Autonomic CLI Introspection
 //!
 //! Pure functions for machine-grade CLI introspection.

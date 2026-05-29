@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! JTBD End-to-End Execution Tests
 //!
 //! These tests actually execute CLI commands and verify argument extraction

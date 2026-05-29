@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Capability domain - intent surface
 //! Capabilities resolve desired surfaces into pack/install/runtime consequences.
 
@@ -38,12 +41,26 @@ impl CapabilityResolver {
             return Err("projection requires surface".to_string());
         }
 
-        // TODO: Implement resolution logic
+        let needs_policy_check = capability.profile == "restricted" || capability.profile == "admin";
+        let mut packs = Vec::new();
+        let mut actions = Vec::new();
+
+        if !capability.surface.is_empty() {
+            packs.push(format!("pack-{}", capability.surface));
+            actions.push(format!("install-{}", capability.surface));
+        }
+        if let Some(ref proj) = capability.projection {
+            actions.push(format!("project-{}", proj));
+        }
+        if let Some(ref runtime) = capability.runtime {
+            actions.push(format!("exec-{}", runtime));
+        }
+
         Ok(CapabilityResolution {
             capability: capability.clone(),
-            packs: vec![],
-            actions: vec![],
-            needs_policy_check: false,
+            packs,
+            actions,
+            needs_policy_check,
         })
     }
 }

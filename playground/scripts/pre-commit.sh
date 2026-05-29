@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # Pre-commit hook script for playground-cli
 # Run this before committing to ensure code quality
 #

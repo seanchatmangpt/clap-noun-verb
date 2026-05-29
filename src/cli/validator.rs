@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Argument and option validator - validates CLI inputs only
 //!
 //! This module contains validation logic for CLI arguments and options.

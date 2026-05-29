@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Academic paper operations
 //!
 //! Generate, list, and validate academic papers using Tera templates.

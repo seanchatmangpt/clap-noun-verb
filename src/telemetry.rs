@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Chicago TDD Telemetry and Observability System
 //!
 //! Provides distributed tracing, metrics aggregation, W3C traceparent propagation,

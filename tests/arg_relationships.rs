@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Comprehensive Argument Relationship Tests (Typer-like Doc Comment Syntax)
 //!
 //! Tests for Typer-like doc comment syntax for argument relationships:

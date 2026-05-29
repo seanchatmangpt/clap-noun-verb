@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Spec Kit commands - RDF-Native Build Protocol
 
 use clap_noun_verb_macros::verb;

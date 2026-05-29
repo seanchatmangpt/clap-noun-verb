@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! MCP server for exposing RDF ontology and KGC lockchain
 //!
 //! Provides stdio-based MCP protocol for:

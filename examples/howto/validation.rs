@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Automatic Validation
 //!
 //! This example demonstrates automatic validation from types and explicit

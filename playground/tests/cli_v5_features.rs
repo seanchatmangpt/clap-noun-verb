@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! CLI Integration Tests for clap-noun-verb v5 Features
 //!
 //! 80/20 Approach: Test CLI commands end-to-end rather than domain internals.

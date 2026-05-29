@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Calculator CLI Example - Generated from calculator.ttl
 //!
 //! This example demonstrates CLI code generation from turtle specifications.

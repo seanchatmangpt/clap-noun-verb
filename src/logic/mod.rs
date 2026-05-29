@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Business logic layer - reusable functions independent of CLI
 //!
 //! This module contains pure business logic functions that can be used

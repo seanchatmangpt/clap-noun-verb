@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RMCP-based MCP server handler for RDF ontology and lockchain
 //!
 //! Implements the official Rust SDK (rmcp) for Model Context Protocol,

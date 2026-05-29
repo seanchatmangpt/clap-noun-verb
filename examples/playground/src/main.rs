@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Playground CLI - clap-noun-verb v5.5.0 Documentation-Style Demo
 //!
 //! Architecture: CLI validates, domain computes, integration connects

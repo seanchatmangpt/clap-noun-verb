@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Async handler support for verbs
 //!
 //! This module provides utilities for using async operations within verb handlers.

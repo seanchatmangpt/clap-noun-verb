@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Acceptance tests for attribute macro API
 //!
 //! These tests verify the high-level behavior of the attribute macro API.

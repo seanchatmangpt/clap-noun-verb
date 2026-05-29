@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Capability registry with RDF store and SPARQL queries
 
 use super::capability::{CapabilityMetadata, SEMANTIC_CAPABILITIES};

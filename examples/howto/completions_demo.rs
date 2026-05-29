@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! How-to: Generate shell completions for a builder-constructed CLI
 //!
 //! This example shows how to use `.with_completions_subcommand()` to register

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RDF triple generation from macro metadata
 //!
 //! This module generates Turtle RDF triples and SHACL shapes from verb metadata

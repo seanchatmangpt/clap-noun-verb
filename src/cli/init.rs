@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Scaffolding and project initialization
 //!
 //! This module provides utilities for initializing a new clap-noun-verb project,

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Core RDF types for the ontology control layer
 
 use serde::{Deserialize, Serialize};

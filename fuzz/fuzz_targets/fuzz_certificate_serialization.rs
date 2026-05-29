@@ -1,4 +1,7 @@
 #![no_main]
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 
 use libfuzzer_sys::fuzz_target;
 use clap_noun_verb::autonomic::{CertificateId, SchemaHash};

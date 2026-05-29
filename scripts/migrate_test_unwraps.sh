@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # Migration script for converting .unwrap()/.expect() to test-safe patterns
 #
 # This script converts test files to use the new test_prelude utilities:

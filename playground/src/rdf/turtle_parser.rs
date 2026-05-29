@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Production-grade Turtle parser for RDF ontologies
 //!
 //! Provides W3C-compliant Turtle parsing with:

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Convenience macros for composable CLI patterns
 
 /// Helper macro to create a noun command

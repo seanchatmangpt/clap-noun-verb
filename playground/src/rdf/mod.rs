@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RDF/Turtle ontology control layer for CNV v5
 //!
 //! Provides a graph-native machine interface where:

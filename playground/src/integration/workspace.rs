@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Workspace detection for finding project roots
 //!
 //! This module provides utilities for finding workspace roots by searching upward

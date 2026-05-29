@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap::ArgMatches;
 use serde::de::DeserializeOwned;
 use serde::Serialize;

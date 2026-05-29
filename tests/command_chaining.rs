@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap_noun_verb::cli::preprocessor::preprocess_args;
 use clap_noun_verb::cli::registry::{ArgMetadata, CommandRegistry};
 use clap_noun_verb::logic::{HandlerInput, HandlerOutput};

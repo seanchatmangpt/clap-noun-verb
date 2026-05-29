@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! MCP tools for RDF Turtle CLI generation
 //!
 //! Provides three main MCP tools for agent-driven CLI generation:

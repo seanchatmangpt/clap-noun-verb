@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! User-friendly error handling for ggen CLI
 //!
 //! This module provides actionable error messages with recovery suggestions

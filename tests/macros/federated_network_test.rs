@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for Federated Semantic Network macros
 //!
 //! These tests verify the behavior of federation macros using Chicago TDD:

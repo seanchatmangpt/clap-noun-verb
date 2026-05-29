@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Doctor domain - diagnostic surface
 //!
 //! Detects workspace integrity, lockfile truth, pack integrity, trust/profile conflicts.

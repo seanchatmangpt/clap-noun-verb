@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Runtime integration with macro-generated RDF metadata
 //!
 //! This module provides the bridge between compile-time RDF generation

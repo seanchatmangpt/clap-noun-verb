@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RDF invocation parser - converts agent RDF requests to structured invocations
 
 use crate::rdf::ontology::Ontology;

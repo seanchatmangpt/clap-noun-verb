@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap::{Arg, ArgAction, Command};
 use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 use clap_noun_verb_utils::display_json::arg_matches_to_json;

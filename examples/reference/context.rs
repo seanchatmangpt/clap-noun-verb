@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Global Application Context
 //!
 //! Demonstrates how to use AppContext<T> to share state across all commands.

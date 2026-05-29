@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for compile-time validation (Poka-Yoke error-proofing)
 //!
 //! These tests demonstrate the four gaps that are now closed:

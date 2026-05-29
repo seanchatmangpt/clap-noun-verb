@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Guard validation middleware for autonomic command execution
 //!
 //! This module integrates SHACL shape validation with command execution,

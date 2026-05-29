@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use unibit_cli::executor::UnifiedExecutor;
 use unibit_mustar::MotionPacket;
 

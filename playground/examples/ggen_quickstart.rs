@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! ggen v26.4.2 Quickstart Example
 //!
 //! Demonstrates basic ggen workflow:

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Production-grade code generator for RDF ontology to Rust CLI
 //!
 //! Transforms RDF Turtle ontologies into type-safe Rust CLI code using:

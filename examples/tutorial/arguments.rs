@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example demonstrating argument extraction with automatic type inference
 
 use clap_noun_verb::Result;

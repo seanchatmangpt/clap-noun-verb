@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Compile-time command registry for attribute macros
 //!
 //! This module provides a registry that collects functions marked with
@@ -801,7 +804,7 @@ impl CommandRegistry {
                     let structured = crate::error::StructuredError::from_error(&err);
                     let formatted =
                         serde_json::to_string_pretty(&serde_json::json!({ "error": structured }))
-                            .unwrap();
+                            .unwrap_or_else(|_| "{}".to_string());
                     eprintln!("{}", formatted);
                     return Err(err);
                 }
@@ -854,7 +857,8 @@ impl CommandRegistry {
                 let structured = crate::error::StructuredError::from_error(e);
                 let formatted = match output_format {
                     crate::format::OutputFormat::Json => {
-                        serde_json::to_string(&serde_json::json!({ "error": structured })).unwrap()
+                        serde_json::to_string(&serde_json::json!({ "error": structured }))
+                            .unwrap_or_else(|_| "{}".to_string())
                     }
                     crate::format::OutputFormat::Yaml => {
                         format!(
@@ -863,7 +867,7 @@ impl CommandRegistry {
                         )
                     }
                     _ => serde_json::to_string_pretty(&serde_json::json!({ "error": structured }))
-                        .unwrap(),
+                        .unwrap_or_else(|_| "{}".to_string()),
                 };
                 eprintln!("{}", formatted);
             }

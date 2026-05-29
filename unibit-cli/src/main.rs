@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! unibit-cli - Unified POWL64 Executor Substrate
 //!
 //! This crate provides the machine-grade CLI interface for the unibit kinetic substrate.

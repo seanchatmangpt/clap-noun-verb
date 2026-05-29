@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # Pre-Release Quality Gate for clap-noun-verb
 # Design for Lean Six Sigma (DfLSS) Automated Validation
 # Exit on first failure (Andon signal - Stop the Line)

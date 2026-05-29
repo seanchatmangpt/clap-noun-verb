@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # scripts/validate-docs.sh - Comprehensive documentation validation
 # Part of FMEA risk mitigation strategy
 

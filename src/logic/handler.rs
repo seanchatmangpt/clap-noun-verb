@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Command handlers - bridge between CLI and business logic
 //!
 //! Command handlers accept validated arguments from the CLI layer and

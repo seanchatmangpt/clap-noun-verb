@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Tests for ArgAction support
 //!
 //! These tests verify that different ArgAction types (Count, Set, SetFalse, SetTrue, Append)

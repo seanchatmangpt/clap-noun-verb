@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for reflexive test generation
 //!
 //! Tests the complete reflexive testing system end-to-end using Chicago TDD:

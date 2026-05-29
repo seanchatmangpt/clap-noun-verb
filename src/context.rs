@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Global application context and state management
 //!
 //! This module provides a type-safe way to share state across all commands.

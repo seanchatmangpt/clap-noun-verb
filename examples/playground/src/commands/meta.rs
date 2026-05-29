@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! v5 autonomic features
 //!
 //! Introspection, ontology, SPARQL, completions, middleware, telemetry.

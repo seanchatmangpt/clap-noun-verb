@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Tests for positional argument support
 //!
 //! These tests verify that arguments with `#[arg(index = N)]` attributes

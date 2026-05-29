@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Unit tests for clap-noun-verb modules
 
 use clap_noun_verb::tree::patterns;

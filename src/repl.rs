@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Interactive REPL shell execution loop with autocomplete and history parsing
 //! Gated behind the `repl` feature.
 
@@ -304,6 +307,7 @@ mod tests {
         assert_eq!(split_shell_words("pack install \"unclosed"), None);
     }
 
+    #[allow(unused_variables)]
     #[test]
     fn test_repl_stub() {
         let registry = CommandRegistry::new();

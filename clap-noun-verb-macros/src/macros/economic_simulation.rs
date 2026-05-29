@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Economic Simulation Macros
 //!
 //! This module provides procedural macros for simulating economic behavior

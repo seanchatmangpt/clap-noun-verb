@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Deprecation tracking and migration helpers
 //!
 //! This module provides utilities for marking verbs and arguments as deprecated,

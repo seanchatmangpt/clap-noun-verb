@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // FUTURE: These types are part of the frontier feature set and will be integrated in future phases
 
 //! Learning Trajectory Macros for clap-noun-verb-macros-frontier

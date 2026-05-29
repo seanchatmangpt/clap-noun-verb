@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Compile-time validation for Poka-Yoke error-proofing
 //!
 //! This module implements four critical compile-time checks:

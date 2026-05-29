@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Core business logic functions - pure functions reusable by any interface
 //!
 //! These functions contain the actual business logic and are completely

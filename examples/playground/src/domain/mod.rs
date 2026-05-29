@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Domain Logic Layer - Pure, Testable Business Logic
 //!
 //! This module contains pure functions that implement the core business logic.

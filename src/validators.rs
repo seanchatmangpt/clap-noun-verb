@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Common value validators for CLI arguments
 //!
 //! This module provides reusable validators for common data types.

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Chicago TDD tests for Middleware System CLI Integration
 //!
 //! Tests middleware execution chain:

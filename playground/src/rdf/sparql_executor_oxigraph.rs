@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Production-grade SPARQL executor using oxigraph
 //!
 //! Provides high-performance SPARQL query execution with:

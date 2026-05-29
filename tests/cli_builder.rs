@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Tests for CLI builder
 //!
 //! These tests follow AAA pattern (Arrange, Act, Assert) and test

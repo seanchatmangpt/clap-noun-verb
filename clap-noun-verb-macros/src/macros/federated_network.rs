@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Federated Semantic Network Macros
 //!
 //! This module provides procedural macros for enabling CLI federation and semantic networking.

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! SPARQL query planner for agent introspection
 //!
 //! NOTE: Full SPARQL parser and executor implementations are placeholders for future development.

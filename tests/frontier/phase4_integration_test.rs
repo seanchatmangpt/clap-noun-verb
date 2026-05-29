@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Phase 4 Integration Tests - Advanced Features
 //!
 //! Comprehensive Chicago TDD tests for all four Phase 4 sub-phases:

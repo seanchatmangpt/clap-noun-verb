@@ -269,7 +269,11 @@ for_kv_map = "allow"
 unnecessary_map_or = "allow"
 
 [[test]]
-name = "telemetry_cli_tests"
-path = "tests/cli/telemetry_cli_tests.rs"
+name = "cli_tests"
+path = "tests/cli/mod.rs"
+
+[[test]]
+name = "frontier_tests"
+path = "tests/frontier/mod.rs"
 
 

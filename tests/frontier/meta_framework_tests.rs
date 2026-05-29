@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for meta_framework module
 //!
 //! These tests verify the complete integration of oxrdf, typetag, and erased-serde

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap_noun_verb::tree::{CommandHandler, CommandTreeBuilder, TreeNode};
 use clap_noun_verb::VerbArgs;
 

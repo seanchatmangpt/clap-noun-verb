@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # 21-Point Test Matrix Execution Script
 # Validates all feature configurations for clap-noun-verb project
 # Follows Andon signal workflow: Stop the Line on errors

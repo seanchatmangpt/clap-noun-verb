@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Common test utilities for clap-noun-verb tests
 pub mod test_prelude;
 /// Assertion helpers for command structure verification

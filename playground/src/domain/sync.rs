@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Sync domain - the sacred authoritative transformation
 //!
 //! Sync consumes resolved graph, validates, emits artifacts, writes receipts.

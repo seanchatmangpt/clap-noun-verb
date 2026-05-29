@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Compile-time validation for telemetry spans
 //!
 //! This module prevents the "48 RPN failure mode" - spans registered but never emitted (dead telemetry).

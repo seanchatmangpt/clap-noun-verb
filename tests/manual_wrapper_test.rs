@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // Manual wrapper test to verify the logic
 
 use clap_noun_verb::error::Result;

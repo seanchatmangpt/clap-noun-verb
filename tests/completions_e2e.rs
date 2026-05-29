@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! E2E tests for automatic completions generation using compiled examples.
 
 use assert_cmd::prelude::*;

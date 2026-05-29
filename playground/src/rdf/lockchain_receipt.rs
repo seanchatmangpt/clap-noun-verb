@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Lockchain-specific receipt types for KGC integration
 
 use crate::rdf::Blake3Hash;

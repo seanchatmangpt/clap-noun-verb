@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Research Thesis Integration with Hyper-Thesis Framework
 //!
 //! Maps RESEARCH_THESIS.tex to HTF components (Δ-Shards, Λ-Scheduling, Π-Profiling, Γ-Globalization)

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! clap-noun-verb - A framework for building composable CLI patterns
 //!
 //! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns

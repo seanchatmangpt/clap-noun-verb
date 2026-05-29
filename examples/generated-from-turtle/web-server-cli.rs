@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Web Server CLI Example - Generated from web-server.ttl
 //!
 //! This example demonstrates a web server lifecycle management CLI with start, stop,

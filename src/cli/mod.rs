@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! CLI layer - argument validation and routing only
 //!
 //! This module contains the CLI interface layer that validates arguments

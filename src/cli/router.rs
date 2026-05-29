@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! CLI router - validation and delegation only
 //!
 //! This router enforces the pattern: validate arguments, then

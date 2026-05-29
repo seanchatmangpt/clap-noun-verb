@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Builder pattern API for composable CLI applications
 //!
 //! The `CliBuilder` provides a fluent interface for constructing CLI applications

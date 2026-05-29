@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Deprecation & Migration System
 //!
 //! Demonstrates how to mark commands as deprecated and provide migration guidance.

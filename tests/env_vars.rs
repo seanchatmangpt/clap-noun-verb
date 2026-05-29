@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Tests for environment variable support
 //!
 //! These tests verify that arguments with `#[arg(env = "...")]` attributes

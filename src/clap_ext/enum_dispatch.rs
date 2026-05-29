@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Enum-based subcommand composition for advanced clap integration.
 //!
 //! This module provides zero-boilerplate command composition using Rust enums,

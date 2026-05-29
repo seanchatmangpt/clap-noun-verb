@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap_noun_verb::{CliBuilder, NounCommand, NounVerbError, VerbArgs, VerbCommand};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;

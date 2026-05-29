@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! E2E tests for the global `--select` projection option
 //!
 //! Executes the compiled example binaries directly to validate global JSON path,

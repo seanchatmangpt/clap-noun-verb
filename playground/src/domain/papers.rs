@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Domain Logic: Academic Paper Generation
 //!
 //! Pure functions for paper structure and content generation.

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! File Manager CLI Example - Generated from file-manager.ttl
 //!
 //! This example demonstrates a file management CLI with create, delete, and list operations.

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! User API CLI Example - Generated from user-api.ttl
 //!
 //! This example demonstrates a CRUD API CLI for managing users.

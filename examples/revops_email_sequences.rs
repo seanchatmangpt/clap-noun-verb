@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RevOps Email Sequence Generator
 //!
 //! Ready-to-send email templates for all revenue streams

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Registry protocol client with HTTP, retries, and caching
 //!
 //! Provides a production-ready HTTP client for interacting with the

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! POWL8 commands - Execution of the Instruction Set Architecture
 
 use clap_noun_verb_macros::verb;

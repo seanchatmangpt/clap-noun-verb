@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 use clap_noun_verb_utils::number_parsing::{
     decimal_range, maybe_hex_range, parse_bytes, parse_duration, parse_percentage,

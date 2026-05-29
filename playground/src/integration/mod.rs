@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration Layer - Glue Code Between CLI and Domain
 //!
 //! This module connects the CLI layer to the domain layer.

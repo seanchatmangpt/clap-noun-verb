@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Deterministic Test Runtime - Zero-Flake by Design
 //!
 //! Provides controlled execution environments for async tests that eliminate

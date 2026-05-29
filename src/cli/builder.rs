@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Opinionated CLI builder - maximum automation and defaults
 //!
 //! This builder provides an extremely opinionated, automated API that:

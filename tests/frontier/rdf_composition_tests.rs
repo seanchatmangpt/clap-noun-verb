@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for rdf_composition module
 //!
 //! These tests verify SPARQL 1.1 compliance and oxigraph integration.
@@ -361,11 +364,11 @@ mod tests {
         }
         let duration = start.elapsed();
 
-        // Assert: < 1µs per triple target (3 triples per capability)
+        // Assert: < 1s per triple target (3 triples per capability)
         let micros_per_triple = duration.as_micros() / 3000;
         assert!(
             micros_per_triple < 1,
-            "Triple creation took {} µs/triple, target is < 1µs",
+            "Triple creation took {} s/triple, target is < 1s",
             micros_per_triple
         );
     }

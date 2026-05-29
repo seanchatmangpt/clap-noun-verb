@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Procedural macros for clap-noun-verb
 //!
 //! This crate provides attribute macros `#[noun]` and `#[verb]` for

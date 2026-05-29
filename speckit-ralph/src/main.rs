@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! speckit-ralph - Ralph Loop Orchestrator for MCPP
 //!
 //! This crate implements the Ralph loop closure:
