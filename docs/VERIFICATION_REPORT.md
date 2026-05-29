@@ -337,6 +337,6 @@ All high-priority and medium-priority issues have been resolved:
 **Final Documentation Structure** (33 files):
 - **Tutorial** (6 files): 02-domain-separation.md, 03-adding-commands.md, 04-testing-basics.md, 05-output-formats.md, 07-async-operations.md, 08-error-handling.md, README.md
 - **How-To** (9 files): common-mistakes.md, debugging.md, performance-optimization.md, setup-help-and-version.md, testing.md, validation.md, production/ (4 files), README.md
-- **Reference** (7 files): api-catalog.md, api.md, api/arg-attributes.md, api/errors.md, api/types.md, api/verb-macro.md, error-codes.md, performance-slos.md, README.md
+- **Reference** (7 files): api-catalog.md, api/arg-attributes.md, api/errors.md, api/types.md, api/verb-macro.md, error-codes.md, performance-slos.md, README.md
 - **Explanation** (3 files): architecture.md, design-patterns.md, README.md
 - **Root** (3 files): diataxis-index.md, INDEX.md, VERIFICATION_REPORT.md

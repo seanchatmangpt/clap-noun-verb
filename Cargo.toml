@@ -47,6 +47,15 @@ readme = "README.md"
 [lib]
 name = "clap_noun_verb"
 path = "src/lib.rs"
+
+[[bin]]
+name = "completions_demo"
+path = "examples/howto/completions_demo.rs"
+
+[[bin]]
+name = "tutorial_basic"
+path = "examples/tutorial/basic.rs"
+
 [features]
 repl = ["dep:rustyline"]
 
@@ -123,9 +132,6 @@ verbose = false
 # TUTORIAL EXAMPLES - Learning-oriented, step-by-step guides
 # =============================================================================
 
-[[example]]
-name = "tutorial_basic"
-path = "examples/tutorial/basic.rs"
 
 [[example]]
 name = "tutorial_arguments"
@@ -162,10 +168,6 @@ path = "examples/howto/arg_actions.rs"
 [[example]]
 name = "howto_deprecation"
 path = "examples/howto/deprecation.rs"
-
-[[example]]
-name = "completions_demo"
-path = "examples/howto/completions_demo.rs"
 
 # =============================================================================
 # REFERENCE EXAMPLES - Complete API demonstrations

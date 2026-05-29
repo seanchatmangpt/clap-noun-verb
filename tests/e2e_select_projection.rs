@@ -3,13 +3,14 @@
 //! Executes the compiled example binaries directly to validate global JSON path,
 //! select, and JMESPath query projections.
 
-use std::process::Command;
+use assert_cmd::Command;
 
 #[test]
 fn test_select_projection_basic_status() {
     // Test default output (no select)
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -20,8 +21,9 @@ fn test_select_projection_basic_status() {
     assert_eq!(json_val.get("all_running"), Some(&serde_json::Value::Bool(true)));
 
     // Test select key "all_running"
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "--select", "all_running", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["--select", "all_running", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -31,8 +33,9 @@ fn test_select_projection_basic_status() {
     assert_eq!(json_val, serde_json::Value::Bool(true));
 
     // Test select array "services"
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "--select", "services", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["--select", "services", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -45,8 +48,9 @@ fn test_select_projection_basic_status() {
     );
 
     // Test JMESPath array index "services[0]"
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "--select", "services[0]", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["--select", "services[0]", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -56,8 +60,9 @@ fn test_select_projection_basic_status() {
     assert_eq!(json_val, serde_json::Value::String("web-server".to_string()));
 
     // Test JSONPath format "$.all_running"
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "--select", "$.all_running", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["--select", "$.all_running", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -67,8 +72,9 @@ fn test_select_projection_basic_status() {
     assert_eq!(json_val, serde_json::Value::Bool(true));
 
     // Test JSONPath format with index "$.services[1]"
-    let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_basic", "--", "--select", "$.services[1]", "services", "status"])
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
+        .args(&["--select", "$.services[1]", "services", "status"])
         .output()
         .expect("failed to execute process");
 
@@ -80,12 +86,9 @@ fn test_select_projection_basic_status() {
 
 #[test]
 fn test_select_projection_with_yaml_format() {
-    let output = Command::new("cargo")
+    let mut cmd = Command::cargo_bin("tutorial_basic").expect("failed to get cargo bin tutorial_basic");
+    let output = cmd
         .args(&[
-            "run",
-            "--example",
-            "tutorial_basic",
-            "--",
             "--format",
             "yaml",
             "--select",

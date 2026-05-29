@@ -5,6 +5,11 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [26.5.19] - 2026-05-28
+
+### Added
+- Direct execution support for E2E verification of CLI behaviors without nesting cargo run.
+
 ## [26.4.25] - 2026-04-24
 
 ### Added

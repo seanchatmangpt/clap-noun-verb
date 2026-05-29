@@ -396,6 +396,7 @@ fn generate_mcp_descriptor(
 // =============================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use syn::parse_quote;

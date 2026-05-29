@@ -17,7 +17,10 @@ TOTAL_TESTS=21
 PASSED=0
 FAILED=0
 SKIPPED=0
-TEST_RESULTS_FILE="/home/user/clap-noun-verb/docs/test_results_raw.txt"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+TEST_RESULTS_FILE="$PROJECT_ROOT/docs/test_results_raw.txt"
 
 # Initialize results file
 echo "Test Matrix Execution Results - $(date)" > "$TEST_RESULTS_FILE"

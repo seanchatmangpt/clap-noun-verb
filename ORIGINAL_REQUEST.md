@@ -47,3 +47,23 @@ Verify that all refactored examples, the updated playground targets, and all uni
 - [ ] Refactored examples build successfully (`cargo build --examples`) using the shared `utils` dependency.
 - [ ] Standalone playground targets compile cleanly and pass their respective test suites.
 - [ ] No local boilerplate redundancies remain for tools supported by the `utils` library.
+
+## Follow-up — 2026-05-28T17:10:39-07:00
+
+Determine and list all outstanding CLI, macro, validation, formatting, and safety capabilities that need to be implemented or verified before the `clap-noun-verb` framework can be officially released as version `v26.5.28`.
+
+Working directory: /Users/sac/clap-noun-verb
+
+## Requirements
+
+### R1. Release Gap Analysis
+Examine the complete workspace, including core libraries, macro expanders, testing suites, examples, and the playground. Identify any missing features, incomplete validation rules, compile warnings, or inconsistent API surfaces.
+
+### R2. Capability Matrix mapping
+Construct a comprehensive capability checklist detailing core, macro, utility, and verification bounds to guide release readiness.
+
+## Acceptance Criteria
+
+### Verification
+- [ ] A final report detailing all outstanding release gaps, missing validations, or integration anomalies is generated.
+- [ ] No stubs or undocumented features are left untracked.

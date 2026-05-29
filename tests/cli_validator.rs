@@ -35,7 +35,7 @@ fn test_validator_validate_required_str_success() -> Result<()> {
 
 #[test]
 fn test_validator_validate_required_str_missing() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name").required(true));
 
     let matches = cmd
@@ -160,7 +160,7 @@ fn test_validator_validate_many_success() -> Result<()> {
 
 #[test]
 fn test_validator_validate_many_empty() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("items").required(true).num_args(1..));
 
     let matches = cmd

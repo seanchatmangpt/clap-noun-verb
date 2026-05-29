@@ -174,3 +174,19 @@ fn test_end_to_end_chaining() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_preprocessor_infinite_loop_prevention() -> Result<()> {
+    let step_results = vec![
+        json!({
+            "recursive": "looping @{1.recursive}",
+            "normal": "value"
+        })
+    ];
+
+    let args = vec!["@{1.recursive}".to_string()];
+    let processed = preprocess_args(&args, &None, &step_results)?;
+    assert_eq!(processed, vec!["looping @{1.recursive}".to_string()]);
+
+    Ok(())
+}

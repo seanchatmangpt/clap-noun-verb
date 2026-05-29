@@ -136,7 +136,7 @@ if ! cargo make test > /tmp/test-output.txt 2>&1; then
 fi
 
 # Check for test failures
-test_failures=$(grep -c "FAILED" /tmp/test-output.txt || echo "0")
+test_failures=$(grep -c "FAILED" /tmp/test-output.txt || true)
 if [ "$test_failures" != "0" ]; then
     print_failure "$test_failures test failures"
     echo ""
@@ -157,7 +157,7 @@ echo ""
 print_gate "4" "Compiler Warnings"
 
 cargo make lint > /tmp/lint-output.txt 2>&1 || true
-warning_count=$(grep -c "warning:" /tmp/lint-output.txt || echo "0")
+warning_count=$(grep -c "warning:" /tmp/lint-output.txt || true)
 
 if [ "$warning_count" != "0" ]; then
     print_failure "$warning_count compiler warnings detected"
@@ -200,7 +200,7 @@ else
 fi
 
 # Check README (should have version references)
-readme_version_count=$(grep -c "\"$DESIRED_VERSION\"" README.md || echo "0")
+readme_version_count=$(grep -c "\"$DESIRED_VERSION\"" README.md || true)
 if [ "$readme_version_count" = "0" ]; then
     print_failure "README missing version $DESIRED_VERSION references"
     echo ""

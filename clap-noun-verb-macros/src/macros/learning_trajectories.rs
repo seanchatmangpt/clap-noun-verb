@@ -751,6 +751,7 @@ pub fn parse_learning_path_args(args: TokenStream) -> Result<CompetencyLevel, sy
 // ============================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

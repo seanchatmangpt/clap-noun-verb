@@ -345,6 +345,7 @@ const ALLOWED_ARG_KEYS: &[&str] = &[
 ];
 
 /// Helper to calculate Levenshtein distance between two strings for typo suggestions
+#[allow(clippy::needless_range_loop)]
 fn levenshtein_distance(a: &str, b: &str) -> usize {
     let a_len = a.chars().count();
     let b_len = b.chars().count();
@@ -391,15 +392,25 @@ pub fn validate_arg_attribute_syntax(attrs: &[syn::Attribute]) -> syn::Result<()
                                         }
                                     }
 
-                                    let error_msg = if min_distance <= 3 {
-                                        format!(
-                                            "Unknown argument parameter `{}` in `#[arg]`. Did you mean `{}`?\n\
-                                             \n\
-                                             Valid parameters are: {}",
-                                            key,
-                                            best_suggestion.unwrap(),
-                                            ALLOWED_ARG_KEYS.join(", ")
-                                        )
+                                    let error_msg = if let Some(suggestion) = best_suggestion {
+                                        if min_distance <= 3 {
+                                            format!(
+                                                "Unknown argument parameter `{}` in `#[arg]`. Did you mean `{}`?\n\
+                                                 \n\
+                                                 Valid parameters are: {}",
+                                                key,
+                                                suggestion,
+                                                ALLOWED_ARG_KEYS.join(", ")
+                                            )
+                                        } else {
+                                            format!(
+                                                "Unknown argument parameter `{}` in `#[arg]`.\n\
+                                                 \n\
+                                                 Valid parameters are: {}",
+                                                key,
+                                                ALLOWED_ARG_KEYS.join(", ")
+                                            )
+                                        }
                                     } else {
                                         format!(
                                             "Unknown argument parameter `{}` in `#[arg]`.\n\
@@ -663,6 +674,7 @@ fn count_complexity_in_expr(expr: &syn::Expr, complexity: &mut usize) {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use quote::quote;

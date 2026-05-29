@@ -1,305 +1,171 @@
-# Reference: Error Types
+# Reference: Error Types and MAPE-K Structured Errors
 
 **File**: `src/error.rs`
 
-## CliError Enum
+## NounVerbError Enum
 
-The primary error type for clap-noun-verb operations.
+The primary error type for `clap-noun-verb` operations.
 
 **Definition**:
 ```rust
 #[derive(Error, Debug)]
-pub enum CliError {
-    #[error("Parse error: {0}")]
-    ParseError(String),
+pub enum NounVerbError {
+    /// Command not found
+    #[error("Command '{noun}' not found{suggestion}")]
+    CommandNotFound { noun: String, suggestion: String },
 
-    #[error("Validation error: {0}")]
-    ValidationError(String),
+    /// Verb not found for a given noun
+    #[error("Verb '{verb}' not found for noun '{noun}'{suggestion}")]
+    VerbNotFound { noun: String, verb: String, suggestion: String },
 
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    /// Invalid command structure
+    #[error("Invalid command structure: {message}")]
+    InvalidStructure { message: String },
 
-    #[error("Serialization error: {0}")]
-    SerializationError(#[from] serde_json::Error),
+    /// Command execution error
+    #[error("Command execution failed: {message}")]
+    ExecutionError { message: String },
 
-    #[error("{0}")]
-    Custom(String),
+    /// Argument parsing error
+    #[error("Argument parsing failed: {message}")]
+    ArgumentError { message: String },
+
+    /// Plugin-related error
+    #[error("Plugin error: {0}")]
+    PluginError(String),
+
+    /// Validation failed
+    #[error("Validation failed: {0}")]
+    ValidationFailed(String),
+
+    /// Middleware error
+    #[error("Middleware error: {0}")]
+    MiddlewareError(String),
+
+    /// Telemetry error
+    #[error("Telemetry error: {0}")]
+    TelemetryError(String),
+
+    /// Generic error wrapper
+    #[error("Error: {0}")]
+    Generic(String),
 }
 ```
 
-## Error Variants
+---
 
-### ParseError
+## MAPE-K Structured Errors
 
-Raised when CLI argument parsing fails.
+For machine-grade orchestration and self-healing systems (MAPE-K control loops), `clap-noun-verb` provides a uniform, machine-readable structured error representation (`StructuredError`).
 
-**When It Happens**:
-- Invalid argument type (e.g., "abc" as u32)
-- Missing required argument
-- Invalid argument format
-
-**Example**:
-```rust
-#[verb("list")]
-fn list_items(page: u32) -> Result<Vec<Item>> {
-    // If user provides: myapp list --page abc
-    // Error: Parse error: invalid digit found in string
-    Ok(vec![])
-}
-```
-
-### ValidationError
-
-Raised when argument values fail validation.
-
-**When It Happens**:
-- Custom validation rules fail
-- Value constraints violated
-- Domain-specific rules broken
-
-**Example**:
-```rust
-#[verb("create")]
-fn create_user(email: String) -> Result<UserId> {
-    if !email.contains('@') {
-        return Err(CliError::ValidationError("Invalid email format".to_string()));
-    }
-    Ok(UserId(1))
-}
-```
-
-### IoError
-
-Raised during file I/O operations.
-
-**When It Happens**:
-- File not found
-- Permission denied
-- Disk full
-- Broken pipe
-
-**Example**:
-```rust
-#[verb("read")]
-fn read_file(path: String) -> Result<FileContents> {
-    let contents = std::fs::read_to_string(&path)?;  // Converts io::Error
-    Ok(FileContents(contents))
-}
-```
-
-### SerializationError
-
-Raised when output cannot be serialized to JSON.
-
-**When It Happens**:
-- Circular references in data
-- Non-serializable types in output
-- serde serialization failure
-
-**Example**:
-```rust
-#[verb("export")]
-fn export_data() -> Result<DataToExport> {
-    Ok(DataToExport {
-        values: vec![1, 2, 3],  // OK: Vec<i32> is serializable
-    })
-}
-```
-
-### Custom
-
-Generic error for application-specific failures.
-
-**Usage**:
-```rust
-#[verb("process")]
-fn process(file: String) -> Result<ProcessResult> {
-    let result = do_complex_operation(&file)
-        .map_err(|e| CliError::Custom(format!("Processing failed: {}", e)))?;
-    Ok(result)
-}
-```
-
-## Creating Custom Error Types
-
-**With thiserror**:
-```rust
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum UserError {
-    #[error("User not found: {0}")]
-    NotFound(u32),
-
-    #[error("Invalid email: {0}")]
-    InvalidEmail(String),
-
-    #[error("Duplicate user: {0}")]
-    DuplicateUser(String),
-}
-
-// Implement conversion to CliError
-impl From<UserError> for CliError {
-    fn from(err: UserError) -> Self {
-        CliError::Custom(err.to_string())
-    }
-}
-
-#[verb("create")]
-fn create_user(email: String) -> Result<UserId, UserError> {
-    if !email.contains('@') {
-        return Err(UserError::InvalidEmail(email));
-    }
-    Ok(UserId(1))
-}
-```
-
-**With anyhow**:
-```rust
-use anyhow::Result;
-
-#[verb("fetch")]
-fn fetch_data(url: String) -> Result<Data> {
-    let response = reqwest::blocking::get(&url)?;
-    let data = response.json()?;
-    Ok(data)
-}
-```
-
-## Error Handling Patterns
-
-### Pattern 1: Conversion with `?` Operator
+### StructuredError Struct
 
 ```rust
-#[verb("process")]
-fn process(path: String) -> Result<ProcessResult> {
-    let input = std::fs::read_to_string(&path)?;  // Converts io::Error
-    let parsed = serde_json::from_str::<Data>(&input)?;  // Converts serde_json::Error
-    Ok(ProcessResult { count: parsed.items.len() })
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub struct StructuredError {
+    pub kind: ErrorKind,
+    pub severity: Severity,
+    pub message: String,
+    pub details: std::collections::HashMap<String, serde_json::Value>,
+    pub action_templates: Vec<ActionTemplate>,
 }
 ```
 
-### Pattern 2: Explicit Conversion with `map_err`
+### ErrorKind Enum
 
 ```rust
-#[verb("validate")]
-fn validate(value: String) -> Result<ValidateResult> {
-    check_constraint(&value)
-        .map_err(|e| CliError::ValidationError(format!("Constraint failed: {}", e)))?;
-    Ok(ValidateResult { valid: true })
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub enum ErrorKind {
+    InvalidInput,
+    PermissionDenied,
+    InvariantBreach,
+    DeadlineExceeded,
+    GuardExceeded,
+    CommandNotFound,
+    VerbNotFound,
+    ExecutionError,
+    InternalError,
 }
 ```
 
-### Pattern 3: Custom Error Context
+### Severity Enum
 
 ```rust
-#[verb("import")]
-fn import_data(file: String) -> Result<ImportResult> {
-    let contents = std::fs::read_to_string(&file)
-        .map_err(|e| CliError::Custom(
-            format!("Failed to read import file '{}': {}", file, e)
-        ))?;
-    Ok(ImportResult { imported: 42 })
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+pub enum Severity {
+    Warning,
+    Error,
+    Critical,
 }
 ```
 
-### Pattern 4: Nested Results
+### ActionTemplate Enum
+
+Autonomic loops rely on executable recovery templates proposed by the error layer to automatically resolve runtime issues:
 
 ```rust
-#[verb("complex")]
-fn complex_operation(arg: String) -> Result<ComplexResult> {
-    let step1 = step_one(&arg)?;
-    let step2 = step_two(step1)?;
-    let step3 = step_three(step2)?;
-    Ok(ComplexResult { result: step3 })
-}
-
-fn step_one(arg: &str) -> Result<String> {
-    Ok(arg.to_uppercase())
-}
-
-fn step_two(input: String) -> Result<String> {
-    Ok(input)  // Could return Err(...)
-}
-
-fn step_three(input: String) -> Result<Vec<String>> {
-    Ok(vec![input])
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum ActionTemplate {
+    TimeoutAdjustment {
+        suggested_timeout_ms: u64,
+        reason: String,
+    },
+    CommandFix {
+        suggested_command: String,
+        reason: String,
+    },
 }
 ```
 
-## Error Output Format
+---
 
-Errors are automatically formatted for CLI:
+## Mapping NounVerbError to StructuredError
 
-**Example Error Output**:
+When errors occur during command routing or execution, the framework automatically maps the `NounVerbError` to a `StructuredError` via `StructuredError::from_error(&err)`.
+
+### Mapping Matrix
+
+| NounVerbError Variant | Mapped ErrorKind | Severity | Dynamic Action Templates / Suggestions |
+|---|---|---|---|
+| `CommandNotFound` | `ErrorKind::CommandNotFound` | `Severity::Error` | Misspelling suggestion mapped to `ActionTemplate::CommandFix` (using Levenshtein distance). |
+| `VerbNotFound` | `ErrorKind::VerbNotFound` | `Severity::Error` | Misspelling suggestion mapped to `ActionTemplate::CommandFix` with correct parent noun. |
+| `InvalidStructure` | `ErrorKind::InvalidInput` | `Severity::Error` | None |
+| `ExecutionError` | `ErrorKind::ExecutionError` or `DeadlineExceeded` | `Severity::Error` or `Critical` | Mapped to `ErrorKind::DeadlineExceeded` with `ActionTemplate::TimeoutAdjustment` if message contains "deadline", "timeout", or "budget exceeded". |
+| `ArgumentError` | `ErrorKind::InvalidInput` | `Severity::Error` | None |
+| `ValidationFailed` | `ErrorKind::InvariantBreach` | `Severity::Error` | None |
+| `PluginError`, `MiddlewareError`, `TelemetryError`, `Generic` | `ErrorKind::InternalError` | `Severity::Error` | None |
+
+### JSON Output Example (Command Spellcheck Recovery)
+
+If a user tries to run a misspelled command:
 ```bash
-$ myapp user create invalid-email
-Error: Validation error: Invalid email format
+$ myapp servise list
 ```
-
-**Exit Codes**:
-- `0` - Success
-- `1` - Generic error
-- `2` - Parse/usage error
-- Custom codes supported via `HandlerOutput::status_code`
-
-## HTTP Status Code Mapping
-
-For APIs, map CLI errors to HTTP:
-
-```rust
-impl From<CliError> for u16 {
-    fn from(error: CliError) -> u16 {
-        match error {
-            CliError::ParseError(_) => 400,      // Bad Request
-            CliError::ValidationError(_) => 422, // Unprocessable Entity
-            CliError::IoError(_) => 500,         // Internal Server Error
-            CliError::SerializationError(_) => 500,
-            CliError::Custom(_) => 500,
-        }
+The resulting structured JSON error response will be:
+```json
+{
+  "kind": "CommandNotFound",
+  "severity": "Error",
+  "message": "Command 'servise' not found. Did you mean: service?",
+  "details": {
+    "noun": "servise",
+    "suggestion": ". Did you mean: \u001b[1m\u001b[33mservice\u001b[0m?"
+  },
+  "action_templates": [
+    {
+      "suggested_command": "service",
+      "reason": "Suggested correction for misspelled command 'servise'"
     }
+  ]
 }
 ```
+
+---
 
 ## Best Practices
 
-1. **Be Specific**: Use concrete error variants when possible
-2. **Provide Context**: Include relevant information in error messages
-3. **Use Custom Types**: For domain-specific errors, create custom error enums
-4. **Chain Errors**: Use `?` operator to preserve error chains
-5. **User-Friendly Messages**: Write errors users can act on
-6. **Document Errors**: Note what errors your command can return
+1. **Leverage Recovery Suggestions**: Inspect the `action_templates` array in the JSON response of your autonomic control program to execute self-healing steps (e.g. automatically retrying with the suggested command or adjusted timeouts).
+2. **Preserve Exit Codes**: Use structured error formatting while maintaining the correct exit status code on the shell to preserve interoperability.
+3. **Chicago TDD Testing**: Validate expected error scenarios directly on your domain interfaces as well as the CLI boundaries to prevent parsing or validation regressions.
 
-## Testing Error Cases
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validation_error() {
-        let result = create_user("no-at-sign".to_string());
-        assert!(result.is_err());
-        match result {
-            Err(CliError::ValidationError(msg)) => {
-                assert!(msg.contains("email"));
-            }
-            _ => panic!("Expected ValidationError"),
-        }
-    }
-
-    #[test]
-    fn test_io_error() {
-        let result = read_file("/nonexistent/file");
-        assert!(matches!(result, Err(CliError::IoError(_))));
-    }
-}
-```
-
-## See Also
-
-- Result<T> - Return type wrapper
-- thiserror - Custom error types crate
-- anyhow - Flexible error handling
-- Error Messages - User-facing error output

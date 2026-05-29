@@ -32,7 +32,7 @@ The macro generates:
 1. **Static registration**: Adds verb to `linkme` distributed slice
 2. **Argument extraction**: Creates `HandlerInput` wrapper from CLI args
 3. **Type coercion**: Converts clap values to Rust types
-4. **Error handling**: Maps parse errors to `CliError`
+4. **Error handling**: Maps parse errors to `NounVerbError`
 5. **Handler dispatch**: Routes to wrapped function
 
 ## Examples
@@ -150,7 +150,7 @@ fn process(input_file: Option<String>) -> Result<ProcessResult> {
 
 ## Error Handling
 
-The wrapped function should return errors as `Result<T, E>` where `E` implements `Into<CliError>`:
+The wrapped function should return errors as `Result<T, E>` where `E` implements `Into<NounVerbError>`:
 
 ```rust
 use thiserror::Error;
@@ -232,7 +232,7 @@ fn db_list() -> Result<Vec<Database>> { }
 
 ## See Also
 
-- `#[noun]` - Parent command container
+- [#[noun] Macro (DEPRECATED)](./noun-macro.md) - Legacy parent command container
 - `HandlerInput` - CLI argument access
 - `Result<T>` - Required return type
 - Doc Comment Tags - Relationship declarations

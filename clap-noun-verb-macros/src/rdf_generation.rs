@@ -289,6 +289,7 @@ pub fn generate_rdf_registration(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

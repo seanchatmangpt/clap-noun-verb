@@ -48,11 +48,14 @@ pub fn preprocess_args(
         let mut new_arg = arg.clone();
         
         // 1. Resolve step references @{step.key}
-        while let Some(start_idx) = new_arg.find("@{") {
+        let mut search_idx = 0;
+        while let Some(start_offset) = new_arg[search_idx..].find("@{") {
+            let start_idx = search_idx + start_offset;
             if let Some(end_offset) = new_arg[start_idx..].find('}') {
                 let end_idx = start_idx + end_offset;
                 let ref_content = &new_arg[start_idx + 2..end_idx];
                 
+                let mut resolved = false;
                 if let Some(dot_idx) = ref_content.find('.') {
                     let (step_str, path) = ref_content.split_at(dot_idx);
                     let path = &path[1..]; // skip '.'
@@ -61,12 +64,16 @@ pub fn preprocess_args(
                             let step_data = &step_results[step_num - 1];
                             if let Some(resolved_val) = get_json_path(step_data, path) {
                                 new_arg.replace_range(start_idx..=end_idx, &resolved_val);
-                                continue;
+                                search_idx = start_idx + resolved_val.len();
+                                resolved = true;
                             }
                         }
                     }
                 }
-                new_arg.replace_range(start_idx..=end_idx, "");
+                if !resolved {
+                    new_arg.replace_range(start_idx..=end_idx, "");
+                    search_idx = start_idx;
+                }
             } else {
                 break;
             }

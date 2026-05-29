@@ -88,6 +88,7 @@ fn generate_basic_test_cases(fn_name: &syn::Ident) -> Vec<TokenStream> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use quote::quote;

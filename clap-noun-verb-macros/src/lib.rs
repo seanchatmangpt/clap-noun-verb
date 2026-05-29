@@ -2292,6 +2292,7 @@ pub fn remote_invoke(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::items_after_test_module)]
 mod tests {
     use super::*;
 

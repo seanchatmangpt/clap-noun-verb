@@ -84,6 +84,7 @@ args = ["build", "--release"]
 description = "Build in release mode"
 
 [tasks.build-examples]
+workspace = false
 command = "cargo"
 args = ["build", "--examples"]
 description = "Build all examples"

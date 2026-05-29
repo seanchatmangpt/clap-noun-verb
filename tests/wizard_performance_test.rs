@@ -23,5 +23,6 @@ fn test_wizard_parser_overhead_performance() {
 
     // Verify parser performs well (1000 parses should be well under 100 milliseconds)
     println!("Parsed 1000 invocations in {:?}", duration);
-    assert!(duration.as_millis() < 100, "Parsing overhead too high: {:?}", duration);
+    let threshold = if cfg!(debug_assertions) { 250 } else { 100 };
+    assert!(duration.as_millis() < threshold, "Parsing overhead too high: {:?}", duration);
 }

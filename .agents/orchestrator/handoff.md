@@ -1,24 +1,21 @@
-# Final Handoff Report — Project Orchestrator
+# Handoff Report: v26.5.28 Release Gap Analysis
 
 ## Milestone State
-- **Milestone 1**: Codebase Research & Needs Analysis [DONE]
-- **Milestone 2**: Design & Implementation Plan [DONE]
-- **Milestone 3**: Core Utils Implementation [DONE]
-- **Milestone 4**: Integration Testing & Verification [DONE]
-- **Final Status Verification**: Checked using Verification Reviewer [DONE]
+- **Milestone 1**: Core Framework Research [DONE]
+- **Milestone 2**: Macro Crate Research [DONE]
+- **Milestone 3**: Workspace & Integration Research [DONE]
+- **Milestone 4**: Capability Matrix & Gap Synthesis [DONE]
+- **Milestone 5**: Final Release Report [DONE]
 
 ## Active Subagents
-- None (All 19 subagents have completed and delivered reports successfully).
+- None (all three Explorer subagents completed successfully).
 
 ## Pending Decisions
-- None.
-
-## Remaining Work
-- The task is fully complete. All tests compile cleanly and pass with 0 errors, 0 warnings, and 100% correct logic under forensic integrity verification.
+- Remediation strategy for the hardcoded `ggen` domain coupling (e.g. dynamic category registry).
+- Cleanup strategy for the uncompiled/orphaned source files (`src/config.rs`, `src/router.rs`).
 
 ## Key Artifacts
-- `/Users/sac/clap-noun-verb/utils/` (The utility package: `clap-noun-verb-utils` containing completions, adapters, display_json, help, mangen, markdown, etc.)
-- `/Users/sac/clap-noun-verb/utils/tests/` (Full integration test suite: `adapters.rs`, `adversarial.rs`, `adverse_challenges.rs`, `challenge_verification.rs`, `common.rs`, `display_json.rs`, `doc_generation.rs`, `help.rs`, `number_parsing.rs`, `reviewer_4_verification.rs`, `visual_and_doc_adverse.rs`)
-- `/Users/sac/clap-noun-verb/.agents/orchestrator/progress.md` (Project progress tracking)
-- `/Users/sac/clap-noun-verb/.agents/reviewer_verification/handoff.md` (Final Verification Review report)
-- `/Users/sac/clap-noun-verb/PROJECT.md` (Milestones index at root)
+- `/Users/sac/clap-noun-verb/RELEASE_GAPS_v26.5.28.md` — Complete release readiness report and capability matrix.
+- `/Users/sac/clap-noun-verb/.agents/orchestrator/plan.md` — Orchestrator project plan.
+- `/Users/sac/clap-noun-verb/.agents/orchestrator/progress.md` — Progress tracker.
+- `/Users/sac/clap-noun-verb/.agents/orchestrator/context.md` — Context definition.

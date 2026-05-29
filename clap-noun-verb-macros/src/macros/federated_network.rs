@@ -502,6 +502,7 @@ pub fn parse_remote_invoke_config(args: TokenStream) -> syn::Result<RemoteInvoke
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use quote::quote;

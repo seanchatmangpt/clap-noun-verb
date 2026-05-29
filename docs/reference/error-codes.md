@@ -366,4 +366,4 @@ If you encounter an error not listed here:
 **Related**:
 - [How-to: Debug RDF Issues](../howto/debugging.md)
 - [How-to: Validate Ontologies](../howto/validation.md)
-- [API Reference](api-reference.md)
+- [API Reference](api-catalog.md)
