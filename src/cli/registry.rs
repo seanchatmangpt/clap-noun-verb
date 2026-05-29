@@ -555,7 +555,17 @@ impl CommandRegistry {
                 let long_static: &'static str = Box::leak(long_name.into_boxed_str());
                 clap::Arg::new(arg_name).long(long_static)
             } else {
-                clap::Arg::new(arg_name).long(arg_name)
+                // Canonical long flag is idiomatic kebab-case (--profile-id), matching
+                // clap's derive convention. The verbatim snake_case spelling
+                // (--profile_id) is kept as an alias so existing scripts/tests that
+                // used the underscore form keep working (backward compatible).
+                let long_name = arg_name.replace('_', "-");
+                if long_name == arg_name {
+                    clap::Arg::new(arg_name).long(arg_name)
+                } else {
+                    let long_static: &'static str = Box::leak(long_name.into_boxed_str());
+                    clap::Arg::new(arg_name).long(long_static).alias(arg_name)
+                }
             }
         };
 
