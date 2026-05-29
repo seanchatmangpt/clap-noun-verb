@@ -368,6 +368,6 @@ cnv:Quickly a cnv:Noun ; cnv:name "quickly" .    # Noun should be resource/thing
 ---
 
 **Related**:
-- [Tutorial 2: Create Your First RDF Ontology](../tutorials/tutorial-2-first-rdf.md)
-- [How-to: Build Multi-Level CLIs](../howto/multi-level-cli.md)
-- [Explanation: Semantic Web Fundamentals](semantic-web.md)
+- [Tutorial: Adding Multiple Commands](../tutorial/03-adding-commands.md)
+- [How-to: Validation](../howto/validation.md)
+- [Explanation: Architecture Overview](architecture.md)

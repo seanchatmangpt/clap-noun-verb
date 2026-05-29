@@ -105,7 +105,7 @@ url = "2.5"
 # =============================================================================
 
 [dev-dependencies]
-clap-noun-verb-utils = { path = "utils" }
+clap-noun-verb-utils = { path = "utils", version = "26.5.28" }
 # Testing frameworks
 cargo-make = "0.37"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }

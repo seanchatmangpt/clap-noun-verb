@@ -495,9 +495,9 @@ mod tests {
 
 ## Next Steps
 
-- **[Tutorial 09: Deployment Basics](09-deployment-basics.md)** - Production deployment
-- **[Tutorial 10: Next Steps](10-next-steps.md)** - Advanced topics
+- **[How-To: Problem-Solving](../howto/README.md)** - Practical guides
 - **[Reference: Error Codes](../reference/error-codes.md)** - Standard error types
+- **[Explanation: Architecture](../explanation/architecture.md)** - Design philosophy
 
 **Estimated time to next tutorial:** 20 minutes
 

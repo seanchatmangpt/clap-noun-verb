@@ -315,6 +315,6 @@ Before deploying any ontology:
 ---
 
 **Related**:
-- [Tutorial 2: Create Your First RDF Ontology](../tutorials/tutorial-2-first-rdf.md)
-- [How-to: Query with SPARQL](sparql-queries.md)
+- [Tutorial: Adding Multiple Commands](../tutorial/03-adding-commands.md)
+- [How-to: Debugging](debugging.md)
 - [Reference: Error Codes](../reference/error-codes.md)

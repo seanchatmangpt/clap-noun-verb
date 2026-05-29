@@ -361,6 +361,6 @@ Expected output:
 ---
 
 **Related**:
-- [Explanation: Performance Optimization](../explanation/performance.md)
-- [How-to: Validate Ontologies](validation.md)
 - [Reference: Performance SLOs](../reference/performance-slos.md)
+- [How-to: Validate Input](validation.md)
+- [Explanation: Architecture Overview](../explanation/architecture.md)

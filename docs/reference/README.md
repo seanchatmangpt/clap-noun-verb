@@ -116,7 +116,7 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 - **Can't find an API?** - [Request documentation](https://github.com/seanchatmangpt/clap-noun-verb/issues/new?template=doc_request.md)
 - **API doesn't work as documented?** - [Report a bug](https://github.com/seanchatmangpt/clap-noun-verb/issues)
-- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb)
 
 ---
 

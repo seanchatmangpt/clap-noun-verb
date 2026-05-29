@@ -576,7 +576,6 @@ kubectl describe pod <pod-name> -n production | grep -A 10 "Environment"
 
 - **[How-To: Production Security](security.md)** - Secure configuration and secrets
 - **[How-To: Production Deployment](deployment.md)** - Deploy with configuration
-- **[Tutorial 09: Deployment Basics](../../tutorial/09-deployment-basics.md)** - Configuration fundamentals
 
 ---
 

@@ -183,7 +183,7 @@ Once run, it automatically hosts a local web server displaying a timeline, call 
    ```bash
    cargo run --features dhat-heap --release
    ```
-4. Examine the generated `dhat-heap.json` in `viewer.html` (provided by `dhat` or uploaded to [https://valgrind.org/dhat/dh_view.html](https://valgrind.org/dhat/dh_view.html)) to find short-lived dynamic allocations during startup.
+4. Examine the generated `dhat-heap.json` in the `dh_view.html` viewer (included in the `dhat` crate, or available in the `dhat` repository) to find short-lived dynamic allocations during startup.
 
 ### D. Detailed Trace Analysis: `tracing` and `tracing-chrome`
 If you need microsecond-accurate trace spans for custom logic, use `tracing` combined with `tracing-chrome` to output files compatible with Chrome’s tracing tool (`about:tracing`).

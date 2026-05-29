@@ -538,6 +538,6 @@ cargo build
 
 ## Reference
 
-- [Tutorial: Your First CLI](../tutorial/01-your-first-cli.md)
+- [Tutorial: Domain Separation](../tutorial/02-domain-separation.md)
 - [Tutorial: Output Formats](../tutorial/05-output-formats.md)
 - [Explanation: Architecture](../explanation/architecture.md)

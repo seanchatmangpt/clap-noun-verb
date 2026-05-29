@@ -94,7 +94,7 @@ This tutorial series follows **learning-oriented** principles:
 ### Stuck on a tutorial?
 - **Re-read the instructions** - Most issues come from skipped steps
 - **Check the examples** - Each tutorial has a working example in `examples/`
-- **Ask for help** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Ask for help** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb)
 
 ### Found a bug in a tutorial?
 - **Report it** - [GitHub Issues](https://github.com/seanchatmangpt/clap-noun-verb/issues)

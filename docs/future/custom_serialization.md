@@ -79,7 +79,7 @@ pub enum OutputFormat {
     Table,       // ASCII table representation for list/array outputs
     Plain,       // Plain text key-value format
     Tsv,         // Tab-Separated Values for tabular automation
-    Quiet,       // Supresses all stdout rendering (returns empty string)
+    Quiet,       // Suppresses all stdout rendering (returns empty string)
 }
 ```
 

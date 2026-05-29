@@ -2,7 +2,7 @@
 
 **Learning Path:** Understanding Architecture → Building Maintainable CLIs
 **Time:** 15 minutes
-**Prerequisites:** [Tutorial 01: Your First CLI](01-your-first-cli.md)
+**Prerequisites:** [README Quick Start](../../README.md#2-minute-example)
 
 ---
 

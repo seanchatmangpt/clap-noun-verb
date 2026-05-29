@@ -542,7 +542,6 @@ $ myapp users export --format jsonl
 
 ## Next Steps
 
-- **[Tutorial 06: Autonomic Features](06-autonomic-features.md)** - Machine-grade introspection
 - **[Tutorial 07: Async Operations](07-async-operations.md)** - Async CLI commands
 
 **Estimated time to next tutorial:** 20 minutes

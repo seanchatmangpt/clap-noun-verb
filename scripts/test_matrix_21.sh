@@ -52,18 +52,18 @@ test_config() {
     local temp_output=$(mktemp)
 
     # Build command based on features
-    local check_cmd="cargo make check"
-    local test_cmd="cargo make test"
-    local lint_cmd="cargo make lint"
+    local check_cmd="cargo make --no-workspace check"
+    local test_cmd="cargo make --no-workspace test"
+    local lint_cmd="cargo make --no-workspace lint"
 
     if [ "$features" != "default" ] && [ "$features" != "no-default" ]; then
-        check_cmd="cargo make check --features $features"
-        test_cmd="cargo make test --features $features"
-        lint_cmd="cargo make lint --features $features"
+        check_cmd="cargo make --no-workspace check --features $features"
+        test_cmd="cargo make --no-workspace test --features $features"
+        lint_cmd="cargo make --no-workspace lint --features $features"
     elif [ "$features" = "no-default" ]; then
-        check_cmd="cargo make check --no-default-features"
-        test_cmd="cargo make test --no-default-features"
-        lint_cmd="cargo make lint --no-default-features"
+        check_cmd="cargo make --no-workspace check --no-default-features"
+        test_cmd="cargo make --no-workspace test --no-default-features"
+        lint_cmd="cargo make --no-workspace lint --no-default-features"
     fi
 
     # Step 1: Compilation check (CRITICAL ANDON SIGNAL)

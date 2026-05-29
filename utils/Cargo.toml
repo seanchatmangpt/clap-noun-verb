@@ -3,6 +3,7 @@ name = "clap-noun-verb-utils"
 version = "26.5.28"
 edition = "2021"
 rust-version = "1.74"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 clap = { workspace = true }

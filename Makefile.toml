@@ -1,6 +1,7 @@
 [config]
 skip_core_tasks = false
 on_error_task = "notification"
+workspace = false
 
 [tasks.default]
 dependencies = ["format-check", "clippy", "test"]
