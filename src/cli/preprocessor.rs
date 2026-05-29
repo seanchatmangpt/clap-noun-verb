@@ -12,23 +12,11 @@ pub fn get_json_path(value: &serde_json::Value, path: &str) -> Option<String> {
             continue;
         }
         if let Some(obj) = current.as_object() {
-            if let Some(next) = obj.get(part) {
-                current = next;
-            } else {
-                return None;
-            }
-        } else if let Some(arr) = current.as_array() {
-            if let Ok(idx) = part.parse::<usize>() {
-                if let Some(next) = arr.get(idx) {
-                    current = next;
-                } else {
-                    return None;
-                }
-            } else {
-                return None;
-            }
+            current = obj.get(part)?;
         } else {
-            return None;
+            let arr = current.as_array()?;
+            let idx = part.parse::<usize>().ok()?;
+            current = arr.get(idx)?;
         }
     }
     match current {

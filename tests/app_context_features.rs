@@ -26,7 +26,7 @@ fn test_state_isolation_between_types() {
     // Insert multiple different types
     ctx.insert(42_i32).expect("Failed to insert i32");
     ctx.insert("hello world".to_string()).expect("Failed to insert String");
-    ctx.insert(3.14_f64).expect("Failed to insert f64");
+    ctx.insert(2.5_f64).expect("Failed to insert f64");
     ctx.insert(true).expect("Failed to insert bool");
 
     // Verify each type can be retrieved correctly
@@ -37,7 +37,7 @@ fn test_state_isolation_between_types() {
     assert_eq!(str_val, "hello world", "String value should be isolated and correct");
 
     let float_val: f64 = ctx.get().expect("Failed to get f64");
-    assert!((float_val - 3.14).abs() < f64::EPSILON, "f64 value should be isolated and correct");
+    assert!((float_val - 2.5).abs() < f64::EPSILON, "f64 value should be isolated and correct");
 
     let bool_val: bool = ctx.get().expect("Failed to get bool");
     assert!(bool_val, "bool value should be isolated and correct");
@@ -319,7 +319,7 @@ fn test_clear_functionality() {
     // Insert multiple values
     ctx.insert(42_i32).expect("Failed to insert i32");
     ctx.insert("test".to_string()).expect("Failed to insert String");
-    ctx.insert(3.14_f64).expect("Failed to insert f64");
+    ctx.insert(2.5_f64).expect("Failed to insert f64");
 
     assert_eq!(ctx.len().expect("Failed to get len"), 3, "Should have 3 values");
     assert!(!ctx.is_empty().expect("Failed to check empty"), "Should not be empty");

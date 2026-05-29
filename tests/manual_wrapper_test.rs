@@ -12,9 +12,9 @@ fn test_opt(opt: Option<String>) -> Result<()> {
 }
 
 fn test_opt_wrapper(input: HandlerInput) -> Result<HandlerOutput> {
-    let opt = input.args.get("opt").map(|v| v.clone());
-    let result = test_opt(opt)?;
-    HandlerOutput::from_data(result)
+    let opt = input.args.get("opt").cloned();
+    test_opt(opt)?;
+    HandlerOutput::from_data(())
 }
 
 #[test]

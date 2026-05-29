@@ -1,7 +1,7 @@
 [config]
 skip_core_tasks = false
 on_error_task = "notification"
-workspace = false
+default_to_workspace = false
 
 [tasks.default]
 dependencies = ["format-check", "clippy", "test"]
@@ -71,27 +71,32 @@ script = '''
 '''
 
 [tasks.test-lib-deterministic]
+workspace = false
 command = "cargo"
 args = ["test", "--lib", "--quiet"]
 env = { RUST_TEST_THREADS = "1" }
 description = "Run library tests (deterministic, single-threaded, unfailable)"
 
 [tasks.test-integration-isolated]
+workspace = false
 command = "cargo"
 args = ["test", "--test", "*", "--quiet"]
 env = { RUST_TEST_THREADS = "1" }
 description = "Run integration tests (isolated, single-threaded, unfailable)"
 
 [tasks.test-unfailable]
+workspace = false
 dependencies = ["test-lib-deterministic", "test-integration-isolated"]
 description = "Run all tests with unfailable architecture (no timeouts needed)"
 
 [tasks.test-all]
+workspace = false
 command = "cargo"
 args = ["test", "--all-features"]
 description = "Run all tests with all features"
 
 [tasks.test-integration]
+workspace = false
 command = "cargo"
 args = ["test", "--test", "integration_examples", "--", "--ignored"]
 description = "Run integration tests for examples"

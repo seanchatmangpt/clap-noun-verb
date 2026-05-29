@@ -23,7 +23,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tests::common::test_prelude::*;
 //!
 //! #[test]

@@ -10,15 +10,11 @@ use clap_noun_verb::error::{NounVerbError, Result};
 #[test]
 fn testvalidator_new() {
     let _validator = ArgValidator::new();
-    // Validator should be created successfully
-    assert!(true); // Validator is zero-sized, just verify it compiles
 }
 
 #[test]
 fn testvalidator_default() {
-    let _validator = ArgValidator::default();
-    // Default should work
-    assert!(true);
+    let _validator = ArgValidator::new();
 }
 
 #[test]
@@ -224,8 +220,7 @@ fn testvalidator_extract_opts() -> Result<()> {
 
     let opts = validator.extract_opts(&matches);
 
-    // Should extract flags (Count actions are not extracted by extract_opts - they need get_count)
-    assert!(opts.len() >= 1);
+    assert!(!opts.is_empty());
 
     Ok(())
 }

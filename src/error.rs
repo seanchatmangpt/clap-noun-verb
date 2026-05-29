@@ -89,7 +89,7 @@ pub fn find_best_matches<'a>(input: &str, candidates: &[&'a str]) -> Vec<&'a str
         .filter(|&(_, dist)| dist <= 3 && dist < input.len())
         .collect();
 
-    with_distances.sort_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.cmp(&b.0)));
+    with_distances.sort_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.cmp(b.0)));
     with_distances.into_iter().map(|(c, _)| c).collect()
 }
 

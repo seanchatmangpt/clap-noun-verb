@@ -29,7 +29,7 @@ pub mod command_assertions {
         let sub = cmd
             .get_subcommands()
             .find(|s| s.get_name() == subcommand)
-            .expect(&format!("Subcommand '{}' not found", subcommand));
+            .unwrap_or_else(|| panic!("Subcommand '{}' not found", subcommand));
         assert!(
             sub.get_subcommands().any(|v| v.get_name() == verb),
             "Subcommand '{}' should have verb '{}'",

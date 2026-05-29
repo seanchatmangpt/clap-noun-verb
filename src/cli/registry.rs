@@ -63,7 +63,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 thread_local! {
-    pub static ACTIVE_COMMAND: std::cell::RefCell<Option<clap::Command>> = std::cell::RefCell::new(None);
+    pub static ACTIVE_COMMAND: std::cell::RefCell<Option<clap::Command>> = const { std::cell::RefCell::new(None) };
 }
 
 /// Apply validation constraints and auto-inferred parsers to a clap Arg
