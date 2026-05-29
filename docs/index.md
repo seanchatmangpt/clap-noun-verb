@@ -90,6 +90,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 ### Quick References
 - [README.md](../README.md) - Project overview and quick start
 - [AUTONOMIC.md](../AUTONOMIC.md) - Autonomic layer overview
+- [Autonomic CLI Layer Spec](future/autonomic_cli.md) - Self-healing commands, diagnostic reporting, and MAPE-K integration patterns
 - [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - Documentation verification report
 
 ### Development
