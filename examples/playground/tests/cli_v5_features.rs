@@ -208,7 +208,7 @@ fn test_version() {
     let combined = format!("{}{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr));
-    assert!(combined.contains("2.0.0") || combined.contains("playground") || combined.contains("cli") || combined.contains("26.5.19"), "Should show version");
+    assert!(combined.contains("2.0.0") || combined.contains("playground") || combined.contains("cli") || combined.contains("26.5.28"), "Should show version");
 }
 
 // ============================================================================

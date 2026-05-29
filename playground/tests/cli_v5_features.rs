@@ -208,7 +208,7 @@ fn test_version() {
     let combined = format!("{}{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr));
-    assert!(combined.contains("26.5.19") || combined.contains("cli"), "Should show version");
+    assert!(combined.contains("26.5.28") || combined.contains("cli"), "Should show version");
 }
 
 // ============================================================================
