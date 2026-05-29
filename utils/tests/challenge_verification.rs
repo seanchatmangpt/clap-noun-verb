@@ -1,7 +1,7 @@
+use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 use clap_noun_verb_utils::number_parsing::{
     decimal_range, maybe_hex_range, parse_bytes, parse_duration, parse_percentage,
 };
-use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -45,7 +45,7 @@ fn test_number_parsing_overflow_empty_invalid_limits() {
     assert!(parse_hex_u16("65536").is_err()); // u16 overflow
     assert!(parse_hex_u16("0x10000").is_err()); // u16 overflow in hex
     assert!(parse_hex_u16("18446744073709551616").is_err()); // huge overflow
-    // Empty inputs
+                                                             // Empty inputs
     assert!(parse_hex_u16("").is_err());
     assert!(parse_hex_u16("  ").is_err());
     // Invalid range configuration: min > max
@@ -146,7 +146,9 @@ fn test_configuration_adapter_nested_merges() {
     assert!(!resolved_default.deep.sub.active);
 
     // B. Merge with Config File (Deeply nested)
-    let temp_json = TempCleanup(std::env::temp_dir().join(format!("cnv_challenge_cfg_{}.json", std::process::id())));
+    let temp_json = TempCleanup(
+        std::env::temp_dir().join(format!("cnv_challenge_cfg_{}.json", std::process::id())),
+    );
     let config_json = r#"{
         "host": "config-host",
         "port": 8080,
@@ -160,7 +162,8 @@ fn test_configuration_adapter_nested_merges() {
     }"#;
     fs::write(&temp_json.0, config_json).unwrap();
 
-    let adapter_file: LayeredConfigAdapter<AppConfig> = LayeredConfigAdapter::new(Some(temp_json.0.clone()), None);
+    let adapter_file: LayeredConfigAdapter<AppConfig> =
+        LayeredConfigAdapter::new(Some(temp_json.0.clone()), None);
     let resolved_file = adapter_file.resolve(&matches).unwrap();
     assert_eq!(resolved_file.host, "config-host");
     assert_eq!(resolved_file.port, 8080);
@@ -173,7 +176,8 @@ fn test_configuration_adapter_nested_merges() {
     std::env::set_var("CFG_DEEP__LEVEL", "2"); // nested level 1 override
     std::env::set_var("CFG_DEEP__SUB__NAME", "env-sub"); // nested level 2 override
 
-    let adapter_env: LayeredConfigAdapter<AppConfig> = LayeredConfigAdapter::new(Some(temp_json.0.clone()), Some("CFG_".to_string()));
+    let adapter_env: LayeredConfigAdapter<AppConfig> =
+        LayeredConfigAdapter::new(Some(temp_json.0.clone()), Some("CFG_".to_string()));
     let resolved_env = adapter_env.resolve(&matches).unwrap();
 
     // port: config file (8080) -> env override (9090) => 9090
@@ -195,11 +199,7 @@ fn test_configuration_adapter_nested_merges() {
                 .action(clap::ArgAction::Set)
                 .default_value("default-cli-host"), // tests default check
         )
-        .arg(
-            clap::Arg::new("deep.level")
-                .long("deep-level")
-                .action(clap::ArgAction::Set),
-        )
+        .arg(clap::Arg::new("deep.level").long("deep-level").action(clap::ArgAction::Set))
         .arg(
             clap::Arg::new("deep.sub.active")
                 .long("deep-sub-active")
@@ -222,9 +222,8 @@ fn test_configuration_adapter_nested_merges() {
     assert!(resolved_cli.deep.sub.active);
 
     // Run 2: CLI explicitly overrides "host"
-    let matches_cli_explicit = cmd_with_args
-        .try_get_matches_from(vec!["app", "--host", "cli-explicit-host"])
-        .unwrap();
+    let matches_cli_explicit =
+        cmd_with_args.try_get_matches_from(vec!["app", "--host", "cli-explicit-host"]).unwrap();
 
     let resolved_cli_explicit = adapter_env.resolve(&matches_cli_explicit).unwrap();
     // host: explicit cli value should override config file => "cli-explicit-host"

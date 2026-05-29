@@ -3,7 +3,7 @@
 
 [advisories]
 vulnerability = "deny"
-unmaintained = "warn"
+unmaintained = "all"
 yanked = "deny"
 notice = "warn"
 
@@ -30,22 +30,14 @@ deny = [
 multiple-versions = "warn"
 wildcards = "deny"
 allow = []
-
-[bans.skips]
-# Allow multiple versions of transitive dependencies when necessary
-allow = []
+skip = []
 
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-ssh = "warn"
 allow-registry = [
     "sparse+https://index.crates.io/",
     "https://github.com/rust-lang/crates.io-index",
 ]
 allow-git = []
-
-[metadata]
-# Metadata for cargo-deny reporting
-maintainers = ["seanchatmangpt@gmail.com"]
 

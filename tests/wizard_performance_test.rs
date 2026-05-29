@@ -1,15 +1,15 @@
-use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs, Arg};
+use clap_noun_verb::{noun, verb, Arg, CliBuilder, VerbArgs};
 use std::time::Instant;
 
 #[test]
 fn test_wizard_parser_overhead_performance() {
-    let cli = CliBuilder::new()
-        .name("wizard-perf")
-        .noun(noun!("wizard", "Wizard", [
-            verb!("generate", "Generate", |_args: &VerbArgs| Ok(()), args: [
-                Arg::new("target").long("target").required(true)
-            ])
-        ]));
+    let cli = CliBuilder::new().name("wizard-perf").noun(noun!(
+        "wizard",
+        "Wizard",
+        [verb!("generate", "Generate", |_args: &VerbArgs| Ok(()), args: [
+            Arg::new("target").long("target").required(true)
+        ])]
+    ));
 
     let cmd = cli.build_command();
 

@@ -81,7 +81,8 @@ pub fn extract_command_schema(cmd: &clap::Command) -> CommandSchema {
         author: cmd.get_author().map(String::from),
         about: cmd.get_about().map(|s| s.to_string()),
         subcommands: cmd.get_subcommands().map(extract_command_schema).collect(),
-        arguments: cmd.get_arguments()
+        arguments: cmd
+            .get_arguments()
             .map(|arg| ArgSchema {
                 name: arg.get_id().as_str().to_string(),
                 short: arg.get_short(),
@@ -89,11 +90,11 @@ pub fn extract_command_schema(cmd: &clap::Command) -> CommandSchema {
                 help: arg.get_help().map(|s| s.to_string()),
                 required: arg.is_required_set(),
                 multiple: matches!(
-                    arg.get_action(), 
+                    arg.get_action(),
                     clap::ArgAction::Append | clap::ArgAction::Count
                 ),
                 is_flag: matches!(
-                    arg.get_action(), 
+                    arg.get_action(),
                     clap::ArgAction::SetTrue | clap::ArgAction::SetFalse | clap::ArgAction::Count
                 ),
             })
@@ -122,12 +123,10 @@ pub fn arg_matches_to_json(matches: &clap::ArgMatches) -> Value {
     let mut map = serde_json::Map::new();
     for id in matches.ids() {
         let name = id.as_str();
-        
+
         if let Some(raw_vals) = matches.get_raw(name) {
-            let list: Vec<String> = raw_vals
-                .map(|os| os.to_string_lossy().to_string())
-                .collect();
-                
+            let list: Vec<String> = raw_vals.map(|os| os.to_string_lossy().to_string()).collect();
+
             if list.len() == 1 {
                 map.insert(name.to_string(), parse_string_value(&list[0]));
             } else {
@@ -194,7 +193,7 @@ impl<T: Serialize> PrintJson for T {
         println!("{}", serde_json::to_string(self)?);
         Ok(())
     }
-    
+
     fn print_json_pretty(&self) -> Result<(), serde_json::Error> {
         println!("{}", serde_json::to_string_pretty(self)?);
         Ok(())

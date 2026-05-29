@@ -1,8 +1,8 @@
 //! Interactive REPL shell execution loop with autocomplete and history parsing
 //! Gated behind the `repl` feature.
 
-use crate::CommandRegistry;
 use crate::error::Result;
+use crate::CommandRegistry;
 use std::path::PathBuf;
 
 /// Interactive REPL shell execution helper
@@ -14,10 +14,7 @@ pub struct Repl {
 impl Repl {
     /// Create a new REPL shell execution helper from the command registry
     pub fn new(registry: CommandRegistry) -> Self {
-        Self {
-            registry,
-            history_file: None,
-        }
+        Self { registry, history_file: None }
     }
 
     /// Configure a history file path for the REPL session
@@ -40,12 +37,13 @@ impl Repl {
             .completion_type(rustyline::CompletionType::List)
             .build();
 
-        let helper = ReplHelper {
-            commands: self.registry.command_structure(),
-        };
+        let helper = ReplHelper { commands: self.registry.command_structure() };
 
         let mut rl = rustyline::Editor::with_config(config).map_err(|e| {
-            crate::NounVerbError::execution_error(format!("Failed to initialize REPL editor: {}", e))
+            crate::NounVerbError::execution_error(format!(
+                "Failed to initialize REPL editor: {}",
+                e
+            ))
         })?;
         rl.set_helper(Some(helper));
 
@@ -148,7 +146,7 @@ impl Repl {
     #[cfg(not(feature = "repl"))]
     pub fn run(&self) -> Result<()> {
         Err(crate::NounVerbError::execution_error(
-            "REPL feature is not enabled. Build with --features repl to enable it."
+            "REPL feature is not enabled. Build with --features repl to enable it.",
         ))
     }
 }
@@ -173,10 +171,7 @@ impl rustyline::completion::Completer for ReplHelper {
         _ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         let text_to_complete = &line[..pos];
-        let start = text_to_complete
-            .rfind(char::is_whitespace)
-            .map(|i| i + 1)
-            .unwrap_or(0);
+        let start = text_to_complete.rfind(char::is_whitespace).map(|i| i + 1).unwrap_or(0);
         let current_word = &text_to_complete[start..];
 
         let words: Vec<&str> = text_to_complete.split_whitespace().collect();
@@ -208,7 +203,9 @@ impl rustyline::completion::Completer for ReplHelper {
             // Suggest verbs for the noun
             let noun = words[0];
             if let Some(verbs) = self.commands.get(noun) {
-                if (words.len() == 1 && ends_with_space) || (words.len() == 2 && current_word.is_empty() && ends_with_space) {
+                if (words.len() == 1 && ends_with_space)
+                    || (words.len() == 2 && current_word.is_empty() && ends_with_space)
+                {
                     for verb in verbs {
                         suggestions.push(verb.clone());
                     }
@@ -224,10 +221,7 @@ impl rustyline::completion::Completer for ReplHelper {
 
         let pairs = suggestions
             .into_iter()
-            .map(|s| rustyline::completion::Pair {
-                display: s.clone(),
-                replacement: s,
-            })
+            .map(|s| rustyline::completion::Pair { display: s.clone(), replacement: s })
             .collect();
 
         Ok((start, pairs))
@@ -295,9 +289,18 @@ mod tests {
     #[test]
     fn test_split_shell_words() {
         assert_eq!(split_shell_words(""), Some(vec![]));
-        assert_eq!(split_shell_words("pack install"), Some(vec!["pack".to_string(), "install".to_string()]));
-        assert_eq!(split_shell_words("pack install \"my package\""), Some(vec!["pack".to_string(), "install".to_string(), "my package".to_string()]));
-        assert_eq!(split_shell_words("pack install 'my package'"), Some(vec!["pack".to_string(), "install".to_string(), "my package".to_string()]));
+        assert_eq!(
+            split_shell_words("pack install"),
+            Some(vec!["pack".to_string(), "install".to_string()])
+        );
+        assert_eq!(
+            split_shell_words("pack install \"my package\""),
+            Some(vec!["pack".to_string(), "install".to_string(), "my package".to_string()])
+        );
+        assert_eq!(
+            split_shell_words("pack install 'my package'"),
+            Some(vec!["pack".to_string(), "install".to_string(), "my package".to_string()])
+        );
         assert_eq!(split_shell_words("pack install \"unclosed"), None);
     }
 
@@ -316,9 +319,7 @@ mod tests {
     #[test]
     fn test_repl_autocomplete() {
         let registry = CommandRegistry::new().name("test-app");
-        let helper = ReplHelper {
-            commands: registry.command_structure(),
-        };
+        let helper = ReplHelper { commands: registry.command_structure() };
 
         // When registry is empty, first word autocomplete lists builtins
         let line = "ex";

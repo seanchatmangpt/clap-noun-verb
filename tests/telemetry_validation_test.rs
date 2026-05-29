@@ -1,5 +1,5 @@
 use clap_noun_verb::NounVerbError;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 /// A real, functional trace span for validation testing
 pub struct TestSpan {
@@ -37,4 +37,3 @@ fn test_telemetry_span_lifecycle_simulation() {
     assert_eq!(span.attributes.get("command").unwrap(), "user create");
     assert!(duration >= Duration::from_millis(10));
 }
-

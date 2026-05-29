@@ -1,7 +1,10 @@
 mod common;
 
 use clap::{Arg, Command};
-use clap_noun_verb_utils::{markdown, help::{format_box_text, format_table}};
+use clap_noun_verb_utils::{
+    help::{format_box_text, format_table},
+    markdown,
+};
 
 #[test]
 fn test_markdown_adverse_subcommands() {
@@ -14,21 +17,16 @@ fn test_markdown_adverse_subcommands() {
                 .about("Subcommand with spaces")
                 .arg(Arg::new("arg1").help("An argument").action(clap::ArgAction::Set))
                 .subcommand(
-                    Command::new("nested hierarchical sub")
-                        .about("Deeply nested subcommand")
-                )
+                    Command::new("nested hierarchical sub").about("Deeply nested subcommand"),
+                ),
         )
         .subcommand(
-            Command::new("sub-@special!-characters")
-                .about("Subcommand with special characters")
+            Command::new("sub-@special!-characters").about("Subcommand with special characters"),
         )
-        .subcommand(
-            Command::new("sub-emoji-😀-and-🚀")
-                .about("Subcommand with emojis")
-        )
+        .subcommand(Command::new("sub-emoji-😀-and-🚀").about("Subcommand with emojis"))
         .subcommand(
             Command::new("sub-\"quotes\"-and-\\backslashes\\")
-                .about("Subcommand with quotes and backslashes")
+                .about("Subcommand with quotes and backslashes"),
         );
 
     let mut buf = Vec::new();
@@ -57,7 +55,9 @@ fn test_markdown_adverse_subcommands() {
     // slugify("sub-emoji-😀-and-🚀") -> "sub-emoji--and-" (ignoring emoji chars)
     assert!(output.contains("- [`sub-emoji-😀-and-🚀`](#sub-emoji--and-)"));
     // slugify("sub-\"quotes\"-and-\\backslashes\\") -> "sub-quotes-and-backslashes" (ignoring quotes and backslashes)
-    assert!(output.contains("- [`sub-\"quotes\"-and-\\backslashes\\`](#sub-quotes-and-backslashes)"));
+    assert!(
+        output.contains("- [`sub-\"quotes\"-and-\\backslashes\\`](#sub-quotes-and-backslashes)")
+    );
 }
 
 #[test]
@@ -125,10 +125,7 @@ fn test_layout_boxes_and_tables_adverse() {
             "start-🚀".to_string(),
             "Start the service immediately.\nSupports auto-restart.\nTabbed\tDetail.".to_string(),
         ],
-        vec![
-            "运行".to_string(),
-            "Run CJK command.\n第二行".to_string(),
-        ],
+        vec!["运行".to_string(), "Run CJK command.\n第二行".to_string()],
     ];
 
     let table_output = format_table(&headers, &rows);

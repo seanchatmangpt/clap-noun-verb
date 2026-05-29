@@ -113,26 +113,29 @@ pub trait NounCommand: Send + Sync {
 
     /// Handle a verb command for this noun
     fn handle_verb(&self, verb_name: &str, args: &VerbArgs) -> Result<()> {
-        let verb =
-            self.verbs().into_iter().find(|v| v.name() == verb_name).ok_or_else(|| {
-                let mut candidates: Vec<&str> = self.verbs().iter().map(|v| v.name()).collect();
-                candidates.extend(self.sub_nouns().iter().map(|n| n.name()));
-                crate::error::NounVerbError::verb_not_found_with_candidates(self.name(), verb_name, &candidates)
-            })?;
+        let verb = self.verbs().into_iter().find(|v| v.name() == verb_name).ok_or_else(|| {
+            let mut candidates: Vec<&str> = self.verbs().iter().map(|v| v.name()).collect();
+            candidates.extend(self.sub_nouns().iter().map(|n| n.name()));
+            crate::error::NounVerbError::verb_not_found_with_candidates(
+                self.name(),
+                verb_name,
+                &candidates,
+            )
+        })?;
 
         verb.run(args)
     }
 
     /// Handle a sub-noun command for this noun
     fn handle_sub_noun(&self, sub_noun_name: &str, args: &VerbArgs) -> Result<()> {
-        let sub_noun = self
-            .sub_nouns()
-            .into_iter()
-            .find(|n| n.name() == sub_noun_name)
-            .ok_or_else(|| {
+        let sub_noun =
+            self.sub_nouns().into_iter().find(|n| n.name() == sub_noun_name).ok_or_else(|| {
                 let mut candidates: Vec<&str> = self.sub_nouns().iter().map(|n| n.name()).collect();
                 candidates.extend(self.verbs().iter().map(|v| v.name()));
-                crate::error::NounVerbError::command_not_found_with_candidates(sub_noun_name, &candidates)
+                crate::error::NounVerbError::command_not_found_with_candidates(
+                    sub_noun_name,
+                    &candidates,
+                )
             })?;
 
         sub_noun.handle_direct(args)

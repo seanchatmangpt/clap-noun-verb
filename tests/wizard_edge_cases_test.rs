@@ -1,19 +1,19 @@
-use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs, Arg};
+use clap_noun_verb::{noun, verb, Arg, CliBuilder, VerbArgs};
 
 #[test]
 fn test_wizard_edge_cases_empty_values() {
-    let cli = CliBuilder::new()
-        .name("wizard-edge")
-        .noun(noun!("wizard", "Wizard", [
-            verb!("generate", "Generate", |args: &VerbArgs| {
-                let target = args.get_many_opt_str("target");
-                assert!(!target.is_empty());
-                assert_eq!(target[0], "");
-                Ok(())
-            }, args: [
-                Arg::new("target").long("target").required(true)
-            ])
-        ]));
+    let cli = CliBuilder::new().name("wizard-edge").noun(noun!(
+        "wizard",
+        "Wizard",
+        [verb!("generate", "Generate", |args: &VerbArgs| {
+            let target = args.get_many_opt_str("target");
+            assert!(!target.is_empty());
+            assert_eq!(target[0], "");
+            Ok(())
+        }, args: [
+            Arg::new("target").long("target").required(true)
+        ])]
+    ));
 
     let cmd = cli.build_command();
 
@@ -30,17 +30,17 @@ fn test_wizard_edge_cases_empty_values() {
 
 #[test]
 fn test_wizard_edge_cases_default_fallback() {
-    let cli = CliBuilder::new()
-        .name("wizard-edge")
-        .noun(noun!("wizard", "Wizard", [
-            verb!("synthesize", "Synthesize", |args: &VerbArgs| {
-                let depth = args.get_many_opt_str("depth");
-                assert_eq!(depth, vec!["1".to_string()]);
-                Ok(())
-            }, args: [
-                Arg::new("depth").long("depth").default_value("1")
-            ])
-        ]));
+    let cli = CliBuilder::new().name("wizard-edge").noun(noun!(
+        "wizard",
+        "Wizard",
+        [verb!("synthesize", "Synthesize", |args: &VerbArgs| {
+            let depth = args.get_many_opt_str("depth");
+            assert_eq!(depth, vec!["1".to_string()]);
+            Ok(())
+        }, args: [
+            Arg::new("depth").long("depth").default_value("1")
+        ])]
+    ));
 
     let cmd = cli.build_command();
 

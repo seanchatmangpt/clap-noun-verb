@@ -1,11 +1,11 @@
+use clap::{Arg, ArgAction, Command};
+use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
+use clap_noun_verb_utils::display_json::arg_matches_to_json;
+use clap_noun_verb_utils::number_parsing::{decimal_range, parse_duration};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration as StdDuration;
-use serde::{Deserialize, Serialize};
-use clap::{Arg, ArgAction, Command};
-use clap_noun_verb_utils::display_json::arg_matches_to_json;
-use clap_noun_verb_utils::number_parsing::{decimal_range, parse_duration};
-use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 
 // =========================================================================
 // 1. Thread-safety and Panic-abort Safety of `arg_matches_to_json`
@@ -18,13 +18,18 @@ fn test_arg_matches_to_json_thread_safety() {
         .arg(Arg::new("verbose").long("verbose").action(ArgAction::SetTrue))
         .arg(Arg::new("tags").long("tag").action(ArgAction::Append));
 
-    let matches = cmd.try_get_matches_from(vec![
-        "test-app",
-        "--port", "8080",
-        "--verbose",
-        "--tag", "admin",
-        "--tag", "web",
-    ]).unwrap();
+    let matches = cmd
+        .try_get_matches_from(vec![
+            "test-app",
+            "--port",
+            "8080",
+            "--verbose",
+            "--tag",
+            "admin",
+            "--tag",
+            "web",
+        ])
+        .unwrap();
 
     let shared_matches = Arc::new(matches);
     let mut handles = vec![];
@@ -111,7 +116,7 @@ struct NestedConfig {
 #[test]
 fn test_layered_config_adapter_overrides_and_nesting() {
     let file_path = std::env::temp_dir().join("test_config_verification_nested.json");
-    
+
     // Write JSON config file representing file layer
     let json_content = r#"{
         "host": "file.host",
@@ -140,10 +145,8 @@ fn test_layered_config_adapter_overrides_and_nesting() {
     // server.path: "/file" (from File)
     // debug: true (from Env)
     let matches_default = cmd.clone().try_get_matches_from(vec!["verify-app"]).unwrap();
-    let adapter: LayeredConfigAdapter<NestedConfig> = LayeredConfigAdapter::new(
-        Some(file_path.clone()),
-        Some("VERIFY_".to_string())
-    );
+    let adapter: LayeredConfigAdapter<NestedConfig> =
+        LayeredConfigAdapter::new(Some(file_path.clone()), Some("VERIFY_".to_string()));
 
     let resolved_default = adapter.resolve(&matches_default).unwrap();
     assert_eq!(resolved_default.host, "file.host");
@@ -155,11 +158,10 @@ fn test_layered_config_adapter_overrides_and_nesting() {
     // host: explicitly passed as "cli.host".
     // server.path: explicitly passed as "/cli".
     // Result: host -> cli.host, server.path -> /cli, server.port -> 9090, debug -> true
-    let matches_override = cmd.clone().try_get_matches_from(vec![
-        "verify-app",
-        "--host", "cli.host",
-        "--path", "/cli"
-    ]).unwrap();
+    let matches_override = cmd
+        .clone()
+        .try_get_matches_from(vec!["verify-app", "--host", "cli.host", "--path", "/cli"])
+        .unwrap();
 
     let resolved_override = adapter.resolve(&matches_override).unwrap();
     assert_eq!(resolved_override.host, "cli.host");

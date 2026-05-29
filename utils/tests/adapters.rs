@@ -1,7 +1,7 @@
 mod common;
 
 use clap_noun_verb_utils::adapters::{
-    parse_key_val, extract_key_value_pairs, LayeredConfigAdapter
+    extract_key_value_pairs, parse_key_val, LayeredConfigAdapter,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -31,12 +31,9 @@ fn test_parse_key_val() -> Result<(), String> {
 #[test]
 fn test_extract_key_value_pairs() -> Result<(), String> {
     let cmd = clap::Command::new("test")
-        .arg(
-            clap::Arg::new("kv")
-                .long("kv")
-                .action(clap::ArgAction::Append)
-        );
-    let matches = cmd.try_get_matches_from(vec!["test", "--kv", "a=1", "--kv", "b=2"])
+        .arg(clap::Arg::new("kv").long("kv").action(clap::ArgAction::Append));
+    let matches = cmd
+        .try_get_matches_from(vec!["test", "--kv", "a=1", "--kv", "b=2"])
         .map_err(|e| format!("matches failed: {}", e))?;
 
     let map = extract_key_value_pairs(&matches, "kv")?;
@@ -64,7 +61,8 @@ fn test_layered_config_adapter() -> Result<(), String> {
 
     // Write default JSON config to file
     let json_content = r#"{"port": 8080, "host": "127.0.0.1", "verbose": false}"#;
-    fs::write(&file_path, json_content).map_err(|e| format!("Failed to write config file: {}", e))?;
+    fs::write(&file_path, json_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
 
     // 2. Setup env variables (prefix APP_)
     std::env::set_var("APP_PORT", "9090");
@@ -75,14 +73,13 @@ fn test_layered_config_adapter() -> Result<(), String> {
         .arg(clap::Arg::new("verbose").long("verbose").action(clap::ArgAction::SetTrue))
         .arg(clap::Arg::new("host").long("host").action(clap::ArgAction::Set));
 
-    let matches = cmd.try_get_matches_from(vec!["test", "--verbose", "--host", "192.168.1.1"])
+    let matches = cmd
+        .try_get_matches_from(vec!["test", "--verbose", "--host", "192.168.1.1"])
         .map_err(|e| format!("CLI matches failed: {}", e))?;
 
     // 4. Resolve layered config
-    let adapter: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(file_path),
-        Some("APP_".to_string())
-    );
+    let adapter: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(file_path), Some("APP_".to_string()));
 
     let resolved = adapter.resolve(&matches).map_err(|e| format!("Resolve failed: {}", e))?;
 

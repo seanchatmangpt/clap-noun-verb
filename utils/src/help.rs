@@ -37,7 +37,8 @@ fn char_display_width(c: char) -> usize {
         || (0x3040..=0x309F).contains(&cp) // Hiragana
         || (0x30A0..=0x30FF).contains(&cp) // Katakana
         || (0xAC00..=0xD7AF).contains(&cp) // Hangul Syllables
-        || (0x1F300..=0x1FAFF).contains(&cp) // Emojis / Pictographs
+        || (0x1F300..=0x1FAFF).contains(&cp)
+    // Emojis / Pictographs
     {
         2
     } else {
@@ -110,18 +111,18 @@ pub fn format_box_text(text: &str) -> String {
     let lines: Vec<&str> = text.lines().collect();
     let expanded_lines: Vec<String> = lines.iter().map(|l| expand_line(l)).collect();
     let max_width = expanded_lines.iter().map(|l| display_width(l)).max().unwrap_or(0);
-    
+
     let mut boxed = String::new();
     boxed.push('┌');
     boxed.push_str(&"─".repeat(max_width + 2));
     boxed.push_str("┐\n");
-    
+
     for line in expanded_lines {
         let width = display_width(&line);
         let padding = " ".repeat(max_width - width);
         boxed.push_str(&format!("│ {}{} │\n", line, padding));
     }
-    
+
     boxed.push('└');
     boxed.push_str(&"─".repeat(max_width + 2));
     boxed.push_str("┘\n");
@@ -148,15 +149,15 @@ pub fn format_table(headers: &[&str], rows: &[Vec<String>]) -> String {
     if headers.is_empty() {
         return String::new();
     }
-    
+
     let col_count = headers.len();
     let mut col_widths = vec![0; col_count];
-    
+
     let expanded_headers: Vec<String> = headers.iter().map(|h| expand_line(h)).collect();
     for (i, header) in expanded_headers.iter().enumerate() {
         col_widths[i] = display_width(header);
     }
-    
+
     let mut processed_rows: Vec<Vec<Vec<String>>> = Vec::new();
     for row in rows {
         let mut processed_row = vec![Vec::new(); col_count];
@@ -181,9 +182,9 @@ pub fn format_table(headers: &[&str], rows: &[Vec<String>]) -> String {
         }
         processed_rows.push(processed_row);
     }
-    
+
     let mut output = String::new();
-    
+
     // Header row
     for (i, header) in expanded_headers.iter().enumerate() {
         let w = display_width(header);
@@ -192,14 +193,14 @@ pub fn format_table(headers: &[&str], rows: &[Vec<String>]) -> String {
         output.push(' ');
     }
     output.push('\n');
-    
+
     // Separator row
     for width in &col_widths {
         output.push_str(&"-".repeat(*width));
         output.push(' ');
     }
     output.push('\n');
-    
+
     // Rows
     for processed_row in processed_rows {
         let height = processed_row.iter().map(|col| col.len()).max().unwrap_or(0);
@@ -214,6 +215,6 @@ pub fn format_table(headers: &[&str], rows: &[Vec<String>]) -> String {
             output.push('\n');
         }
     }
-    
+
     output
 }

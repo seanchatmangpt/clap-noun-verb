@@ -258,7 +258,8 @@ impl CliBuilder {
         }
 
         if steps.is_empty() {
-            let matches = cmd.clone()
+            let matches = cmd
+                .clone()
                 .try_get_matches_from(vec![binary_name])
                 .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
             return router.route(&matches);
@@ -269,10 +270,12 @@ impl CliBuilder {
 
         for step in steps {
             let mut step_args = vec![binary_name.clone()];
-            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            let processed_args =
+                crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
             step_args.extend(processed_args);
 
-            let matches = cmd.clone()
+            let matches = cmd
+                .clone()
                 .try_get_matches_from(step_args)
                 .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
 
@@ -321,10 +324,10 @@ impl CliBuilder {
     fn build_completions_noun(&self) -> CompletionsNoun {
         let app_name = self.name.clone();
         let app_version = self.version.clone();
-        
+
         let mut commands = Vec::new();
         let mut options = Vec::new();
-        
+
         // Collect all nouns and their verbs/subnouns
         for (noun_name, noun) in &self.nouns {
             commands.push(noun_name.clone());
@@ -335,7 +338,7 @@ impl CliBuilder {
                 commands.push(format!("{} {}", noun_name, sub_noun.name()));
             }
         }
-        
+
         // Collect options from verb arguments
         for noun in self.nouns.values() {
             for verb in noun.verbs() {
@@ -349,13 +352,8 @@ impl CliBuilder {
                 }
             }
         }
-        
-        CompletionsNoun::new(
-            app_name,
-            app_version,
-            commands,
-            options,
-        )
+
+        CompletionsNoun::new(app_name, app_version, commands, options)
     }
 }
 

@@ -69,11 +69,8 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
         for (j, &cb) in b_chars.iter().enumerate() {
             let temp = result;
             result = cache[j];
-            dist = if ca == cb {
-                temp
-            } else {
-                std::cmp::min(std::cmp::min(result, dist), temp) + 1
-            };
+            dist =
+                if ca == cb { temp } else { std::cmp::min(std::cmp::min(result, dist), temp) + 1 };
             cache[j] = dist;
         }
     }
@@ -132,7 +129,11 @@ impl NounVerbError {
     }
 
     /// Create a verb not found error with suggestion candidates
-    pub fn verb_not_found_with_candidates(noun: impl Into<String>, verb: impl Into<String>, candidates: &[&str]) -> Self {
+    pub fn verb_not_found_with_candidates(
+        noun: impl Into<String>,
+        verb: impl Into<String>,
+        candidates: &[&str],
+    ) -> Self {
         let verb_str = verb.into();
         let matches = find_best_matches(&verb_str, candidates);
         let suggestion = if matches.is_empty() {
@@ -264,14 +265,8 @@ pub enum Severity {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ActionTemplate {
-    TimeoutAdjustment {
-        suggested_timeout_ms: u64,
-        reason: String,
-    },
-    CommandFix {
-        suggested_command: String,
-        reason: String,
-    },
+    TimeoutAdjustment { suggested_timeout_ms: u64, reason: String },
+    CommandFix { suggested_command: String, reason: String },
 }
 
 /// Machine-readable, uniform structured error format for autonomic MAPE-K loops
@@ -290,7 +285,7 @@ impl StructuredError {
         let mut details = std::collections::HashMap::new();
         details.insert("deadline_ms".to_string(), serde_json::json!(deadline_ms));
         details.insert("actual_ms".to_string(), serde_json::json!(actual_ms));
-        
+
         Self {
             kind: ErrorKind::DeadlineExceeded,
             severity: Severity::Critical,
@@ -313,7 +308,10 @@ impl StructuredError {
             NounVerbError::CommandNotFound { noun, suggestion } => {
                 details.insert("noun".to_string(), serde_json::Value::String(noun.clone()));
                 if !suggestion.is_empty() {
-                    details.insert("suggestion".to_string(), serde_json::Value::String(suggestion.clone()));
+                    details.insert(
+                        "suggestion".to_string(),
+                        serde_json::Value::String(suggestion.clone()),
+                    );
                     let clean = suggestion
                         .replace("\x1b[1m\x1b[33m", "")
                         .replace("\x1b[0m", "")
@@ -324,7 +322,10 @@ impl StructuredError {
                         if !first.is_empty() {
                             action_templates.push(ActionTemplate::CommandFix {
                                 suggested_command: first.to_string(),
-                                reason: format!("Suggested correction for misspelled command '{}'", noun),
+                                reason: format!(
+                                    "Suggested correction for misspelled command '{}'",
+                                    noun
+                                ),
                             });
                         }
                     }
@@ -335,7 +336,10 @@ impl StructuredError {
                 details.insert("noun".to_string(), serde_json::Value::String(noun.clone()));
                 details.insert("verb".to_string(), serde_json::Value::String(verb.clone()));
                 if !suggestion.is_empty() {
-                    details.insert("suggestion".to_string(), serde_json::Value::String(suggestion.clone()));
+                    details.insert(
+                        "suggestion".to_string(),
+                        serde_json::Value::String(suggestion.clone()),
+                    );
                     let clean = suggestion
                         .replace("\x1b[1m\x1b[33m", "")
                         .replace("\x1b[0m", "")
@@ -346,7 +350,10 @@ impl StructuredError {
                         if !first.is_empty() {
                             action_templates.push(ActionTemplate::CommandFix {
                                 suggested_command: format!("{} {}", noun, first),
-                                reason: format!("Suggested correction for misspelled verb '{}'", verb),
+                                reason: format!(
+                                    "Suggested correction for misspelled verb '{}'",
+                                    verb
+                                ),
                             });
                         }
                     }
@@ -359,7 +366,10 @@ impl StructuredError {
             }
             NounVerbError::ExecutionError { message } => {
                 details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                if message.to_lowercase().contains("deadline") || message.to_lowercase().contains("timeout") || message.to_lowercase().contains("budget exceeded") {
+                if message.to_lowercase().contains("deadline")
+                    || message.to_lowercase().contains("timeout")
+                    || message.to_lowercase().contains("budget exceeded")
+                {
                     severity = Severity::Critical;
                     action_templates.push(ActionTemplate::TimeoutAdjustment {
                         suggested_timeout_ms: 1000,
@@ -396,13 +406,6 @@ impl StructuredError {
             }
         };
 
-        StructuredError {
-            kind,
-            severity,
-            message: err.to_string(),
-            details,
-            action_templates,
-        }
+        StructuredError { kind, severity, message: err.to_string(), details, action_templates }
     }
 }
-

@@ -50,6 +50,7 @@
 // CORE MODULES - Always available (no feature flags)
 // =============================================================================
 
+pub mod async_verb;
 pub mod builder;
 pub mod cli;
 pub mod error;
@@ -57,11 +58,9 @@ pub mod logic;
 pub mod macros;
 pub mod noun;
 pub mod registry;
+pub mod telemetry;
 pub mod tree;
 pub mod verb;
-pub mod async_verb;
-pub mod telemetry;
-
 
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
@@ -97,7 +96,7 @@ pub use cli::run;
 
 // Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
-pub use error::{NounVerbError, Result, StructuredError, ErrorKind, Severity, ActionTemplate};
+pub use error::{ActionTemplate, ErrorKind, NounVerbError, Result, Severity, StructuredError};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
@@ -106,7 +105,10 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 // Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
-pub use format::{format_output, OutputFormat, register_output_validation_hook, clear_output_validation_hooks, OutputValidationHook};
+pub use format::{
+    clear_output_validation_hooks, format_output, register_output_validation_hook, OutputFormat,
+    OutputValidationHook,
+};
 pub mod validators;
 pub use validators::{
     validate_email, validate_ipv4, validate_ipv6, validate_length, validate_not_empty,

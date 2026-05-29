@@ -1,6 +1,6 @@
-use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs};
-use std::sync::Mutex;
+use clap_noun_verb::{noun, verb, CliBuilder, VerbArgs};
 use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
 #[derive(Clone, Debug, PartialEq)]
 struct WizardSession {
@@ -12,9 +12,10 @@ struct WizardSession {
 static SESSION_STATE: Lazy<Mutex<Option<WizardSession>>> = Lazy::new(|| Mutex::new(None));
 
 fn make_cli() -> CliBuilder {
-    CliBuilder::new()
-        .name("wizard-session")
-        .noun(noun!("wizard", "Wizard", [
+    CliBuilder::new().name("wizard-session").noun(noun!(
+        "wizard",
+        "Wizard",
+        [
             verb!("start", "Start session", |args: &VerbArgs| {
                 let targets = args.get_many_opt_str("target");
                 if let Some(target) = targets.first() {
@@ -40,37 +41,37 @@ fn make_cli() -> CliBuilder {
                 }
                 Ok(())
             })
-        ]))
+        ]
+    ))
 }
 
 #[test]
 fn test_wizard_session_state_transitions() -> Result<(), Box<dyn std::error::Error>> {
     // Reset state safely
     if let Ok(mut guard) = SESSION_STATE.lock() {
-        *guard = Some(WizardSession {
-            step: 0,
-            target: "".to_string(),
-            completed: false,
-        });
+        *guard = Some(WizardSession { step: 0, target: "".to_string(), completed: false });
     }
 
     let cmd = make_cli().build_command();
 
     // Step 1: Start
-    let res1 = cmd.try_get_matches_from(vec!["wizard-session", "wizard", "start", "--target", "code-generator"])
+    let res1 = cmd
+        .try_get_matches_from(vec![
+            "wizard-session",
+            "wizard",
+            "start",
+            "--target",
+            "code-generator",
+        ])
         .map_err(|e| e.to_string())?;
 
     // Execute start handler manually using start sub-matches
-    let sub_w1 = res1.subcommand_matches("wizard")
-        .ok_or("missing subcommand wizard")?;
-    let sub_s1 = sub_w1.subcommand_matches("start")
-        .ok_or("missing subcommand start")?;
-    
+    let sub_w1 = res1.subcommand_matches("wizard").ok_or("missing subcommand wizard")?;
+    let sub_s1 = sub_w1.subcommand_matches("start").ok_or("missing subcommand start")?;
+
     let cli = make_cli();
-    let w_noun = cli.registry_ref().get_noun("wizard")
-        .ok_or("missing noun wizard")?;
-    let start_verb = w_noun.verbs().into_iter().next()
-        .ok_or("missing verb start")?;
+    let w_noun = cli.registry_ref().get_noun("wizard").ok_or("missing noun wizard")?;
+    let start_verb = w_noun.verbs().into_iter().next().ok_or("missing verb start")?;
     let verb_args = VerbArgs::new(sub_s1.clone());
     start_verb.run(&verb_args)?;
 
@@ -85,8 +86,7 @@ fn test_wizard_session_state_transitions() -> Result<(), Box<dyn std::error::Err
 
     // Step 2: Finish
     let sub_f1 = sub_w1.subcommand_matches("finish");
-    let finish_verb = w_noun.verbs().into_iter().nth(1)
-        .ok_or("missing verb finish")?;
+    let finish_verb = w_noun.verbs().into_iter().nth(1).ok_or("missing verb finish")?;
     let verb_args_finish = VerbArgs::new(sub_f1.cloned().unwrap_or_default());
     finish_verb.run(&verb_args_finish)?;
 

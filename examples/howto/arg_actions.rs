@@ -46,10 +46,8 @@ fn create_build_config(verbosity: usize, cache: bool, debug: bool, quiet: bool) 
 /// - Explicit action: `#[arg(action = "set_false")]` for inverse flags
 #[verb("project", "build")]
 fn build_project(
-    #[arg(short = 'v')]
-    verbosity: usize,
-    #[arg(action = "set_false")]
-    cache: bool,
+    #[arg(short = 'v')] verbosity: usize,
+    #[arg(action = "set_false")] cache: bool,
     // Enable debug mode (SetTrue action: --debug) - Auto-inferred from bool type
     debug: bool,
     // Suppress output (SetTrue action: --quiet) - Auto-inferred from bool type

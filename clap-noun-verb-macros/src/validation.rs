@@ -52,8 +52,7 @@ fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) -> syn::Result
     match ty {
         Type::Path(type_path) => {
             let last_segment = type_path.path.segments.last();
-            let type_name =
-                last_segment.map(|s| s.ident.to_string()).unwrap_or_default();
+            let type_name = last_segment.map(|s| s.ident.to_string()).unwrap_or_default();
 
             // Special handling for Result<T, E> and Option<T>
             match type_name.as_str() {
@@ -349,18 +348,24 @@ const ALLOWED_ARG_KEYS: &[&str] = &[
 fn levenshtein_distance(a: &str, b: &str) -> usize {
     let a_len = a.chars().count();
     let b_len = b.chars().count();
-    if a_len == 0 { return b_len; }
-    if b_len == 0 { return a_len; }
+    if a_len == 0 {
+        return b_len;
+    }
+    if b_len == 0 {
+        return a_len;
+    }
     let mut dp = vec![vec![0; b_len + 1]; a_len + 1];
-    for i in 0..=a_len { dp[i][0] = i; }
-    for j in 0..=b_len { dp[0][j] = j; }
+    for i in 0..=a_len {
+        dp[i][0] = i;
+    }
+    for j in 0..=b_len {
+        dp[0][j] = j;
+    }
     for (i, ca) in a.chars().enumerate() {
         for (j, cb) in b.chars().enumerate() {
             let cost = if ca == cb { 0 } else { 1 };
-            dp[i + 1][j + 1] = std::cmp::min(
-                std::cmp::min(dp[i][j + 1] + 1, dp[i + 1][j] + 1),
-                dp[i][j] + cost,
-            );
+            dp[i + 1][j + 1] =
+                std::cmp::min(std::cmp::min(dp[i][j + 1] + 1, dp[i + 1][j] + 1), dp[i][j] + cost);
         }
     }
     dp[a_len][b_len]

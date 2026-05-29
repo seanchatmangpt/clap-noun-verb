@@ -147,8 +147,9 @@ pub fn parse_bytes(s: &str) -> Result<u64, String> {
     let s_lower = s.to_lowercase();
     let alphabetic_pos = s_lower.find(|c: char| c.is_alphabetic()).unwrap_or(s_lower.len());
     let (num_part, unit_part) = s_lower.split_at(alphabetic_pos);
-    let number = num_part.trim().parse::<u64>().map_err(|e| format!("Invalid byte number: {}", e))?;
-    
+    let number =
+        num_part.trim().parse::<u64>().map_err(|e| format!("Invalid byte number: {}", e))?;
+
     let multiplier = match unit_part.trim() {
         "" | "b" => 1,
         "k" | "kb" => 1024,
@@ -157,7 +158,7 @@ pub fn parse_bytes(s: &str) -> Result<u64, String> {
         "t" | "tb" => 1024 * 1024 * 1024 * 1024,
         unknown => return Err(format!("Unknown byte unit: {}", unknown)),
     };
-    
+
     number.checked_mul(multiplier).ok_or_else(|| "Byte size overflow".to_string())
 }
 
@@ -188,7 +189,9 @@ pub fn parse_duration(s: &str) -> Result<Duration, String> {
     let mut total_secs = 0u64;
     let words = s.split_whitespace();
     for word in words {
-        let pos = word.find(|c: char| c.is_alphabetic()).ok_or_else(|| "Missing unit in duration segment".to_string())?;
+        let pos = word
+            .find(|c: char| c.is_alphabetic())
+            .ok_or_else(|| "Missing unit in duration segment".to_string())?;
         let (num_part, unit_part) = word.split_at(pos);
         let val = num_part.parse::<u64>().map_err(|e| format!("Invalid duration value: {}", e))?;
         let secs = match unit_part {
@@ -197,7 +200,8 @@ pub fn parse_duration(s: &str) -> Result<Duration, String> {
             "h" | "hour" | "hours" => val.checked_mul(3600),
             "d" | "day" | "days" => val.checked_mul(86400),
             unknown => return Err(format!("Unknown duration unit: {}", unknown)),
-        }.ok_or_else(|| "Duration overflow".to_string())?;
+        }
+        .ok_or_else(|| "Duration overflow".to_string())?;
         total_secs = total_secs.checked_add(secs).ok_or_else(|| "Duration overflow".to_string())?;
     }
     Ok(Duration::from_secs(total_secs))

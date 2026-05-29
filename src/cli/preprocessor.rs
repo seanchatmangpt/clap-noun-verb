@@ -46,7 +46,7 @@ pub fn preprocess_args(
     let mut processed = Vec::new();
     for arg in args {
         let mut new_arg = arg.clone();
-        
+
         // 1. Resolve step references @{step.key}
         let mut search_idx = 0;
         while let Some(start_offset) = new_arg[search_idx..].find("@{") {
@@ -54,7 +54,7 @@ pub fn preprocess_args(
             if let Some(end_offset) = new_arg[start_idx..].find('}') {
                 let end_idx = start_idx + end_offset;
                 let ref_content = &new_arg[start_idx + 2..end_idx];
-                
+
                 let mut resolved = false;
                 if let Some(dot_idx) = ref_content.find('.') {
                     let (step_str, path) = ref_content.split_at(dot_idx);

@@ -1591,7 +1591,12 @@ fn generate_verb_registration(
                 let is_arg = attr.path().is_ident("arg")
                     || attr.path().segments.last().map(|seg| seg.ident == "arg").unwrap_or(false);
                 let is_validate = attr.path().is_ident("validate")
-                    || attr.path().segments.last().map(|seg| seg.ident == "validate").unwrap_or(false);
+                    || attr
+                        .path()
+                        .segments
+                        .last()
+                        .map(|seg| seg.ident == "validate")
+                        .unwrap_or(false);
                 !is_arg && !is_validate
             });
         }

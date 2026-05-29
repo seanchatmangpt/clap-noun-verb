@@ -4,20 +4,17 @@
 //! and autonomic telemetry envelope formatting.
 
 use crate::error::NounVerbError;
+use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use parking_lot::RwLock;
-use serde::{Serialize, Deserialize};
 
 /// Helper to generate unique hex identifiers
 fn generate_hex_id(len: usize) -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     static COUNTER: AtomicU64 = AtomicU64::new(0);
     let count = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+    let time = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
     let mut state = time as u64 ^ count;
     let mut hex = String::with_capacity(len);
     for _ in 0..len {
@@ -40,7 +37,13 @@ pub struct AutonomicTelemetryEnvelope<T> {
 }
 
 impl<T> AutonomicTelemetryEnvelope<T> {
-    pub fn new(schema_version: &str, cli_version: &str, trace_id: String, span_id: Option<String>, payload: T) -> Self {
+    pub fn new(
+        schema_version: &str,
+        cli_version: &str,
+        trace_id: String,
+        span_id: Option<String>,
+        payload: T,
+    ) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs().to_string())
@@ -118,7 +121,10 @@ impl TraceContext {
         let flags = parts[3];
 
         if version != "00" {
-            return Err(NounVerbError::TelemetryError(format!("Unsupported traceparent version: {}", version)));
+            return Err(NounVerbError::TelemetryError(format!(
+                "Unsupported traceparent version: {}",
+                version
+            )));
         }
         if trace_id.len() != 32 || !trace_id.chars().all(|c| c.is_ascii_hexdigit()) {
             return Err(NounVerbError::TelemetryError("Invalid trace_id in traceparent".into()));
@@ -381,7 +387,7 @@ impl Metrics {
 
         let counters = self.counters.read().clone();
         let gauges = self.gauges.read().clone();
-        
+
         let mut histograms_avg = HashMap::new();
         {
             let histograms = self.histograms.read();
@@ -410,9 +416,7 @@ pub struct TelemetryManager {
 
 impl TelemetryManager {
     pub fn new(app_name: &str) -> Result<Self, NounVerbError> {
-        Ok(Self {
-            app_name: app_name.to_string(),
-        })
+        Ok(Self { app_name: app_name.to_string() })
     }
 
     pub fn start_span(&self, name: &str) -> Result<Span, NounVerbError> {
@@ -431,7 +435,7 @@ impl TelemetryManager {
             "3.8.0",
             span.id(),
             None,
-            format!("span_ended: {}", span.name())
+            format!("span_ended: {}", span.name()),
         );
         if let Ok(json) = serde_json::to_string(&envelope) {
             // Emitted log simulation
@@ -444,7 +448,10 @@ impl TelemetryManager {
         TraceContext::new()
     }
 
-    pub fn inject_context(&self, context: &TraceContext) -> Result<HashMap<String, String>, NounVerbError> {
+    pub fn inject_context(
+        &self,
+        context: &TraceContext,
+    ) -> Result<HashMap<String, String>, NounVerbError> {
         let mut headers = HashMap::new();
         headers.insert("traceparent".to_string(), context.to_traceparent()?);
         for (k, v) in &context.baggage {
@@ -453,7 +460,10 @@ impl TelemetryManager {
         Ok(headers)
     }
 
-    pub fn extract_context(&self, headers: &HashMap<String, String>) -> Result<TraceContext, NounVerbError> {
+    pub fn extract_context(
+        &self,
+        headers: &HashMap<String, String>,
+    ) -> Result<TraceContext, NounVerbError> {
         if let Some(tp) = headers.get("traceparent") {
             let mut ctx = TraceContext::from_traceparent(tp)?;
             for (k, v) in headers {
@@ -467,13 +477,18 @@ impl TelemetryManager {
         }
     }
 
-    pub fn record_event(&self, span: &Span, name: &str, details: &str) -> Result<(), NounVerbError> {
+    pub fn record_event(
+        &self,
+        span: &Span,
+        name: &str,
+        details: &str,
+    ) -> Result<(), NounVerbError> {
         let envelope = AutonomicTelemetryEnvelope::new(
             "1.0.0",
             "3.8.0",
             span.id(),
             None,
-            (name.to_string(), details.to_string())
+            (name.to_string(), details.to_string()),
         );
         if let Ok(json) = serde_json::to_string(&envelope) {
             let _ = json;

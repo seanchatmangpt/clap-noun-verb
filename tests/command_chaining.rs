@@ -1,6 +1,6 @@
-use clap_noun_verb::cli::registry::{CommandRegistry, ArgMetadata};
-use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
 use clap_noun_verb::cli::preprocessor::preprocess_args;
+use clap_noun_verb::cli::registry::{ArgMetadata, CommandRegistry};
+use clap_noun_verb::logic::{HandlerInput, HandlerOutput};
 use clap_noun_verb::Result;
 use serde_json::json;
 
@@ -17,7 +17,7 @@ fn test_preprocessor_step_references() -> Result<()> {
         json!({
             "status": "success",
             "code": 200
-        })
+        }),
     ];
 
     // Test simple reference
@@ -41,7 +41,7 @@ fn test_preprocessor_step_references() -> Result<()> {
 #[test]
 fn test_preprocessor_stdin_bindings() -> Result<()> {
     let stdin_val = Some("hello-stdin-world".to_string());
-    
+
     // Test basic stdin binding @-
     let args1 = vec!["--message".to_string(), "@-".to_string()];
     let processed1 = preprocess_args(&args1, &stdin_val, &[])?;
@@ -60,7 +60,7 @@ fn test_preprocessor_stdin_bindings() -> Result<()> {
 fn test_end_to_end_chaining() -> Result<()> {
     // Register commands for testing chaining
     CommandRegistry::register_noun("session", "Session commands");
-    
+
     let username_arg = ArgMetadata {
         name: "username".to_string(),
         required: true,
@@ -105,7 +105,7 @@ fn test_end_to_end_chaining() -> Result<()> {
                 "token": "token-for-".to_string() + &username,
                 "status": "active"
             }))
-        }
+        },
     );
 
     let token_arg = ArgMetadata {
@@ -152,7 +152,7 @@ fn test_end_to_end_chaining() -> Result<()> {
                 "verified": true,
                 "token_used": token
             }))
-        }
+        },
     );
 
     // Act: Run chained execution
@@ -165,9 +165,9 @@ fn test_end_to_end_chaining() -> Result<()> {
         "++".to_string(),
         "session".to_string(),
         "verify".to_string(),
-        "@{1.token}".to_string()
+        "@{1.token}".to_string(),
     ];
-    
+
     // This should run step 1 and step 2, substituting john_doe's token into step 2!
     let res = reg.run(run_args);
     assert!(res.is_ok(), "Chained execution failed: {:?}", res);
@@ -177,12 +177,10 @@ fn test_end_to_end_chaining() -> Result<()> {
 
 #[test]
 fn test_preprocessor_infinite_loop_prevention() -> Result<()> {
-    let step_results = vec![
-        json!({
-            "recursive": "looping @{1.recursive}",
-            "normal": "value"
-        })
-    ];
+    let step_results = vec![json!({
+        "recursive": "looping @{1.recursive}",
+        "normal": "value"
+    })];
 
     let args = vec!["@{1.recursive}".to_string()];
     let processed = preprocess_args(&args, &None, &step_results)?;

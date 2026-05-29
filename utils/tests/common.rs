@@ -19,20 +19,13 @@ pub fn create_test_command() -> Command {
                 .num_args(1)
                 .action(clap::ArgAction::Set),
         )
-        .arg(
-            Arg::new("tags")
-                .long("tag")
-                .help("Tags list")
-                .action(clap::ArgAction::Append),
-        )
+        .arg(Arg::new("tags").long("tag").help("Tags list").action(clap::ArgAction::Append))
         .subcommand(
-            Command::new("start")
-                .about("Start the service")
-                .arg(
-                    Arg::new("daemon")
-                        .long("daemon")
-                        .help("Run in daemon mode")
-                        .action(clap::ArgAction::SetTrue),
-                ),
+            Command::new("start").about("Start the service").arg(
+                Arg::new("daemon")
+                    .long("daemon")
+                    .help("Run in daemon mode")
+                    .action(clap::ArgAction::SetTrue),
+            ),
         )
 }

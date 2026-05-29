@@ -66,12 +66,9 @@ fn create_server_config(
 /// The environment variable will be read if set, with CLI arguments taking precedence.
 #[verb("config", "server")]
 fn server_config(
-    #[arg(env = "SERVER_PORT", default_value = "8080")]
-    port: u16,
-    #[arg(env = "SERVER_HOST", default_value = "localhost")]
-    host: String,
-    #[arg(env = "SERVER_TIMEOUT")]
-    timeout: Option<u64>,
+    #[arg(env = "SERVER_PORT", default_value = "8080")] port: u16,
+    #[arg(env = "SERVER_HOST", default_value = "localhost")] host: String,
+    #[arg(env = "SERVER_TIMEOUT")] timeout: Option<u64>,
     // Enable debug mode
     debug: bool,
 ) -> Result<ServerConfig> {

@@ -2,15 +2,16 @@
 mod common;
 
 use clap_noun_verb_utils::{
-    adapters::{parse_key_val, extract_key_value_pairs, LayeredConfigAdapter},
-    completions, mangen, markdown,
+    adapters::{extract_key_value_pairs, parse_key_val, LayeredConfigAdapter},
+    completions,
     help::{format_box_text, format_table},
+    mangen, markdown,
 };
 
 static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
 struct TestConfig {
@@ -45,10 +46,8 @@ fn test_adverse_config_files() {
     // A. Malformed JSON
     let temp_json = TempFile::new("malformed.json");
     fs::write(&temp_json.0, "{invalid_json").unwrap();
-    let adapter: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(temp_json.0.clone()),
-        None
-    );
+    let adapter: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(temp_json.0.clone()), None);
     let cmd = clap::Command::new("test");
     let matches = cmd.try_get_matches_from(vec!["test"]).unwrap();
     let res = adapter.resolve(&matches);
@@ -57,20 +56,16 @@ fn test_adverse_config_files() {
     // B. Malformed TOML
     let temp_toml = TempFile::new("malformed.toml");
     fs::write(&temp_toml.0, "[invalid_toml").unwrap();
-    let adapter_toml: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(temp_toml.0.clone()),
-        None
-    );
+    let adapter_toml: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(temp_toml.0.clone()), None);
     let res = adapter_toml.resolve(&matches);
     assert!(res.is_err(), "Expected error for malformed TOML config file");
 
     // C. Config path is a directory (should fail on read_to_string)
     let temp_dir = std::env::temp_dir().join(format!("cnv_test_dir_{}", std::process::id()));
     fs::create_dir_all(&temp_dir).unwrap();
-    let adapter_dir: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(temp_dir.clone()),
-        None
-    );
+    let adapter_dir: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(temp_dir.clone()), None);
     let res = adapter_dir.resolve(&matches);
     assert!(res.is_err(), "Expected error when config file path is a directory");
     fs::remove_dir(&temp_dir).unwrap();
@@ -78,20 +73,16 @@ fn test_adverse_config_files() {
     // D. Empty JSON file
     let temp_empty_json = TempFile::new("empty.json");
     fs::write(&temp_empty_json.0, "").unwrap();
-    let adapter_empty_json: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(temp_empty_json.0.clone()),
-        None
-    );
+    let adapter_empty_json: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(temp_empty_json.0.clone()), None);
     let res = adapter_empty_json.resolve(&matches);
     assert!(res.is_err(), "Expected error for empty JSON file");
 
     // E. Empty TOML file
     let temp_empty_toml = TempFile::new("empty.toml");
     fs::write(&temp_empty_toml.0, "").unwrap();
-    let adapter_empty_toml: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
-        Some(temp_empty_toml.0.clone()),
-        None
-    );
+    let adapter_empty_toml: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(Some(temp_empty_toml.0.clone()), None);
     let res = adapter_empty_toml.resolve(&matches);
     // TOML allows empty input (deserializes to empty map), so it may merge with defaults
     if let Ok(config) = res {
@@ -99,10 +90,8 @@ fn test_adverse_config_files() {
     }
 
     // F. Non-object default configuration
-    let adapter_non_obj: LayeredConfigAdapter<NonObjectConfig> = LayeredConfigAdapter::new(
-        None,
-        None
-    );
+    let adapter_non_obj: LayeredConfigAdapter<NonObjectConfig> =
+        LayeredConfigAdapter::new(None, None);
     let res = adapter_non_obj.resolve(&matches);
     assert!(res.is_err(), "Expected error for config model not serializing to a JSON Object");
     let err_msg = res.unwrap_err().to_string();
@@ -113,10 +102,10 @@ fn test_adverse_config_files() {
 fn test_adverse_key_value_formats() {
     // A. Empty string
     assert!(parse_key_val("").is_err());
-    
+
     // B. No equals sign
     assert!(parse_key_val("no_equals").is_err());
-    
+
     // C. Multiple equals signs
     let res_mult = parse_key_val("key=val1=val2");
     assert!(res_mult.is_ok());
@@ -180,11 +169,13 @@ fn test_adverse_conflicting_inputs() {
         .arg(clap::Arg::new("host").long("host").action(clap::ArgAction::Set))
         .arg(clap::Arg::new("verbose").long("verbose").action(clap::ArgAction::SetTrue));
 
-    let matches_override = cmd_override.clone().try_get_matches_from(vec![
-        "test", "--port", "5678", "--host", "cli.host", "--verbose"
-    ]).unwrap();
+    let matches_override = cmd_override
+        .clone()
+        .try_get_matches_from(vec!["test", "--port", "5678", "--host", "cli.host", "--verbose"])
+        .unwrap();
 
-    let adapter_conflict: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(None, Some("TEST_CONFLICT_".to_string()));
+    let adapter_conflict: LayeredConfigAdapter<TestConfig> =
+        LayeredConfigAdapter::new(None, Some("TEST_CONFLICT_".to_string()));
     let resolved_conflict = adapter_conflict.resolve(&matches_override).unwrap();
 
     // Verify CLI overrides Env
@@ -210,26 +201,33 @@ fn test_layered_config_cli_default_override_conflict() {
     // Demonstration of CLI default override conflict:
     // If CLI argument has default_value, it will always override Env and Config File,
     // because clap puts default values in ArgMatches and we don't check value_source.
-    
+
     let temp_json = TempFile::new("config.json");
     fs::write(&temp_json.0, r#"{"port": 8080, "host": "config.host", "verbose": false}"#).unwrap();
 
     std::env::set_var("TEST_DEFAULT_OVERRIDE_HOST", "env.host");
 
     // Command with default value for "host"
-    let cmd = clap::Command::new("test")
-        .arg(clap::Arg::new("host").long("host").default_value("default.host").action(clap::ArgAction::Set));
+    let cmd = clap::Command::new("test").arg(
+        clap::Arg::new("host")
+            .long("host")
+            .default_value("default.host")
+            .action(clap::ArgAction::Set),
+    );
 
     let matches = cmd.try_get_matches_from(vec!["test"]).unwrap();
     let adapter: LayeredConfigAdapter<TestConfig> = LayeredConfigAdapter::new(
         Some(temp_json.0.clone()),
-        Some("TEST_DEFAULT_OVERRIDE_".to_string())
+        Some("TEST_DEFAULT_OVERRIDE_".to_string()),
     );
 
     let resolved = adapter.resolve(&matches).unwrap();
 
     // The host is "env.host" because CLI default override check is implemented
-    assert_eq!(resolved.host, "env.host", "CLI default should NOT override env/config due to value_source checking");
+    assert_eq!(
+        resolved.host, "env.host",
+        "CLI default should NOT override env/config due to value_source checking"
+    );
 
     std::env::remove_var("TEST_DEFAULT_OVERRIDE_HOST");
 }
@@ -239,23 +237,23 @@ fn test_layered_config_cli_default_override_conflict() {
 #[test]
 fn test_extreme_completions() {
     // A. Deeply nested subcommands (5 levels deep)
-    let mut cmd = clap::Command::new("root")
-        .subcommand(clap::Command::new("sub1")
-            .subcommand(clap::Command::new("sub2")
-                .subcommand(clap::Command::new("sub3")
-                    .subcommand(clap::Command::new("sub4")
-                        .subcommand(clap::Command::new("sub5")
-                            .arg(clap::Arg::new("arg5").long("arg5").action(clap::ArgAction::Set))
-                        )
-                    )
-                )
-            )
-        );
+    let mut cmd = clap::Command::new("root").subcommand(
+        clap::Command::new("sub1").subcommand(
+            clap::Command::new("sub2").subcommand(
+                clap::Command::new("sub3").subcommand(
+                    clap::Command::new("sub4").subcommand(
+                        clap::Command::new("sub5")
+                            .arg(clap::Arg::new("arg5").long("arg5").action(clap::ArgAction::Set)),
+                    ),
+                ),
+            ),
+        ),
+    );
 
     let mut buf = Vec::new();
     completions::generate_completions(&mut cmd, clap_complete::Shell::Bash, &mut buf);
     let output = String::from_utf8(buf).unwrap();
-    
+
     assert!(output.contains("root"), "Completion output should contain command name");
     assert!(output.contains("sub1"), "Completion output should contain sub1");
     assert!(output.contains("sub5"), "Completion output should contain sub5");
@@ -271,18 +269,18 @@ fn test_extreme_completions() {
 #[test]
 fn test_mangen_formatting_and_missing_metadata() {
     // A. Command with special troff characters and missing metadata (no version, no about, no author)
-    let cmd = clap::Command::new("mangen-test")
-        .arg(clap::Arg::new("config")
+    let cmd = clap::Command::new("mangen-test").arg(
+        clap::Arg::new("config")
             .long("config")
             .help("Set config file. Starts with dot: .config. Has backslash: \\path\\to\\config.")
-            .action(clap::ArgAction::Set)
-        );
+            .action(clap::ArgAction::Set),
+    );
 
     let mut buf = Vec::new();
     let res = mangen::generate_manpage(&cmd, &mut buf);
     assert!(res.is_ok(), "Mangen should succeed with missing metadata and special chars");
     let output = String::from_utf8(buf).unwrap();
-    
+
     // Check if the backslash and dot are present in the output
     assert!(output.contains("mangen-test"));
     assert!(output.contains(".config"));
@@ -291,11 +289,11 @@ fn test_mangen_formatting_and_missing_metadata() {
 #[test]
 fn test_markdown_tree_walker_edge_cases() {
     // A. Missing metadata and nested structure
-    let cmd = clap::Command::new("md-test")
-        .subcommand(clap::Command::new("sub command") // name with spaces
+    let cmd = clap::Command::new("md-test").subcommand(
+        clap::Command::new("sub command") // name with spaces
             .arg(clap::Arg::new("pos_arg").required(true))
-            .arg(clap::Arg::new("opt_pos").required(false))
-        );
+            .arg(clap::Arg::new("opt_pos").required(false)),
+    );
 
     let mut buf = Vec::new();
     let res = markdown::generate_markdown(&cmd, &mut buf);
@@ -349,9 +347,7 @@ fn test_help_formatting_adverse_inputs() {
     assert!(!res_table.is_empty());
 
     // F. format_table with cell containing newlines
-    let rows_nl = vec![
-        vec!["val1\nnewline".to_string(), "val2".to_string()]
-    ];
+    let rows_nl = vec![vec!["val1\nnewline".to_string(), "val2".to_string()]];
     let res_table_nl = format_table(&headers, &rows_nl);
     assert!(res_table_nl.contains("newline"));
 }

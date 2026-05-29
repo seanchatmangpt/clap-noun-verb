@@ -6,7 +6,11 @@ pub fn generate_markdown(cmd: &Command, buf: &mut dyn Write) -> std::io::Result<
     write_markdown_recursive(cmd, buf, 1)
 }
 
-fn write_markdown_recursive(cmd: &Command, buf: &mut dyn Write, depth: usize) -> std::io::Result<()> {
+fn write_markdown_recursive(
+    cmd: &Command,
+    buf: &mut dyn Write,
+    depth: usize,
+) -> std::io::Result<()> {
     let title_prefix = "#".repeat(depth);
     writeln!(buf, "{} {}", title_prefix, cmd.get_name())?;
     writeln!(buf)?;

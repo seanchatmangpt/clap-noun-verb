@@ -159,16 +159,16 @@ impl ParsedVersion {
         let v = v.strip_prefix('v').unwrap_or(v);
         // Split by '+' to discard build metadata
         let version_part = v.split('+').next().unwrap_or(v);
-        
+
         let mut parts = version_part.splitn(2, '-');
         let core = parts.next().unwrap_or("");
         let pre = parts.next();
-        
+
         let mut core_parts = core.split('.');
         let major = core_parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
         let minor = core_parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
         let patch = core_parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
-        
+
         let mut pre_release = Vec::new();
         if let Some(pre_str) = pre {
             for id in pre_str.split('.') {
@@ -182,13 +182,8 @@ impl ParsedVersion {
                 }
             }
         }
-        
-        Self {
-            major,
-            minor,
-            patch,
-            pre_release,
-        }
+
+        Self { major, minor, patch, pre_release }
     }
 }
 

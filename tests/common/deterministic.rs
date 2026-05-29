@@ -224,10 +224,7 @@ impl<const MAX_ITERATIONS: usize> BoundedExecutor<MAX_ITERATIONS> {
             }
         }
 
-        panic!(
-            "Async task exceeded MAX_ITERATIONS ({}) - infinite loop detected",
-            MAX_ITERATIONS
-        );
+        panic!("Async task exceeded MAX_ITERATIONS ({}) - infinite loop detected", MAX_ITERATIONS);
     }
 }
 

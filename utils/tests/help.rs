@@ -1,6 +1,4 @@
-use clap_noun_verb_utils::help::{
-    style_header, style_item, format_box_text, format_table
-};
+use clap_noun_verb_utils::help::{format_box_text, format_table, style_header, style_item};
 
 #[test]
 fn test_style_header() {

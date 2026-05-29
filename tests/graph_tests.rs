@@ -1,18 +1,16 @@
-use clap_noun_verb::tree::{CommandTreeBuilder, TreeNode, CommandHandler};
+use clap_noun_verb::tree::{CommandHandler, CommandTreeBuilder, TreeNode};
 use clap_noun_verb::VerbArgs;
 
 #[test]
 fn test_command_tree_builder_and_traversal() {
     let mut builder = CommandTreeBuilder::new();
-    
+
     // Build a graph tree: root -> child -> leaf
     let leaf = TreeNode {
         name: "status".to_string(),
         about: "Show status".to_string(),
         children: vec![],
-        handler: Some(CommandHandler {
-            handler: Box::new(|_args: &VerbArgs| Ok(())),
-        }),
+        handler: Some(CommandHandler { handler: Box::new(|_args: &VerbArgs| Ok(())) }),
     };
 
     let child = TreeNode {
@@ -45,9 +43,7 @@ fn test_command_tree_build_clap_commands() {
         name: "list".to_string(),
         about: "List items".to_string(),
         children: vec![],
-        handler: Some(CommandHandler {
-            handler: Box::new(|_args: &VerbArgs| Ok(())),
-        }),
+        handler: Some(CommandHandler { handler: Box::new(|_args: &VerbArgs| Ok(())) }),
     };
     let root = TreeNode {
         name: "pack".to_string(),

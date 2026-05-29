@@ -40,11 +40,10 @@ impl CommandRouter {
             .ok_or_else(|| NounVerbError::invalid_structure("No subcommand found"))?;
 
         // Find the noun command
-        let noun =
-            self.nouns.get(noun_name).ok_or_else(|| {
-                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
-                NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
-            })?;
+        let noun = self.nouns.get(noun_name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+            NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+        })?;
 
         // Route the command recursively with root matches for global args
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)

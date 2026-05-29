@@ -1,4 +1,4 @@
-use clap_noun_verb::{CliBuilder, noun, verb, VerbArgs};
+use clap_noun_verb::{noun, verb, CliBuilder, VerbArgs};
 use proptest::prelude::*;
 
 proptest! {

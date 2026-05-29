@@ -385,20 +385,19 @@ impl CommandRegistry {
         verb_name: &str,
         input: HandlerInput,
     ) -> Result<HandlerOutput> {
-        let verbs = self
-            .verbs
-            .get(noun_name)
-            .ok_or_else(|| {
-                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
-                crate::error::NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
-            })?;
+        let verbs = self.verbs.get(noun_name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+            crate::error::NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+        })?;
 
-        let verb = verbs
-            .get(verb_name)
-            .ok_or_else(|| {
-                let candidates: Vec<&str> = verbs.keys().map(|s| s.as_str()).collect();
-                crate::error::NounVerbError::verb_not_found_with_candidates(noun_name, verb_name, &candidates)
-            })?;
+        let verb = verbs.get(verb_name).ok_or_else(|| {
+            let candidates: Vec<&str> = verbs.keys().map(|s| s.as_str()).collect();
+            crate::error::NounVerbError::verb_not_found_with_candidates(
+                noun_name,
+                verb_name,
+                &candidates,
+            )
+        })?;
 
         (verb.handler_fn)(input)
     }
@@ -771,7 +770,8 @@ impl CommandRegistry {
 
         for step in steps {
             let mut step_args = vec![binary_name.clone()];
-            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            let processed_args =
+                crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
             step_args.extend(processed_args);
 
             let output = self.execute_single_step(step_args)?;
@@ -784,7 +784,7 @@ impl CommandRegistry {
     /// Execute a single CLI command step and return the handler output
     pub fn execute_single_step(&self, args: Vec<String>) -> Result<HandlerOutput> {
         let cmd = self.build_command();
-        
+
         let requested = args.iter().any(|arg| arg == "--structured-errors" || arg == "--autonomic")
             || std::env::var("STRUCTURED_ERRORS").is_ok()
             || std::env::var("AUTONOMIC").is_ok();
@@ -796,9 +796,12 @@ impl CommandRegistry {
                 let help_or_version_msg = e.to_string();
 
                 if requested {
-                    let err = crate::error::NounVerbError::argument_error(help_or_version_msg.clone());
+                    let err =
+                        crate::error::NounVerbError::argument_error(help_or_version_msg.clone());
                     let structured = crate::error::StructuredError::from_error(&err);
-                    let formatted = serde_json::to_string_pretty(&serde_json::json!({ "error": structured })).unwrap();
+                    let formatted =
+                        serde_json::to_string_pretty(&serde_json::json!({ "error": structured }))
+                            .unwrap();
                     eprintln!("{}", formatted);
                     return Err(err);
                 }
@@ -821,27 +824,22 @@ impl CommandRegistry {
             let json_str = serde_json::to_string_pretty(&tools)
                 .map_err(|e| crate::error::NounVerbError::execution_error(e.to_string()))?;
             println!("{}", json_str);
-            return Ok(HandlerOutput {
-                data: serde_json::Value::Null,
-                message: Some(json_str),
-            });
+            return Ok(HandlerOutput { data: serde_json::Value::Null, message: Some(json_str) });
         }
 
-        let format_str = matches.get_one::<String>("format")
-            .cloned()
-            .or_else(|| {
-                if let Some((_, sub_matches)) = matches.subcommand() {
-                    sub_matches.get_one::<String>("format").cloned().or_else(|| {
-                        if let Some((_, verb_matches)) = sub_matches.subcommand() {
-                            verb_matches.get_one::<String>("format").cloned()
-                        } else {
-                            None
-                        }
-                    })
-                } else {
-                    None
-                }
-            });
+        let format_str = matches.get_one::<String>("format").cloned().or_else(|| {
+            if let Some((_, sub_matches)) = matches.subcommand() {
+                sub_matches.get_one::<String>("format").cloned().or_else(|| {
+                    if let Some((_, verb_matches)) = sub_matches.subcommand() {
+                        verb_matches.get_one::<String>("format").cloned()
+                    } else {
+                        None
+                    }
+                })
+            } else {
+                None
+            }
+        });
 
         let output_format = format_str
             .as_deref()
@@ -855,11 +853,17 @@ impl CommandRegistry {
             if requested || flag_requested {
                 let structured = crate::error::StructuredError::from_error(e);
                 let formatted = match output_format {
-                    crate::format::OutputFormat::Json => serde_json::to_string(&serde_json::json!({ "error": structured })).unwrap(),
-                    crate::format::OutputFormat::Yaml => {
-                        format!("error:\n  kind: {:?}\n  severity: {:?}\n  message: \"{}\"\n", structured.kind, structured.severity, structured.message)
+                    crate::format::OutputFormat::Json => {
+                        serde_json::to_string(&serde_json::json!({ "error": structured })).unwrap()
                     }
-                    _ => serde_json::to_string_pretty(&serde_json::json!({ "error": structured })).unwrap(),
+                    crate::format::OutputFormat::Yaml => {
+                        format!(
+                            "error:\n  kind: {:?}\n  severity: {:?}\n  message: \"{}\"\n",
+                            structured.kind, structured.severity, structured.message
+                        )
+                    }
+                    _ => serde_json::to_string_pretty(&serde_json::json!({ "error": structured }))
+                        .unwrap(),
                 };
                 eprintln!("{}", formatted);
             }
@@ -867,22 +871,24 @@ impl CommandRegistry {
         result
     }
 
-    fn execute_step_internal(&self, matches: &clap::ArgMatches, output_format: crate::format::OutputFormat) -> Result<HandlerOutput> {
-        let select_str = matches.get_one::<String>("select")
-            .cloned()
-            .or_else(|| {
-                if let Some((_, sub_matches)) = matches.subcommand() {
-                    sub_matches.get_one::<String>("select").cloned().or_else(|| {
-                        if let Some((_, verb_matches)) = sub_matches.subcommand() {
-                            verb_matches.get_one::<String>("select").cloned()
-                        } else {
-                            None
-                        }
-                    })
-                } else {
-                    None
-                }
-            });
+    fn execute_step_internal(
+        &self,
+        matches: &clap::ArgMatches,
+        output_format: crate::format::OutputFormat,
+    ) -> Result<HandlerOutput> {
+        let select_str = matches.get_one::<String>("select").cloned().or_else(|| {
+            if let Some((_, sub_matches)) = matches.subcommand() {
+                sub_matches.get_one::<String>("select").cloned().or_else(|| {
+                    if let Some((_, verb_matches)) = sub_matches.subcommand() {
+                        verb_matches.get_one::<String>("select").cloned()
+                    } else {
+                        None
+                    }
+                })
+            } else {
+                None
+            }
+        });
 
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
@@ -896,11 +902,16 @@ impl CommandRegistry {
 
                 let mut output = self.execute_root_verb(subcommand_name, input)?;
                 if let Some(ref select_expr) = select_str {
-                    output.data = apply_select(&output.data, select_expr)
-                        .map_err(|e| crate::error::NounVerbError::execution_error(format!("Selection error: {}", e)))?;
+                    output.data = apply_select(&output.data, select_expr).map_err(|e| {
+                        crate::error::NounVerbError::execution_error(format!(
+                            "Selection error: {}",
+                            e
+                        ))
+                    })?;
                 }
-                let formatted = output_format.format(&output.data)
-                    .map_err(|e| crate::error::NounVerbError::execution_error(format!("Format error: {}", e)))?;
+                let formatted = output_format.format(&output.data).map_err(|e| {
+                    crate::error::NounVerbError::execution_error(format!("Format error: {}", e))
+                })?;
                 if output_format != crate::format::OutputFormat::Quiet {
                     println!("{}", formatted);
                 }
@@ -925,11 +936,16 @@ impl CommandRegistry {
 
                 let mut output = self.execute_verb(noun_name, verb_name, input)?;
                 if let Some(ref select_expr) = select_str {
-                    output.data = apply_select(&output.data, select_expr)
-                        .map_err(|e| crate::error::NounVerbError::execution_error(format!("Selection error: {}", e)))?;
+                    output.data = apply_select(&output.data, select_expr).map_err(|e| {
+                        crate::error::NounVerbError::execution_error(format!(
+                            "Selection error: {}",
+                            e
+                        ))
+                    })?;
                 }
-                let formatted = output_format.format(&output.data)
-                    .map_err(|e| crate::error::NounVerbError::execution_error(format!("Format error: {}", e)))?;
+                let formatted = output_format.format(&output.data).map_err(|e| {
+                    crate::error::NounVerbError::execution_error(format!("Format error: {}", e))
+                })?;
                 if output_format != crate::format::OutputFormat::Quiet {
                     println!("{}", formatted);
                 }
@@ -968,14 +984,9 @@ impl CommandRegistry {
                             e
                         ))
                     })?;
-                    Ok(HandlerOutput {
-                        data: serde_json::Value::Null,
-                        message: None,
-                    })
+                    Ok(HandlerOutput { data: serde_json::Value::Null, message: None })
                 } else {
-                    Err(crate::error::NounVerbError::invalid_structure(
-                        "No verb specified",
-                    ))
+                    Err(crate::error::NounVerbError::invalid_structure("No verb specified"))
                 }
             }
         } else {
@@ -983,29 +994,26 @@ impl CommandRegistry {
             cmd.print_help().map_err(|e| {
                 crate::error::NounVerbError::execution_error(format!("Failed to print help: {}", e))
             })?;
-            Ok(HandlerOutput {
-                data: serde_json::Value::Null,
-                message: None,
-            })
+            Ok(HandlerOutput { data: serde_json::Value::Null, message: None })
         }
     }
 
     /// Execute a root-level verb handler (verbs without a noun)
     pub fn execute_root_verb(&self, verb_name: &str, input: HandlerInput) -> Result<HandlerOutput> {
-        let verb = self
-            .root_verbs
-            .get(verb_name)
-            .ok_or_else(|| {
-                let mut candidates: Vec<&str> = self.root_verbs.keys().map(|s| s.as_str()).collect();
-                candidates.extend(self.nouns.keys().map(|s| s.as_str()));
-                crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
-            })?;
+        let verb = self.root_verbs.get(verb_name).ok_or_else(|| {
+            let mut candidates: Vec<&str> = self.root_verbs.keys().map(|s| s.as_str()).collect();
+            candidates.extend(self.nouns.keys().map(|s| s.as_str()));
+            crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
+        })?;
 
         (verb.handler_fn)(input)
     }
 }
 
-fn apply_select(value: &serde_json::Value, expr: &str) -> std::result::Result<serde_json::Value, String> {
+fn apply_select(
+    value: &serde_json::Value,
+    expr: &str,
+) -> std::result::Result<serde_json::Value, String> {
     let clean_expr = if expr == "$" || expr == "@" {
         "@"
     } else if expr.starts_with("$.") {
@@ -1022,12 +1030,13 @@ fn apply_select(value: &serde_json::Value, expr: &str) -> std::result::Result<se
 
     let compiled = jmespath::compile(clean_expr)
         .map_err(|e| format!("Invalid query expression '{}': {}", expr, e))?;
-    
-    let result = compiled.search(value)
+
+    let result = compiled
+        .search(value)
         .map_err(|e| format!("Failed to evaluate query '{}': {}", expr, e))?;
 
-    let json_val = serde_json::to_value(&*result)
-        .map_err(|e| format!("Serialization error: {}", e))?;
+    let json_val =
+        serde_json::to_value(&*result).map_err(|e| format!("Serialization error: {}", e))?;
 
     Ok(json_val)
 }

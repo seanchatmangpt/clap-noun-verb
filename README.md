@@ -64,10 +64,10 @@
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.6"
+clap-noun-verb = "26.5.28"
 ```
 
-For development: also add `clap-noun-verb-macros = "5.6"`
+For development: also add `clap-noun-verb-macros = "26.5.28"`
 
 ---
 

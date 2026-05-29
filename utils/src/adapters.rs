@@ -1,9 +1,9 @@
+use clap::ArgMatches;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use clap::ArgMatches;
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use serde_json::Value;
 
 /// Parser for KEY=VALUE argument format.
 ///
@@ -44,7 +44,10 @@ pub fn parse_key_val(s: &str) -> Result<(String, String), String> {
 /// # Ok(())
 /// # }
 /// ```
-pub fn extract_key_value_pairs(matches: &ArgMatches, arg_name: &str) -> Result<HashMap<String, String>, String> {
+pub fn extract_key_value_pairs(
+    matches: &ArgMatches,
+    arg_name: &str,
+) -> Result<HashMap<String, String>, String> {
     let mut map = HashMap::new();
     if let Some(pairs) = matches.get_many::<String>(arg_name) {
         for pair in pairs {
@@ -139,11 +142,7 @@ where
     T: Serialize + DeserializeOwned + Default,
 {
     pub fn new(file_path: Option<PathBuf>, env_prefix: Option<String>) -> Self {
-        Self {
-            file_path,
-            env_prefix,
-            _marker: std::marker::PhantomData,
-        }
+        Self { file_path, env_prefix, _marker: std::marker::PhantomData }
     }
 
     pub fn resolve(&self, matches: &ArgMatches) -> Result<T, anyhow::Error> {
@@ -225,7 +224,8 @@ fn get_or_create_nested_map<'a>(
         Some(target)
     } else {
         let p = parts[0];
-        let next_val = target.entry(p.to_string()).or_insert_with(|| Value::Object(serde_json::Map::new()));
+        let next_val =
+            target.entry(p.to_string()).or_insert_with(|| Value::Object(serde_json::Map::new()));
         if !next_val.is_object() {
             *next_val = Value::Object(serde_json::Map::new());
         }
@@ -234,7 +234,10 @@ fn get_or_create_nested_map<'a>(
     }
 }
 
-fn merge_json_maps(target: &mut serde_json::Map<String, Value>, source: serde_json::Map<String, Value>) {
+fn merge_json_maps(
+    target: &mut serde_json::Map<String, Value>,
+    source: serde_json::Map<String, Value>,
+) {
     for (k, v) in source {
         if v.is_null() {
             continue;
@@ -244,20 +247,22 @@ fn merge_json_maps(target: &mut serde_json::Map<String, Value>, source: serde_js
         if parts.is_empty() {
             continue;
         }
-        
+
         let curr_map = match get_or_create_nested_map(target, &parts[..parts.len() - 1]) {
             Some(m) => m,
             None => continue,
         };
-        
+
         let last_key = match parts.last() {
             Some(key) => key.to_string(),
             None => continue,
         };
-        
+
         match curr_map.entry(last_key) {
             serde_json::map::Entry::Occupied(mut entry) => {
-                if let (Some(target_obj), Some(source_obj)) = (entry.get_mut().as_object_mut(), v.as_object()) {
+                if let (Some(target_obj), Some(source_obj)) =
+                    (entry.get_mut().as_object_mut(), v.as_object())
+                {
                     merge_json_maps(target_obj, source_obj.clone());
                 } else {
                     entry.insert(v);

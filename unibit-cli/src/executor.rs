@@ -30,16 +30,12 @@ impl UnifiedExecutor {
             let word_index = instr.scope as u32;
 
             // Extract current state from region via read_word
-            let word_val = self
-                .region
-                .truth
-                .read_word(word_index)
-                .map_err(|e| {
-                    clap_noun_verb::NounVerbError::execution_error(format!(
-                        "TruthBlock read out of bounds at index {}: {:?}",
-                        word_index, e
-                    ))
-                })?;
+            let word_val = self.region.truth.read_word(word_index).map_err(|e| {
+                clap_noun_verb::NounVerbError::execution_error(format!(
+                    "TruthBlock read out of bounds at index {}: {:?}",
+                    word_index, e
+                ))
+            })?;
             let current_state = UCell(word_val);
 
             // Execute kernel step
@@ -47,15 +43,12 @@ impl UnifiedExecutor {
                 unibit_kernel::execute_step(current_state, word_index, &instr, self.receipt);
 
             // Update region truth via write_word
-            self.region
-                .truth
-                .write_word(word_index, new_state.0)
-                .map_err(|e| {
-                    clap_noun_verb::NounVerbError::execution_error(format!(
-                        "TruthBlock write out of bounds at index {}: {:?}",
-                        word_index, e
-                    ))
-                })?;
+            self.region.truth.write_word(word_index, new_state.0).map_err(|e| {
+                clap_noun_verb::NounVerbError::execution_error(format!(
+                    "TruthBlock write out of bounds at index {}: {:?}",
+                    word_index, e
+                ))
+            })?;
 
             // Update rolling receipts
             self.receipt = next_receipt;

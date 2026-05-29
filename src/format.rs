@@ -30,10 +30,14 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::sync::{Arc, RwLock, OnceLock};
+use std::sync::{Arc, OnceLock, RwLock};
 
 /// Type alias for output validation hooks.
-pub type OutputValidationHook = Arc<dyn Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> + Send + Sync>;
+pub type OutputValidationHook = Arc<
+    dyn Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync,
+>;
 
 static VALIDATION_HOOKS: OnceLock<RwLock<Vec<OutputValidationHook>>> = OnceLock::new();
 
@@ -43,7 +47,10 @@ static VALIDATION_HOOKS: OnceLock<RwLock<Vec<OutputValidationHook>>> = OnceLock:
 /// depth, disallowed keys), or enforcing security policies.
 pub fn register_output_validation_hook<F>(hook: F)
 where
-    F: Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+    F: Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync
+        + 'static,
 {
     let hooks = VALIDATION_HOOKS.get_or_init(|| RwLock::new(Vec::new()));
     if let Ok(mut write_guard) = hooks.write() {
@@ -60,11 +67,18 @@ pub fn clear_output_validation_hooks() {
 }
 
 /// Run all registered validation hooks on a serialized JSON value.
-fn validate_output_value(value: &serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn validate_output_value(
+    value: &serde_json::Value,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let hooks = VALIDATION_HOOKS.get_or_init(|| RwLock::new(Vec::new()));
     if let Ok(read_guard) = hooks.read() {
         for hook in read_guard.iter() {
-            hook(value).map_err(|e| Box::new(crate::error::NounVerbError::execution_error(format!("Output validation failed: {}", e))) as Box<dyn std::error::Error>)?;
+            hook(value).map_err(|e| {
+                Box::new(crate::error::NounVerbError::execution_error(format!(
+                    "Output validation failed: {}",
+                    e
+                ))) as Box<dyn std::error::Error>
+            })?;
         }
     }
     Ok(())
@@ -435,7 +449,10 @@ mod tests {
         let invalid_data = serde_json::json!({ "blocked": "value" });
         let result = OutputFormat::Json.format(&invalid_data);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Output validation failed: Found blocked key"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Output validation failed: Found blocked key"));
 
         // Clear hooks and test again
         clear_output_validation_hooks();

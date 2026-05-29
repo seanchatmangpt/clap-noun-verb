@@ -75,7 +75,12 @@ impl CommandRegistry {
 
     /// Create a new registry with configuration
     pub fn with_config(config: RegistryConfig) -> Self {
-        Self { nouns: HashMap::new(), config, extensions: TypeMap::new(), has_completions_subcommand: false }
+        Self {
+            nouns: HashMap::new(),
+            config,
+            extensions: TypeMap::new(),
+            has_completions_subcommand: false,
+        }
     }
 
     /// Enable fluent completions subcommand
@@ -305,11 +310,10 @@ impl CommandRegistry {
         }
 
         // Find the noun command
-        let noun =
-            self.nouns.get(noun_name).ok_or_else(|| {
-                let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
-                NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
-            })?;
+        let noun = self.nouns.get(noun_name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+            NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+        })?;
 
         // Route the command recursively with root matches for global args access
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)
@@ -393,13 +397,18 @@ impl CommandRegistry {
 
         if steps.is_empty() {
             let cmd = self.build_command();
-            let matches = cmd.clone()
+            let matches = cmd
+                .clone()
                 .try_get_matches_from(vec![binary_name])
                 .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
 
             if matches.get_flag("introspect") {
                 let tools = collect_tools_from_cmd(&cmd, "");
-                println!("{}", serde_json::to_string_pretty(&tools).map_err(|e| NounVerbError::execution_error(e.to_string()))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&tools)
+                        .map_err(|e| NounVerbError::execution_error(e.to_string()))?
+                );
                 return Ok(());
             }
             return self.route(&matches);
@@ -410,17 +419,23 @@ impl CommandRegistry {
 
         for step in steps {
             let mut step_args = vec![binary_name.clone()];
-            let processed_args = crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            let processed_args =
+                crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
             step_args.extend(processed_args);
 
             let cmd = self.build_command();
-            let matches = cmd.clone()
+            let matches = cmd
+                .clone()
                 .try_get_matches_from(step_args)
                 .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
 
             if matches.get_flag("introspect") {
                 let tools = collect_tools_from_cmd(&cmd, "");
-                println!("{}", serde_json::to_string_pretty(&tools).map_err(|e| NounVerbError::execution_error(e.to_string()))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&tools)
+                        .map_err(|e| NounVerbError::execution_error(e.to_string()))?
+                );
                 return Ok(());
             }
 
@@ -513,15 +528,13 @@ impl NounCommand for CompletionsNoun {
     }
 
     fn build_command(&self) -> Command {
-        let mut cmd = Command::new(self.name())
-            .about(self.about())
-            .arg(
-                clap::Arg::new("shell")
-                    .short('s')
-                    .long("shell")
-                    .help("The shell to generate completions for")
-                    .value_parser(["bash", "zsh", "fish", "powershell"])
-            );
+        let mut cmd = Command::new(self.name()).about(self.about()).arg(
+            clap::Arg::new("shell")
+                .short('s')
+                .long("shell")
+                .help("The shell to generate completions for")
+                .value_parser(["bash", "zsh", "fish", "powershell"]),
+        );
 
         for verb in self.verbs() {
             cmd = cmd.subcommand(verb.build_command());
@@ -556,12 +569,12 @@ impl NounCommand for CompletionsNoun {
         let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
             .with_version(self.app_version.as_deref().unwrap_or("1.0.0"))
             .with_commands(self.commands.clone());
-        
+
         let mut gen = generator;
         for opt in &self.options {
             gen = gen.with_option(opt);
         }
-        
+
         let script = gen.generate(shell)?;
         print!("{}", script);
         Ok(())
@@ -591,12 +604,12 @@ impl crate::verb::VerbCommand for CompletionsVerb {
         let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
             .with_version(&self.app_version)
             .with_commands(self.commands.clone());
-        
+
         let mut gen = generator;
         for opt in &self.options {
             gen = gen.with_option(opt);
         }
-        
+
         let script = gen.generate(self.shell)?;
         print!("{}", script);
         Ok(())
@@ -607,10 +620,10 @@ impl CommandRegistry {
     fn build_completions_noun(&self) -> CompletionsNoun {
         let app_name = self.config.name.clone();
         let app_version = self.config.version.clone();
-        
+
         let mut commands = Vec::new();
         let mut options = Vec::new();
-        
+
         // Collect all nouns and their verbs/subnouns
         for (noun_name, noun) in &self.nouns {
             commands.push(noun_name.clone());
@@ -621,7 +634,7 @@ impl CommandRegistry {
                 commands.push(format!("{} {}", noun_name, sub_noun.name()));
             }
         }
-        
+
         // Collect options
         for arg in &self.config.global_args {
             if let Some(long) = arg.get_long() {
@@ -631,7 +644,7 @@ impl CommandRegistry {
                 options.push(format!("-{}", short));
             }
         }
-        
+
         for noun in self.nouns.values() {
             for verb in noun.verbs() {
                 for arg in verb.additional_args() {
@@ -644,13 +657,8 @@ impl CommandRegistry {
                 }
             }
         }
-        
-        CompletionsNoun {
-            app_name,
-            app_version,
-            commands,
-            options,
-        }
+
+        CompletionsNoun { app_name, app_version, commands, options }
     }
 }
 
@@ -711,10 +719,8 @@ pub fn collect_tools_from_cmd(cmd: &clap::Command, prefix: &str) -> Vec<ToolDefi
                 arg.get_action(),
                 clap::ArgAction::SetTrue | clap::ArgAction::SetFalse | clap::ArgAction::Count
             );
-            let multiple = matches!(
-                arg.get_action(),
-                clap::ArgAction::Append | clap::ArgAction::Count
-            );
+            let multiple =
+                matches!(arg.get_action(), clap::ArgAction::Append | clap::ArgAction::Count);
 
             let prop_type = if is_flag {
                 "boolean".to_string()
@@ -735,7 +741,8 @@ pub fn collect_tools_from_cmd(cmd: &clap::Command, prefix: &str) -> Vec<ToolDefi
                 None
             };
 
-            let default = arg.get_default_values()
+            let default = arg
+                .get_default_values()
                 .first()
                 .map(|v| serde_json::Value::String(v.to_string_lossy().to_string()));
 
@@ -743,22 +750,14 @@ pub fn collect_tools_from_cmd(cmd: &clap::Command, prefix: &str) -> Vec<ToolDefi
                 required.push(name.clone());
             }
 
-            properties.insert(name, PropertySchema {
-                prop_type,
-                description: help,
-                default,
-                items,
-            });
+            properties
+                .insert(name, PropertySchema { prop_type, description: help, default, items });
         }
 
         tools.push(ToolDefinition {
             name: current_name,
             description: cmd.get_about().map(|s| s.to_string()).unwrap_or_default(),
-            parameters: ToolParameters {
-                param_type: "object".to_string(),
-                properties,
-                required,
-            },
+            parameters: ToolParameters { param_type: "object".to_string(), properties, required },
         });
     } else {
         let pass_prefix = if prefix.is_empty() {

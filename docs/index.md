@@ -1,6 +1,6 @@
 # clap-noun-verb Documentation Index
 
-**Version**: 26.5.1
+**Version**: 26.5.28
 **Framework**: [Diataxis](https://diataxis.fr/)
 **Last Updated**: 2026-05-28
 

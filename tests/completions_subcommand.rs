@@ -1,8 +1,8 @@
 //! Tests for completions subcommand configuration option
 //!
 
-use clap_noun_verb::{CliBuilder as MainCliBuilder, Result};
 use clap_noun_verb::cli::builder::CliBuilder as OpinionatedCliBuilder;
+use clap_noun_verb::{CliBuilder as MainCliBuilder, Result};
 
 #[test]
 fn test_main_cli_builder_completions_structure() {
@@ -17,14 +17,14 @@ fn test_main_cli_builder_completions_structure() {
 
     // Assert
     assert_eq!(cmd.get_name(), "testapp");
-    
+
     // Check if completions subcommand exists
     let completions_sub = cmd.find_subcommand("completions");
     assert!(completions_sub.is_some(), "completions subcommand should be registered");
-    
+
     let completions_sub = completions_sub.unwrap();
     assert_eq!(completions_sub.get_name(), "completions");
-    
+
     // Check if bash, zsh, fish, powershell subcommands are registered under completions
     assert!(completions_sub.find_subcommand("bash").is_some());
     assert!(completions_sub.find_subcommand("zsh").is_some());
@@ -44,14 +44,14 @@ fn test_opinionated_cli_builder_completions_structure() {
 
     // Assert
     assert_eq!(cmd.get_name(), "testapp");
-    
+
     // Check if completions subcommand exists
     let completions_sub = cmd.find_subcommand("completions");
     assert!(completions_sub.is_some(), "completions subcommand should be registered");
-    
+
     let completions_sub = completions_sub.unwrap();
     assert_eq!(completions_sub.get_name(), "completions");
-    
+
     // Check if bash, zsh, fish, powershell subcommands are registered under completions
     assert!(completions_sub.find_subcommand("bash").is_some());
     assert!(completions_sub.find_subcommand("zsh").is_some());

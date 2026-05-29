@@ -1,4 +1,4 @@
-use clap_noun_verb::error::{StructuredError, ErrorKind, Severity, ActionTemplate, NounVerbError};
+use clap_noun_verb::error::{ActionTemplate, ErrorKind, NounVerbError, Severity, StructuredError};
 use serde_json::json;
 
 #[test]
@@ -7,7 +7,7 @@ fn test_deadline_exceeded_construction() {
     assert_eq!(err.kind, ErrorKind::DeadlineExceeded);
     assert_eq!(err.severity, Severity::Critical);
     assert_eq!(err.message, "Deadline 100ms exceeded, took 150ms");
-    
+
     let deadline_val = err.details.get("deadline_ms").unwrap();
     let actual_val = err.details.get("actual_ms").unwrap();
     assert_eq!(deadline_val, &json!(100));
@@ -32,7 +32,7 @@ fn test_from_error_command_not_found() {
     assert_eq!(err.kind, ErrorKind::CommandNotFound);
     assert_eq!(err.severity, Severity::Error);
     assert_eq!(err.details.get("noun").unwrap(), &json!("testcmd"));
-    
+
     assert_eq!(
         err.action_templates[0],
         ActionTemplate::CommandFix {
@@ -44,10 +44,8 @@ fn test_from_error_command_not_found() {
 
 #[test]
 fn test_from_error_command_not_found_no_suggestion() {
-    let raw_err = NounVerbError::CommandNotFound {
-        noun: "testcmd".to_string(),
-        suggestion: "".to_string(),
-    };
+    let raw_err =
+        NounVerbError::CommandNotFound { noun: "testcmd".to_string(), suggestion: "".to_string() };
     let err = StructuredError::from_error(&raw_err);
     assert_eq!(err.kind, ErrorKind::CommandNotFound);
     assert_eq!(err.severity, Severity::Error);
@@ -67,7 +65,7 @@ fn test_from_error_verb_not_found() {
     assert_eq!(err.severity, Severity::Error);
     assert_eq!(err.details.get("noun").unwrap(), &json!("testcmd"));
     assert_eq!(err.details.get("verb").unwrap(), &json!("testverb"));
-    
+
     assert_eq!(
         err.action_templates[0],
         ActionTemplate::CommandFix {
@@ -94,9 +92,8 @@ fn test_from_error_verb_not_found_no_suggestion() {
 
 #[test]
 fn test_from_error_invalid_structure() {
-    let raw_err = NounVerbError::InvalidStructure {
-        message: "invalid structure message".to_string(),
-    };
+    let raw_err =
+        NounVerbError::InvalidStructure { message: "invalid structure message".to_string() };
     let err = StructuredError::from_error(&raw_err);
     assert_eq!(err.kind, ErrorKind::InvalidInput);
     assert_eq!(err.severity, Severity::Error);
@@ -129,9 +126,7 @@ fn test_from_error_execution_generic() {
 
 #[test]
 fn test_from_error_argument_error() {
-    let raw_err = NounVerbError::ArgumentError {
-        message: "missing argument".to_string(),
-    };
+    let raw_err = NounVerbError::ArgumentError { message: "missing argument".to_string() };
     let err = StructuredError::from_error(&raw_err);
     assert_eq!(err.kind, ErrorKind::InvalidInput);
     assert_eq!(err.severity, Severity::Error);

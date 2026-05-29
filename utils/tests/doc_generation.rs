@@ -7,10 +7,10 @@ use common::create_test_command;
 fn test_completions_generation() -> Result<(), String> {
     let mut cmd = create_test_command();
     let mut buf = Vec::new();
-    
+
     completions::generate_completions(&mut cmd, clap_complete::Shell::Bash, &mut buf);
     let output = String::from_utf8(buf).map_err(|e| format!("UTF8 error: {}", e))?;
-    
+
     assert!(output.contains("test-cli"));
     assert!(output.contains("complete"));
     Ok(())
@@ -20,10 +20,11 @@ fn test_completions_generation() -> Result<(), String> {
 fn test_mangen_generation() -> Result<(), String> {
     let cmd = create_test_command();
     let mut buf = Vec::new();
-    
-    mangen::generate_manpage(&cmd, &mut buf).map_err(|e| format!("Man page generation failed: {}", e))?;
+
+    mangen::generate_manpage(&cmd, &mut buf)
+        .map_err(|e| format!("Man page generation failed: {}", e))?;
     let output = String::from_utf8(buf).map_err(|e| format!("UTF8 error: {}", e))?;
-    
+
     assert!(output.contains(".TH"));
     assert!(output.contains("test"));
     Ok(())
@@ -33,10 +34,11 @@ fn test_mangen_generation() -> Result<(), String> {
 fn test_markdown_generation() -> Result<(), String> {
     let cmd = create_test_command();
     let mut buf = Vec::new();
-    
-    markdown::generate_markdown(&cmd, &mut buf).map_err(|e| format!("Markdown generation failed: {}", e))?;
+
+    markdown::generate_markdown(&cmd, &mut buf)
+        .map_err(|e| format!("Markdown generation failed: {}", e))?;
     let output = String::from_utf8(buf).map_err(|e| format!("UTF8 error: {}", e))?;
-    
+
     assert!(output.contains("# test-cli"));
     assert!(output.contains("# Usage"));
     assert!(output.contains("# Arguments / Options"));
