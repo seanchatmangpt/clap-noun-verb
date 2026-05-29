@@ -3,7 +3,6 @@
 
 //! E2E tests for automatic completions generation using compiled examples.
 
-use assert_cmd::prelude::*;
 use assert_cmd::Command;
 
 #[test]

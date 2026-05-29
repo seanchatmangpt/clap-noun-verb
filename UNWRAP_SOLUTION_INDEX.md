@@ -4,7 +4,7 @@
 
 - **Executive Summary**: Archived (see CHANGELOG.md for historical information)
 - **User Guide**: [docs/test_unwrap_migration_guide.md](docs/test_unwrap_migration_guide.md)
-- **Technical Spec**: [docs/test_unwrap_technical_spec.md](docs/test_unwrap_technical_spec.md)
+- **Technical Spec**: Archived (see CHANGELOG.md for historical information)
 - **Core Implementation**: [tests/common/test_prelude.rs](tests/common/test_prelude.rs)
 
 ## All Files Created
@@ -19,7 +19,7 @@ tests/common/mod.rs              # Updated to export test_prelude
 ```
 docs/test_unwrap_migration_guide.md    # 14KB - Comprehensive user guide
 # Archived - See CHANGELOG.md for historical information
-docs/test_unwrap_technical_spec.md     # 20KB - Technical deep-dive
+# docs/test_unwrap_technical_spec.md     # 20KB - Technical deep-dive
 UNWRAP_SOLUTION_INDEX.md               # This file
 ```
 

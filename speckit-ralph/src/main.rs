@@ -9,7 +9,6 @@
 use clap_noun_verb::{NounVerbError, Result};
 use clap_noun_verb_macros::verb;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::fs;
 use std::path::Path;
 

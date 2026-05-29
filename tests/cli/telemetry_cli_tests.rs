@@ -11,7 +11,6 @@
 //! - Performance tracking
 
 use clap_noun_verb::telemetry::{Metrics, Span, TelemetryManager, TraceContext};
-use parking_lot::Mutex;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -585,7 +584,7 @@ fn test_telemetry_with_metrics() {
 #[test]
 fn test_telemetry_sampling() {
     // Arrange
-    let manager = TelemetryManager::new("cli-app").ok().unwrap();
+    let _manager = TelemetryManager::new("cli-app").ok().unwrap();
     let mut sampled_context = TraceContext::new().ok().unwrap();
     sampled_context.set_sampled(true);
 

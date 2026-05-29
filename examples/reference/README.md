@@ -165,5 +165,4 @@ pub enum CliError {
 ## Next Steps
 
 1. See [docs/reference/api/](../../docs/reference/api/) for complete API documentation
-2. Explore [advanced examples](../advanced/) for production patterns
-3. Check [playground examples](../playground/) for RDF/MCP features
+2. Check [playground examples](../playground/) for RDF/MCP features

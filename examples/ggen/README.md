@@ -175,8 +175,8 @@ pub fn ai_generate(
 
 ## Documentation
 
-- [Error Handling Improvements](../../docs/ggen_error_handling_improvements.md) - Before/after examples
-- [Implementation Summary](../../docs/ggen_implementation_summary.md) - Technical details
+- [Error Handling Guide](../../docs/tutorial/08-error-handling.md) - Error handling tutorial and patterns
+- [Documentation Index](../../docs/INDEX.md) - Main documentation and guides
 
 ## License
 

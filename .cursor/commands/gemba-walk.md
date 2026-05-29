@@ -347,7 +347,7 @@ let result = registry.register_noun(noun)?; // Proper error handling
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules and standards
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules and standards
 - **[Verify Tests](./verify-tests.md)** - Test verification workflow
 - **[80/20 Fill Gaps](./80-20-fill-gaps.md)** - Capability completion
 

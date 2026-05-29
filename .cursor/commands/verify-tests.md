@@ -31,7 +31,7 @@ cargo make test
 
 **If this step succeeds**: Skip to Step 5 (Verify Completion)
 
-**Note**: Always use `cargo make test`, never `cargo test` directly. See [Core Team Best Practices](../.cursorrules).
+**Note**: Always use `cargo make test`, never `cargo test` directly. See [Core Team Best Practices](../../.cursorrules).
 
 #### 1.1: Collect Baseline Data (DMAIC Measurement)
 
@@ -187,7 +187,7 @@ cargo make check
 **Step 3.2.3**: Fix the issue
 - Update test if test is wrong
 - Update implementation if implementation is wrong
-- Ensure test follows AAA pattern (see [Core Team Best Practices](../.cursorrules))
+- Ensure test follows AAA pattern (see [Core Team Best Practices](../../.cursorrules))
 
 **Step 3.2.4**: Verify fix
 ```bash
@@ -568,7 +568,7 @@ cargo make test   # All tests pass
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules and standards
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules and standards
 - **[Expert Testing Patterns](./expert-testing-patterns.md)** - Expert patterns
 - **[ACP Command](./acp.md)** - Git workflow integration
 - **[Makefile.toml](../../Makefile.toml)** - Build system configuration

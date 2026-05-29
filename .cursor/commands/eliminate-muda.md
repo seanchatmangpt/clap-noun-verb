@@ -211,7 +211,7 @@ cargo make verify
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules
 - **[Eliminate Mura](./eliminate-mura.md)** - Standardization
 - **[Kaizen Improvement](./kaizen-improvement.md)** - Continuous improvement
 

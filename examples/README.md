@@ -11,7 +11,6 @@
 | **Learn the basics** | [tutorial/](tutorial/) | basic, arguments, positional |
 | **Solve a specific task** | [howto/](howto/) | arg_groups, validation, env_vars |
 | **See complete API usage** | [reference/](reference/) | attribute_macro, framework, nested |
-| **Explore advanced features** | [advanced/](advanced/) | autonomic, async, io_advanced |
 | **Experiment with RDF/MCP** | [playground/](playground/) | rdf_mcp, sparql, semantic |
 
 ---
@@ -86,31 +85,6 @@ cargo run --example ref_nested -- level1 level2 action
 - `reference/collector.rs` - Command collection patterns
 - `reference/format.rs` - Output format handling
 - `reference/context.rs` - AppContext and state
-
----
-
-## 🚀 Advanced Examples (Expert-Level)
-
-**For:** Production systems, agents, and advanced use cases
-
-```bash
-# Machine-grade introspection
-cargo run --example adv_autonomic -- --capabilities
-
-# Async operations
-cargo run --example adv_async
-
-# Advanced I/O
-cargo run --example adv_io
-```
-
-**Examples:**
-- `advanced/autonomic.rs` - Agent2028 capabilities, introspection
-- `advanced/async.rs` - Async command handlers
-- `advanced/io_basic.rs` - File I/O with clio
-- `advanced/io_advanced.rs` - Advanced I/O patterns
-- `advanced/swarm_*.rs` - Multi-agent patterns
-- `advanced/thesis_*.rs` - Research/academic examples
 
 ---
 

@@ -128,4 +128,4 @@ cargo run --example howto_arg_actions -- --tag foo --tag bar --tag baz
 
 1. See [docs/howto/production/](../../docs/howto/production/) for deployment guides
 2. Explore [reference examples](../reference/) for complete API coverage
-3. Try [advanced examples](../advanced/) for production patterns
+3. Try [playground examples](../playground/) for RDF/MCP integration patterns

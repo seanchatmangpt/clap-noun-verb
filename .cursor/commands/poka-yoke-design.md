@@ -428,7 +428,7 @@ fn add_noun(&mut self, name: NounName) -> Result<()> {
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules and standards
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules and standards
 - **[80/20 Fill Gaps](./80-20-fill-gaps.md)** - Capability completion
 - **[Expert Testing Patterns](./expert-testing-patterns.md)** - Testing patterns
 

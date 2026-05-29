@@ -326,7 +326,7 @@ git push
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules and standards
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules and standards
 - **[Verify Tests Command](./verify-tests.md)** - Detailed test failure handling
 - **[Makefile.toml](../../Makefile.toml)** - Build system configuration
 

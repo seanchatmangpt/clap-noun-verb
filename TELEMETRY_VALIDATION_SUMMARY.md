@@ -487,15 +487,14 @@ help: you might have meant to declare this span first
 ## References
 
 ### Documentation
-- [User Guide](/Users/sac/clap-noun-verb/docs/TELEMETRY_VALIDATION.md)
-- [Implementation Guide](/Users/sac/clap-noun-verb/docs/TELEMETRY_VALIDATION_IMPLEMENTATION.md)
-- [Example Code](/Users/sac/clap-noun-verb/examples/telemetry_validation.rs)
+- [User Guide](TELEMETRY_VALIDATION_QUICKSTART.md)
+- [Implementation Guide](TELEMETRY_VALIDATION_SUMMARY.md)
 
 ### Source Files
-- [Macro Implementation](/Users/sac/clap-noun-verb/clap-noun-verb-macros/src/telemetry_validation.rs)
-- [Proc Macros](/Users/sac/clap-noun-verb/clap-noun-verb-macros/src/lib.rs)
-- [Runtime](/Users/sac/clap-noun-verb/src/autonomic/telemetry.rs)
-- [Tests](/Users/sac/clap-noun-verb/tests/telemetry_validation_test.rs)
+- [Macro Implementation](clap-noun-verb-macros/src/telemetry_validation.rs)
+- [Proc Macros](clap-noun-verb-macros/src/lib.rs)
+- [Runtime](src/telemetry.rs)
+- [Tests](tests/telemetry_validation_test.rs)
 
 ### External
 - [linkme crate](https://docs.rs/linkme)
