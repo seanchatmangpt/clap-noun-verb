@@ -1,0 +1,35 @@
+name: services
+about: Manage application services
+version: 0.1.0
+author: Generated
+
+verbs:
+  - name: status
+    noun: services
+    doc: Show status of all services
+    returns: ServiceStatus
+    args: []
+
+  - name: logs
+    noun: services
+    doc: Show logs for a service
+    returns: ServiceLogs
+    args:
+      - name: service
+        arg_type: String
+        doc: Service name
+        required: true
+
+  - name: restart
+    noun: services
+    doc: Restart a service
+    returns: RestartResult
+    args:
+      - name: service
+        arg_type: String
+        doc: Service name to restart
+        required: true
+      - name: force
+        arg_type: bool
+        doc: Force restart without graceful shutdown
+        is_flag: true
