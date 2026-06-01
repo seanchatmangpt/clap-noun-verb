@@ -1,5 +1,8 @@
 # Custom Serialization and Deserialization Patterns
 
+**Status:** Proposed for v6.0 (Phase 2)  
+**Timeline:** 2026-06-16 – 2026-06-29
+
 This document provides a comprehensive reference and guide to the custom serialization, deserialization, parsing, and formatting patterns utilized across the `clap-noun-verb` framework and the companion `clap-noun-verb-utils` utility library.
 
 ---

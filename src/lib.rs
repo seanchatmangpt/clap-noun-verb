@@ -28,7 +28,7 @@
 //! - `rdf` - RDF/Ontology with MCP
 //! - `kernel` - Deterministic execution
 //!
-//! ## Version 5.3.0 Architecture
+//! ## Version 26.6.1 Architecture
 //!
 //! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
@@ -45,7 +45,7 @@
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 5.3.0 provides:
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 26.6.1 provides:
 //!
 //! - **Public APIs** are stable within the same major version
 //! - **Breaking changes** only in major version bumps

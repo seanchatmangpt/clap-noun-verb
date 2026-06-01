@@ -1,0 +1,534 @@
+# ggen Producer Gap Ledger - clap-noun-verb v26.6.1
+# Research conducted: 2026-06-01
+# Purpose: Determine what clap-noun-verb v26.6.1 must expose for ggen to manufacture CLIs from graph law
+
+research_metadata:
+  version: "26.6.1"
+  phase: "Phase 2 Ledgers (Public API Only)"
+  methodology: "API Surface Analysis + Introspection Capability Assessment"
+  date: 2026-06-01
+
+# ============================================================================
+# QUESTION 1: Can a command surface be represented as data struct/JSON?
+# ============================================================================
+question_1:
+  title: "Data Structure Representation of Command Surface"
+  verdict: ALREADY_SUPPORTED
+
+  findings:
+    - registry_api:
+        status: ALREADY_SUPPORTED
+        name: "CommandRegistry::command_structure()"
+        signature: "pub fn command_structure(&self) -> HashMap<String, Vec<String>>"
+        returns: "HashMap mapping noun names to verb names"
+        data_model:
+          noun: String
+          verbs: Vec<String>
+        limitation: "Name-only; lacks argument, description, type metadata"
+
+    - cli_builder_api:
+        status: ALREADY_SUPPORTED
+        name: "CliBuilder::command_structure()"
+        signature: "pub fn command_structure(&self) -> std::collections::HashMap<String, Vec<String>>"
+        provides: "Shallow structure (noun -> [verbs])"
+
+    - noun_command_trait:
+        status: ALREADY_SUPPORTED
+        name: "NounCommand trait methods"
+        public_methods:
+          - name() -> &'static str
+          - about() -> &'static str
+          - verbs() -> Vec<Box<dyn VerbCommand>>
+          - sub_nouns() -> Vec<Box<dyn NounCommand>>
+        serializable: "Individual noun/verb names are accessible but NOT as Serialize impl"
+
+    - gap_identified: |
+        While command names and hierarchies ARE accessible, there is no built-in way to:
+        1. Serialize the full CLI surface to JSON/YAML
+        2. Include argument metadata (types, defaults, required, descriptions)
+        3. Export as a single data structure (no impl Serialize for registries)
+
+  requirement_for_ggen:
+    - Can ggen represent commands as data? YES
+    - Must ggen write custom glue code to extract names? YES
+    - Must ggen build its own JSON schema of the surface? YES
+    - Can ggen use clap's internal schema? NO (clap doesn't expose Command as serde struct)
+
+# ============================================================================
+# QUESTION 2: Can ggen emit Rust code using only public APIs?
+# ============================================================================
+question_2:
+  title: "Emission of Rust Code via Public APIs"
+  verdict: ALREADY_SUPPORTED
+
+  findings:
+    - main_api:
+        status: ALREADY_SUPPORTED
+        name: "clap-noun-verb-gen binary"
+        path: "src/bin/clap-noun-verb-gen.rs"
+        capabilities:
+          - from-ttl: Generate from RDF/Turtle specifications
+          - from-yaml: Generate from YAML declarations
+          - scaffold: Create minimal CLI skeleton
+        code_generation: |
+          Generates:
+          - src/main.rs (with clap_noun_verb::run())
+          - src/lib.rs
+          - src/commands/{verb_name}.rs (one per verb)
+          - src/commands/mod.rs
+          - Cargo.toml (optional)
+
+    - publicly_available:
+        status: ALREADY_SUPPORTED
+        modules:
+          - CliSpec (struct for CLI specification)
+          - VerbSpec (struct for verb/command specification)
+          - ArgSpec (struct for argument specification)
+          - Generator (main code generation logic)
+        usage: "These structs are NOT public in library, ONLY in bin/clap-noun-verb-gen.rs"
+
+    - api_limitation: |
+        The Generator and Spec types are INTERNAL to clap-noun-verb-gen binary.
+        They are NOT exported from the library crate for programmatic use.
+
+  requirement_for_ggen:
+    - Can ggen emit Rust using public APIs? PARTIALLY
+    - Does clap-noun-verb expose generation structs as library API? NO
+    - Can ggen reimplement its own Generation logic? YES
+    - Must ggen depend on clap-noun-verb-gen binary? NO (but could)
+    - Should ggen use clap-noun-verb-gen code as reference? YES
+
+# ============================================================================
+# QUESTION 3: Can ggen emit tests for the command surface?
+# ============================================================================
+question_3:
+  title: "Test Emission for Generated Commands"
+  verdict: ALREADY_SUPPORTED
+
+  findings:
+    - testing_framework:
+        status: ALREADY_SUPPORTED
+        locations:
+          - tests/attribute_macro.rs: Test #[verb] attribute
+          - tests/compile_time_validation.rs: Test compilation
+          - tests/cli_builder.rs: Test CliBuilder API
+          - tests/arg_actions.rs: Test argument handling
+          - tests/command_registration.rs: Test command registration
+        patterns: "AAA (Arrange, Act, Assert) with focus on behaviors"
+
+    - public_testing_apis:
+        status: ALREADY_SUPPORTED
+        - CliBuilder::build_command() -> clap::Command
+        - CliBuilder::run_with_args(Vec<String>) -> Result<()>
+        - CommandRegistry::run_with_args(Vec<String>) -> Result<()>
+        - Command::try_get_matches_from() (from clap)
+        description: "Allows testing without spawning subprocesses"
+
+    - test_patterns_available:
+        - Unit tests for individual verbs (test function behavior)
+        - Integration tests for command routing
+        - E2E tests using assert_cmd crate (external dep)
+
+    - gap_identified: |
+        No API for:
+        1. Generating test boilerplate for new commands
+        2. Snapshot/approval testing of help output
+        3. Property-based testing of argument parsing
+
+  requirement_for_ggen:
+    - Can ggen write testable code? YES (output code is tested as part of verification)
+    - Can ggen auto-generate test files? YES (it's code generation)
+    - Must ggen understand clap-noun-verb semantics for tests? YES
+    - Can ggen verify generated tests pass? YES (cargo test)
+
+# ============================================================================
+# QUESTION 4: Can ggen emit docs/help examples?
+# ============================================================================
+question_4:
+  title: "Documentation and Help Text Emission"
+  verdict: ALREADY_SUPPORTED
+
+  findings:
+    - docstring_support:
+        status: ALREADY_SUPPORTED
+        macro: "#[verb]"
+        extracts: "Rust doc comments (///) into clap help text"
+        flow: |
+          1. extract_docstring(&input_fn) parses /// comments
+          2. Parses special section: "# Arguments" for parameter docs
+          3. Parses relationship metadata tags: [default: X], [env: Y]
+          4. clean_docstring_for_about() removes technical sections
+          5. clap::Arg auto-generates help from attributes
+
+    - help_generation:
+        status: ALREADY_SUPPORTED
+        - clap automatically generates help text from Command/Arg metadata
+        - #[verb] macro embeds doc comment into help
+        - env vars, defaults, validators all appear in --help
+
+    - markdown_support:
+        status: NOT_SUPPORTED_NATIVELY
+        limitation: "Help text in clap is plain text, not rendered markdown"
+
+    - pub_api_for_docs:
+        - NounCommand::about() -> &'static str
+        - VerbCommand::about() -> &'static str
+        - Docstring extraction in #[verb] macro (compile-time)
+        - OutputValidationHook for metadata export (format.rs)
+
+  requirement_for_ggen:
+    - Can ggen emit help text? YES
+    - Must ggen implement markdown-to-plain conversion? NO (clap does plain)
+    - Can ggen embed docstring in generated #[verb] code? YES
+    - Can ggen export markdown docs for a CLI? PARTIALLY (would need custom logic)
+
+# ============================================================================
+# QUESTION 5: Can ggen emit command metadata with receipts?
+# ============================================================================
+question_5:
+  title: "Metadata and Receipt Emission"
+  verdict: TEMPLATE_ONLY
+
+  findings:
+    - metadata_structures:
+        status: PARTIALLY_AVAILABLE
+        - RegistryConfig: name, about, version (basic metadata)
+        - VerbContext: noun, verb, data (context at runtime)
+        - format.rs: OutputValidationHook (for JSON validation)
+        - telemetry.rs: Metrics and schema_version tracking
+
+    - telemetry_module:
+        status: AVAILABLE_BUT_FEATURE_GATED
+        location: "src/telemetry.rs"
+        features: "autonomic, kernel"
+        provides:
+          - CliMetrics struct with schema_version
+          - export() method to serialize metrics
+          - Distributed slice for telemetry registration
+
+    - receipt_concept:
+        status: NOT_NATIVELY_SUPPORTED
+        meaning: "No built-in receipt/proof-of-execution tracking"
+        workaround: |
+          1. Custom middleware could generate receipts
+          2. Output validation hooks can emit metadata
+          3. Telemetry infrastructure can track spans
+          4. But no canonical Receipt type in v26.6.1
+
+    - mcp_integration:
+        status: MENTIONED_NOT_IMPLEMENTED
+        comment: "MCP tool calling mentioned in --introspect help but not fully implemented"
+        location: "src/registry.rs - global --introspect flag"
+
+  requirement_for_ggen:
+    - Can ggen emit structured metadata? PARTIALLY
+    - Must ggen define Receipt type itself? YES
+    - Can ggen use telemetry for proofs? YES (feature-gated)
+    - Does v26.6.1 provide receipt infrastructure? NO
+
+# ============================================================================
+# QUESTION 6: Can generated command modules compile using stable public APIs?
+# ============================================================================
+question_6:
+  title: "Compilation of Generated Modules with Stable APIs"
+  verdict: ALREADY_SUPPORTED
+
+  findings:
+    - generated_code_structure:
+        status: ALREADY_SUPPORTED
+        bin_example: "src/bin/clap-noun-verb-gen.rs generates"
+        - main.rs: fn main() { clap_noun_verb::run() }
+        - lib.rs: pub mod commands; (re-exports)
+        - commands/verb_name.rs: #[verb] fn verb_name(...) -> Result<OutputType>
+        - commands/mod.rs: pub mod verb1, pub mod verb2, ...
+
+    - public_api_for_generation:
+        status: ALREADY_SUPPORTED
+        - clap_noun_verb::run() - entry point
+        - #[verb] macro for registration
+        - #[arg] attribute for parameters
+        - Result<T> for return type
+        - serde::Serialize for output types (requirement)
+
+    - generated_code_constraints:
+        - Return type MUST implement Serialize
+        - Macro validates this at compile-time (validation::validate_return_type)
+        - Function parameters may include clio::Input/Output (auto-detected)
+        - Functions must be async-free (async feature exists but requires #[async_verb])
+
+    - compilation_verification:
+        status: ALREADY_SUPPORTED
+        method: "clap-noun-verb-gen with --verify flag"
+        flow: "cargo check on generated output"
+
+  requirement_for_ggen:
+    - Can generated code compile? YES
+    - Must ggen understand #[verb] macro constraints? YES
+    - Must ggen know about Serialize requirement? YES
+    - Can ggen verify compilation? YES (cargo check/build)
+    - Are stable public APIs sufficient? YES
+
+# ============================================================================
+# QUESTION 7: Is a new public API needed, or are templates enough?
+# ============================================================================
+question_7:
+  title: "API Extension Need vs Template Sufficiency"
+  verdict: REQUIRES_PUBLIC_API_EXTENSION
+
+  findings:
+    - existing_templates:
+        status: AVAILABLE
+        locations:
+          - src/bin/clap-noun-verb-gen.rs (for scaffolding)
+          - examples/ (reference implementations)
+          - tests/ (test patterns)
+        problem: "Templates alone don't give ggen insight into command metadata"
+
+    - introspection_api:
+        status: PARTIALLY_AVAILABLE
+        - CommandRegistry::command_structure() -> HashMap<String, Vec<String>>
+        - Limitation: NO argument metadata, NO help text access, NO type info
+        - Global --introspect flag exists but maps to nothing
+
+    - public_api_gaps:
+        gap_1:
+          name: "Command Metadata Export"
+          missing: "pub struct CommandMetadata { name, about, version, args: Vec<ArgMetadata> }"
+          impact: "ggen must parse #[verb] macros or introspect runtime to build surface"
+
+        gap_2:
+          name: "Argument Introspection"
+          missing: "pub trait VerbCommand { fn arg_metadata() -> Vec<ArgMetadata>; }"
+          impact: "ggen cannot auto-generate tests/docs without reimplementing argument parsing"
+
+        gap_3:
+          name: "Receipt/Metadata Type"
+          missing: "pub struct Receipt { id, timestamp, command_path, exit_code, ... }"
+          impact: "ggen must define its own proof/receipt structure"
+
+        gap_4:
+          name: "Generator Struct Export"
+          missing: "pub use crate::bin::Generator; // Currently internal to bin"
+          impact: "ggen must reimplement code generation (or call clap-noun-verb-gen as subprocess)"
+
+    - what_needs_new_api:
+        tier_1_critical:
+          - CommandMetadata struct with complete hierarchy + argument details
+          - Serialize impl for CommandRegistry (make it data-serializable)
+          - Receipt/CliEvent type for proof-of-execution
+
+        tier_2_important:
+          - VerbCommand::arg_metadata() method
+          - NounCommand::serialize_structure() -> serde_json::Value
+          - Introspection API that maps to --introspect flag
+
+        tier_3_nice_to_have:
+          - Public Generator trait for custom code emission
+          - OutputValidationHook refinement (already exists)
+          - Telemetry integration with well-defined schema
+
+    - templates_sufficiency:
+        status: INSUFFICIENT
+        rationale: |
+          Templates are great for scaffolding, but they don't:
+          1. Allow ggen to inspect an EXISTING CLI's surface at runtime
+          2. Enable generation of accurate tests without manual audit
+          3. Support receipt/metadata emission without custom code
+          4. Provide typed access to command arguments for code gen
+
+          Templates are static patterns. ggen needs DYNAMIC INTROSPECTION.
+
+  requirement_for_ggen:
+    - Can templates enable code generation? YES (static templates work)
+    - Can templates alone provide all ggen needs? NO
+    - Is new API essential? YES (for introspection + receipts)
+    - Should API be stabilized in v26.6.1? Recommend v26.7.0
+
+# ============================================================================
+# SUMMARY TABLE: Classification by Requirement
+# ============================================================================
+summary_table:
+  - capability: "Q1: Represent surface as data struct/JSON"
+    classification: ALREADY_SUPPORTED
+    why: "CommandRegistry::command_structure() exists; ggen must build schema from it"
+    required_for_ggen: "Extract names, infer args from signatures"
+
+  - capability: "Q2: Emit Rust code via public APIs"
+    classification: ALREADY_SUPPORTED
+    why: "clap-noun-verb-gen binary exists; #[verb], #[arg] macros are public"
+    required_for_ggen: "Macros + Result type + Serialize requirement enforcement"
+
+  - capability: "Q3: Emit tests"
+    classification: ALREADY_SUPPORTED
+    why: "CliBuilder::run_with_args() allows deterministic testing; AAA patterns available"
+    required_for_ggen: "Access to Command trait; snapshots via insta (external)"
+
+  - capability: "Q4: Emit docs/help"
+    classification: ALREADY_SUPPORTED
+    why: "Docstring extraction in #[verb] macro; clap generates help automatically"
+    required_for_ggen: "Must preserve docstrings in generated output"
+
+  - capability: "Q5: Emit metadata with receipts"
+    classification: TEMPLATE_ONLY
+    why: "Telemetry exists (feature-gated); no canonical Receipt type; --introspect unimplemented"
+    required_for_ggen: "Define Receipt; implement --introspect; integrate telemetry"
+
+  - capability: "Q6: Compile with stable APIs"
+    classification: ALREADY_SUPPORTED
+    why: "All generated code uses public macros and types; validation is compile-time"
+    required_for_ggen: "Understand Serialize requirement; validate return types"
+
+  - capability: "Q7: Is new API needed"
+    classification: REQUIRES_PUBLIC_API_EXTENSION
+    why: "Command metadata export missing; runtime introspection incomplete; receipts undefined"
+    required_for_ggen: "CommandMetadata struct; Serialize for registries; Receipt type"
+
+# ============================================================================
+# CONCRETE GAPS FOR ggen IMPLEMENTATION
+# ============================================================================
+concrete_gaps:
+
+  gap_A:
+    name: "CommandMetadata Struct"
+    type: "REQUIRES_PUBLIC_API_EXTENSION"
+    description: |
+      ggen needs to know full command hierarchy + arguments at compile or runtime.
+      Currently only name -> verb names are accessible.
+
+    proposed_api: |
+      pub struct CommandMetadata {
+          pub app_name: String,
+          pub app_about: String,
+          pub version: Option<String>,
+          pub nouns: Vec<NounMetadata>,
+      }
+
+      pub struct NounMetadata {
+          pub name: String,
+          pub about: String,
+          pub verbs: Vec<VerbMetadata>,
+          pub sub_nouns: Vec<Box<dyn NounMetadata>>,
+      }
+
+      pub struct VerbMetadata {
+          pub name: String,
+          pub about: String,
+          pub args: Vec<ArgMetadata>,
+      }
+
+      pub struct ArgMetadata {
+          pub name: String,
+          pub typ: TypeAnnotation,
+          pub required: bool,
+          pub about: String,
+          pub default: Option<String>,
+          pub env_var: Option<String>,
+          pub short: Option<char>,
+          pub long: Option<String>,
+      }
+
+    who_uses: "ggen (during code generation phase)"
+    blocking: "Without this, ggen must parse #[verb] source or reverse-engineer from --help"
+
+  gap_B:
+    name: "Registry Serializability"
+    type: "REQUIRES_PUBLIC_API_EXTENSION"
+    description: |
+      CommandRegistry should impl Serialize so ggen can export CLI structure as JSON.
+
+    proposed_api: |
+      impl serde::Serialize for CommandRegistry {
+          // Serialize to CommandMetadata, then to JSON
+      }
+
+      impl CliBuilder {
+          pub fn export_schema(&self) -> Result<serde_json::Value> {
+              // serde_json::to_value(&self.registry)
+          }
+      }
+
+    who_uses: "ggen (documentation/metadata emission)"
+    impact: "Enables --introspect flag implementation"
+
+  gap_C:
+    name: "Receipt/Proof-of-Execution Type"
+    type: "REQUIRES_PUBLIC_API_EXTENSION"
+    description: |
+      No canonical Receipt/CliEvent type for proof-of-execution.
+      Needed to satisfy graph law verification (Process Mining Chicago TDD).
+
+    proposed_api: |
+      pub struct Receipt {
+          pub id: String,                    // Unique receipt ID
+          pub timestamp: i64,                // Unix timestamp
+          pub command_path: Vec<String>,     // ["noun", "verb"]
+          pub exit_code: i32,
+          pub input_args: serde_json::Value,
+          pub output: serde_json::Value,
+          pub duration_ms: u64,
+      }
+
+      pub trait VerbCommand {
+          fn emit_receipt(&self, args: &VerbArgs, output: &HandlerOutput) -> Option<Receipt>;
+      }
+
+    who_uses: "ggen (proof emission); graph law validators"
+    blocking: "Cannot verify graph law without proof structure"
+
+  gap_D:
+    name: "--introspect Implementation"
+    type: "DOC_ONLY"
+    description: |
+      Flag exists but does nothing. Should return JSON Schema array of tool definitions.
+
+    current_state: |
+      global --introspect flag added to registry but routing not implemented.
+      Expected: { "tools": [ { "name": "noun verb", "params": {...} } ] }
+
+    who_uses: "ggen (for LLM tool calling integration)"
+    effort: "Moderate (implement flag routing + schema generation)"
+
+# ============================================================================
+# FINAL ASSESSMENT
+# ============================================================================
+final_assessment:
+
+  ggen_can_work_with_v26_6_1: "YES, but with limitations"
+
+  what_ggen_can_do_today:
+    - Generate Rust code using #[verb] and #[arg] macros
+    - Generate tests using CliBuilder::run_with_args()
+    - Generate basic help text (preserved from docstrings)
+    - Scaffold new CLIs from graph specs (YAML/TTL input)
+
+  what_ggen_cannot_do_today:
+    - Export a CLI's surface as structured metadata (must parse or introspect)
+    - Emit receipts/proofs without custom Receipt impl
+    - Auto-generate comprehensive tests for all commands (partial automation only)
+    - Integrate with graph law validators (missing proof infrastructure)
+
+  recommended_actions:
+    priority_1:
+      - Implement CommandMetadata struct + export_schema() method
+      - Unblock: ggen can statically introspect CLI structure
+
+    priority_2:
+      - Define Receipt type in error.rs or new proof.rs module
+      - Unblock: ggen can emit valid proofs
+
+    priority_3:
+      - Implement --introspect routing (map to export_schema)
+      - Unblock: LLM tool calling integration
+
+    priority_4:
+      - Stabilize telemetry for proof generation
+      - Unblock: Process Mining Chicago TDD conformance
+
+version_recommendation:
+  current: "26.6.1 (Minimalist)"
+  next_milestone: "26.7.0 (Introspection)"
+  add_in_26_7: |
+    - CommandMetadata struct + Serialize
+    - Receipt type + emit_receipt() trait method
+    - --introspect implementation
+    - Public re-export of Generator from bin (optional)

@@ -1,8 +1,8 @@
-# Tutorial 03: Adding Commands - Organization & Discovery
+# Tutorial 02: Adding Commands - Organization & Discovery
 
 **Learning Path:** Basic CLI → Multi-Command Applications
 **Time:** 20 minutes
-**Prerequisites:** [Tutorial 02: Domain Separation](02-domain-separation.md)
+**Prerequisites:** [Tutorial 01: Domain Separation](01-domain-separation.md)
 
 > **v5.6.0 Update**: `#[noun]` is deprecated. Nouns are auto-detected from filename.
 > `#[arg]` on parameters still works, but documentation style (`# Arguments` with tags) is preferred.
@@ -499,8 +499,8 @@ commands/
 
 ## Next Steps
 
-- **[Tutorial 04: Testing Basics](04-testing-basics.md)** - Test your commands with Chicago TDD
-- **[Tutorial 05: Output Formats](05-output-formats.md)** - JSON, YAML, custom serialization
+- **[Tutorial 03: Testing Basics](03-testing-basics.md)** - Test your commands with Chicago TDD
+- **[Tutorial 04: Output Formats](04-output-formats.md)** - JSON, YAML, custom serialization
 - **[Reference: Verb Macro](../reference/api/verb-macro.md)** - Complete verb attribute reference
 - **[Reference: Arg Attributes](../reference/api/arg-attributes.md)** - All Phase 2 tags documented
 

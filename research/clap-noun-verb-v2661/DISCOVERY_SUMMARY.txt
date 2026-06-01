@@ -1,0 +1,211 @@
+================================================================================
+clap-noun-verb v26.6.1: COMMAND GRAMMAR DISCOVERY SUMMARY
+================================================================================
+
+RESEARCH COMPLETED: 2026-06-01
+INSPECTOR: Claude Code (Haiku 4.5)
+CONFIDENCE LEVEL: HIGH (source code inspection)
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. TERMINOLOGY IS TRAIT-BASED, NOT MANDATORY
+
+   - "noun" and "verb" are Rust traits (NounCommand, VerbCommand)
+   - NOT keywords, reserved terms, or enforced patterns
+   - Developers CHOOSE this organization; system doesn't force it
+   - Traits implement arbitrary command grouping/action semantics
+
+   Source: src/noun.rs:77, src/verb.rs:469
+
+2. DISPATCH MECHANISM: TRAIT OBJECT RECURSION
+
+   - Commands stored as: HashMap<String, Box<dyn NounCommand>>
+   - Dispatch algorithm: CommandRegistry::route_recursive()
+   - Flow: clap parses → route → noun.verbs.find() → verb.run()
+   - Supports arbitrary nesting via NounCommand::sub_nouns()
+
+   Source: src/registry.rs:30-34 (HashMap), src/registry.rs:327-363 (routing)
+
+3. REGISTRATION: LINKME DISTRIBUTED SLICES (PRIMARY)
+
+   - #[verb] macro generates registration functions
+   - linkme collects function pointers at link time
+   - Distributed slices: __VERB_REGISTRY, __NOUN_REGISTRY
+   - Runtime initialization: CommandRegistry::init() calls all functions
+
+   Source: src/cli/registry.rs:163-278
+
+4. ALTERNATIVE REGISTRATION: RUNTIME API
+
+   - CommandRegistry::register_verb_with_args() accepts closures
+   - Bypasses linkme entirely
+   - Enables dynamic CLIs and plugin loading
+
+   Source: src/cli/registry.rs:315-349
+
+5. OUTPUT IS ALWAYS JSON (Agent-Ready)
+
+   - Return types must impl serde::Serialize
+   - Enforced at compile-time by #[verb] macro
+   - Default output format: JSON (not human-readable text)
+   - Designed for LLM/agent tool-calling, not terminal UX
+
+   Source: src/lib.rs:6-44, src/format.rs
+
+6. ARGUMENT HANDLING: MACRO-EXTRACTED METADATA
+
+   - Function signature parsed by #[verb] macro
+   - ArgMetadata generated from parameter types and #[arg] attributes
+   - Types inferred at compile time; stored in Vec<ArgMetadata>
+   - Access via VerbArgs (type-safe wrapper around clap::ArgMatches)
+
+   Source: src/cli/registry.rs:192-246, src/verb.rs:89-436
+
+7. INTROSPECTION: JSON SCHEMA FOR LLM TOOLS
+
+   - --introspect flag emits ToolDefinition array
+   - Uses collect_tools_from_cmd() to traverse clap Command tree
+   - Generated JSON Schema compatible with LLM tool-calling APIs
+
+   Source: src/registry.rs:699-781
+
+8. CRITICAL: #[noun] MACRO IS DEPRECATED
+
+   - Removed in v5.6.0
+   - Now a no-op with deprecation warning
+   - Nouns are now auto-detected from filename/module docs
+   - Only #[verb] macro is actively maintained
+
+   Source: clap-noun-verb-macros/src/lib.rs:286-313
+
+================================================================================
+ACTUAL DISPATCH FLOW (Evidence-Based)
+================================================================================
+
+INPUT: myapp services status --verbose
+
+CLAP PARSING:
+  clap::Command::try_get_matches_from()
+    ↓
+  ArgMatches {
+    subcommand: ("services", ...)
+      subcommand: ("status", ...)
+        arg: ("verbose", true)
+  }
+
+CLAP → DISPATCH HANDOFF:
+  CommandRegistry::route(ArgMatches)
+    ↓
+  extract top-level subcommand: "services"
+    ↓
+  registry.get_noun("services")
+    ↓
+  route_recursive(noun, "services", noun_matches, root_matches)
+
+RECURSIVE DISPATCH:
+  route_recursive():
+    extract next subcommand: "status"
+      ↓
+    noun.verbs().find(|v| v.name() == "status")
+      ↓
+    verb.run(&VerbArgs::new(sub_matches).with_parent(root_matches))
+
+HANDLER EXECUTION:
+  #[verb("status")]
+  fn show_status(verbose: bool) -> Result<Status> { ... }
+    ↓
+  Handler extracts args: verbose = args.is_flag_set("verbose")
+    ↓
+  Returns Result<Status> where Status: Serialize
+    ↓
+  serde_json::to_string(&result)
+    ↓
+  println!("{}", json_string)
+
+EXIT:
+  JSON output to stdout, exit code 0 (or 1 on error)
+
+================================================================================
+MECHANISM CLASSIFICATION
+================================================================================
+
+Aspect                    Classification            Evidence
+─────────────────────────────────────────────────────────────────────────────
+Command Grouping          TRAIT_BASED               NounCommand trait + HashMap
+Action Selection          TRAIT_BASED               VerbCommand trait dispatch
+Argument Modeling         MACRO_BASED               #[verb] extracts from signature
+Registration              REGISTRY_MECHANISM       linkme distributed slices
+Output Serialization      GENERATED_TABLE          serde::Serialize requirement
+Error/Refusal Handling    EXPLICIT_NOUN_VERB_API   NounVerbError with suggestions
+Help Generation           CLAP_NATIVE_WRAPPER      Clap's built-in + docstring parse
+Introspection             EXPLICIT_NOUN_VERB_API   JSON Schema via --introspect
+
+================================================================================
+WHAT THIS IS NOT
+================================================================================
+
+NOT a language extension
+  → No special syntax; standard Rust traits and macros
+
+NOT enforcing noun/verb semantics
+  → Developers choose this organization; system doesn't mandate it
+
+NOT a binary protocol
+  → No serialization format for command definitions
+
+NOT human-first CLI framework
+  → Designed for LLM/agent tool-calling, not terminal UX
+
+NOT a static command registry
+  → Supports both compile-time (linkme) and runtime registration
+
+================================================================================
+ARTIFACTS GENERATED
+================================================================================
+
+1. command-grammar-ledger.yaml
+   - Detailed YAML mapping of all dispatch mechanisms
+   - File paths and line numbers for each mechanism
+   - Classification of each component
+   - Key insights and critical findings
+
+2. command-grammar-truth.md
+   - Long-form markdown report of findings
+   - Reality vs. assumptions section
+   - Dispatch mechanism deep-dive
+   - Design philosophy and limitations
+   - Comprehensive classification table
+
+3. DISCOVERY_SUMMARY.txt (this file)
+   - Quick reference of key findings
+   - Actual dispatch flow diagram
+   - Mechanism classification table
+
+================================================================================
+NEXT STEPS FOR USER
+================================================================================
+
+To understand how clap-noun-verb works:
+
+1. START HERE: Read command-grammar-truth.md (comprehensive overview)
+
+2. REFERENCE: Use command-grammar-ledger.yaml for specific mechanism details
+   - Look up file paths and line numbers
+   - Cross-reference with implementation
+
+3. VERIFY: Inspect actual source files mentioned:
+   - src/verb.rs:469 (VerbCommand trait)
+   - src/noun.rs:77 (NounCommand trait)
+   - src/registry.rs:327-363 (route_recursive algorithm)
+   - src/cli/registry.rs:163-168 (linkme distributed slices)
+
+4. BUILD: Use CliBuilder API or #[verb] macro to create CLIs
+   - Framework is production-ready
+   - Clear trait-based design
+   - Excellent compile-time validation
+
+================================================================================
+END OF SUMMARY
+================================================================================

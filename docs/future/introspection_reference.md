@@ -1,5 +1,8 @@
 # Introspection API Design & Reference Specification
 
+**Status:** Proposed for v6.0 (Phase 2–3)  
+**Timeline:** 2026-06-16 – 2026-07-11
+
 This document defines the formal reference specification for the **Introspection API** in the `clap-noun-verb` framework. It outlines the schema formats, metadata structures, CLI command maps, and machine-readable output schemas designed for autonomic controllers, orchestrators, Model Context Protocol (MCP) servers, and LLM agents.
 
 ---

@@ -1,0 +1,158 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+
+//! {{ crate_name }} - {{ crate_description }}
+//!
+//! A clap-noun-verb CLI built with the following architecture:
+//!
+//! ```text
+//! ┌──────────────┐
+//! │  CLI Layer   │  ← #[verb] attributes (thin, validation only)
+//! └────────┬─────┘
+//!          │
+//! ┌────────▼──────────┐
+//! │ Integration       │  ← Tera, file I/O, external services
+//! └────────┬──────────┘
+//!          │
+//! ┌────────▼──────────┐
+//! │  Domain Layer     │  ← Pure business logic (testable, reusable)
+//! └──────────────────┘
+//! ```
+//!
+//! ## Features
+//!
+//! - **Auto-Discovery**: Commands discovered via `#[verb]` macros
+//! - **Type Inference**: Arguments inferred from function signatures
+//! - **JSON Output**: All output serialized to JSON by default
+//! - **Error Handling**: Structured error types with context
+//! - **Testing**: Pure domain logic enables comprehensive unit tests
+
+use clap_noun_verb::Result;
+
+// ============================================================================
+// MODULE ORGANIZATION
+// ============================================================================
+
+/// Domain layer - Pure business logic (no I/O, no CLI)
+///
+/// Modules in this layer:
+/// - PLACEHOLDER: Module documentation
+/// Example:
+/// - `users` - User management domain logic
+/// - `projects` - Project management domain logic
+/// - `config` - Configuration schema and defaults
+pub mod domain;
+
+/// Integration layer - Glue code with side effects (I/O, external services)
+///
+/// Modules in this layer:
+/// - PLACEHOLDER: Integration documentation
+/// Example:
+/// - `file_system` - File I/O operations
+/// - `http` - External API clients
+/// - `database` - Database connections
+pub mod integration;
+
+/// CLI layer - Thin validation and argument binding
+///
+/// Modules in this layer (one per noun):
+/// - PLACEHOLDER: Command module documentation
+/// Example:
+/// - `commands::users` - User commands (#[verb] handlers)
+/// - `commands::projects` - Project commands (#[verb] handlers)
+pub mod commands;
+
+/// Output types for JSON serialization
+///
+/// Each module exports its corresponding Output types for JSON serialization.
+/// Follow this pattern:
+///
+/// ```ignore
+/// #[derive(Serialize)]
+/// pub struct UserOutput {
+///     pub id: String,
+///     pub name: String,
+/// }
+/// ```
+pub mod outputs;
+
+// ============================================================================
+// RE-EXPORTS FOR PUBLIC API
+// ============================================================================
+
+// PLACEHOLDER: Export key types from submodules for public API
+//
+// Example:
+// pub use domain::{User, Project};
+// pub use commands::*;
+
+// ============================================================================
+// ENTRY POINT
+// ============================================================================
+
+/// Main entry point for the CLI
+///
+/// Automatically discovers all `#[verb]` attributes and dispatches commands.
+///
+/// # Examples
+///
+/// In your `main.rs`:
+///
+/// ```ignore
+/// fn main() -> Result<()> {
+///     {{ crate_name }}::run()
+/// }
+/// ```
+pub fn run() -> Result<()> {
+    clap_noun_verb::run()
+}
+
+// ============================================================================
+// INITIALIZATION (OPTIONAL)
+// ============================================================================
+
+/// Initialize the CLI with custom configuration
+///
+/// PLACEHOLDER: Implement if your CLI needs startup logic.
+///
+/// # Examples
+///
+/// ```ignore
+/// pub fn init_with_config(config: MyConfig) -> Result<()> {
+///     // PLACEHOLDER: Set up logging, telemetry, etc.
+///     // Example:
+///     // env_logger::init();
+///     // tracing_subscriber::fmt::init();
+///     Ok(())
+/// }
+/// ```
+
+// ============================================================================
+// TESTS
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_crate_initialization() {
+        // Arrange & Act
+        // PLACEHOLDER: Test that the crate initializes correctly
+        //
+        // Example:
+        // let result = crate::init_with_config(MyConfig::default());
+        //
+        // Assert
+        // assert!(result.is_ok(), "Crate should initialize successfully");
+    }
+
+    // PLACEHOLDER: Add integration tests here
+    // Examples:
+    // - test_command_discovery
+    // - test_help_output
+    // - test_version_flag
+}

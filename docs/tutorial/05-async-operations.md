@@ -1,8 +1,8 @@
-# Tutorial 07: Async Operations - Tokio Integration
+# Tutorial 05: Async Operations - Tokio Integration
 
 **Learning Path:** Synchronous CLIs → Async/Await Patterns
 **Time:** 25 minutes
-**Prerequisites:** [Tutorial 05: Output Formats](05-output-formats.md)
+**Prerequisites:** [Tutorial 04: Output Formats](04-output-formats.md)
 
 ---
 
@@ -486,7 +486,7 @@ mod tests {
 
 ## Next Steps
 
-- **[Tutorial 08: Error Handling](08-error-handling.md)** - Comprehensive error strategies
+- **[Tutorial 06: Error Handling](06-error-handling.md)** - Comprehensive error strategies
 - **[How-To: Performance Optimization](../howto/performance-optimization.md)** - Performance tuning
 
 **Estimated time to next tutorial:** 20 minutes

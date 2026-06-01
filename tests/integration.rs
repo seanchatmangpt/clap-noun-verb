@@ -106,11 +106,15 @@ fn test_command_tree_hierarchy() -> Result<()> {
     // Assert
     assert_eq!(paths.len(), 2, "Expected exactly 2 command paths in hierarchy");
     assert!(
-        paths.iter().any(|path| path == &vec!["dev".to_string(), "test".to_string(), "run".to_string()]),
+        paths
+            .iter()
+            .any(|path| path == &vec!["dev".to_string(), "test".to_string(), "run".to_string()]),
         "Expected paths to contain ['dev', 'test', 'run']"
     );
     assert!(
-        paths.iter().any(|path| path == &vec!["dev".to_string(), "test".to_string(), "watch".to_string()]),
+        paths
+            .iter()
+            .any(|path| path == &vec!["dev".to_string(), "test".to_string(), "watch".to_string()]),
         "Expected paths to contain ['dev', 'test', 'watch']"
     );
 
@@ -187,7 +191,10 @@ fn test_custom_command_implementation() -> Result<()> {
     // Assert
     assert!(has_custom_services, "Expected structure to contain 'custom-services'");
     if let Some(verbs) = structure.get("custom-services") {
-        assert!(verbs.contains(&"status".to_string()), "Expected custom services verbs to contain 'status'");
+        assert!(
+            verbs.contains(&"status".to_string()),
+            "Expected custom services verbs to contain 'status'"
+        );
     } else {
         panic!("Missing expected 'custom-services' key in command structure");
     }
@@ -338,12 +345,14 @@ fn test_command_group_macro() -> Result<()> {
 fn test_command_tree_macro() -> Result<()> {
     // Arrange
     let mut cli = Cli::new().name("tree-test").about("Tree test");
-    let tree_noun = noun!("root", "Root command", [
-        verb!("leaf", "Leaf command", |_args: &VerbArgs| {
+    let tree_noun = noun!(
+        "root",
+        "Root command",
+        [verb!("leaf", "Leaf command", |_args: &VerbArgs| {
             println!("Leaf command");
             Ok(())
-        }),
-    ]);
+        }),]
+    );
 
     // Act
     cli = command_tree!(cli => tree_noun);
@@ -390,13 +399,13 @@ fn test_registry_introspection() -> Result<()> {
     assert!(has_services, "Expected registry to contain 'services' noun");
     assert!(has_config, "Expected registry to contain 'config' noun");
     assert_eq!(structure.len(), 2, "Expected structure length to be exactly 2");
-    
+
     if let Some(services_verbs) = structure.get("services") {
         assert_eq!(services_verbs.len(), 2, "Expected 'services' to have exactly 2 verbs");
     } else {
         panic!("Missing expected 'services' key in command structure");
     }
-    
+
     if let Some(config_verbs) = structure.get("config") {
         assert_eq!(config_verbs.len(), 2, "Expected 'config' to have exactly 2 verbs");
     } else {

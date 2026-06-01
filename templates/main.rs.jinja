@@ -1,0 +1,280 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! {{ crate_name }} - Binary entry point
+//!
+//! Command-line interface for {{ crate_description }}.
+//!
+//! ## Architecture
+//!
+//! This binary uses clap-noun-verb's auto-discovery to register commands
+//! from the library crate. No explicit command registration needed.
+//!
+//! ```text
+//! main.rs (this file)
+//!    ↓
+//! {{ crate_lib }}::run()  (auto-discovers all #[verb] commands)
+//!    ↓
+//! CommandRegistry (collects distributed_slice entries)
+//!    ↓
+//! CommandRouter (dispatches parsed args to handlers)
+//! ```
+
+use {{ crate_lib }}::Result;
+use std::process;
+
+/// Program configuration and initialization
+///
+/// PLACEHOLDER: Implement custom startup logic here.
+///
+/// # Examples
+///
+/// ```ignore
+/// struct AppConfig {
+///     log_level: log::LevelFilter,
+///     output_format: OutputFormat,
+/// }
+///
+/// fn init_app() -> Result<AppConfig> {
+///     // PLACEHOLDER: Initialize logging
+///     // env_logger::init();
+///     //
+///     // PLACEHOLDER: Load config from file or environment
+///     // let config = AppConfig::from_env()?;
+///     //
+///     // Ok(config)
+/// }
+/// ```
+
+/// Main entry point
+///
+/// Initializes the CLI framework and auto-discovers all `#[verb]` commands.
+///
+/// # Exit Codes
+///
+/// * 0 - Success
+/// * 1 - Validation error (invalid arguments or user input)
+/// * 2 - Execution error (I/O, network, external service failure)
+/// * 3 - Configuration error (missing files, permissions, env vars)
+/// * 101 - Internal error (panic or unwrap, should never happen)
+///
+/// # Examples
+///
+/// ## Basic usage
+///
+/// ```bash
+/// # List help
+/// $ app --help
+///
+/// # List available nouns and verbs
+/// $ app --list-commands
+///
+/// # Execute a verb
+/// $ app {{ example_noun }} {{ example_verb }} [ARGS]
+/// ```
+///
+/// ## Common patterns
+///
+/// ```bash
+/// # PLACEHOLDER: Add example commands
+///
+/// # Example: Create a resource
+/// $ app {{ example_noun }} create "my-resource"
+///
+/// # Example: List resources with output formatting
+/// $ app {{ example_noun }} list --format yaml
+///
+/// # Example: Delete with confirmation
+/// $ app {{ example_noun }} delete "my-resource" --force
+/// ```
+
+fn main() {
+    // ========================================================================
+    // 1. INITIALIZE (PLACEHOLDER)
+    // ========================================================================
+    //
+    // PLACEHOLDER: Uncomment to add startup logic
+    //
+    // Example:
+    // ```
+    // if let Err(e) = init_logging() {
+    //     eprintln!("Failed to initialize logging: {}", e);
+    //     process::exit(3);
+    // }
+    // ```
+    //
+    // let app_config = match init_app() {
+    //     Ok(cfg) => cfg,
+    //     Err(e) => {
+    //         eprintln!("Configuration error: {}", e);
+    //         process::exit(3);
+    //     }
+    // };
+
+    // ========================================================================
+    // 2. RUN - Auto-discover and dispatch commands
+    // ========================================================================
+    match {{ crate_lib }}::run() {
+        Ok(()) => {
+            // Success - exit code 0
+            process::exit(0);
+        }
+        Err(e) => {
+            // Determine exit code based on error type
+            let (exit_code, formatted_error) = format_error_with_code(&e);
+            eprintln!("{}", formatted_error);
+            process::exit(exit_code);
+        }
+    }
+}
+
+// ============================================================================
+// ERROR FORMATTING & EXIT CODES
+// ============================================================================
+
+/// Format error message with appropriate exit code
+///
+/// Maps `NounVerbError` variants to exit codes and user-friendly messages.
+///
+/// # Arguments
+///
+/// * `error` - The `NounVerbError` to format
+///
+/// # Returns
+///
+/// A tuple of (exit_code, formatted_message)
+fn format_error_with_code(error: &{{ crate_lib }}::error::NounVerbError) -> (i32, String) {
+    use {{ crate_lib }}::error::NounVerbError;
+
+    match error {
+        // Validation errors (exit code 1)
+        NounVerbError::ValidationError { field, value, hint } => (
+            1,
+            format!(
+                "Validation Error: Field '{}' has invalid value '{}'\n{}",
+                field,
+                value,
+                hint.as_deref().unwrap_or("Check your input and try again.")
+            ),
+        ),
+
+        // Execution errors (exit code 2)
+        NounVerbError::ExecutionError(msg) => (
+            2,
+            format!("Execution Error: {}\n\nTroubleshooting:\n- Check network connectivity\n- Verify external service availability\n- Review logs for details", msg),
+        ),
+
+        // Configuration errors (exit code 3)
+        NounVerbError::ConfigurationError { reason } => (
+            3,
+            format!(
+                "Configuration Error: {}\n\nTroubleshooting:\n- Check configuration file permissions\n- Verify required environment variables are set\n- See documentation for setup instructions",
+                reason
+            ),
+        ),
+
+        // All other errors (exit code 2)
+        _ => (2, format!("Error: {}", error)),
+    }
+}
+
+// ============================================================================
+// INITIALIZATION HELPERS (OPTIONAL)
+// ============================================================================
+
+// PLACEHOLDER: Uncomment and implement as needed
+
+/// Initialize logging subsystem
+///
+/// PLACEHOLDER: Implement for your logging backend (env_logger, tracing, etc.)
+///
+/// # Errors
+///
+/// Returns error if logging cannot be initialized.
+///
+/// # Examples
+///
+/// ```ignore
+/// fn init_logging() -> Result<()> {
+///     env_logger::Builder::from_default_env()
+///         .filter_level(log::LevelFilter::Info)
+///         .try_init()
+///         .map_err(|e| NounVerbError::configuration_error(e.to_string()))
+/// }
+/// ```
+
+/// Initialize CLI with environment configuration
+///
+/// PLACEHOLDER: Implement for your configuration needs (env vars, config files, etc.)
+///
+/// # Errors
+///
+/// Returns error if configuration cannot be loaded.
+///
+/// # Examples
+///
+/// ```ignore
+/// fn init_app() -> Result<AppConfig> {
+///     // Load from environment
+///     let log_level = std::env::var("LOG_LEVEL")
+///         .unwrap_or_else(|_| "info".to_string());
+///
+///     Ok(AppConfig {
+///         log_level: log_level.parse()?,
+///     })
+/// }
+/// ```
+
+// ============================================================================
+// TESTS
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_exit_code_for_validation_error() {
+        // Arrange
+        let error = {{ crate_lib }}::error::NounVerbError::validation_error(
+            "test_field".to_string(),
+            "invalid".to_string(),
+            None,
+        );
+
+        // Act
+        let (exit_code, _) = format_error_with_code(&error);
+
+        // Assert
+        assert_eq!(exit_code, 1, "Validation errors should exit with code 1");
+    }
+
+    #[test]
+    fn test_exit_code_for_execution_error() {
+        // Arrange
+        let error = {{ crate_lib }}::error::NounVerbError::execution_error("test error");
+
+        // Act
+        let (exit_code, _) = format_error_with_code(&error);
+
+        // Assert
+        assert_eq!(exit_code, 2, "Execution errors should exit with code 2");
+    }
+
+    #[test]
+    fn test_exit_code_for_configuration_error() {
+        // Arrange
+        let error = {{ crate_lib }}::error::NounVerbError::configuration_error("test config error");
+
+        // Act
+        let (exit_code, _) = format_error_with_code(&error);
+
+        // Assert
+        assert_eq!(exit_code, 3, "Configuration errors should exit with code 3");
+    }
+
+    // PLACEHOLDER: Add more tests
+    // - test_help_output
+    // - test_version_flag
+    // - test_invalid_command
+}

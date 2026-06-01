@@ -1,5 +1,8 @@
 # RDF/SPARQL Semantic Integration Design Document
 
+**Status:** Proposed for v6.0 (Phase 2–3)  
+**Timeline:** 2026-06-16 – 2026-07-11
+
 This design document outlines the architecture, semantic mappings, triple representations, and query engine interfaces for integrating Resource Description Framework (RDF) and SPARQL capabilities into the `clap-noun-verb` framework. By turning CLI structures and validation logic into a queryable semantic knowledge graph, `clap-noun-verb` transitions from a traditional parser to an agent-comprehensible, self-documenting, and self-validating command mesh.
 
 ---

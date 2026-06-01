@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**clap-noun-verb** is a Rust CLI framework built on top of `clap`, providing noun-verb command patterns (e.g., `myapp services status`). It uses proc-macros (`#[noun]`, `#[verb]`) for declarative command registration with `linkme` distributed slices for compile-time auto-discovery. Version 5.6.0.
+**clap-noun-verb** is a Rust CLI framework built on top of `clap`, providing noun-verb command patterns (e.g., `myapp services status`). It uses proc-macros (`#[noun]`, `#[verb]`) for declarative command registration with `linkme` distributed slices for compile-time auto-discovery. Version 26.6.1.
 
 ## Build Commands
 

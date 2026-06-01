@@ -1,0 +1,372 @@
+---
+# clap-noun-verb Version Truth Ledger
+# Research Phase 1 - Local Version Truth
+# Executed: 2026-06-01
+# Authority: /Users/sac/clap-noun-verb local source
+
+package_metadata:
+  package_name: clap-noun-verb
+  local_version: "26.6.1"
+  edition: "2021"
+  rust_version_minimum: "1.74"
+  license: "MIT OR Apache-2.0"
+  authors:
+    - "Sean Chatman <seanchatmangpt@gmail.com>"
+  repository: "https://github.com/seanchatmangpt/clap-noun-verb"
+  documentation: "https://docs.rs/clap-noun-verb"
+  homepage: "https://github.com/seanchatmangpt/clap-noun-verb"
+  description: "A high-level, ergonomic API for building noun-verb CLI patterns on top of clap"
+
+version_control:
+  current_branch: "minimalist-refactor-final"
+  main_branch: "main"
+  branch_ahead_of_main: 9
+  latest_commit_hash: "854735e"
+  latest_commit_message: "feat(bin): add clap-noun-verb-gen CLI generator for creating CLIs from specifications"
+  git_describe_tag: "v26.5.1-17-g854735e"
+  changelog_entry_date: "2026-06-01"
+  changelog_entry_version: "[26.6.1]"
+
+workspace_structure:
+  workspace_members:
+    - name: "clap-noun-verb"
+      kind: "library"
+      path: "."
+      version: "26.6.1"
+      proc_macro: false
+
+    - name: "clap-noun-verb-macros"
+      kind: "proc-macro"
+      path: "clap-noun-verb-macros"
+      version: "26.6.1"
+      proc_macro: true
+
+    - name: "clap-noun-verb-utils"
+      kind: "library"
+      path: "utils"
+      version: "26.6.1"
+
+    - name: "unibit-cli"
+      kind: "example"
+      path: "unibit-cli"
+
+    - name: "speckit-ralph"
+      kind: "example"
+      path: "speckit-ralph"
+
+  excluded_members:
+    - "playground" # Standalone; uses published crates.io version
+    - "examples/playground"
+    - "vendors" # Vendored dependencies directory
+
+crate_dependencies:
+  core_runtime_crates:
+    clap:
+      version: "4.5"
+      features: ["derive", "env", "suggestions"]
+
+    clap-noun-verb-macros:
+      version: "26.6.1"
+      path: "clap-noun-verb-macros"
+
+    linkme:
+      version: "0.3"
+      purpose: "Auto-discovery via distributed slices"
+
+    serde:
+      version: "1.0"
+      features: ["derive"]
+
+    serde_json:
+      version: "1.0"
+
+    thiserror:
+      version: "1.0"
+
+    anyhow:
+      version: "1.0"
+
+    once_cell:
+      version: "1.19"
+
+    tokio:
+      version: "1.40"
+      features: ["full"]
+
+  optional_features:
+    repl:
+      depends_on: "rustyline"
+      version: "14.0.0"
+
+  dev_dependencies:
+    test_frameworks:
+      - "criterion (0.5 with html_reports)"
+      - "proptest (1.0)"
+      - "insta (1.0 with json,yaml features)"
+      - "loom (0.7)"
+
+    cli_testing:
+      - "assert_cmd (2.0)"
+      - "predicates (3.0)"
+      - "assert_fs (1.0)"
+
+    async_testing:
+      - "tokio-test (0.4)"
+      - "serial_test (3.0)"
+      - "tempfile (3.8)"
+
+    build_tools:
+      - "cargo-make (0.37)"
+      - "chicago-tdd-tools (1.0.0 with testing-extras)"
+
+feature_flags:
+  default_features:
+    status: "minimal"
+    count: 0
+    description: "No features enabled by default; ~10 core dependencies only"
+
+  available_features:
+    repl:
+      status: "stable"
+      pulls_in: ["rustyline"]
+
+  # Frontier features are declared in Cargo.toml check-cfg but may not all be implemented
+  frontier_features_declared:
+    - "meta-framework"
+    - "rdf-composition"
+    - "executable-specs"
+    - "fractal-patterns"
+    - "discovery-engine"
+    - "federated-network"
+    - "learning-trajectories"
+    - "reflexive-testing"
+    - "economic-sim"
+    - "quantum-ready"
+
+  meta_features:
+    - "frontier-semantic"
+    - "frontier-intelligence"
+    - "frontier-quality"
+    - "frontier-all"
+
+code_organization:
+  main_library_crate_path: "src/"
+  main_modules:
+    - "async_verb.rs"
+    - "builder.rs"
+    - "cli/" # Submodule
+    - "context.rs"
+    - "deprecation.rs"
+    - "error.rs"
+    - "format.rs"
+    - "lib.rs"
+    - "logic/" # Submodule
+    - "noun.rs"
+    - "registry.rs"
+    - "repl.rs"
+    - "shell.rs"
+    - "telemetry.rs"
+    - "tree.rs"
+    - "validators.rs"
+    - "verb.rs"
+    - "clap_ext/" # Submodule
+
+  macro_crate_path: "clap-noun-verb-macros/src/"
+  macro_modules:
+    - "lib.rs" # Main macro definitions
+    - "io_detection.rs"
+    - "rdf_generation.rs"
+    - "telemetry_validation.rs"
+    - "validation.rs"
+    - "meta_framework.rs"
+    - "macros/" # Submodule for frontier macros
+
+macro_api:
+  main_macros:
+    - name: "#[verb(...)]"
+      purpose: "Register a function as a CLI verb command"
+      status: "stable"
+      auto_discovery: "Yes (via linkme distributed slices)"
+      compile_time_validation: "Yes"
+
+    - name: "#[noun(...)]"
+      purpose: "Register a struct as a CLI noun (command group)"
+      status: "deprecated or no-op (per macro code comments)"
+      note: "Verify in validation.rs for actual behavior"
+
+    - name: "#[arg(...)]"
+      purpose: "Mark function parameters with CLI argument metadata"
+      status: "stable"
+      note: "Only valid on parameters within #[verb] functions"
+
+    - name: "#[meta_aware]"
+      purpose: "Generate RDF introspection methods"
+      status: "frontier (frontier features)"
+      requires_feature: "meta-framework (likely)"
+
+    - name: "#[declare_span(...)]"
+      purpose: "Declare telemetry spans for compile-time validation"
+      status: "frontier"
+      requires_feature: "autonomic (likely)"
+
+core_traits:
+  traits_defined_in_verb_rs:
+    - name: "VerbCommand"
+      methods:
+        - "execute(args: &VerbArgs) -> Result<T>"
+      async_in_trait: false
+      dyn_compatible: true
+      note: "No async methods in trait (sync only)"
+
+    - name: "VerbContext"
+      fields:
+        - "verb: String"
+        - "noun: Option<String>"
+        - "data: HashMap<String, String>"
+        - "extensions: TypeMap (for typed dependency injection)"
+      purpose: "Context passed to verb commands at runtime"
+
+    - name: "VerbArgs"
+      fields:
+        - "matches: ArgMatches (from clap)"
+        - "parent_matches: Option<ArgMatches>"
+        - "context: VerbContext"
+      purpose: "Arguments and metadata passed to verb handlers"
+
+  traits_defined_in_noun_rs:
+    - name: "NounCommand"
+      purpose: "Base trait for noun (command group) implementations"
+      note: "Verify actual methods in src/noun.rs"
+
+cli_capabilities:
+  command_registration:
+    mechanism: "linkme distributed slices"
+    registration_time: "compile-time"
+    runtime_overhead: "zero-cost (verified via monomorphization)"
+
+  arg_inference:
+    from_function_signature: true
+    auto_detection_of_clio_types: true
+    io_detection_module: "io_detection.rs in macros crate"
+
+  validation:
+    compile_time: true
+    modules:
+      - "validation.rs (macros crate)"
+      - "validators.rs (main crate)"
+    checks:
+      - "Return type must implement Serialize"
+      - "No duplicate verbs detected"
+      - "Parameter type compatibility"
+      - "I/O type (clio) auto-detection"
+
+  output_format:
+    default_format: "JSON"
+    agent_ready: true
+    customizable: true
+    module: "format.rs"
+
+examples_present:
+  tutorial_examples:
+    - "examples/tutorial/basic.rs"
+    - "examples/tutorial/arguments.rs"
+    - "examples/tutorial/positional.rs"
+    - "examples/tutorial/services.rs"
+
+  howto_examples:
+    - "examples/howto/arg_groups.rs"
+    - "examples/howto/validation.rs"
+    - "examples/howto/env_vars.rs"
+    - "examples/howto/arg_actions.rs"
+    - "examples/howto/deprecation.rs"
+    - "examples/howto/completions_demo.rs"
+
+  reference_examples:
+    - "examples/reference/attribute_macro.rs"
+    - "examples/reference/framework.rs"
+    - "examples/reference/nested.rs"
+    - "examples/reference/collector.rs"
+    - "examples/reference/format.rs"
+    - "examples/reference/context.rs"
+    - "examples/reference/root_verb.rs"
+
+  playground:
+    - "examples/playground/" (comprehensive demo)
+    - "playground/" (separate, uses published crates.io version)
+
+tests_present:
+  integration_tests:
+    - "tests/integration.rs"
+    - "tests/unit.rs"
+    - "tests/arg_actions.rs"
+    - "tests/arg_relationships.rs"
+    - "tests/env_vars.rs"
+    - "tests/compile_time_validation.rs"
+
+  acceptance_tests:
+    - "tests/acceptance/"
+    - "tests/attribute_macro_acceptance.rs"
+    - "tests/validation_acceptance.rs"
+
+  advanced_test_suites:
+    - "tests/frontier/" (for frontier features)
+    - "tests/cli/" (CLI-specific tests)
+    - "tests/performance/" (benchmark tests)
+
+  test_count_estimate: "50+ integration + unit tests"
+  test_execution_time: "<1 second with parallel execution"
+  test_pattern: "AAA (Arrange, Act, Assert)"
+
+docs_present:
+  rustdoc_in_source:
+    - "lib.rs module docs"
+    - "verb.rs trait and type docs"
+    - "noun.rs trait docs"
+    - "Inline comments on public API"
+
+  external_docs:
+    - "README.md"
+    - "CHANGELOG.md"
+    - "docs/index.md"
+    - "docs/explanation/architecture.md"
+    - "docs/explanation/design-patterns.md"
+    - "docs/howto/" (task-oriented guides)
+    - "docs/tutorial/" (learning-oriented guides)
+
+  docs_coverage: "extensive (Diataxis structure)"
+
+publish_status:
+  main_crate: "publishable (version 26.6.1)"
+  macros_crate: "publishable (version 26.6.1)"
+  published_order: "macros crate first, then main crate"
+  crates_io_presence: "https://crates.io/crates/clap-noun-verb"
+
+v26_6_1_changes:
+  changelog_version: "[26.6.1] - 2026-06-01"
+  breaking_changes: false
+  major_additions:
+    - "kebab-case long flags (idiomatic) with snake_case aliases"
+    - "Single-file change: src/cli/registry.rs"
+    - "Backward compatibility maintained"
+
+  migration_needed: "Documentation update recommended (flags now kebab-case by default)"
+
+comparison_to_public_docs:
+  status: "VERIFY_EXTERNAL_DOCS"
+  note: "Public crates.io docs point to v26.6.1; assume current unless contradicted"
+  trust_order: "Local source > crates.io > docs.rs"
+
+research_completeness:
+  phase_0_andon_guard: "COMPLETE"
+  phase_1_local_version_truth: "COMPLETE"
+  phase_2_macro_api_mapping: "NOT_STARTED"
+  phase_3_trait_definitions: "NOT_STARTED"
+  phase_4_test_proof: "NOT_STARTED"
+  phase_5_breaking_change_analysis: "NOT_STARTED
+
+research_metadata:
+  executed_by: "claude.ai/code (Haiku 4.5)"
+  execution_date: "2026-06-01"
+  source_repo: "/Users/sac/clap-noun-verb"
+  working_branch: "minimalist-refactor-final"
+  research_workflow_id: "CLAP_NOUN_VERB_V2661_API_TRUTH_RESEARCH_001"

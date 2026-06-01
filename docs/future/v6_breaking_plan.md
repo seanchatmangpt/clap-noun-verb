@@ -1,5 +1,8 @@
 # Major Version v6.0 Breaking Changes & Planning Guide
 
+**Status:** Proposed for v6.0 (Phase 1–2)  
+**Timeline:** 2026-06-01 – 2026-06-29
+
 This document details the architectural roadmap, breaking changes, and migration strategies for the major version v6.0 release of the `clap-noun-verb` framework. 
 
 ---

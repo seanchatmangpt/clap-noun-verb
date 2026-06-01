@@ -1,0 +1,279 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! {{ verb_name }} verb - {{ brief_description }}
+//!
+//! Business logic, CLI binding, and integration layer for {{ noun_name }} {{ verb_name }}.
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::{NounVerbError, OutputFormat, Result, format_output};
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+// ============================================================================
+// DOMAIN LAYER - Pure business logic (no I/O, no CLI)
+// ============================================================================
+
+/// {{ verb_name_title }} domain state
+///
+/// Pure business logic representation of {{ noun_name }} {{ verb_name }} operation.
+/// This struct contains no I/O, CLI, or side effects.
+///
+/// # Examples
+///
+/// ```ignore
+/// let state = {{ verb_domain_struct }}::new("example".to_string());
+/// let result = state.execute()?;
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ verb_domain_struct }} {
+    /// PLACEHOLDER: Input parameters
+    /// Example:
+    /// pub name: String,
+    /// pub tags: Vec<String>,
+    /// pub config: serde_json::Value,
+}
+
+impl {{ verb_domain_struct }} {
+    /// Create a new {{ verb_name }} domain state
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - PLACEHOLDER: primary input
+    ///
+    /// # Returns
+    ///
+    /// A new domain state ready for execution.
+    pub fn new(name: String) -> Self {
+        Self {
+            // PLACEHOLDER: Initialize from inputs
+            // Example:
+            // name,
+            // tags: Vec::new(),
+            // config: serde_json::json!({}),
+        }
+    }
+
+    /// Execute the {{ verb_name }} operation
+    ///
+    /// Core business logic, no side effects. All validation is complete by this point.
+    ///
+    /// # Returns
+    ///
+    /// The {{ verb_output_struct }} with operation results.
+    ///
+    /// # Errors
+    ///
+    /// Returns `NounVerbError` for business logic violations.
+    pub fn execute(&self) -> Result<{{ verb_output_struct }}> {
+        // PLACEHOLDER: Implement pure business logic
+        // Example:
+        // if self.name.is_empty() {
+        //     return Err(NounVerbError::validation_error(
+        //         "name".to_string(),
+        //         self.name.clone(),
+        //         Some("Name cannot be empty"),
+        //     ));
+        // }
+        //
+        // Ok({{ verb_output_struct }} {
+        //     id: uuid::Uuid::new_v4().to_string(),
+        //     name: self.name.clone(),
+        //     status: "completed".to_string(),
+        //     timestamp: chrono::Utc::now().to_rfc3339(),
+        // })
+
+        unimplemented!("Implement {{ verb_name }} domain logic")
+    }
+}
+
+// ============================================================================
+// OUTPUT LAYER - JSON serialization for agent consumption
+// ============================================================================
+
+/// {{ verb_name }} operation output
+///
+/// Serializes to JSON for downstream consumption by agents, MCP, or logs.
+///
+/// # JSON Example
+///
+/// ```json
+/// {
+///   "id": "550e8400-e29b-41d4-a716-446655440000",
+///   "name": "example",
+///   "status": "completed",
+///   "timestamp": "2024-01-15T10:30:00Z"
+/// }
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ verb_output_struct }} {
+    /// PLACEHOLDER: Output fields
+    /// Example:
+    /// pub id: String,
+    /// pub name: String,
+    /// pub status: String,
+    /// pub timestamp: String,
+}
+
+// ============================================================================
+// CLI LAYER - Thin validation and argument binding
+// ============================================================================
+
+/// {{ verb_name_title }} command
+///
+/// {{ brief_description }}
+///
+/// # Arguments
+///
+/// * `name` - PLACEHOLDER: Input name [default: unnamed]
+/// * `tags` - PLACEHOLDER: Tags to apply [default: ]
+/// * `format` - Output format: json, json-pretty, yaml, table, plain [default: json-pretty]
+/// * `dry-run` - PLACEHOLDER: Preview without executing [default: false]
+///
+/// # Examples
+///
+/// ```bash
+/// # Basic usage
+/// app {{ noun_name }} {{ verb_name }} "my-resource"
+///
+/// # With options
+/// app {{ noun_name }} {{ verb_name }} "my-resource" --tags prod --format yaml
+///
+/// # Preview without executing
+/// app {{ noun_name }} {{ verb_name }} "my-resource" --dry-run
+/// ```
+///
+/// # Exit Codes
+///
+/// * 0 - Success
+/// * 1 - Validation error (invalid input)
+/// * 2 - Execution error (I/O, external service)
+/// * 3 - Configuration error (missing files, permissions)
+#[verb("{{ noun_name }}", "{{ verb_name }}")]
+pub fn {{ verb_handler_name }}(
+    /// PLACEHOLDER: Primary input name
+    #[arg(index = 1)]
+    name: Option<String>,
+
+    /// PLACEHOLDER: Tags to apply
+    #[arg(long, value_delimiter = ',')]
+    tags: Option<Vec<String>>,
+
+    /// Output format (json, yaml, table, plain)
+    #[arg(long, short = 'f')]
+    format: Option<String>,
+
+    /// PLACEHOLDER: Preview mode without executing
+    #[arg(long)]
+    dry_run: bool,
+) -> Result<{{ verb_output_struct }}> {
+    // ========================================================================
+    // 1. VALIDATE - CLI validation of user inputs
+    // ========================================================================
+    let name = name.ok_or_else(|| {
+        NounVerbError::validation_error(
+            "name".to_string(),
+            "<missing>".to_string(),
+            Some("Name is required. Usage: app {{ noun_name }} {{ verb_name }} <name>"),
+        )
+    })?;
+
+    if name.is_empty() {
+        return Err(NounVerbError::validation_error(
+            "name".to_string(),
+            name.clone(),
+            Some("Name cannot be empty"),
+        ));
+    }
+
+    // Parse format option
+    let _format = format
+        .as_deref()
+        .and_then(|s| OutputFormat::from_str(s).ok())
+        .unwrap_or(OutputFormat::JsonPretty);
+
+    // Parse tags
+    let _tags = tags.unwrap_or_default();
+
+    // ========================================================================
+    // 2. DRY RUN CHECK - If preview requested, show what would happen
+    // ========================================================================
+    if dry_run {
+        return Ok({{ verb_output_struct }} {
+            // PLACEHOLDER: Return dry-run output
+            // Example:
+            // id: "(dry-run)".to_string(),
+            // name,
+            // status: "would-succeed".to_string(),
+            // timestamp: chrono::Utc::now().to_rfc3339(),
+            unimplemented!()
+        });
+    }
+
+    // ========================================================================
+    // 3. DOMAIN - Call pure business logic
+    // ========================================================================
+    let domain = {{ verb_domain_struct }}::new(name);
+    let output = domain.execute()?;
+
+    // ========================================================================
+    // 4. INTEGRATION - Optional: Call external services, write files, etc.
+    // ========================================================================
+    // PLACEHOLDER: Add integration layer calls
+    // Example:
+    // write_audit_log(&output)?;
+    // notify_webhook(&output)?;
+
+    // ========================================================================
+    // 5. RETURN - Output is automatically formatted by framework
+    // ========================================================================
+    Ok(output)
+}
+
+// ============================================================================
+// TESTS - AAA pattern (Arrange, Act, Assert)
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_{{ verb_name }}_with_valid_input() {
+        // Arrange
+        let name = "test-resource".to_string();
+        let domain = {{ verb_domain_struct }}::new(name);
+
+        // Act
+        let result = domain.execute();
+
+        // Assert
+        assert!(result.is_ok(), "{{ verb_name }} should succeed with valid input");
+        // PLACEHOLDER: Add more assertions
+        // let output = result.unwrap();
+        // assert_eq!(output.status, "completed");
+    }
+
+    #[test]
+    fn test_{{ verb_name }}_rejects_empty_name() {
+        // Arrange
+        let empty_name = String::new();
+        let domain = {{ verb_domain_struct }}::new(empty_name);
+
+        // Act
+        let result = domain.execute();
+
+        // Assert
+        assert!(result.is_err(), "{{ verb_name }} should reject empty name");
+        // PLACEHOLDER: Check error type
+        // match result {
+        //     Err(NounVerbError::ValidationError { .. }) => (),
+        //     _ => panic!("Expected validation error"),
+        // }
+    }
+
+    // PLACEHOLDER: Add more tests
+    // - test_{{ verb_name }}_with_tags
+    // - test_{{ verb_name }}_idempotence
+    // - test_{{ verb_name }}_output_format
+}

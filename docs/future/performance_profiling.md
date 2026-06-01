@@ -1,5 +1,8 @@
 # Performance Profiling and Optimization Guide
 
+**Status:** Proposed for v6.0 (Phase 1)  
+**Timeline:** 2026-06-01 – 2026-06-15
+
 This guide details the methodologies, tools, and best practices for profiling and optimizing CLI applications built with the `clap-noun-verb` framework. 
 
 CLI applications demand a different performance profile than long-running services: startup latency (time-to-first-output/help) must be sub-10 milliseconds, memory footprint (resident set size, RSS) must remain small for invocation in tight loop scripts, and allocations must be kept to a minimum.

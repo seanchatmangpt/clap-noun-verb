@@ -1,0 +1,859 @@
+# clap-noun-verb v26.6.1 Macro Surface Ledger
+# Definitive inventory of all proc macros exported by the crate
+#
+# Convention:
+# - LIVE_V2661: Macro is active in v26.6.1 and fully functional
+# - DEPRECATED_V2661: Marked with #[deprecated] but still works (emits deprecation warning)
+# - REMOVED: Deleted from codebase; code referencing it will not compile
+# - HISTORICAL_ONLY: Documented but not exported (internal use only)
+# - FRONTIER: Experimental feature-gated or unstable macro
+
+macros:
+
+  # ============================================================================
+  # CORE: Noun/Verb Registration (foundational layer)
+  # ============================================================================
+
+  - name: "#[noun(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute"
+    status: "DEPRECATED_V2661"
+    version_added: "< 1.0"
+    version_deprecated: "5.6.0"
+    feature_gate: "none (always available)"
+    deprecation_note: |
+      Nouns are now auto-detected from filename and module doc comments (//!).
+      This macro is a no-op that emits a deprecation warning.
+      Remove #[noun(...)] from your code; it is not needed.
+    input_shape: |
+      #[noun("noun_name")]
+      #[noun("noun_name", "description")]
+      fn your_function() {}
+    emitted_shape: |
+      Function definition with deprecation attribute added.
+      Generates compile warning: "#[noun] is no longer needed — nouns are auto-detected..."
+    example_usage: |
+      // OLD (deprecated):
+      #[noun("services", "Manage services")]
+      fn show_status() -> Result<Status> { ... }
+
+      // NEW (remove #[noun]):
+      /// Manage services
+      fn show_status() -> Result<Status> { ... }
+    test_evidence: "tests/integration.rs (integration tests run against deprecated macro)"
+    behavior: "Pass-through with deprecation warning; removes #[noun] from output"
+
+  - name: "#[verb(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute"
+    status: "LIVE_V2661"
+    version_added: "1.0"
+    version_current: "26.6.1"
+    feature_gate: "none (always available)"
+    input_shape: |
+      #[verb("verb_name")]
+      #[verb("verb_name", "noun_name")]
+      #[verb("verb_name", "noun_name", "description")]
+      fn function_name(
+          #[arg(short = 's', ...)] param: Type,
+      ) -> Result<OutputType> { ... }
+    emitted_shape: |
+      Original function definition (with #[noun] removed)
+      + Duplicate verb detection code (GAP 2)
+      + Wrapper function (__function_name_wrapper)
+      + Distributed slice registration (__init_function_name)
+      All returned as TokenStream for registration via linkme
+    compile_time_validation:
+      - "GAP 1 (Forgotten #[verb]): Compile-fail detect if handler not wrapped"
+      - "GAP 2 (Duplicate verbs): Generates duplicate detection at compile time"
+      - "GAP 3 (Return type Serialize): Validates via #[non_existent_type] reference"
+      - "GAP 4 (Attribute syntax): Helpful error messages for malformed attributes"
+      - "Verb complexity check (POKA-YOKE FM-1.1): Prevents business logic in verb layer"
+      - "CLI type detection (POKA-YOKE FM-1.2): Rejects CLI types in parameters"
+    feature_gate: "none (always available)"
+    example_usage: |
+      #[verb("status")]
+      fn show_status(
+          #[arg(short = 'v')]
+          verbose: bool,
+      ) -> Result<Status> {
+          Ok(Status { active: true })
+      }
+    test_evidence: |
+      tests/arg_actions.rs
+      tests/integration.rs
+      tests/compile_time_validation.rs
+      Comprehensive integration tests covering:
+      - Positional and named arguments
+      - Flags (bool types)
+      - Count actions (usize types)
+      - Multiple values (Vec<T>)
+      - Options with defaults
+    behavior: |
+      Registers verb in linkme distributed slice for auto-discovery.
+      Generates wrapper for type-safe argument extraction and handler invocation.
+      Auto-infers noun from filename; allows explicit override.
+      Strips #[arg] and #[validate] attributes from parameters in output.
+
+  # ============================================================================
+  # ARG ANNOTATION: Parameter attributes
+  # ============================================================================
+
+  - name: "#[arg(...)]"
+    kind: "proc_macro_attribute (parameter)"
+    macro_type: "attribute on function parameters"
+    status: "LIVE_V2661"
+    version_added: "2.0"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    note: |
+      This is NOT a real proc_macro on parameters (Rust doesn't support that).
+      Instead, it is a proc_macro_attribute that errors when misused on items.
+      The #[verb] macro extracts #[arg(...)] attributes directly from raw parameter tokens.
+    input_shape: |
+      Within #[verb] functions only:
+      #[arg(short = 'v')]
+      #[arg(long = "verbose")]
+      #[arg(short = 'p', default_value = "8080")]
+      #[arg(env = "PORT", default_value = "8080")]
+      #[arg(value_name = "FILE")]
+      #[arg(index = 0)]  // positional
+      #[arg(action = "count")]
+      #[arg(action = "set_false")]
+      #[arg(help = "Custom help")]
+      #[arg(long_help = "Detailed help")]
+      #[arg(group = "format")]
+      #[arg(requires = ["other_arg"])]
+      #[arg(conflicts_with = ["other_arg"])]
+      #[arg(multiple)]
+      #[arg(next_line_help)]
+      #[arg(value_parser = some_expression)]
+      #[arg(aliases = ["v", "verb"])]
+      #[arg(exclusive = true)]
+      param: Type
+    emitted_shape: |
+      If applied to an item: compile error
+      If applied to parameter in #[verb]: parsed and consumed by #[verb] macro
+      No output; attributes are strip from final function.
+    misuse_error: |
+      "#[arg(...)] cannot be applied to items directly.
+       It should only be used on function parameters within a #[verb] function."
+    example_usage: |
+      #[verb("deploy")]
+      fn deploy(
+          #[arg(short = 'e', long = "environment")]
+          env: String,
+
+          #[arg(short = 'v')]
+          verbose: bool,
+
+          #[arg(default_value = "8080")]
+          port: u16,
+
+          #[arg(env = "CONFIG")]
+          config: Option<String>,
+      ) -> Result<DeployResult> { ... }
+    test_evidence: "tests/arg_actions.rs, tests/integration.rs"
+    behavior: |
+      Parsed by #[verb] macro for each parameter.
+      Supports all common clap argument types (short, long, default, env, etc.).
+      Handles multiple, flags, options, and positional arguments.
+      Integrates with doc comment relationship tags: [group:], [requires:], [conflicts:], etc.
+
+  - name: "#[validate(...)]"
+    kind: "proc_macro_attribute (parameter)"
+    macro_type: "attribute on function parameters"
+    status: "LIVE_V2661"
+    version_added: "3.0"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    input_shape: |
+      #[validate(min = 0, max = 100)]
+      #[validate(min_length = 1, max_length = 50)]
+      #[validate(min = "0", max = "255")]
+      param: Type
+    emitted_shape: |
+      Parsed by #[verb] macro; stripped from final parameter.
+      Constraints combined with type-inferred validation.
+    example_usage: |
+      #[verb("process")]
+      fn process(
+          #[arg(short = 'c')]
+          #[validate(min = 1, max = 100)]
+          count: u32,
+      ) -> Result<ProcessResult> { ... }
+    behavior: |
+      Extracted by #[verb] macro during argument metadata generation.
+      Merged with auto-inferred constraints from type (e.g., u8 infers max=255).
+      Explicit #[validate] overrides type-inferred constraints.
+
+  # ============================================================================
+  # META-FRAMEWORK & INTROSPECTION (Frontier)
+  # ============================================================================
+
+  - name: "#[meta_aware]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on structs"
+    status: "LIVE_V2661"
+    version_added: "5.0"
+    version_current: "26.6.1"
+    feature_gate: "none (always available)"
+    purpose: "Generate RDF introspection methods and optimization queries for structs"
+    input_shape: |
+      #[meta_aware]
+      struct MyStruct {
+          field1: Type1,
+          field2: Type2,
+      }
+    emitted_shape: |
+      Original struct definition
+      + impl block with trait implementations:
+        - introspect_capabilities() -> String (RDF triples)
+        - query_optimizations() -> Vec<String> (optimization hints)
+    example_usage: |
+      #[meta_aware]
+      struct AgentCapabilities {
+          name: String,
+          max_concurrency: usize,
+      }
+
+      let caps = AgentCapabilities { ... };
+      let rdf = caps.introspect_capabilities();  // RDF metadata
+      let opts = caps.query_optimizations();     // Hints
+    test_evidence: "tests/integration.rs (meta-framework tests)"
+    behavior: |
+      Generates RDF serialization of struct fields and types.
+      Creates optimization discovery via SPARQL-like patterns.
+      Enables meta-level capability reflection for agent systems.
+
+  # ============================================================================
+  # TELEMETRY & SPAN INSTRUMENTATION (Frontier)
+  # ============================================================================
+
+  - name: "declare_span!(...)"
+    kind: "proc_macro"
+    macro_type: "function-like macro"
+    status: "LIVE_V2661"
+    version_added: "5.1"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Declare a compile-time validated telemetry span constant"
+    input_shape: |
+      declare_span!(SPAN_NAME, "span_name");
+    emitted_shape: |
+      Static span constant: const SPAN_NAME: &'static str = "span_name";
+      Distributed slice registration for compile-time validation
+    example_usage: |
+      declare_span!(PROCESS_REQUEST, "process_request");
+
+      // Use must follow or compilation fails
+      span!(PROCESS_REQUEST, { /* work */ })
+    test_evidence: "tests/unit.rs (telemetry tests)"
+    behavior: |
+      Registers span in __SPAN_REGISTRY distributed slice.
+      Requires span usage via span!(...) macro in same module.
+      Compile-time validation prevents unused spans.
+      NOTE: telemetry removed in recent versions (no-op behavior).
+
+  - name: "span!(...)"
+    kind: "proc_macro"
+    macro_type: "function-like macro"
+    status: "LIVE_V2661"
+    version_added: "5.1"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Instrument a code block with telemetry span wrapping"
+    input_shape: |
+      span!(SPAN_CONST, { /* block */ })
+    emitted_shape: |
+      Wrapped block expression with instrumentation code
+      (actual telemetry removed; macro acts as transparent passthrough)
+    example_usage: |
+      declare_span!(PROCESS_DATA, "process_data");
+
+      fn process() -> Result<Data> {
+          span!(PROCESS_DATA, {
+              Ok(Data::new())
+          })
+      }
+    behavior: |
+      Wraps code block with span context.
+      Returns the block result unchanged.
+      Registers usage in distributed slice for declare_span! validation.
+      NOTE: telemetry instrumentation removed (no-op); kept for compatibility.
+
+  # ============================================================================
+  # FEDERATED NETWORK MACROS (Frontier)
+  # ============================================================================
+
+  - name: "#[federated(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on structs"
+    status: "LIVE_V2661"
+    version_added: "5.2"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Mark a CLI as participatory in federated network with discovery & authentication"
+    input_shape: |
+      #[federated(
+          discovery_url = "https://cli-federation.example.com",
+          identity = "my-cli-v1.0",
+          trust_anchor = "./certs/root.pem"
+      )]
+      struct MyCli;
+    emitted_shape: |
+      Original struct
+      + federation initialization code
+      + capability advertisement handlers
+      + peer authentication registration
+    example_usage: |
+      #[federated(
+          discovery_url = "https://discovery.example.com",
+          identity = "processor-cli-v1.0",
+          trust_anchor = "/etc/pki/root.pem"
+      )]
+      struct ProcessorCli;
+    test_evidence: "Frontier feature tests (may require feature-gating)"
+    behavior: |
+      Generates federation initialization for CLI discovery.
+      Enables peer authentication and capability advertisement.
+      Registers CLI in federation network on startup.
+
+  - name: "#[advertise_capability(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.2"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Generate RDF metadata and register a capability for remote invocation"
+    input_shape: |
+      #[advertise_capability(
+          capability_id = "process-data",
+          description = "Process data files",
+          inputs = ["file:path", "format:string"],
+          outputs = ["result:json"]
+      )]
+      #[verb("process")]
+      fn process_data(file: PathBuf, format: String) -> Result<ProcessResult> { ... }
+    emitted_shape: |
+      Original function + metadata registration
+      RDF triples for capability discovery
+      MCP protocol descriptors
+    example_usage: |
+      #[advertise_capability(
+          capability_id = "read-config",
+          description = "Read and parse configuration files",
+          inputs = ["filepath:string"],
+          outputs = ["config:json"]
+      )]
+      #[verb("read")]
+      fn read_config(filepath: String) -> Result<ConfigData> { ... }
+    behavior: |
+      Generates RDF metadata for SPARQL-based capability discovery.
+      Registers in MCP (Model Context Protocol) federation network.
+      Enables remote capability invocation by peer CLIs.
+
+  - name: "#[remote_invoke(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on function declarations"
+    status: "LIVE_V2661"
+    version_added: "5.2"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Generate type-safe RPC stubs for calling remote CLI commands"
+    input_shape: |
+      #[remote_invoke(
+          target = "remote-cli-v1.0",
+          capability = "process-data",
+          timeout_ms = 5000
+      )]
+      fn remote_process(file: PathBuf, format: String) -> Result<ProcessResult>;
+    emitted_shape: |
+      Function stub with RPC implementation
+      Serialization/deserialization logic
+      Authentication and timeout handling
+      Error translation
+    example_usage: |
+      #[remote_invoke(
+          target = "data-processor-v1.0",
+          capability = "validate-schema",
+          timeout_ms = 3000
+      )]
+      fn validate_remote(schema: String, data: String) -> Result<ValidationResult>;
+    behavior: |
+      Generates type-safe RPC client code.
+      Handles serialization, network transport, auth, timeouts.
+      Result validation and error translation.
+
+  # ============================================================================
+  # FRACTAL PATTERNS (Frontier)
+  # ============================================================================
+
+  - name: "#[noun_level(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on structs"
+    status: "LIVE_V2661"
+    version_added: "5.3"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Define nouns at different architectural levels (CLI, Agent, Ecosystem)"
+    input_shape: |
+      #[noun_level(Level::CLI)]
+      #[noun_level(Level::Agent)]
+      #[noun_level(Level::Ecosystem)]
+      struct NounType { ... }
+    emitted_shape: |
+      Original struct
+      + FractalNoun trait implementation for specified level
+    example_usage: |
+      #[noun_level(Level::CLI)]
+      struct ServiceCommand {
+          name: String,
+      }
+
+      #[noun_level(Level::Agent)]
+      struct ServiceAgent {
+          capability: String,
+      }
+
+      #[noun_level(Level::Ecosystem)]
+      struct ServiceCollective {
+          members: Vec<String>,
+      }
+    behavior: |
+      Generates level-specific implementations.
+      Enables type-safe cross-level noun composition.
+      Supports hierarchical command structure from CLI → Agent → Ecosystem.
+
+  - name: "#[verb_level(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on impl blocks"
+    status: "LIVE_V2661"
+    version_added: "5.3"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Define verbs at different architectural levels with trait generation"
+    input_shape: |
+      #[verb_level(Level::CLI)]
+      #[verb_level(Level::Agent)]
+      #[verb_level(Level::Ecosystem)]
+      impl NounType { ... }
+    emitted_shape: |
+      Original impl block
+      + FractalVerb trait implementation for specified level
+    example_usage: |
+      #[verb_level(Level::CLI)]
+      impl ServiceCommand {
+          fn start(&self) -> Result<(), String> { Ok(()) }
+      }
+
+      #[verb_level(Level::Agent)]
+      impl ServiceAgent {
+          fn execute(&self) -> Result<(), String> { Ok(()) }
+      }
+    behavior: |
+      Generates level-aware verb implementations.
+      Connects to #[noun_level] types for composition.
+      Enables semantic routing of commands across architectural boundaries.
+
+  # ============================================================================
+  # SEMANTIC COMPOSITION (Frontier)
+  # ============================================================================
+
+  - name: "#[semantic_composable(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.4"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: |
+      Mark a function as semantically composable capability.
+      Generates RDF metadata, MCP protocol descriptors, and type-level composition validators.
+    input_shape: |
+      #[semantic_composable(
+          uri = "urn:example:capability:file-reader",
+          inputs = "rdf:type fs:Path",
+          outputs = "rdf:type text:Content",
+          constraints = "ASK WHERE { ?s rdf:type fs:ReadableFile }",
+          mcp_version = "2024.1"
+      )]
+      fn capability_fn(...) -> Result<OutputType> { ... }
+    emitted_shape: |
+      Original function
+      + RDF metadata registration
+      + MCP protocol descriptor
+      + Type-level composition validator
+      + Distributed slice registration
+    compile_time_validation:
+      - "Function must return Result<T, E>"
+      - "All parameters must be Serialize"
+      - "Unsafe functions rejected"
+      - "Async not yet supported"
+    example_usage: |
+      #[semantic_composable(
+          uri = "urn:cli:read-file",
+          inputs = "rdf:type fs:Path",
+          outputs = "rdf:type text:Content",
+          constraints = "ASK WHERE { ?s rdf:type fs:ReadableFile }"
+      )]
+      fn read_file(path: PathBuf) -> Result<String, std::io::Error> {
+          std::fs::read_to_string(path)
+      }
+    test_evidence: "Frontier feature tests (semantic composition)"
+    behavior: |
+      Generates RDF triples for SPARQL-based discovery.
+      Creates MCP protocol metadata for agent communication.
+      Enables type-safe composition validation at compile time.
+      Registers in SEMANTIC_CAPABILITIES distributed slice.
+
+  # ============================================================================
+  # EXECUTABLE SPECIFICATIONS (Frontier)
+  # ============================================================================
+
+  - name: "#[spec]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.5"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Convert documentation into executable tests with proof generation"
+    input_shape: |
+      /// Description of spec
+      /// @version 1.0.0
+      /// @property[correctness] result >= a && result >= b
+      /// @property[performance] execution_time < 1ms
+      #[spec]
+      fn function_name(...) -> OutputType { ... }
+    emitted_shape: |
+      Original function
+      + Extracted specification properties
+      + Property-based test generation
+      + Proof evidence collection hooks
+      + Audit trail metrics
+    example_usage: |
+      /// Calculate sum of two numbers
+      /// @version 1.0.0
+      /// @property[correctness] result >= a && result >= b
+      /// @property[performance] execution_time < 1ms
+      #[spec]
+      fn add(a: u32, b: u32) -> u32 {
+          a + b
+      }
+    behavior: |
+      Parses @property, @version, and other spec tags from doc comments.
+      Generates property-based tests via proptest framework.
+      Collects proof evidence for compliance tracking.
+      Creates audit trail with versioning information.
+
+  - name: "#[milestone]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.5"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Mark achievement targets with criteria tracking"
+    input_shape: |
+      /// Feature: User authentication
+      /// @milestone Phase1-Auth
+      /// @target 2024-12-31
+      /// @criteria OAuth2 integration complete
+      /// @criteria JWT token validation working
+      #[milestone]
+      fn auth_milestone() { ... }
+    emitted_shape: |
+      Original function
+      + Milestone metadata registration
+      + Target date validation
+      + Criteria collection
+      + Status tracking initialization
+    example_usage: |
+      /// Implement distributed CLI federation
+      /// @milestone Federation-v1
+      /// @target 2025-06-01
+      /// @criteria Peer discovery working
+      /// @criteria Capability advertisement functional
+      #[milestone]
+      fn federation_milestone() {}
+    behavior: |
+      Extracts milestone metadata from doc comments.
+      Validates target dates.
+      Collects criteria as structured data.
+      Registers in milestone tracker for progress monitoring.
+
+  - name: "#[invariant]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.5"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Runtime validation of invariant properties"
+    input_shape: |
+      /// Process user data
+      /// @invariant[non_negative] value >= 0
+      /// @severity error
+      /// @frequency always
+      #[invariant]
+      fn process_value() { ... }
+    emitted_shape: |
+      Original function
+      + Runtime invariant checks
+      + Pre/post-condition validators
+      + Severity-based error handling
+      + Check frequency controller
+    example_usage: |
+      /// Calculate discount
+      /// @invariant[range] discount >= 0 && discount <= 100
+      /// @severity error
+      /// @frequency always
+      #[invariant]
+      fn apply_discount(value: f64, discount: u32) -> f64 {
+          value * (1.0 - (discount as f64 / 100.0))
+      }
+    behavior: |
+      Parses invariant expressions from doc comments.
+      Generates runtime checks (pre, post, always).
+      Severity levels: error (panics), warning (stderr), info (log).
+      Configurable check frequency via feature flags.
+
+  # ============================================================================
+  # LEARNING TRAJECTORIES (Frontier)
+  # ============================================================================
+
+  - name: "#[competency(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on structs"
+    status: "LIVE_V2661"
+    version_added: "5.6"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Define competency dimension with multi-dimensional skill tracking"
+    input_shape: |
+      #[competency(dimension = "CLI Development")]
+      struct CliSkills {
+          parsing: ProficiencyLevel,
+          validation: ProficiencyLevel,
+          composition: ProficiencyLevel,
+      }
+    emitted_shape: |
+      Original struct
+      + CompetencyDimension trait implementation
+      + aggregate_proficiency() method
+      + name() method
+      + proficiency_map() method
+    example_usage: |
+      #[competency(dimension = "CLI Development")]
+      struct CliSkills {
+          parsing: ProficiencyLevel,
+          validation: ProficiencyLevel,
+          composition: ProficiencyLevel,
+      }
+
+      let skills = CliSkills {
+          parsing: ProficiencyLevel::new(0.8),
+          validation: ProficiencyLevel::new(0.7),
+          composition: ProficiencyLevel::new(0.6),
+      };
+
+      assert_eq!(skills.name(), "CLI Development");
+      assert!(skills.aggregate_proficiency().value() >= 0.7);
+    behavior: |
+      Generates trait implementations for skill tracking.
+      Aggregates multi-dimensional proficiency scores.
+      Enables learning trajectory planning.
+
+  - name: "#[assessment(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.6"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Define assessment function with proficiency evaluation"
+    input_shape: |
+      #[assessment(threshold = 0.75)]
+      fn evaluate_proficiency() -> AssessmentResult { ... }
+    emitted_shape: |
+      Original function
+      + AssessmentEngine trait implementation
+      + threshold validation
+      + result normalization
+    example_usage: |
+      #[assessment(threshold = 0.75)]
+      fn evaluate_cli_skills(skills: &CliSkills) -> AssessmentResult {
+          AssessmentResult::new(skills.aggregate_proficiency().value(), "Proficient")
+      }
+    behavior: |
+      Wraps function with assessment validation.
+      Compares results against threshold.
+      Enables learner proficiency tracking.
+
+  - name: "#[learning_path(...)]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.6"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Define learning path generator with optimal sequence planning"
+    input_shape: |
+      #[learning_path(target = "Expert")]
+      fn generate_cli_path(...) -> LearningPath { ... }
+    emitted_shape: |
+      Original function
+      + PathOptimizer trait implementation
+      + sequence validation
+      + step ordering
+    example_usage: |
+      #[learning_path(target = "Expert")]
+      fn generate_cli_path(current: CompetencyLevel) -> LearningPath {
+          let steps = vec![
+              LearningStep::new(CompetencyLevel::Foundation, "Learn CLI basics"),
+              LearningStep::new(CompetencyLevel::Intermediate, "Master patterns"),
+              LearningStep::new(CompetencyLevel::Advanced, "Implement features"),
+              LearningStep::new(CompetencyLevel::Expert, "Design frameworks"),
+          ];
+          LearningPath::new(steps, CompetencyLevel::Expert)
+      }
+    behavior: |
+      Generates PathOptimizer implementation.
+      Validates learning sequence feasibility.
+      Enables optimal step ordering.
+
+  # ============================================================================
+  # REFLEXIVE TESTING (Frontier)
+  # ============================================================================
+
+  - name: "#[auto_test]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on functions"
+    status: "LIVE_V2661"
+    version_added: "5.7"
+    version_current: "26.6.1"
+    feature_gate: "none"
+    purpose: "Automatically generate tests from semantic combinations"
+    input_shape: |
+      #[auto_test]
+      fn parse_command(input: &str) -> Result<Command, ParseError> { ... }
+    emitted_shape: |
+      Original function
+      + test_parse_command_basic (functionality)
+      + test_parse_command_property (property-based via proptest)
+      + test_parse_command_edge_cases (boundary conditions)
+      + test_parse_command_performance (benchmarks)
+    example_usage: |
+      #[auto_test]
+      fn parse_command(input: &str) -> Result<Command, ParseError> {
+          // Implementation
+          Ok(Command::default())
+      }
+
+      // Generates automatically:
+      // - test_parse_command_basic
+      // - test_parse_command_property
+      // - test_parse_command_edge_cases
+      // - test_parse_command_performance
+    behavior: |
+      Analyzes function signature and return type.
+      Generates property-based tests with proptest.
+      Creates edge case and boundary tests.
+      Includes performance benchmarks.
+      Inserts into test module automatically.
+
+  # ============================================================================
+  # ECONOMIC SIMULATION (Frontier)
+  # ============================================================================
+
+  - name: "#[economic_actor]"
+    kind: "proc_macro_attribute"
+    macro_type: "attribute on structs"
+    status: "LIVE_V2661"
+    version_added: "5.8"
+    version_current: "26.6.1"
+    feature_gate: "none (frontier feature)"
+    purpose: "Mark a type as an economic actor in a multi-agent simulation"
+    input_shape: |
+      #[economic_actor]
+      struct Agent { ... }
+    emitted_shape: |
+      Original struct
+      + EconomicActor trait implementation
+      + Cost model methods
+      + Value calculation
+      + Market participation stubs
+    behavior: |
+      Enables participation in economic simulations.
+      Tracks cost, value, and market interactions.
+      Foundation for multi-agent economic modeling.
+
+# ============================================================================
+# SUMMARY STATISTICS
+# ============================================================================
+
+summary:
+  total_macros: 26
+  live_v2661: 25
+  deprecated_v2661: 1
+  removed: 0
+  frontier_features: 19
+
+  macro_kinds:
+    proc_macro_attribute: 25
+    proc_macro: 2
+    derive: 0
+
+  feature_gates:
+    always_available: 8
+    frontier: 19
+
+# ============================================================================
+# EVIDENCE OF #[noun] and #[verb] PRESENCE IN v26.6.1
+# ============================================================================
+
+noun_and_verb_status:
+
+  "[#noun] in v26.6.1":
+    status: "DEPRECATED_V2661"
+    evidence:
+      - "Defined: clap-noun-verb-macros/src/lib.rs:285-313"
+      - "Deprecation message: since = \"5.6.0\""
+      - "Deprecation note: \"#[noun] is no longer needed — nouns are auto-detected from filename\""
+      - "Behavior: No-op pass-through that removes #[noun] attribute from output"
+      - "Test evidence: tests/integration.rs (runs against deprecated macro)"
+    historical_docs: "Removed: docs/tutorial/02-domain-separation.md"
+    conclusion: "STILL PRESENT but marked deprecated; code using it will compile with warning"
+
+  "[#verb] in v26.6.1":
+    status: "LIVE_V2661"
+    evidence:
+      - "Defined: clap-noun-verb-macros/src/lib.rs:331-449"
+      - "Exported as: pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream"
+      - "No deprecation marker"
+      - "Active compile-time validation (GAP 1-4, POKA-YOKE checks)"
+      - "Comprehensive test coverage: tests/arg_actions.rs, tests/integration.rs, tests/compile_time_validation.rs"
+    active_examples: "See clap-noun-verb/examples/ (all using #[verb])"
+    conclusion: "FULLY ACTIVE AND REQUIRED for CLI registration"
+
+# ============================================================================
+# KEY CHANGES IN v26.6.1
+# ============================================================================
+
+breaking_changes_v2661:
+  - "No breaking changes to macro surface"
+  - "#[noun] deprecated but still works (warning only)"
+  - "All frontier features remain experimental"
+  - "Telemetry macros made no-op (backward compatible)"
+
+improvements_v2661:
+  - "Improved argument metadata generation"
+  - "Better docstring relationship parsing"
+  - "Enhanced compile-time validation"
+  - "POKA-YOKE FM-1.1 and FM-1.2 checks added"
+
+deprecated_or_removed_v2661:
+  - "#[noun] → DEPRECATED (since 5.6.0)"
+  - "Telemetry instrumentation → NO-OP (kept for compatibility)"

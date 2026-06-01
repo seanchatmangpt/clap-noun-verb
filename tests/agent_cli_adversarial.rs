@@ -1,8 +1,6 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-
-
 use clap_noun_verb::{noun, verb, Arg, CliBuilder, VerbArgs};
 
 #[test]
@@ -24,7 +22,11 @@ fn test_adversarial_null_bytes() {
         cmd.try_get_matches_from(vec!["adversarial-app", "user", "create", "--name", "john\0doe"]);
 
     // Assert - Verify that the parsing succeeded and null byte is handled gracefully
-    assert!(res.is_ok(), "Expected try_get_matches_from to succeed with null bytes, but got error: {:?}", res.err());
+    assert!(
+        res.is_ok(),
+        "Expected try_get_matches_from to succeed with null bytes, but got error: {:?}",
+        res.err()
+    );
 }
 
 #[test]
@@ -51,7 +53,11 @@ fn test_adversarial_overflow_args() {
     ]);
 
     // Assert - Verify that the extremely large integer string is successfully parsed as a string without crashing
-    assert!(res.is_ok(), "Expected try_get_matches_from to succeed with overflow inputs, but got error: {:?}", res.err());
+    assert!(
+        res.is_ok(),
+        "Expected try_get_matches_from to succeed with overflow inputs, but got error: {:?}",
+        res.err()
+    );
 }
 
 #[test]
@@ -72,7 +78,11 @@ fn test_adversarial_extremely_long_strings() {
         cmd.try_get_matches_from(vec!["adversarial-app", "data", "store", "--payload", &long_str]);
 
     // Assert - Verify parser processes extremely large string without overflow or panic
-    assert!(res.is_ok(), "Expected try_get_matches_from to succeed with 100KB payload, but got error: {:?}", res.err());
+    assert!(
+        res.is_ok(),
+        "Expected try_get_matches_from to succeed with 100KB payload, but got error: {:?}",
+        res.err()
+    );
 }
 
 #[test]

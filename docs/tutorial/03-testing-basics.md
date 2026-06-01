@@ -1,8 +1,8 @@
-# Tutorial 04: Testing Basics - Chicago TDD
+# Tutorial 03: Testing Basics - Chicago TDD
 
 **Learning Path:** Understanding Testing → Production-Ready CLIs
 **Time:** 25 minutes
-**Prerequisites:** [Tutorial 03: Adding Commands](03-adding-commands.md)
+**Prerequisites:** [Tutorial 02: Adding Commands](02-adding-multiple.md)
 
 ---
 
@@ -503,8 +503,8 @@ pub fn validate_password(
 
 ## Next Steps
 
-- **[Tutorial 05: Output Formats](05-output-formats.md)** - JSON, YAML, custom serialization
-- **[Tutorial 07: Async Operations](07-async-operations.md)** - Async command handlers
+- **[Tutorial 04: Output Formats](04-output-formats.md)** - JSON, YAML, custom serialization
+- **[Tutorial 05: Async Operations](05-async-operations.md)** - Async command handlers
 - **[How-To: Testing](../howto/testing.md)** - Advanced testing patterns
 
 **Estimated time to next tutorial:** 20 minutes

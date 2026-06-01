@@ -48,7 +48,8 @@ fn test_env_var_support_registered() -> Result<()> {
     let config_cmd = cmd.get_subcommands().find(|s| s.get_name() == "config");
     assert!(config_cmd.is_some(), "config noun should be registered");
 
-    let set_cmd = config_cmd.test_some("config subcommand").get_subcommands().find(|s| s.get_name() == "set");
+    let set_cmd =
+        config_cmd.test_some("config subcommand").get_subcommands().find(|s| s.get_name() == "set");
     assert!(set_cmd.is_some(), "set verb should be registered");
 
     // Assert: Arguments should exist
@@ -81,4 +82,3 @@ fn test_env_var_metadata_stored() -> Result<()> {
 
     Ok(())
 }
-

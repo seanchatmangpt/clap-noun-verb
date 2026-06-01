@@ -1,5 +1,8 @@
 # Autonomic CLI Layer: Self-Healing, Diagnostics, and MAPE-K Loop Closure Specification
 
+**Status:** Proposed for v6.0 (Phase 3)  
+**Timeline:** 2026-06-30 – 2026-07-11
+
 This document details the architecture, schemas, and integration patterns for the **Autonomic CLI Layer** in `clap-noun-verb`. It specifies how machine-grade interfaces enable autonomous agents and orchestrators to achieve self-healing, run diagnostic reporting, and establish closed-loop MAPE-K (Monitor-Analyze-Plan-Execute-Knowledge) control loops.
 
 ---

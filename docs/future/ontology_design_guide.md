@@ -1,5 +1,8 @@
 # Semantic CLI Ontology Design Guide
 
+**Status:** Proposed for v6.0 (Phase 2)  
+**Timeline:** 2026-06-16 – 2026-06-29
+
 ## 1. Introduction: The Semantic CLI Paradigm
 
 A **Semantic Command Line Interface (CLI)** transitions command-line tools from hardcoded string parsers into queryable, introspectable, and machine-comprehensible semantic graphs. In the `clap-noun-verb` framework, CLI structures are modeled using Resource Description Framework (RDF) and Web Ontology Language (OWL) schemas. This allows runtime engines (like Oxigraph) to query command relationships, intents, execution states, and policies using SPARQL.

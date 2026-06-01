@@ -1,0 +1,478 @@
+---
+# Open Ontologies Command Law Concept Map
+# clap-noun-verb v26.6.1 API Inventory
+# Generated: 2026-06-01
+
+metadata:
+  project: clap-noun-verb
+  version: 26.6.1
+  scope: "Map command law concepts to current v26.6.1 API; identify ggen/execution/receipt/extension needs"
+  approach: "Literal static analysis of verb traits, registries, macros, output contracts"
+
+concepts:
+
+  # ============================================================================
+  # COMMAND SURFACE REPRESENTATION
+  # ============================================================================
+
+  CommandSurface:
+    supported: "YES"
+    confidence: "FULL"
+    description: "How commands are declared and registered at compile-time"
+    evidence:
+      primary:
+        - file: "src/verb.rs"
+          struct: "VerbCommand"
+          trait_methods: ["name(&self) -> &'static str", "about(&self) -> &'static str", "run(&self, args: &VerbArgs) -> Result<()>"]
+        - file: "src/noun.rs"
+          struct: "NounCommand"
+          trait_methods: ["name(&self) -> &'static str", "about(&self) -> &'static str", "verbs(&self) -> Vec<Box<dyn VerbCommand>>"]
+      macro_driven:
+        - file: "clap-noun-verb-macros/src/lib.rs"
+          macro: "#[verb(...)]"
+          generates: "VerbCommand impl + linkme distributed_slice registration"
+        - file: "src/cli/registry.rs"
+          distributed_slice: "linkme::distributed_slice VERBS"
+          compile_time: "All #[verb] functions auto-discovered"
+    api_elements:
+      - VerbCommand trait (sync, dyn-compatible, &'static str names)
+      - NounCommand trait (hierarchical sub_nouns support)
+      - CommandRegistry (HashMap<noun_name, Box<dyn NounCommand>>)
+      - CliBuilder fluent API
+    ggen_rendering: "YES"
+      reason: "Trait names, noun/verb structure, hierarchical nesting all extractable"
+    claude_execution: "YES"
+      reason: "VerbArgs contains ArgMatches (clap parsed); VerbContext carries metadata"
+    receipt_need: "YES"
+      reason: "Each verb.run() is a discrete execution event; receipt must capture: verb_name, noun_name, args, exit_status"
+    extension_need: "YES"
+      reason: "VerbCommand.run() is legacy sync pattern; need async variant, result serialization strategy"
+
+  CommandGroup:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Hierarchical grouping of commands (nouns contain verbs; nouns can nest)"
+    evidence:
+      primary:
+        - file: "src/noun.rs"
+          method: "NounCommand::sub_nouns() -> Vec<Box<dyn NounCommand>>"
+        - file: "src/cli/router.rs"
+          routing_logic: "route_recursive() handles noun nesting; checks verbs first, then sub_nouns"
+      structure:
+        - "Root (CliBuilder) -> Nouns (services, collector) -> Verbs (status, start, stop)"
+        - "Verbs can also be registered at root (root verbs via special noun)"
+        - "Each noun builds its own clap::Command subtree"
+    ggen_rendering: "YES"
+      reason: "Complete hierarchical tree extractable via NounCommand::sub_nouns()"
+    claude_execution: "YES"
+      reason: "Routing dispatches to correct noun then verb; context carries full path"
+    receipt_need: "YES"
+      reason: "Receipt must include noun_path (for nested nouns) and verb_name"
+    extension_need: "YES"
+      reason: "Current impl builds clap subtrees at runtime; v5.0+ may need compile-time proof"
+
+  # ============================================================================
+  # ACTION SURFACE (VERBS)
+  # ============================================================================
+
+  ActionSurface:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Enumeration of all possible actions (verbs) and their signatures"
+    evidence:
+      primary:
+        - file: "src/verb.rs"
+          trait: "VerbCommand"
+          signature_elements:
+            - "name() -> &'static str — action identifier"
+            - "about() -> &'static str — action description"
+            - "run(&self, args: &VerbArgs) -> Result<()> — execution signature"
+        - file: "clap-noun-verb-macros/src/lib.rs"
+          macro: "#[verb(...)]"
+          extracts: "Function name, doc comments, parameter types/defaults from source"
+      macro_metadata:
+        - Parameter inference: "Extracts type, default_value, env, short/long flags from function signature"
+        - Doc parsing: "Extracts /// doc comments as about() text"
+        - Return type check: "Validates Serialize impl (v3+)"
+    api_elements:
+      - VerbCommand trait
+      - VerbArgs (contains ArgMatches + VerbContext)
+      - VerbContext (verb, noun, data map, typed extensions)
+    ggen_rendering: "YES"
+      reason: "Macro extracts verb name, about, parameters; all static"
+    claude_execution: "YES"
+      reason: "VerbArgs provides full context for execution; Result<()> is standard error path"
+    receipt_need: "YES"
+      reason: "Each verb.run() invocation is a discrete action; receipt captures input args, output serialization"
+    extension_need: "YES"
+      reason: "sync-only design; need async ActionSurface; no async fn in trait (limitation)"
+
+  ArgumentSurface:
+    supported: "PARTIAL"
+    confidence: "MEDIUM-HIGH"
+    description: "Argument/parameter specification and validation surface"
+    evidence:
+      primary:
+        - file: "src/cli/registry.rs"
+          struct: "ArgMetadata"
+          fields:
+            - "name: String"
+            - "ty: String"
+            - "required: bool"
+            - "default_value: Option<String>"
+            - "short: Option<char>"
+            - "long: Option<String>"
+            - "about: String"
+            - "value_parser: Option<String> — e.g., 'i64', 'PathBuf', 'parse=url::Url'"
+            - "min_value, max_value: Option<String> — bounds"
+            - "env: Option<String> — environment variable name"
+      macro_validation:
+        - file: "clap-noun-verb-macros/src/validation.rs"
+          checks:
+            - "Duplicate verb detection"
+            - "Return type must Serialize"
+            - "Complexity bounds (max 10 params)"
+        - file: "clap-noun-verb-macros/src/io_detection.rs"
+          detects: "clio::Input / clio::Output types auto-wire CLI args"
+      runtime:
+        - file: "src/cli/registry.rs"
+          apply_validators(): "Applies clap value_parser, range validators from ArgMetadata"
+    api_elements:
+      - ArgMetadata (extracted at compile time via macro)
+      - #[arg(...)] attribute on parameters (doc comment style + attribute tags)
+      - validators module (validate_email, validate_url, validate_port, etc.)
+      - OutputValidationHook (register hooks to validate formatted output)
+    ggen_rendering: "PARTIAL"
+      reason: "ArgMetadata complete for scalar args; clio::Input/Output need special handling"
+    claude_execution: "YES"
+      reason: "ArgMatches in VerbArgs provides parsed values; validators can be called pre-execution"
+    receipt_need: "YES"
+      reason: "Receipt must capture: argument name, provided value, type, validation result"
+    extension_need: "YES"
+      reason: "Need: (1) validation contract reification, (2) complex type serialization, (3) async validators"
+
+  # ============================================================================
+  # OUTPUT CONTRACT (RESULTS)
+  # ============================================================================
+
+  OutputContract:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Output serialization contract; how verb results are formatted"
+    evidence:
+      primary:
+        - file: "src/verb.rs"
+          signature: "fn run(&self, args: &VerbArgs) -> Result<()>"
+          limitation: "Returns () — no typed output capture (v3+)"
+        - file: "src/format.rs"
+          module: "Output formatting system"
+          formats:
+            - "Json (compact)"
+            - "JsonPretty (default)"
+            - "Yaml"
+            - "Table"
+            - "Plain"
+            - "Tsv"
+        - file: "src/logic/handler.rs"
+          struct: "HandlerOutput"
+          fields:
+            - "data: serde_json::Value"
+            - "message: Option<String>"
+          methods:
+            - "from_data<T: Serialize>(T) -> Result<HandlerOutput>"
+            - "to_json() -> Result<String>"
+      validation:
+        - file: "src/format.rs"
+          register_output_validation_hook: "Global hooks validate JSON before render"
+          hook_signature: "Fn(&serde_json::Value) -> Result<(), Box<dyn Error + Send + Sync>>"
+    api_elements:
+      - OutputFormat enum (Json, JsonPretty, Yaml, Table, Plain, Tsv)
+      - format_output<T: Serialize>(T, OutputFormat) -> Result<String>
+      - OutputValidationHook (pluggable validation)
+      - HandlerOutput (for future handler-based verbs)
+    ggen_rendering: "YES"
+      reason: "OutputFormat enum is static; validation hooks are callable at render time"
+    claude_execution: "YES"
+      reason: "VerbArgs.context() can specify output format; format_output() called post-execution"
+    receipt_need: "YES"
+      reason: "Receipt must capture: chosen OutputFormat, rendered output (or error), validation status"
+    extension_need: "YES"
+      reason: "VerbCommand.run() returns () only; need: (1) typed output capture, (2) streaming output, (3) incremental receipts"
+
+  ErrorContract:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Error reporting and recovery strategy"
+    evidence:
+      primary:
+        - file: "src/error.rs"
+          enum: "NounVerbError"
+          variants:
+            - "CommandNotFound { noun, suggestion }"
+            - "VerbNotFound { noun, verb, suggestion }"
+            - "InvalidStructure { message }"
+            - "ExecutionError { message }"
+            - "ArgumentError { message }"
+            - "PluginError(String)"
+            - "ValidationFailed(String)"
+            - "MiddlewareError(String)"
+            - "TelemetryError(String)"
+            - "Generic(String)"
+          methods:
+            - "command_not_found_with_candidates() — Levenshtein distance suggestions"
+            - "verb_not_found_with_candidates()"
+            - "with_recovery_suggestions() — RDF-control placeholder for v5.1"
+        - file: "src/error.rs"
+          type: "Result<T> = std::result::Result<T, NounVerbError>"
+    api_elements:
+      - NounVerbError enum (thiserror::Error)
+      - Result<T> type alias
+      - find_best_matches<'a>(input, candidates) -> Vec<&'a str>
+    ggen_rendering: "YES"
+      reason: "ErrorKind variants are static enum; suggestions are computed at runtime"
+    claude_execution: "YES"
+      reason: "All Err(NounVerbError) paths propagate; context carries error source"
+    receipt_need: "YES"
+      reason: "Receipt must capture: error_type, error_message, suggestions_offered, recovery_attempted"
+    extension_need: "YES"
+      reason: "with_recovery_suggestions() deferred to v5.1; need: (1) RDF guard validation, (2) causal chains, (3) remediation proof"
+
+  # ============================================================================
+  # REFUSAL CONDITION
+  # ============================================================================
+
+  RefusalCondition:
+    supported: "PARTIAL"
+    confidence: "LOW-MEDIUM"
+    description: "Conditions under which a verb should refuse execution"
+    evidence:
+      partial_impl:
+        - file: "src/error.rs"
+          pattern: "NounVerbError variants encode refusal reasons (command_not_found, validation_failed)"
+        - file: "src/validators.rs"
+          validators:
+            - "validate_not_empty(value) -> Result<String>"
+            - "validate_path_exists(path) -> Result<PathBuf>"
+            - "validate_path_creatable(path) -> Result<PathBuf>"
+            - "validate_port(port) -> Result<u16>"
+            - "validate_url(url) -> Result<String>"
+            - "validate_email(email) -> Result<String>"
+      missing:
+        - "No declarative refusal conditions (e.g., @requires, @guard, @precondition)"
+        - "Validators fire at ArgMatches stage; no pre-execution precondition check"
+        - "No SHACL shape enforcement at runtime"
+    api_elements:
+      - validators module (standalone functions)
+      - OutputValidationHook (output-stage refusal only)
+      - ArgMetadata.value_parser (type-based refusal)
+    ggen_rendering: "PARTIAL"
+      reason: "Validator functions are static; no way to express declarative refusal conditions yet"
+    claude_execution: "PARTIAL"
+      reason: "VerbArgs.matches allows manual validation; no automatic pre-execution guards"
+    receipt_need: "YES"
+      reason: "Receipt must capture: refusal reason, preconditions evaluated, guard status"
+    extension_need: "YES"
+      reason: "CRITICAL NEED: Declarative refusal syntax (preconditions, guards, SHACL-backed validation)"
+
+  # ============================================================================
+  # HELP SURFACE
+  # ============================================================================
+
+  HelpSurface:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Help generation and documentation surface"
+    evidence:
+      primary:
+        - file: "src/verb.rs"
+          method: "VerbCommand::about() -> &'static str"
+        - file: "src/noun.rs"
+          method: "NounCommand::about() -> &'static str"
+        - file: "clap-noun-verb-macros/src/lib.rs"
+          macro: "#[verb(...)] extracts doc comments as about()"
+        - file: "src/cli/registry.rs"
+          clap_integration: "All commands added via Command::new(name).about(about)"
+      clap_native:
+        - "clap handles --help, -h automatically"
+        - "Nested command help via subcommand help text"
+        - "Argument help from ArgMetadata.about field"
+    api_elements:
+      - VerbCommand::about()
+      - NounCommand::about()
+      - Macro-driven doc extraction
+      - clap Command::about() / Arg::help()
+    ggen_rendering: "YES"
+      reason: "All about() strings are static; extractable at compile-time or via macro metadata"
+    claude_execution: "YES"
+      reason: "Help rendered by clap; can be captured via --help or introspected via Command tree"
+    receipt_need: "PARTIAL"
+      reason: "Receipt should capture: help_requested, help_section_viewed (if tracking UX)"
+    extension_need: "YES"
+      reason: "Need: (1) semantic help (type descriptions, constraint semantics), (2) example generation, (3) OpenAPI export"
+
+  # ============================================================================
+  # DISPATCH ROUTE
+  # ============================================================================
+
+  DispatchRoute:
+    supported: "YES"
+    confidence: "FULL"
+    description: "How commands are routed from CLI args to verb execution"
+    evidence:
+      primary:
+        - file: "src/cli/router.rs"
+          struct: "CommandRouter"
+          method: "route(&self, matches: &ArgMatches) -> Result<()>"
+          logic:
+            - "Extract noun from root subcommand"
+            - "Recursively route through noun -> verb -> execution"
+            - "Handles nested nouns via route_recursive()"
+        - file: "src/cli/registry.rs"
+          method: "run_with_args(args: Vec<String>) -> Result<()>"
+          logic:
+            - "Parse args with clap::Command"
+            - "Delegate to CommandRouter::route()"
+        - file: "src/cli/mod.rs"
+          function: "run() -> Result<()>"
+          logic: "Auto-discover via VERBS linkme slice; build registry; route current process args"
+    api_elements:
+      - CommandRouter (HashMap<noun_name, Box<dyn NounCommand>>)
+      - CommandRegistry::run() / run_with_args()
+      - route_recursive() for hierarchical routing
+      - VerbArgs creation (wraps ArgMatches + context)
+    ggen_rendering: "YES"
+      reason: "Routing logic is static; dispatch path is deterministic"
+    claude_execution: "YES"
+      reason: "Router validates args, then calls verb.run(VerbArgs); complete execution path"
+    receipt_need: "YES"
+      reason: "Receipt must capture: dispatch_path (noun -> sub_nouns -> verb), arg_binding, routing_time"
+    extension_need: "YES"
+      reason: "route_recursive() is sync; need: (1) async dispatch, (2) middleware chain (see MiddlewareError), (3) transaction semantics"
+
+  # ============================================================================
+  # EMITTED COMMAND MODULE
+  # ============================================================================
+
+  EmittedCommandModule:
+    supported: "YES"
+    confidence: "FULL"
+    description: "Generated code artifacts from #[verb] macro"
+    evidence:
+      primary:
+        - file: "clap-noun-verb-macros/src/lib.rs"
+          macro: "#[verb(...)]"
+          generates:
+            - "VerbCommand impl for the marked function"
+            - "linkme::distributed_slice registration in VERBS"
+            - "Static metadata (name, about, arg metadata)"
+        - file: "clap-noun-verb-macros/src/validation.rs"
+          compile_time: "Return type Serialize validation; duplicate detection"
+        - file: "clap-noun-verb-macros/src/io_detection.rs"
+          emits: "clio::Input/Output arg configuration"
+      example:
+        - source: "#[verb(\"status\", \"Show service status\")] fn status(name: String) -> Result<()> { Ok(()) }"
+        - generates: "impl VerbCommand for status { ... } + VERBS entry"
+    api_elements:
+      - #[verb(...)] attribute macro
+      - Generated VerbCommand impl blocks
+      - linkme::distributed_slice VERBS
+      - ArgMetadata entries
+    ggen_rendering: "YES"
+      reason: "Macro output is deterministic; all generated code is introspectable"
+    claude_execution: "YES"
+      reason: "Generated VerbCommand collected at startup; executed via verb.run()"
+    receipt_need: "YES"
+      reason: "Receipt should capture: module_name, generated_types, registration_order"
+    extension_need: "YES"
+      reason: "Macro only handles sync functions; need: (1) #[async_verb], (2) generic verb factory, (3) middleware wrapper generation"
+
+  # ============================================================================
+  # RECEIPT CONTRACT
+  # ============================================================================
+
+  ReceiptContract:
+    supported: "PARTIAL"
+    confidence: "MEDIUM"
+    description: "Evidence artifact for command execution (event proof)"
+    evidence:
+      partial_impl:
+        - file: "src/telemetry.rs"
+          module: "Telemetry span management"
+          note: "Placeholder for execution tracing; no receipt generation yet"
+        - file: "src/error.rs"
+          error_chain: "NounVerbError carries context; could be basis for receipt"
+        - file: "src/verb.rs"
+          context: "VerbContext carries verb, noun, data; provides receipt basis"
+      missing:
+        - "No Receipt type defined"
+        - "No proof generation (hash chains, timestamps, signatures)"
+        - "No OCEL event log emission"
+        - "No causality tracking (parent -> child execution)"
+    api_elements:
+      - VerbContext (partial receipt: verb, noun, data, extensions)
+      - AppContext (global state, could seed receipt)
+      - Error chain (could record execution failure path)
+    ggen_rendering: "NO"
+      reason: "No Receipt struct defined; no schema to render"
+    claude_execution: "YES"
+      reason: "Could implement Receipt capture post-execution via Handler or middleware"
+    receipt_need: "CRITICAL"
+      reason: "Process Mining Chicago doctrine requires event logs; receipt is minimal event unit"
+    extension_need: "CRITICAL"
+      reason: "MUST ADD: (1) Receipt<T> struct (captures execution proof), (2) Receipt emission on run() completion, (3) Hash/timestamp/signature chain, (4) OCEL object lifecycle tracking"
+
+---
+
+# SUMMARY TABLE
+
+summary_matrix: |
+
+  ┌─────────────────────────┬───────────┬────────┬───────────┬──────────┬─────────┐
+  │ Concept                 │ Supported │ ggen   │ Execution │ Receipt  │ Extend  │
+  ├─────────────────────────┼───────────┼────────┼───────────┼──────────┼─────────┤
+  │ CommandSurface          │ YES (FULL)│ YES    │ YES       │ YES      │ YES     │
+  │ CommandGroup            │ YES (FULL)│ YES    │ YES       │ YES      │ YES     │
+  │ ActionSurface           │ YES (FULL)│ YES    │ YES       │ YES      │ YES*    │
+  │ ArgumentSurface         │ PARTIAL   │ PART   │ YES       │ YES      │ YES     │
+  │ OutputContract          │ YES (FULL)│ YES    │ YES       │ YES      │ YES     │
+  │ ErrorContract           │ YES (FULL)│ YES    │ YES       │ YES      │ YES     │
+  │ RefusalCondition        │ PARTIAL   │ PART   │ PARTIAL   │ YES      │ CRIT    │
+  │ HelpSurface             │ YES (FULL)│ YES    │ YES       │ PARTIAL  │ YES     │
+  │ DispatchRoute           │ YES (FULL)│ YES    │ YES       │ YES      │ YES*    │
+  │ EmittedCommandModule    │ YES (FULL)│ YES    │ YES       │ YES      │ YES*    │
+  │ ReceiptContract         │ PARTIAL   │ NO     │ PARTIAL   │ CRIT     │ CRIT    │
+  └─────────────────────────┴───────────┴────────┼───────────┼──────────┼─────────┘
+
+  *  = async variant needed
+  CRIT = Critical gap for command law
+
+---
+
+# KEY FINDINGS
+
+critical_gaps:
+  - "RefusalCondition: No declarative guard/precondition syntax"
+  - "ReceiptContract: No Receipt struct; no event log emission; no proof chain"
+  - "ActionSurface: Sync-only (no async fn in trait); limits agent integration"
+  - "ArgumentSurface: Complex type serialization not modeled (e.g., Vec<T>, nested structs)"
+  - "DispatchRoute: No middleware chain; no transaction semantics"
+
+open_ontologies_needs:
+  - "Receipt vocabulary (with Hash, Timestamp, Signature, ObjectId, LifecycleEvent)"
+  - "Refusal condition ontology (Precondition, Guard, SHACL shape binding)"
+  - "Async action representation (ActionSurface with Future semantics)"
+  - "Causal execution graph (parent verb -> child verb links; proof chain)"
+  - "Serialization contract (for complex argument/output types)"
+
+ggen_readiness:
+  - "CommandSurface: READY (static trait names, about strings)"
+  - "ActionSurface: READY (VerbCommand, ArgMetadata extraction)"
+  - "OutputContract: READY (OutputFormat enum + validation hooks)"
+  - "DispatchRoute: READY (CommandRegistry tree structure)"
+  - "ReceiptContract: NOT READY (no Receipt type; needs definition)"
+
+execution_readiness:
+  - "All concepts except ReceiptContract can be executed by Claude Code or agents"
+  - "VerbArgs provides full input context; OutputValidationHook provides output stage control"
+  - "Error handling is comprehensive; missing only recovery suggestions (v5.1 deferred)"
+  - "Async execution blocked by trait design; workaround: wrapper functions with tokio::block_on"

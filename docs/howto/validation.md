@@ -315,6 +315,6 @@ Before deploying any ontology:
 ---
 
 **Related**:
-- [Tutorial: Adding Multiple Commands](../tutorial/03-adding-commands.md)
+- [Tutorial: Adding Multiple Commands](../tutorial/02-adding-multiple.md)
 - [How-to: Debugging](debugging.md)
 - [Reference: Error Codes](../reference/error-codes.md)

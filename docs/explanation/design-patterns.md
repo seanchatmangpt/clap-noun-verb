@@ -368,6 +368,6 @@ cnv:Quickly a cnv:Noun ; cnv:name "quickly" .    # Noun should be resource/thing
 ---
 
 **Related**:
-- [Tutorial: Adding Multiple Commands](../tutorial/03-adding-commands.md)
+- [Tutorial: Adding Multiple Commands](../tutorial/02-adding-multiple.md)
 - [How-to: Validation](../howto/validation.md)
 - [Explanation: Architecture Overview](architecture.md)

@@ -18,7 +18,6 @@ use clap_noun_verb::Result;
 use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
-
 // ============================================================================
 // GAP 3: Return Type Validation - CORRECT EXAMPLES (should compile)
 // ============================================================================

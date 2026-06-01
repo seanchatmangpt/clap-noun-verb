@@ -291,6 +291,6 @@ Design for scale:
 
 ## Further Reading
 
-- [Domain Separation Patterns](../tutorial/02-domain-separation.md)
+- [Domain Separation Patterns](../tutorial/01-domain-separation.md)
 - [AUTONOMIC.md](../../AUTONOMIC.md) - Machine-grade interface
 - [Agent2028 Whitepaper](../../PhD_THESIS.md)

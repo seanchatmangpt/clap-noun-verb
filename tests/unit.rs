@@ -131,7 +131,11 @@ fn test_verb_args_creation() -> Result<()> {
     // Assert
     assert_eq!(verb, "", "Expected empty verb for default ArgMatches");
     assert_eq!(noun, None, "Expected no noun for default ArgMatches");
-    assert_eq!(context_val, Some(&"test-value".to_string()), "Context value for 'test-key' mismatch");
+    assert_eq!(
+        context_val,
+        Some(&"test-value".to_string()),
+        "Context value for 'test-key' mismatch"
+    );
 
     Ok(())
 }
@@ -151,7 +155,11 @@ fn test_registry_configuration() -> Result<()> {
         "Test application",
         "Registry application about mismatch"
     );
-    assert_eq!(command.get_version().unwrap_or(""), "1.0.0", "Registry application version mismatch");
+    assert_eq!(
+        command.get_version().unwrap_or(""),
+        "1.0.0",
+        "Registry application version mismatch"
+    );
 
     Ok(())
 }
@@ -218,8 +226,14 @@ fn test_registry_command_structure() -> Result<()> {
 
     if let Some(services_verbs) = structure.get("services") {
         assert_eq!(services_verbs.len(), 2, "Expected 2 verbs under 'services'");
-        assert!(services_verbs.contains(&"status".to_string()), "Expected 'status' verb under 'services'");
-        assert!(services_verbs.contains(&"restart".to_string()), "Expected 'restart' verb under 'services'");
+        assert!(
+            services_verbs.contains(&"status".to_string()),
+            "Expected 'status' verb under 'services'"
+        );
+        assert!(
+            services_verbs.contains(&"restart".to_string()),
+            "Expected 'restart' verb under 'services'"
+        );
     } else {
         panic!("Missing 'services' key in command structure");
     }
@@ -444,11 +458,31 @@ fn test_error_types() -> Result<()> {
     let arg_msg = arg_error.to_string();
 
     // Assert
-    assert!(cmd_msg.contains("Command 'missing-command' not found"), "Error string did not match expected: {}", cmd_msg);
-    assert!(verb_msg.contains("Verb 'missing-verb' not found for noun 'services'"), "Error string did not match expected: {}", verb_msg);
-    assert!(structure_msg.contains("Invalid structure"), "Error string did not match expected: {}", structure_msg);
-    assert!(exec_msg.contains("Execution failed"), "Error string did not match expected: {}", exec_msg);
-    assert!(arg_msg.contains("Invalid arguments"), "Error string did not match expected: {}", arg_msg);
+    assert!(
+        cmd_msg.contains("Command 'missing-command' not found"),
+        "Error string did not match expected: {}",
+        cmd_msg
+    );
+    assert!(
+        verb_msg.contains("Verb 'missing-verb' not found for noun 'services'"),
+        "Error string did not match expected: {}",
+        verb_msg
+    );
+    assert!(
+        structure_msg.contains("Invalid structure"),
+        "Error string did not match expected: {}",
+        structure_msg
+    );
+    assert!(
+        exec_msg.contains("Execution failed"),
+        "Error string did not match expected: {}",
+        exec_msg
+    );
+    assert!(
+        arg_msg.contains("Invalid arguments"),
+        "Error string did not match expected: {}",
+        arg_msg
+    );
 
     Ok(())
 }

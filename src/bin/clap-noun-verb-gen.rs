@@ -90,10 +90,7 @@ impl Generator {
         Ok(Generator { spec })
     }
 
-    fn new_scaffold(
-        name: &str,
-        with_examples: bool,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    fn new_scaffold(name: &str, with_examples: bool) -> Result<Self, Box<dyn std::error::Error>> {
         let mut spec = CliSpec {
             name: name.to_string(),
             about: format!("{} CLI application", name),
@@ -132,7 +129,11 @@ impl Generator {
         self.spec.name = name;
     }
 
-    fn generate(&self, output_dir: &PathBuf, with_cargo: bool) -> Result<(), Box<dyn std::error::Error>> {
+    fn generate(
+        &self,
+        output_dir: &PathBuf,
+        with_cargo: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         fs::create_dir_all(output_dir)?;
         let src_dir = output_dir.join("src");
         fs::create_dir_all(&src_dir)?;
@@ -175,10 +176,7 @@ impl Generator {
             return Err("Cargo.toml not found. Generate with --with-cargo for verification.".into());
         }
 
-        let output = Command::new("cargo")
-            .arg("check")
-            .current_dir(output_dir)
-            .output()?;
+        let output = Command::new("cargo").arg("check").current_dir(output_dir).output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -210,7 +208,7 @@ impl Generator {
                     let verb_name = line[..first_space]
                         .trim_matches(|c| c == '<' || c == '>')
                         .split('/')
-                        .last()
+                        .next_back()
                         .unwrap_or("unknown")
                         .to_lowercase();
 
@@ -333,7 +331,8 @@ pub fn {}("#,
     }
 
     fn generate_commands_mod(spec: &CliSpec) -> Result<String, Box<dyn std::error::Error>> {
-        let mut code = "// Copyright (c) 2024\n// SPDX-License-Identifier: MIT OR Apache-2.0\n\n".to_string();
+        let mut code =
+            "// Copyright (c) 2024\n// SPDX-License-Identifier: MIT OR Apache-2.0\n\n".to_string();
         code.push_str("//! Command modules\n\n");
 
         for verb in &spec.verbs {
@@ -398,9 +397,7 @@ panic = "allow"
     }
 
     fn to_snake_case(s: &str) -> String {
-        s.to_lowercase()
-            .replace('-', "_")
-            .replace(' ', "_")
+        s.to_lowercase().replace(['-', ' '], "_")
     }
 
     fn to_pascal_case(s: &str) -> String {
@@ -410,9 +407,7 @@ panic = "allow"
                 let mut chars = s.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => {
-                        first.to_uppercase().collect::<String>() + chars.as_str()
-                    }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
                 }
             })
             .collect()
@@ -565,7 +560,7 @@ fn run_from_ttl(
         generator.set_name(cli_name);
     }
 
-    generator.generate(&output, with_cargo)?;
+    generator.generate(output, with_cargo)?;
 
     println!("✓ Generated CLI: {}", generator.name());
     println!("  Generated files:");
@@ -583,7 +578,7 @@ fn run_from_ttl(
 
     if verify {
         println!("\nVerifying compilation...");
-        generator.verify_compile(&output)?;
+        generator.verify_compile(output)?;
         println!("✓ Compilation verified");
     }
 
@@ -603,7 +598,7 @@ fn run_from_yaml(
 
     let generator = Generator::new_from_yaml(&yaml_content)?;
 
-    generator.generate(&output, false)?;
+    generator.generate(output, false)?;
 
     println!("✓ Generated CLI: {}", generator.name());
     println!("  Generated files:");
@@ -618,7 +613,7 @@ fn run_from_yaml(
 
     if verify {
         println!("\nVerifying compilation...");
-        generator.verify_compile(&output)?;
+        generator.verify_compile(output)?;
         println!("✓ Compilation verified");
     }
 
@@ -636,7 +631,7 @@ fn run_scaffold(
 
     let generator = Generator::new_scaffold(name, with_examples)?;
 
-    generator.generate(&output, with_cargo)?;
+    generator.generate(output, with_cargo)?;
 
     println!("✓ Scaffold created: {}", name);
     println!("  Generated files:");

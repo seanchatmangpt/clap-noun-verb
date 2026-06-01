@@ -1,8 +1,8 @@
-# Tutorial 05: Output Formats - JSON, YAML, and Custom
+# Tutorial 04: Output Formats - JSON, YAML, and Custom
 
 **Learning Path:** Basic CLI → Production-Ready Output
 **Time:** 20 minutes
-**Prerequisites:** [Tutorial 04: Testing Basics](04-testing-basics.md)
+**Prerequisites:** [Tutorial 03: Testing Basics](03-testing-basics.md)
 
 ---
 
@@ -542,7 +542,7 @@ $ myapp users export --format jsonl
 
 ## Next Steps
 
-- **[Tutorial 07: Async Operations](07-async-operations.md)** - Async CLI commands
+- **[Tutorial 05: Async Operations](05-async-operations.md)** - Async CLI commands
 
 **Estimated time to next tutorial:** 20 minutes
 

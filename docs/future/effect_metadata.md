@@ -1,5 +1,8 @@
 # Effect Metadata Design Guide
 
+**Status:** Proposed for v6.0 (Phase 2)  
+**Timeline:** 2026-06-16 – 2026-06-29
+
 This guide defines the design, semantics, and implementation requirements for **Effect Metadata** in the `clap-noun-verb` framework. Effect Metadata provides a declarative, statically validated, and runtime-enforced system for annotating the side effects of CLI commands. This enables the framework to run commands safely, analyze operational risk, construct command execution graphs, and feed telemetry into autonomic MAPE-K (Monitor-Analyze-Plan-Execute-Knowledge) loops.
 
 ---

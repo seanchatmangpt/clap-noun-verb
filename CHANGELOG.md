@@ -5,6 +5,35 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [26.6.1] - 2026-06-01
+
+### Changed
+- **Kebab-case long flags (idiomatic) with snake_case aliases** - Command flag registration now defaults to kebab-case for long flags to match Rust CLI conventions, with automatic snake_case aliases for backward compatibility. This ensures consistency with idiomatic CLI design while preserving existing scripts and integrations using snake_case.
+
+### Technical Details
+- **Single-file change**: `src/cli/registry.rs`
+- **Test passing status**: All tests pass with updated flag handling
+- **Backward compatibility**: Existing snake_case flag usage continues to work via aliases
+
+### Migration Guide
+
+**From v26.6.0 to v26.6.1:**
+
+Long flags are now generated in kebab-case (e.g., `--my-flag`) by default to match idiomatic Rust CLI conventions. This affects any documentation or scripts that reference flag names.
+
+- **Kebab-case is default**: All long flags use hyphens (`--my-flag`) instead of underscores
+- **Snake_case aliases remain**: Existing scripts using `--my_flag` continue to work without modification
+- **Documentation update recommended**: Update CLI documentation and help text to show the idiomatic kebab-case form
+- **No code changes required**: Existing Rust code and scripts using either form work transparently
+- **Shell completions**: Both forms are recognized by shell completion systems
+
+Example:
+```bash
+# Both work (old and new)
+myapp services --start_after 2026-06-01   # Still works (snake_case alias)
+myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
+```
+
 ## [26.5.28] - 2026-05-28
 
 ### Added

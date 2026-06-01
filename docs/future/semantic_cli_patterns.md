@@ -1,5 +1,8 @@
 # Semantic CLI Patterns: CLI-as-a-Knowledge-Graph & Semantic Web Integration
 
+**Status:** Proposed for v6.0 (Phase 2)  
+**Timeline:** 2026-06-16 – 2026-06-29
+
 This document outlines the architectural patterns, conceptual models, and technical integration specifications for defining Command Line Interfaces (CLIs) as Semantic Knowledge Graphs. By moving from purely text-based syntactic parsing to machine-queryable semantic representations, CLIs become autonomous, self-documenting interfaces optimized for both human developers and artificial intelligence agents.
 
 ---

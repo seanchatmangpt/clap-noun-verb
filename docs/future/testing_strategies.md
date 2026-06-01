@@ -1,5 +1,8 @@
 # Advanced Testing Strategies for clap-noun-verb CLI Systems
 
+**Status:** Proposed for v6.0 (Phase 1–2)  
+**Timeline:** 2026-06-01 – 2026-06-29
+
 This guide details the advanced testing strategies designed for `clap-noun-verb` command-line interfaces. Building on the Chicago TDD (Classical TDD) philosophy of state-based testing with real collaborators, this guide covers advanced methodologies required for resilient, production-ready, and self-verifying CLI applications.
 
 ---

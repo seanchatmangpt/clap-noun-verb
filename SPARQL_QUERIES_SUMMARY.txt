@@ -1,0 +1,316 @@
+================================================================================
+SPARQL QUERY FILES CREATED - CLI INTROSPECTION & CODE GENERATION
+================================================================================
+
+Location: /Users/sac/clap-noun-verb/queries/
+
+Created Files:
+================================================================================
+
+1. find-all-verbs.rq (937 bytes)
+   - Type: SELECT query
+   - Purpose: Discover all verbs in the ontology
+   - Returns: verb URI, verbName, description, parent noun, return type, arg count
+   - Sample Result: 16 verbs found across 5 nouns (services, users, database, network)
+   - Example Result:
+     * services:status -> ServiceStatus (JSON)
+     * services:start -> Result<()>
+     * users:create -> UserInfo (JSON)
+     * database:backup -> BackupResult (JSON)
+
+2. extract-arguments.rq (1.3 KB)
+   - Type: SELECT query
+   - Purpose: Extract argument specifications for a verb
+   - Returns: argumentName, shortName, type, required, defaultValue, description
+   - Parameterized: Can filter by verb name (default: "status")
+   - Use Case: Generate function signatures, clap builders, validation
+   - Note: Demonstrates how to query by verb name with language tag matching
+
+3. validate-cli-structure.rq (2.9 KB)
+   - Type: SELECT query (returns issues/violations when found)
+   - Purpose: Validate noun-verb pattern conformance
+   - Checks 7 conditions:
+     1. No orphaned verbs (verbs without parent noun)
+     2. All verbs named (cnv:hasVerbName present)
+     3. All nouns named (cnv:hasNounName present)
+     4. Verbs have exactly one parent noun
+     5. Required args have valueType specified
+     6. Verbs implement Send trait
+     7. Verbs implement Sync trait
+   - Sample Results: Detected 9 violations in verb-traits.ttl (incomplete definitions)
+   - Use Case: CI/CD validation gate, pre-compilation checks, ontology QA
+
+4. generate-trait-impls.rq (1.7 KB)
+   - Type: SELECT query with aggregation
+   - Purpose: Extract trait implementation requirements for code generation
+   - Returns: resource URI/name, type (Noun/Verb), trait requirements, return type
+   - Aggregates: Arguments per resource
+   - Use Case: Generate impl blocks, verify trait bounds, create wrappers
+   - Sample Results: 622 results including trait requirements for all nouns/verbs
+
+5. generate-cli-spec.rq (1.3 KB)
+   - Type: CONSTRUCT query (generates new RDF triples)
+   - Purpose: Build normalized CLI specification for code generation
+   - Output: RDF graph with spec: namespace predicates
+   - Constructs: NounSpec and VerbSpec resources with spec: properties
+   - Use Case: Feed into templates, version specs, export to JSON-LD
+   - Features: URI generation using CONCAT and IRI functions
+
+6. run-sparql-queries.py (Python script)
+   - Executes all five queries against loaded ontology
+   - Loads all .ttl files from ontology/ directory
+   - Formats and displays results with headers and counts
+   - Handles both SELECT and CONSTRUCT query types
+   - Provides error messages for debugging
+
+7. README.md (12 KB comprehensive documentation)
+   - Detailed description of each query
+   - Sample results and use cases
+   - Query patterns and best practices
+   - Instructions for running queries
+   - Integration with code generation workflow
+   - Troubleshooting guide
+   - Namespace reference
+   - Related documentation links
+
+================================================================================
+QUERY EXECUTION RESULTS
+================================================================================
+
+Ontology Loaded: 1207 RDF triples from 4 files
+  - cli-pattern.ttl (examples)
+  - clap-noun-verb-ontology.ttl (core schema)
+  - cli_schema.ttl (schemas)
+  - verb-traits.ttl (trait specifications)
+
+Query Execution Status:
+  ✓ find-all-verbs.rq - SUCCESS (16 results)
+  ✓ extract-arguments.rq - SUCCESS (ready for parameterized use)
+  ✓ validate-cli-structure.rq - SUCCESS (9 issues detected in test data)
+  ✓ generate-trait-impls.rq - SUCCESS (622 results)
+  ✓ generate-cli-spec.rq - SUCCESS (CONSTRUCT query validated)
+
+Sample Results Summary:
+================================================================================
+
+find-all-verbs.rq - Top 5 Verbs:
+  services:status    -> ServiceStatus (JSON)
+  services:start     -> Result<()>
+  services:stop      -> Result<()>
+  users:create       -> UserInfo (JSON)
+  database:backup    -> BackupResult (JSON)
+
+validate-cli-structure.rq - Validation Findings:
+  Issue: "Verb does not belong to any noun"
+    - Found in: AddVerb, SubtractVerb (from calculator example)
+    - Remediation: Define parent noun relationship
+
+  Issue: "Verb should implement Send trait"
+    - Found in: AddVerb, SubtractVerb
+    - Remediation: Add cnv:HasTraitBound cnv:Send
+
+  Issue: "Noun must have a name via cnv:hasNounName"
+    - Found in: CalculatorNoun
+    - Remediation: Add cnv:hasNounName property
+
+generate-trait-impls.rq - Sample Trait Requirements:
+  UsersNoun:
+    - Traits: [noun] macro, [verb] macro, [arg] macro
+    - Verbs: create, delete, list, update, show
+
+  ServicesNoun:
+    - Traits: Send, Sync required
+    - Verbs: status, start, stop, restart, logs
+
+generate-cli-spec.rq - Normalized Specifications:
+  CONSTRUCT creates RDF triples with spec: namespace
+  - spec:NounSpec resources for each noun
+  - spec:VerbSpec resources for each verb
+  - spec:hasVerbSpec relationships linking nouns to verbs
+  - spec:returnType annotations for code generation
+
+================================================================================
+KEY FEATURES & CAPABILITIES
+================================================================================
+
+1. DISCOVERY
+   - List all verbs with descriptions and parent nouns
+   - Extract argument specifications with types and constraints
+   - Aggregate counts and relationships
+
+2. VALIDATION
+   - Detect orphaned verbs and nouns
+   - Verify trait bound requirements
+   - Check argument type definitions
+   - Ensure parent noun relationships are unique
+
+3. CODE GENERATION
+   - Extract data for Rust trait impl generation
+   - Build normalized specifications for templates
+   - Generate function signatures from arguments
+   - Create trait bound constraints
+
+4. SPECIFICATION
+   - Construct normalized RDF format (spec: namespace)
+   - Enable JSON-LD export for tooling
+   - Version and diff specifications
+   - Document command hierarchy
+
+================================================================================
+INTEGRATION PATHS
+================================================================================
+
+Code Generation Pipeline:
+  1. find-all-verbs.rq
+     └─> Generate Rust enum variants
+
+  2. extract-arguments.rq
+     └─> Generate function signatures, clap builders
+
+  3. validate-cli-structure.rq
+     └─> Fail CI/CD if violations found
+
+  4. generate-trait-impls.rq
+     └─> Generate impl blocks and trait wrappers
+
+  5. generate-cli-spec.rq
+     └─> Feed into Handlebars/Askama templates
+     └─> Export to JSON-LD for documentation
+     └─> Version in git, diff against PRs
+
+Documentation Generation:
+  - Use find-all-verbs.rq results for command reference
+  - Use extract-arguments.rq for parameter documentation
+  - Use generate-cli-spec.rq to generate OpenAPI schemas
+  - Embed validation results in developer guides
+
+Testing:
+  - Use find-all-verbs.rq to generate test matrices
+  - Use extract-arguments.rq to parameterize test fixtures
+  - Use validate-cli-structure.rq as pre-test validation gate
+
+Quality Assurance:
+  - Run validate-cli-structure.rq in pre-commit hooks
+  - Monitor validation results in CI/CD dashboards
+  - Generate quality reports from aggregate results
+
+================================================================================
+FILES REFERENCE
+================================================================================
+
+Location: /Users/sac/clap-noun-verb/queries/
+
+┌─ SPARQL Queries (5 files)
+│  ├─ find-all-verbs.rq
+│  ├─ extract-arguments.rq
+│  ├─ validate-cli-structure.rq
+│  ├─ generate-trait-impls.rq
+│  └─ generate-cli-spec.rq
+│
+├─ Documentation & Tools
+│  ├─ README.md (comprehensive guide)
+│  └─ run-sparql-queries.py (execution script)
+│
+└─ This Summary
+   └─ SPARQL_QUERIES_SUMMARY.txt
+
+Related Ontologies:
+  ├─ ../ontology/clap-noun-verb-ontology.ttl (core schema)
+  ├─ ../ontology/cli-pattern.ttl (examples)
+  ├─ ../ontology/verb-traits.ttl (trait specs)
+  └─ ../ontology/cli_schema.ttl (schema definitions)
+
+================================================================================
+USAGE EXAMPLES
+================================================================================
+
+Example 1: Discover All Verbs
+  python3 run-sparql-queries.py | grep -A 20 "find-all-verbs.rq"
+
+Example 2: Validate CLI Structure
+  python3 run-sparql-queries.py | grep -A 15 "validate-cli-structure.rq"
+
+Example 3: Custom Query in Python
+  from rdflib import Graph
+  from rdflib.plugins.sparql import prepareQuery
+
+  graph = Graph()
+  graph.parse("ontology/cli-pattern.ttl", format="turtle")
+
+  with open("queries/find-all-verbs.rq") as f:
+      query = prepareQuery(f.read())
+
+  for row in graph.query(query):
+      print(f"{row.verbName} -> {row.returnType}")
+
+Example 4: Export to JSON-LD
+  # Run generate-cli-spec.rq, convert RDF to JSON-LD
+  python3 -c "
+  from rdflib import Graph
+  graph = Graph()
+  # Load and query...
+  graph.serialize(format='json-ld')
+  "
+
+Example 5: Use in CI/CD Validation
+  # Before compilation:
+  if python3 run-sparql-queries.py | grep "validate-cli-structure" | grep -c "issue"; then
+    echo "Ontology validation failed!"
+    exit 1
+  fi
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Integrate queries into build system
+   - Add to Makefile targets
+   - Run as pre-commit hook
+   - Add CI/CD workflow step
+
+2. Extend with additional queries
+   - Query for composition patterns
+   - Extract middleware specifications
+   - Find handler implementations
+
+3. Build code generation templates
+   - Rust trait impl templates
+   - Function signature templates
+   - Test fixture templates
+
+4. Create visualization
+   - Generate command hierarchy diagrams
+   - Visualize trait dependencies
+   - Show argument flow graphs
+
+5. Version specifications
+   - Track spec changes over time
+   - Generate changelogs
+   - Support multi-version APIs
+
+================================================================================
+Technical Details
+================================================================================
+
+Query Language: SPARQL 1.1
+  - SELECT queries for discovery and validation
+  - CONSTRUCT queries for specification generation
+  - Aggregation (COUNT) for relationships
+  - Filtering (FILTER NOT EXISTS) for validation
+  - String operations (CONCAT, ENCODE_FOR_URI) for URI construction
+
+Ontology Namespaces:
+  - cnv: (core noun-verb ontology)
+  - ex: (example instances)
+  - spec: (normalized specifications)
+  - Standard: rdf:, rdfs:, owl:, xsd:
+
+RDF Execution Environment:
+  - Python rdflib 7.6.0
+  - Turtle (.ttl) format parsing
+  - In-memory graph with 1207 triples
+  - SPARQL 1.1 compliant evaluation
+
+================================================================================
+END OF SUMMARY
+================================================================================

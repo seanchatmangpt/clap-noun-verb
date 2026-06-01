@@ -12,7 +12,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 
 | Quadrant | When to use | Start here |
 |----------|-------------|------------|
-| 🎓 **[Tutorial](tutorial/)** | You're learning and want step-by-step guidance | [Domain Separation](tutorial/02-domain-separation.md) |
+| 🎓 **[Tutorial](tutorial/)** | You're learning and want step-by-step guidance | [Domain Separation](tutorial/01-domain-separation.md) |
 | 📘 **[How-To](howto/)** | You have a specific problem to solve | [How-To Index](howto/README.md) |
 | 📚 **[Reference](reference/)** | You need to look up API details | [API Catalog](reference/api-catalog.md) |
 | 💡 **[Explanation](explanation/)** | You want to understand the "why" | [Architecture](explanation/architecture.md) |
@@ -24,12 +24,12 @@ This documentation follows the **Diataxis framework**, organizing content into f
 **Goal**: Take you from zero to productive with hands-on, step-by-step guidance.
 
 ### Available Tutorials
-- [02. Domain Separation Architecture](tutorial/02-domain-separation.md) - Separating CLI from business logic
-- [03. Adding Multiple Commands](tutorial/03-adding-commands.md) - Multi-command CLIs
-- [04. Testing Basics](tutorial/04-testing-basics.md) - Chicago TDD fundamentals
-- [05. Output Formats](tutorial/05-output-formats.md) - JSON, YAML, Table outputs
-- [07. Async Operations](tutorial/07-async-operations.md) - Async command handlers
-- [08. Error Handling](tutorial/08-error-handling.md) - Result<T,E> patterns
+- [01. Domain Separation Architecture](tutorial/01-domain-separation.md) - Separating CLI from business logic
+- [02. Adding Multiple Commands](tutorial/02-adding-multiple.md) - Multi-command CLIs
+- [03. Testing Basics](tutorial/03-testing-basics.md) - Chicago TDD fundamentals
+- [04. Output Formats](tutorial/04-output-formats.md) - JSON, YAML, Table outputs
+- [05. Async Operations](tutorial/05-async-operations.md) - Async command handlers
+- [06. Error Handling](tutorial/06-error-handling.md) - Result<T,E> patterns
 
 ---
 
@@ -64,14 +64,15 @@ This documentation follows the **Diataxis framework**, organizing content into f
 - [Types Catalog](reference/api/types.md) - All public types
 - [Errors Catalog](reference/api/errors.md) - Error types
 - [Advanced Features](reference/api/advanced-features.md) - Completions, chaining, stdin, REPL, and introspection
-- [Parameter Preprocessor Guide](PREPROCESSOR_GUIDE.md) - Chaining, variable expansion, overrides, and recursion safety
+- [Parameter Preprocessor Guide](reference/api/preprocessor.md) - Chaining, variable expansion, overrides, and recursion safety
+- [Interactive REPL Guide](reference/api/repl.md) - REPL mode, interactive commands, and session management
 - [Telemetry Reference](reference/api/telemetry.md) - Distributed tracing & context
 - [#[noun] Macro (DEPRECATED)](reference/api/noun-macro.md) - Legacy noun subcommand definition macro
 
 ### CLI Reference
 - [Error Codes](reference/error-codes.md) - Common errors and solutions
 - [Performance SLOs](reference/performance-slos.md) - Performance targets and guarantees
-- [Schema Validation & Introspection](SCHEMA_VALIDATION.md) - SHACL constraints, JSON schema introspection, and output verification hooks
+- [Schema Validation & Introspection](reference/schema-validation.md) - SHACL constraints, JSON schema introspection, and output verification hooks
 
 ---
 
@@ -90,6 +91,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 ### Quick References
 - [README.md](../README.md) - Project overview and quick start
 - [AUTONOMIC.md](../AUTONOMIC.md) - Autonomic layer overview
+- [**Future Specifications Index**](future/INDEX.md) - Complete v6.0 roadmap with 10 frontier feature specs, timeline, and dependency graph
 - [Autonomic CLI Layer Spec](future/autonomic_cli.md) - Self-healing commands, diagnostic reporting, and MAPE-K integration patterns
 - [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - Documentation verification report
 
@@ -102,7 +104,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 ## 🗺️ Finding What You Need
 
 ### "I want to learn clap-noun-verb from scratch"
-→ Start with [Tutorial 02: Domain Separation](tutorial/02-domain-separation.md)
+→ Start with [Tutorial 01: Domain Separation](tutorial/01-domain-separation.md)
 
 ### "I need to solve a specific problem"
 → Browse [How-To Guides](howto/README.md) by category

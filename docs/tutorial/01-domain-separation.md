@@ -1,4 +1,4 @@
-# Tutorial 02: Domain Separation - The Golden Rule
+# Tutorial 01: Domain Separation - The Golden Rule
 
 **Learning Path:** Understanding Architecture → Building Maintainable CLIs
 **Time:** 15 minutes
@@ -446,8 +446,8 @@ fn process_order(
 
 ## Next Steps
 
-- **[Tutorial 03: Adding Commands](03-adding-commands.md)** - Command patterns and organization
-- **[Tutorial 04: Testing Basics](04-testing-basics.md)** - Chicago TDD for domain logic
+- **[Tutorial 02: Adding Commands](02-adding-multiple.md)** - Command patterns and organization
+- **[Tutorial 03: Testing Basics](03-testing-basics.md)** - Chicago TDD for domain logic
 - **[Explanation: Architecture](../explanation/architecture.md)** - System architecture overview
 
 **Estimated time to next tutorial:** 15 minutes

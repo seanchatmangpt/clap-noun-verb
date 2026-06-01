@@ -1,8 +1,8 @@
-# Tutorial 08: Error Handling - Result Types and thiserror
+# Tutorial 06: Error Handling - Result Types and thiserror
 
 **Learning Path:** Basic Error Handling → Production-Grade Errors
 **Time:** 25 minutes
-**Prerequisites:** [Tutorial 07: Async Operations](07-async-operations.md)
+**Prerequisites:** [Tutorial 05: Async Operations](05-async-operations.md)
 
 ---
 

@@ -375,6 +375,6 @@ cargo test --test '*'
 ---
 
 **Related**:
-- [Tutorial 03: Adding Commands](../tutorial/03-adding-commands.md)
+- [Tutorial 02: Adding Commands](../tutorial/02-adding-multiple.md)
 - [How-to: Validation](validation.md)
 - [How-to: Debugging](debugging.md)
