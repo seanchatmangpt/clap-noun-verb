@@ -68,6 +68,19 @@ pub mod tree;
 pub mod verb;
 
 // =============================================================================
+// SPECIMEN INTEGRATION - Production-ready modules from specimen CLI
+// =============================================================================
+
+// Graph operations: load, query, validate RDF data
+pub mod graph;
+
+// Capability management: registry and packing
+pub mod capability;
+
+// Diagnostics: health checks and system monitoring
+pub mod diagnostics;
+
+// =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
 // =============================================================================
 
@@ -88,6 +101,19 @@ pub mod clap_ext;
 
 // Interactive REPL shell
 pub mod repl;
+
+// =============================================================================
+// RDF ↔ GGEN BIDIRECTIONAL GENERATORS - Ontology and code synchronization
+// =============================================================================
+
+// RDF to ggen: convert RDF ontology definitions to compilable Rust code
+pub mod rdf_to_ggen;
+
+// ggen to RDF: convert Rust source code to RDF ontology triples
+pub mod ggen_to_rdf;
+
+// Bidirectional sync: keep Rust code and RDF ontology in sync
+pub mod ontology_sync;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
@@ -124,6 +150,19 @@ pub use validators::{
 // This follows the facade pattern used by serde, tokio, and tracing
 // Note: These are from clap's builder module (the main clap crate re-exports these)
 pub use clap::{Arg, ArgAction, ArgMatches, Command};
+
+// =============================================================================
+// SPECIMEN INTEGRATION RE-EXPORTS
+// =============================================================================
+
+// Graph operations
+pub use graph::{Graph, GraphLoadedOutput, QueryResultOutput, Triple, ValidationResultOutput};
+
+// Capability management
+pub use capability::{CapabilityPackage, CapabilityRegistry, PackAddedOutput, PackRemovedOutput};
+
+// Diagnostics
+pub use diagnostics::{DoctorOutput, HealthIssue};
 
 // =============================================================================
 // FEATURE-GATED RE-EXPORTS
