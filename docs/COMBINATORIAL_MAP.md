@@ -1,6 +1,6 @@
 # Clap-Noun-Verb Combinatorial Feature Map & Gap Analysis
 
-This document provides a rigorous, systems-level analysis of the interaction space between the six primary features of the `clap-noun-verb` framework. It maps out all theoretical user interactions, identifies functional incompatibilities and gaps in the current implementation, and provides a documentation audit against the existing Diátaxis-based directory.
+This document provides a rigorous, systems-level analysis of the interaction space between the six primary features of the `clap-noun-verb` framework. It maps out all theoretical user interactions, identifies functional incompatibilities and gaps in the current implementation, and provides a documentation audit against the existing Diataxis-based directory.
 
 ---
 

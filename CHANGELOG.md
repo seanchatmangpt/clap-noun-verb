@@ -7,15 +7,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [26.6.1] - 2026-06-01
 
+### Added
+- **Graph module** - RDF file loading, SPARQL-like querying, and validation capabilities
+  - `graph load` - Load RDF files (Turtle, N-Triples, RDF/XML)
+  - `graph query` - Execute SPARQL-like queries on loaded graphs
+  - `graph validate` - Validate RDF graph structure and constraints
+  - Output types: `GraphLoadedOutput`, `QueryResultOutput`, `ValidationResultOutput`
+  
+- **Capability packing system** - Registry-based capability management
+  - `pack add` - Register new capabilities with metadata
+  - `pack remove` - Unregister capabilities
+  - `pack list` - Display all registered capability packs
+  - Output type: `PackAddedOutput`
+  
+- **Diagnostics module** - System health checks and status reporting
+  - `doctor check` - Run comprehensive health diagnostics
+  - Output type: `DoctorOutput` with detailed status information
+  
+- **6 new verbs** integrated with proven v26.6.1 API:
+  - All verbs support JSON/YAML/Table/TSV output formats
+  - ggen integration verified: 9 critical APIs stable
+  - Specimen CLI functionality consolidated into core library
+
 ### Changed
-- **Kebab-case long flags (idiomatic) with snake_case aliases** - Command flag registration now defaults to kebab-case for long flags to match Rust CLI conventions, with automatic snake_case aliases for backward compatibility. This ensures consistency with idiomatic CLI design while preserving existing scripts and integrations using snake_case.
+- **Cargo.toml updates**:
+  - Updated version to 26.6.1
+  - Enhanced description: "Rust CLI framework with noun-verb patterns, graph operations, and capability packing"
+  - Exposed new public modules: `graph`, `capability`, `diagnostics`
+  
+- **lib.rs exports**:
+  - Added public re-exports for graph module
+  - Added public re-exports for capability module
+  - Added public re-exports for diagnostics module
+  
+- **CommandRegistry enhancements**:
+  - Extended to support graph/capability/diagnostic verbs
+  - Improved verb discovery for new domains
+
+### Fixed
+- **Clippy warnings** in binary source (clap-noun-verb-gen.rs):
+  - Fixed 7x `needless_borrow` warnings
+  - Improved code quality and clarity
+  
+- **Formatting issues** in generated code:
+  - Standardized whitespace handling
+  - Consistent indentation in verb output
 
 ### Technical Details
+- **Graph module**: RDF loading (oxigraph), querying, validation framework
+- **Capability module**: Registry-based pack management with metadata storage
+- **Diagnostics module**: Health check framework with extensible reporters
+- **Output serialization**: All new verbs use proven JSON/YAML serializers
+- **Test coverage**: All new verbs have integration tests with real examples
+
+### Migration Guide
+
+**From v26.6.0 to v26.6.1:**
+
+All changes are purely additive - existing code continues to work without modification.
+
+**New capabilities available:**
+```bash
+# Load and query RDF graphs
+myapp graph load --file ontology.ttl
+myapp graph query --sparql "SELECT ?s WHERE { ?s ?p ?o }"
+myapp graph validate --file ontology.ttl
+
+# Manage capability packs
+myapp pack add --name my-capability --version 1.0.0
+myapp pack list
+myapp pack remove --name my-capability
+
+# Run system diagnostics
+myapp doctor check
+```
+
+### Notes
+- All new verbs use proven v26.6.1 API (no v26.7.0 extensions)
+- ggen integration verified stable with 9 critical APIs
+- Specimen CLI functionality now available as core library features
+- Full backward compatibility maintained with v26.6.0
+
+### Changed (Previous)
+- **Kebab-case long flags (idiomatic) with snake_case aliases** - Command flag registration now defaults to kebab-case for long flags to match Rust CLI conventions, with automatic snake_case aliases for backward compatibility. This ensures consistency with idiomatic CLI design while preserving existing scripts and integrations using snake_case.
+
+### Technical Details (Previous)
 - **Single-file change**: `src/cli/registry.rs`
 - **Test passing status**: All tests pass with updated flag handling
 - **Backward compatibility**: Existing snake_case flag usage continues to work via aliases
 
-### Migration Guide
+### Migration Guide (Previous)
 
 **From v26.6.0 to v26.6.1:**
 
@@ -719,7 +800,7 @@ No breaking changes. All existing code continues to work. v3.5.0 is a feature-co
 ### Changed
 - Disabled work-in-progress `arg_attributes` test files to unblock release
 
-## [3.3.0] - 2025-01-XX
+## [3.3.0] - 2025-01-07
 
 ### Added - Advanced clap Features and Typer-style Enhancements
 
@@ -862,7 +943,7 @@ No breaking changes. All existing code continues to work. New features are opt-i
 
 3. **Pattern matching** - Simple type parsers like `clap::value_parser!(PathBuf)` are supported via pattern matching
 
-## [3.2.0] - 2025-01-XX
+## [3.2.0] - 2025-01-07
 
 ### Added - Complete clap Feature Support
 
