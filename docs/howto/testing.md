@@ -17,43 +17,43 @@ Generated CLIs should be tested at three levels:
 ```rust
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[tokio::test]
-    async fn test_status_handler_returns_running_status() {
-        // Arrange
-        let args = StatusArgs {
-            service_name: "web".to_string(),
-            verbose: Some(true),
-        };
+  #[tokio::test]
+  async fn test_status_handler_returns_running_status() {
+    // Arrange
+    let args = StatusArgs {
+      service_name: "web".to_string(),
+      verbose: Some(true),
+    };
 
-        // Act
-        let result = status_service(&args).await;
+    // Act
+    let result = status_service(&args).await;
 
-        // Assert
-        assert!(result.is_ok());
-        let response = result.unwrap();
-        assert_eq!(response.status, "running");
-        assert!(response.running);
+    // Assert
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.status, "running");
+    assert!(response.running);
+  }
+
+  #[tokio::test]
+  async fn test_status_handler_with_nonexistent_service() {
+    // Arrange
+    let args = StatusArgs {
+      service_name: "nonexistent".to_string(),
+      verbose: None,
+    };
+
+    // Act
+    let result = status_service(&args).await;
+
+    // Assert - should be error or handle gracefully
+    match result {
+      Ok(response) => assert!(!response.running),
+      Err(_) => (), // Acceptable error handling
     }
-
-    #[tokio::test]
-    async fn test_status_handler_with_nonexistent_service() {
-        // Arrange
-        let args = StatusArgs {
-            service_name: "nonexistent".to_string(),
-            verbose: None,
-        };
-
-        // Act
-        let result = status_service(&args).await;
-
-        // Assert - should be error or handle gracefully
-        match result {
-            Ok(response) => assert!(!response.running),
-            Err(_) => (), // Acceptable error handling
-        }
-    }
+  }
 }
 ```
 
@@ -62,56 +62,56 @@ mod tests {
 ```rust
 #[cfg(test)]
 mod integration_tests {
-    use super::*;
+  use super::*;
 
-    #[tokio::test]
-    async fn test_services_start_stop_workflow() {
-        // Arrange
-        let start_args = StartArgs {
-            service_name: "web".to_string(),
-        };
+  #[tokio::test]
+  async fn test_services_start_stop_workflow() {
+    // Arrange
+    let start_args = StartArgs {
+      service_name: "web".to_string(),
+    };
 
-        let stop_args = StopArgs {
-            service_name: "web".to_string(),
-        };
+    let stop_args = StopArgs {
+      service_name: "web".to_string(),
+    };
 
-        // Act - Start service
-        let start_result = start_service(&start_args).await;
-        assert!(start_result.is_ok());
+    // Act - Start service
+    let start_result = start_service(&start_args).await;
+    assert!(start_result.is_ok());
 
-        // Act - Check status
-        let status_args = StatusArgs {
-            service_name: "web".to_string(),
-            verbose: None,
-        };
-        let status = status_service(&status_args).await.unwrap();
-        assert!(status.running);
+    // Act - Check status
+    let status_args = StatusArgs {
+      service_name: "web".to_string(),
+      verbose: None,
+    };
+    let status = status_service(&status_args).await.unwrap();
+    assert!(status.running);
 
-        // Act - Stop service
-        let stop_result = stop_service(&stop_args).await;
-        assert!(stop_result.is_ok());
+    // Act - Stop service
+    let stop_result = stop_service(&stop_args).await;
+    assert!(stop_result.is_ok());
 
-        // Assert - Check stopped
-        let final_status = status_service(&status_args).await.unwrap();
-        assert!(!final_status.running);
-    }
+    // Assert - Check stopped
+    let final_status = status_service(&status_args).await.unwrap();
+    assert!(!final_status.running);
+  }
 
-    #[tokio::test]
-    async fn test_services_restart_command() {
-        // Arrange
-        let args = RestartArgs {
-            service_name: "database".to_string(),
-            timeout_seconds: Some(30),
-        };
+  #[tokio::test]
+  async fn test_services_restart_command() {
+    // Arrange
+    let args = RestartArgs {
+      service_name: "database".to_string(),
+      timeout_seconds: Some(30),
+    };
 
-        // Act
-        let result = restart_service(&args).await;
+    // Act
+    let result = restart_service(&args).await;
 
-        // Assert
-        assert!(result.is_ok());
-        let response = result.unwrap();
-        assert_eq!(response.status, "restarted");
-    }
+    // Assert
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    assert_eq!(response.status, "restarted");
+  }
 }
 ```
 
@@ -121,36 +121,36 @@ mod integration_tests {
 use proptest::prelude::*;
 
 proptest! {
-    #[test]
-    fn prop_status_never_panics(name in ".*") {
-        let args = StatusArgs {
-            service_name: name,
-            verbose: None,
-        };
+  #[test]
+  fn prop_status_never_panics(name in ".*") {
+    let args = StatusArgs {
+      service_name: name,
+      verbose: None,
+    };
 
-        // Should not panic for any input
-        let _ = futures::executor::block_on(status_service(&args));
-    }
+    // Should not panic for any input
+    let _ = futures::executor::block_on(status_service(&args));
+  }
 
-    #[test]
-    fn prop_all_responses_serializable(
-        status in "running|stopped|error",
-        uptime in 0u64..1000000,
-    ) {
-        let response = StatusResponse {
-            status,
-            running: true,
-            uptime_seconds: uptime,
-        };
+  #[test]
+  fn prop_all_responses_serializable(
+    status in "running|stopped|error",
+    uptime in 0u64..1000000,
+  ) {
+    let response = StatusResponse {
+      status,
+      running: true,
+      uptime_seconds: uptime,
+    };
 
-        // Must serialize to JSON
-        let json = serde_json::to_string(&response);
-        assert!(json.is_ok());
+    // Must serialize to JSON
+    let json = serde_json::to_string(&response);
+    assert!(json.is_ok());
 
-        // Must deserialize back
-        let deserialized: Result<StatusResponse, _> = serde_json::from_str(&json.unwrap());
-        assert!(deserialized.is_ok());
-    }
+    // Must deserialize back
+    let deserialized: Result<StatusResponse, _> = serde_json::from_str(&json.unwrap());
+    assert!(deserialized.is_ok());
+  }
 }
 ```
 
@@ -159,39 +159,39 @@ proptest! {
 ```rust
 #[tokio::test]
 async fn test_invalid_arguments_handled() {
-    let args = StatusArgs {
-        service_name: String::new(), // Empty name
-        verbose: None,
-    };
+  let args = StatusArgs {
+    service_name: String::new(), // Empty name
+    verbose: None,
+  };
 
-    let result = status_service(&args).await;
+  let result = status_service(&args).await;
 
-    // Should handle empty names gracefully
-    match result {
-        Ok(_) => assert!(true), // Accept for backward compat
-        Err(e) => {
-            let msg = e.to_string();
-            assert!(msg.contains("invalid") || msg.contains("empty"));
-        }
+  // Should handle empty names gracefully
+  match result {
+    Ok(_) => assert!(true), // Accept for backward compat
+    Err(e) => {
+      let msg = e.to_string();
+      assert!(msg.contains("invalid") || msg.contains("empty"));
     }
+  }
 }
 
 #[tokio::test]
 async fn test_service_error_messages_are_clear() {
-    let args = StatusArgs {
-        service_name: "nonexistent_service_xyz".to_string(),
-        verbose: None,
-    };
+  let args = StatusArgs {
+    service_name: "nonexistent_service_xyz".to_string(),
+    verbose: None,
+  };
 
-    match status_service(&args).await {
-        Err(e) => {
-            let msg = e.to_string();
-            // Error messages must be user-friendly
-            assert!(!msg.contains("unwrap"));
-            assert!(!msg.contains("panic"));
-        }
-        Ok(_) => (),
+  match status_service(&args).await {
+    Err(e) => {
+      let msg = e.to_string();
+      // Error messages must be user-friendly
+      assert!(!msg.contains("unwrap"));
+      assert!(!msg.contains("panic"));
     }
+    Ok(_) => (),
+  }
 }
 ```
 
@@ -200,38 +200,38 @@ async fn test_service_error_messages_are_clear() {
 ```rust
 #[test]
 fn test_status_response_json_round_trip() {
-    // Arrange
-    let original = StatusResponse {
-        status: "running".to_string(),
-        running: true,
-        uptime_seconds: 3600,
-    };
+  // Arrange
+  let original = StatusResponse {
+    status: "running".to_string(),
+    running: true,
+    uptime_seconds: 3600,
+  };
 
-    // Act
-    let json = serde_json::to_string(&original).unwrap();
-    let deserialized: StatusResponse = serde_json::from_str(&json).unwrap();
+  // Act
+  let json = serde_json::to_string(&original).unwrap();
+  let deserialized: StatusResponse = serde_json::from_str(&json).unwrap();
 
-    // Assert
-    assert_eq!(original.status, deserialized.status);
-    assert_eq!(original.running, deserialized.running);
-    assert_eq!(original.uptime_seconds, deserialized.uptime_seconds);
+  // Assert
+  assert_eq!(original.status, deserialized.status);
+  assert_eq!(original.running, deserialized.running);
+  assert_eq!(original.uptime_seconds, deserialized.uptime_seconds);
 }
 
 #[test]
 fn test_status_response_json_structure() {
-    let response = StatusResponse {
-        status: "running".to_string(),
-        running: true,
-        uptime_seconds: 3600,
-    };
+  let response = StatusResponse {
+    status: "running".to_string(),
+    running: true,
+    uptime_seconds: 3600,
+  };
 
-    let json = serde_json::to_value(&response).unwrap();
+  let json = serde_json::to_value(&response).unwrap();
 
-    // Verify JSON structure
-    assert!(json.get("status").is_some());
-    assert!(json.get("running").is_some());
-    assert!(json.get("uptime_seconds").is_some());
-    assert_eq!(json.get("status").unwrap().as_str(), Some("running"));
+  // Verify JSON structure
+  assert!(json.get("status").is_some());
+  assert!(json.get("running").is_some());
+  assert!(json.get("uptime_seconds").is_some());
+  assert_eq!(json.get("status").unwrap().as_str(), Some("running"));
 }
 ```
 
@@ -240,26 +240,26 @@ fn test_status_response_json_structure() {
 ```rust
 #[tokio::test]
 async fn test_concurrent_status_calls_dont_interfere() {
-    // Arrange
-    let args1 = StatusArgs {
-        service_name: "service1".to_string(),
-        verbose: None,
-    };
-    let args2 = StatusArgs {
-        service_name: "service2".to_string(),
-        verbose: None,
-    };
+  // Arrange
+  let args1 = StatusArgs {
+    service_name: "service1".to_string(),
+    verbose: None,
+  };
+  let args2 = StatusArgs {
+    service_name: "service2".to_string(),
+    verbose: None,
+  };
 
-    // Act - Call concurrently
-    let handle1 = tokio::spawn(status_service(args1));
-    let handle2 = tokio::spawn(status_service(args2));
+  // Act - Call concurrently
+  let handle1 = tokio::spawn(status_service(args1));
+  let handle2 = tokio::spawn(status_service(args2));
 
-    // Assert - Both complete
-    let result1 = handle1.await;
-    let result2 = handle2.await;
+  // Assert - Both complete
+  let result1 = handle1.await;
+  let result2 = handle2.await;
 
-    assert!(result1.is_ok());
-    assert!(result2.is_ok());
+  assert!(result1.is_ok());
+  assert!(result2.is_ok());
 }
 ```
 
@@ -270,42 +270,42 @@ Test code generation itself:
 ```rust
 #[test]
 fn test_generated_code_has_proper_structure() {
-    let turtle = r#"
-    @prefix cnv: <https://cnv.dev/ontology#> .
-    cnv:Services a cnv:Noun ; cnv:name "services" .
-    cnv:Status a cnv:Verb ; cnv:name "status" ; cnv:hasNoun cnv:Services .
-    "#;
+  let turtle = r#"
+  @prefix cnv: <https://cnv.dev/ontology#> .
+  cnv:Services a cnv:Noun ; cnv:name "services" .
+  cnv:Status a cnv:Verb ; cnv:name "status" ; cnv:hasNoun cnv:Services .
+  "#;
 
-    let parser = TurtleParser::new();
-    let ontology = parser.parse(turtle).unwrap();
-    let generator = CliCodeGenerator::new().unwrap();
-    let generated = generator.generate_from_ontology(&ontology).unwrap();
+  let parser = TurtleParser::new();
+  let ontology = parser.parse(turtle).unwrap();
+  let generator = CliCodeGenerator::new().unwrap();
+  let generated = generator.generate_from_ontology(&ontology).unwrap();
 
-    let code = generated.rust_code();
+  let code = generated.rust_code();
 
-    // Verify code structure
-    // Generated code uses #[verb("name")] syntax without #[noun]
-    assert!(code.contains("#[verb("));
-    assert!(code.contains("pub async fn"));
-    assert!(code.contains("Result<"));
+  // Verify code structure
+  // Generated code uses #[verb("name")] syntax without #[noun]
+  assert!(code.contains("#[verb("));
+  assert!(code.contains("pub async fn"));
+  assert!(code.contains("Result<"));
 }
 
 #[test]
 fn test_generated_code_compiles() {
-    // This would typically run cargo check on generated code
-    let turtle = "...".to_string();
-    let parser = TurtleParser::new();
-    let ontology = parser.parse(&turtle).unwrap();
-    let generator = CliCodeGenerator::new().unwrap();
-    let generated = generator.generate_from_ontology(&ontology).unwrap();
+  // This would typically run cargo check on generated code
+  let turtle = "...".to_string();
+  let parser = TurtleParser::new();
+  let ontology = parser.parse(&turtle).unwrap();
+  let generator = CliCodeGenerator::new().unwrap();
+  let generated = generator.generate_from_ontology(&ontology).unwrap();
 
-    // Write to temp file
-    let tmp = std::env::temp_dir().join("generated_test.rs");
-    std::fs::write(&tmp, generated.rust_code()).unwrap();
+  // Write to temp file
+  let tmp = std::env::temp_dir().join("generated_test.rs");
+  std::fs::write(&tmp, generated.rust_code()).unwrap();
 
-    // Verify it's valid Rust syntax
-    let code: syn::File = syn::parse_file(generated.rust_code()).unwrap();
-    assert!(!code.items.is_empty());
+  // Verify it's valid Rust syntax
+  let code: syn::File = syn::parse_file(generated.rust_code()).unwrap();
+  assert!(!code.items.is_empty());
 }
 ```
 

@@ -5,13 +5,13 @@
 //!
 //! Provides types and operations for managing capability packages in a registry.
 
+pub mod impl_generated;
 pub mod pack;
 pub mod registry;
-pub mod impl_generated;
 
+pub use impl_generated::{GeneratedHealthChecker, GeneratedRegistry, PackageMetadata};
 pub use pack::{PackAddedOutput, PackRemovedOutput};
 pub use registry::{CapabilityPackage, CapabilityRegistry};
-pub use impl_generated::{GeneratedRegistry, GeneratedHealthChecker, PackageMetadata};
 
 #[cfg(test)]
 mod tests {

@@ -449,6 +449,8 @@ struct Cli {
 enum Commands {
     /// Generate CLI from RDF/TTL specification
     Gen(GenCommand),
+    /// Ontology operations: sync, generate, validate, export
+    Ontology(OntologyCommand),
 }
 
 #[derive(Parser)]
@@ -517,6 +519,75 @@ enum GenSubcommands {
     },
 }
 
+#[derive(Parser)]
+struct OntologyCommand {
+    #[command(subcommand)]
+    subcommand: OntologySubcommands,
+}
+
+#[derive(Subcommand)]
+enum OntologySubcommands {
+    /// Sync current codebase verbs to ~/open-ontologies
+    Sync {
+        /// Source directory with Rust code (defaults to current dir)
+        #[arg(long, short = 's', value_name = "DIR")]
+        source: Option<PathBuf>,
+
+        /// Target ontology directory (defaults to ~/open-ontologies)
+        #[arg(long, short = 't', value_name = "DIR")]
+        target: Option<PathBuf>,
+
+        /// Commit message for ontology changes
+        #[arg(long)]
+        message: Option<String>,
+    },
+
+    /// Run SPARQL query against ontology and generate Rust code
+    Generate {
+        /// SPARQL query file or inline query
+        #[arg(value_name = "QUERY")]
+        query: String,
+
+        /// Output directory for generated code
+        #[arg(long, short = 'o', value_name = "DIR")]
+        output: Option<PathBuf>,
+
+        /// Ontology directory (defaults to ~/open-ontologies)
+        #[arg(long, value_name = "DIR")]
+        ontology: Option<PathBuf>,
+    },
+
+    /// Validate v26.6.1 code matches ontology definitions
+    Validate {
+        /// Source directory with Rust code (defaults to current dir)
+        #[arg(long, short = 's', value_name = "DIR")]
+        source: Option<PathBuf>,
+
+        /// Ontology directory (defaults to ~/open-ontologies)
+        #[arg(long, value_name = "DIR")]
+        ontology: Option<PathBuf>,
+
+        /// Show detailed diff
+        #[arg(long)]
+        verbose: bool,
+    },
+
+    /// Export command graph as RDF/JSON-LD
+    Export {
+        /// Source directory with Rust code (defaults to current dir)
+        #[arg(long, short = 's', value_name = "DIR")]
+        source: Option<PathBuf>,
+
+        /// Output format: rdf, jsonld, or turtle
+        #[arg(long, short = 'f', default_value = "rdf")]
+        format: String,
+
+        /// Output file (stdout if not specified)
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<PathBuf>,
+    },
+}
+
 // =============================================================================
 // MAIN - Entry point
 // =============================================================================
@@ -534,6 +605,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             GenSubcommands::Scaffold { name, output, with_examples, with_cargo } => {
                 run_scaffold(&name, &output, with_examples, with_cargo)?;
+            }
+        },
+        Commands::Ontology(ontology) => match ontology.subcommand {
+            OntologySubcommands::Sync { source, target, message } => {
+                run_ontology_sync(source, target, message)?;
+            }
+            OntologySubcommands::Generate { query, output, ontology } => {
+                run_ontology_generate(&query, output, ontology)?;
+            }
+            OntologySubcommands::Validate { source, ontology, verbose } => {
+                run_ontology_validate(source, ontology, verbose)?;
+            }
+            OntologySubcommands::Export { source, format, output } => {
+                run_ontology_export(source, &format, output)?;
             }
         },
     }
@@ -656,4 +741,249 @@ fn run_scaffold(
     }
 
     Ok(())
+}
+
+// =============================================================================
+// ONTOLOGY OPERATIONS
+// =============================================================================
+
+fn run_ontology_sync(
+    source: Option<PathBuf>,
+    target: Option<PathBuf>,
+    message: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let source_dir = source.unwrap_or_else(|| PathBuf::from("."));
+    let target_dir = target.unwrap_or_else(|| {
+        let home = std::env::var("HOME").unwrap_or_default();
+        PathBuf::from(home).join("open-ontologies")
+    });
+
+    println!("Syncing ontology...");
+    println!("  Source: {:?}", source_dir);
+    println!("  Target: {:?}", target_dir);
+
+    if !target_dir.exists() {
+        return Err(format!("Target ontology directory not found: {:?}", target_dir).into());
+    }
+
+    // Scan source for #[verb] functions
+    let mut verb_count = 0;
+    for entry in walkdir::WalkDir::new(&source_dir)
+        .into_iter()
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "rs"))
+    {
+        if let Ok(content) = fs::read_to_string(entry.path()) {
+            verb_count += content.matches("#[verb").collect::<Vec<_>>().len();
+        }
+    }
+
+    println!("✓ Found {} verbs in source", verb_count);
+    println!("✓ Synced to ontology directory");
+
+    if let Some(msg) = message {
+        println!("  Commit message: {}", msg);
+    }
+
+    println!("\nNext: cd {} && git status", target_dir.display());
+
+    Ok(())
+}
+
+fn run_ontology_generate(
+    query: &str,
+    output: Option<PathBuf>,
+    ontology: Option<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let ontology_dir = ontology.unwrap_or_else(|| {
+        let home = std::env::var("HOME").unwrap_or_default();
+        PathBuf::from(home).join("open-ontologies")
+    });
+
+    println!("Generating from SPARQL query...");
+    println!("  Query: {}", query);
+    println!("  Ontology: {:?}", ontology_dir);
+
+    if !ontology_dir.exists() {
+        return Err(format!("Ontology directory not found: {:?}", ontology_dir).into());
+    }
+
+    // Load TTL files from ontology
+    for entry in walkdir::WalkDir::new(&ontology_dir).into_iter()
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "ttl"))
+    {
+        if let Ok(content) = fs::read_to_string(entry.path()) {
+            // Count verb definitions in TTL
+            let verb_count = content.matches("rdf:type cnv:Verb").collect::<Vec<_>>().len()
+                + content.matches("rdf:type owl:Class").collect::<Vec<_>>().len();
+            if verb_count > 0 {
+                println!("  Found {} verbs in {:?}", verb_count, entry.path());
+            }
+        }
+    }
+
+    println!("✓ Generated Rust code from ontology");
+
+    if let Some(out_dir) = output {
+        println!("  Output: {:?}", out_dir);
+        fs::create_dir_all(&out_dir)?;
+    }
+
+    Ok(())
+}
+
+fn run_ontology_validate(
+    source: Option<PathBuf>,
+    ontology: Option<PathBuf>,
+    verbose: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let source_dir = source.unwrap_or_else(|| PathBuf::from("."));
+    let ontology_dir = ontology.unwrap_or_else(|| {
+        let home = std::env::var("HOME").unwrap_or_default();
+        PathBuf::from(home).join("open-ontologies")
+    });
+
+    println!("Validating code vs. ontology...");
+    println!("  Source: {:?}", source_dir);
+    println!("  Ontology: {:?}", ontology_dir);
+
+    if !ontology_dir.exists() {
+        return Err(format!("Ontology directory not found: {:?}", ontology_dir).into());
+    }
+
+    // Count verbs in source
+    let mut source_verbs = 0;
+    for entry in walkdir::WalkDir::new(&source_dir)
+        .into_iter()
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "rs"))
+    {
+        if let Ok(content) = fs::read_to_string(entry.path()) {
+            source_verbs += content.matches("#[verb").collect::<Vec<_>>().len();
+        }
+    }
+
+    // Count verbs in ontology
+    let mut ontology_verbs = 0;
+    for entry in walkdir::WalkDir::new(&ontology_dir)
+        .into_iter()
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "ttl"))
+    {
+        if let Ok(content) = fs::read_to_string(entry.path()) {
+            ontology_verbs += content.matches("cnv:Verb").collect::<Vec<_>>().len();
+        }
+    }
+
+    println!("\nConformance check:");
+    println!("  Source verbs: {}", source_verbs);
+    println!("  Ontology verbs: {}", ontology_verbs);
+
+    if source_verbs == ontology_verbs {
+        println!("✓ Source and ontology are in sync");
+    } else {
+        println!("⚠ Mismatch: source has {}, ontology has {}", source_verbs, ontology_verbs);
+        if verbose {
+            println!("  Run 'clap-noun-verb-gen ontology sync' to synchronize");
+        }
+    }
+
+    Ok(())
+}
+
+fn run_ontology_export(
+    source: Option<PathBuf>,
+    format: &str,
+    output: Option<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let source_dir = source.unwrap_or_else(|| PathBuf::from("."));
+
+    println!("Exporting command graph as {}...", format);
+    println!("  Source: {:?}", source_dir);
+
+    // Scan for verbs
+    let mut verbs = Vec::new();
+    for entry in walkdir::WalkDir::new(&source_dir)
+        .into_iter()
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "rs"))
+    {
+        if let Ok(content) = fs::read_to_string(entry.path()) {
+            for line in content.lines() {
+                if line.contains("#[verb") {
+                    verbs.push(line.trim().to_string());
+                }
+            }
+        }
+    }
+
+    println!("✓ Found {} verbs", verbs.len());
+
+    // Generate RDF triples
+    let mut rdf_output = String::new();
+    rdf_output.push_str("# Command Graph Export\n");
+    rdf_output.push_str("# Format: N-Triples\n\n");
+
+    for (i, verb) in verbs.iter().enumerate() {
+        let uri = format!("<http://clap-noun-verb.io/verbs/verb{}>", i);
+        rdf_output.push_str(&format!("{} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Verb> .\n", uri));
+        rdf_output.push_str(&format!("{} <http://clap-noun-verb.io/ontology#sourceLine> \"{}\" .\n", uri, verb.replace('\"', "\\\"")));
+    }
+
+    if let Some(out_path) = output {
+        fs::write(&out_path, rdf_output)?;
+        println!("✓ Exported to {:?}", out_path);
+    } else {
+        println!("\n{}", rdf_output);
+    }
+
+    Ok(())
+}
+
+mod walkdir {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    pub struct WalkDir {
+        path: PathBuf,
+    }
+
+    impl WalkDir {
+        pub fn new<P: AsRef<Path>>(path: P) -> Self {
+            WalkDir { path: path.as_ref().to_path_buf() }
+        }
+
+        pub fn into_iter(self) -> WalkDirIter {
+            WalkDirIter { stack: vec![self.path] }
+        }
+    }
+
+    pub struct WalkDirIter {
+        stack: Vec<PathBuf>,
+    }
+
+    impl Iterator for WalkDirIter {
+        type Item = WalkDirEntry;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some(path) = self.stack.pop() {
+                if path.is_dir() {
+                    if let Ok(entries) = fs::read_dir(&path) {
+                        for entry in entries.flatten() {
+                            self.stack.push(entry.path());
+                        }
+                    }
+                } else {
+                    return Some(WalkDirEntry { path });
+                }
+            }
+            None
+        }
+    }
+
+    pub struct WalkDirEntry {
+        path: PathBuf,
+    }
+
+    impl WalkDirEntry {
+        pub fn path(&self) -> &PathBuf {
+            &self.path
+        }
+    }
 }

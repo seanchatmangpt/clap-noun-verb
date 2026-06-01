@@ -116,8 +116,8 @@ Each command should do one thing:
 ```turtle
 # ❌ Too much responsibility
 cnv:UserManage a cnv:Verb ;
-    cnv:name "manage" ;
-    cnv:description "Create, list, or delete users" .
+  cnv:name "manage" ;
+  cnv:description "Create, list, or delete users" .
 
 # ✅ Single responsibility
 cnv:UserCreate a cnv:Verb ; cnv:name "create" .
@@ -162,12 +162,12 @@ mycli services status --detailed --json --refresh
 In ontology:
 ```turtle
 cnv:ServiceStatus a cnv:Verb ;
-    cnv:name "status" ;
-    cnv:description "Show service status" ;
-    cnv:options [
-        cnv:detailed "Show detailed information" ;
-        cnv:json "Output in JSON format" ;
-    ] .
+  cnv:name "status" ;
+  cnv:description "Show service status" ;
+  cnv:options [
+    cnv:detailed "Show detailed information" ;
+    cnv:json "Output in JSON format" ;
+  ] .
 ```
 
 ## Pattern 5: Backward Compatibility
@@ -180,15 +180,15 @@ cnv:UserCreate a cnv:Verb ; cnv:name "create" .
 
 # Version 2.0 - add new option, keep old one
 cnv:UserCreate a cnv:Verb ;
-    cnv:name "create" ;
-    cnv:deprecated false ;
-    cnv:version "2.0" .
+  cnv:name "create" ;
+  cnv:deprecated false ;
+  cnv:version "2.0" .
 
 # Version 3.0 - deprecate old command
 cnv:UserCreate_v1 a cnv:Verb ;
-    cnv:name "create" ;
-    cnv:deprecated true ;
-    cnv:deprecationMessage "Use 'user create' instead" .
+  cnv:name "create" ;
+  cnv:deprecated true ;
+  cnv:deprecationMessage "Use 'user create' instead" .
 ```
 
 ## Pattern 6: Help System
@@ -197,21 +197,21 @@ Leverage RDF for automatic help:
 
 ```turtle
 cnv:Users a cnv:Noun ;
-    cnv:name "users" ;
-    rdfs:comment "User account management system" ;
-    cnv:examples [
-        cnv:example1 "mycli users create --name alice --role admin" ;
-        cnv:example2 "mycli users list --role admin" ;
-    ] .
+  cnv:name "users" ;
+  rdfs:comment "User account management system" ;
+  cnv:examples [
+    cnv:example1 "mycli users create --name alice --role admin" ;
+    cnv:example2 "mycli users list --role admin" ;
+  ] .
 
 cnv:UserCreate a cnv:Verb ;
-    cnv:name "create" ;
-    rdfs:comment "Create a new user account" ;
-    cnv:options [
-        cnv:name "User name (required)" ;
-        cnv:role "User role (admin|user)" ;
-        cnv:email "Email address (optional)" ;
-    ] .
+  cnv:name "create" ;
+  rdfs:comment "Create a new user account" ;
+  cnv:options [
+    cnv:name "User name (required)" ;
+    cnv:role "User role (admin|user)" ;
+    cnv:email "Email address (optional)" ;
+  ] .
 ```
 
 **Generated help**:
@@ -219,20 +219,20 @@ cnv:UserCreate a cnv:Verb ;
 $ mycli users --help
 User account management system
 
-  create   Create a new user account
-  list     List all users
-  delete   Delete a user
+ create  Create a new user account
+ list   List all users
+ delete  Delete a user
 
 $ mycli users create --help
 Create a new user account
 
 Example:
-  mycli users create --name alice --role admin
+ mycli users create --name alice --role admin
 
 Options:
-  --name <NAME>    User name (required)
-  --role <ROLE>    User role (admin|user)
-  --email <EMAIL>  Email address (optional)
+ --name <NAME>  User name (required)
+ --role <ROLE>  User role (admin|user)
+ --email <EMAIL> Email address (optional)
 ```
 
 ## Pattern 7: Error Handling
@@ -242,33 +242,33 @@ Use consistent error patterns:
 ```rust
 // Generated from ontology
 pub async fn create_user(args: &CreateUserArgs) -> Result<CreateUserResponse> {
-    // Validation errors
-    if args.name.is_empty() {
-        return Err(UserError::InvalidName("Name cannot be empty".into()).into());
-    }
+  // Validation errors
+  if args.name.is_empty() {
+    return Err(UserError::InvalidName("Name cannot be empty".into()).into());
+  }
 
-    // Domain errors
-    if user_exists(&args.name).await? {
-        return Err(UserError::AlreadyExists(args.name.clone()).into());
-    }
+  // Domain errors
+  if user_exists(&args.name).await? {
+    return Err(UserError::AlreadyExists(args.name.clone()).into());
+  }
 
-    // System errors
-    match db.create_user(args).await {
-        Ok(user) => Ok(CreateUserResponse { user_id: user.id }),
-        Err(e) => Err(UserError::DatabaseError(e.to_string()).into()),
-    }
+  // System errors
+  match db.create_user(args).await {
+    Ok(user) => Ok(CreateUserResponse { user_id: user.id }),
+    Err(e) => Err(UserError::DatabaseError(e.to_string()).into()),
+  }
 }
 ```
 
 In ontology:
 ```turtle
 cnv:UserCreate a cnv:Verb ;
-    cnv:name "create" ;
-    cnv:errors [
-        cnv:InvalidName "User name is invalid" ;
-        cnv:AlreadyExists "User already exists" ;
-        cnv:DatabaseError "Database operation failed" ;
-    ] .
+  cnv:name "create" ;
+  cnv:errors [
+    cnv:InvalidName "User name is invalid" ;
+    cnv:AlreadyExists "User already exists" ;
+    cnv:DatabaseError "Database operation failed" ;
+  ] .
 ```
 
 ## Pattern 8: Subcommand Grouping
@@ -277,15 +277,15 @@ Organize related commands:
 
 ```
 mycli services
-  ├── status
-  ├── start
-  ├── stop
-  └── restart
+ ├── status
+ ├── start
+ ├── stop
+ └── restart
 
 mycli config
-  ├── show
-  ├── set
-  └── validate
+ ├── show
+ ├── set
+ └── validate
 ```
 
 When to use subcommands vs. separate tools:
@@ -346,23 +346,23 @@ mycli users create --name bob && mycli users get bob
 
 **❌ Cryptic command names**:
 ```turtle
-cnv:Cmd1 a cnv:Verb ; cnv:name "c1" .  # What does this do?
+cnv:Cmd1 a cnv:Verb ; cnv:name "c1" . # What does this do?
 ```
 
 **❌ Inconsistent verbs**:
 ```turtle
 cnv:UserCreate a cnv:Verb ; cnv:name "create" .
-cnv:ServiceAdd a cnv:Verb ; cnv:name "add" .     # Different verb for same action
+cnv:ServiceAdd a cnv:Verb ; cnv:name "add" .   # Different verb for same action
 ```
 
 **❌ Verbs that do too much**:
 ```turtle
-cnv:DoStuff a cnv:Verb ; cnv:name "dostuff" .    # Too vague
+cnv:DoStuff a cnv:Verb ; cnv:name "dostuff" .  # Too vague
 ```
 
 **❌ Nouns that aren't nouns**:
 ```turtle
-cnv:Quickly a cnv:Noun ; cnv:name "quickly" .    # Noun should be resource/thing
+cnv:Quickly a cnv:Noun ; cnv:name "quickly" .  # Noun should be resource/thing
 ```
 
 ---

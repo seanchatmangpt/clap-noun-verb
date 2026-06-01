@@ -9,49 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Graph module** - RDF file loading, SPARQL-like querying, and validation capabilities
-  - `graph load` - Load RDF files (Turtle, N-Triples, RDF/XML)
-  - `graph query` - Execute SPARQL-like queries on loaded graphs
-  - `graph validate` - Validate RDF graph structure and constraints
-  - Output types: `GraphLoadedOutput`, `QueryResultOutput`, `ValidationResultOutput`
-  
+ - `graph load` - Load RDF files (Turtle, N-Triples, RDF/XML)
+ - `graph query` - Execute SPARQL-like queries on loaded graphs
+ - `graph validate` - Validate RDF graph structure and constraints
+ - Output types: `GraphLoadedOutput`, `QueryResultOutput`, `ValidationResultOutput`
+ 
 - **Capability packing system** - Registry-based capability management
-  - `pack add` - Register new capabilities with metadata
-  - `pack remove` - Unregister capabilities
-  - `pack list` - Display all registered capability packs
-  - Output type: `PackAddedOutput`
-  
+ - `pack add` - Register new capabilities with metadata
+ - `pack remove` - Unregister capabilities
+ - `pack list` - Display all registered capability packs
+ - Output type: `PackAddedOutput`
+ 
 - **Diagnostics module** - System health checks and status reporting
-  - `doctor check` - Run comprehensive health diagnostics
-  - Output type: `DoctorOutput` with detailed status information
-  
+ - `doctor check` - Run comprehensive health diagnostics
+ - Output type: `DoctorOutput` with detailed status information
+ 
 - **6 new verbs** integrated with proven v26.6.1 API:
-  - All verbs support JSON/YAML/Table/TSV output formats
-  - ggen integration verified: 9 critical APIs stable
-  - Specimen CLI functionality consolidated into core library
+ - All verbs support JSON/YAML/Table/TSV output formats
+ - ggen integration verified: 9 critical APIs stable
+ - Specimen CLI functionality consolidated into core library
 
 ### Changed
 - **Cargo.toml updates**:
-  - Updated version to 26.6.1
-  - Enhanced description: "Rust CLI framework with noun-verb patterns, graph operations, and capability packing"
-  - Exposed new public modules: `graph`, `capability`, `diagnostics`
-  
+ - Updated version to 26.6.1
+ - Enhanced description: "Rust CLI framework with noun-verb patterns, graph operations, and capability packing"
+ - Exposed new public modules: `graph`, `capability`, `diagnostics`
+ 
 - **lib.rs exports**:
-  - Added public re-exports for graph module
-  - Added public re-exports for capability module
-  - Added public re-exports for diagnostics module
-  
+ - Added public re-exports for graph module
+ - Added public re-exports for capability module
+ - Added public re-exports for diagnostics module
+ 
 - **CommandRegistry enhancements**:
-  - Extended to support graph/capability/diagnostic verbs
-  - Improved verb discovery for new domains
+ - Extended to support graph/capability/diagnostic verbs
+ - Improved verb discovery for new domains
 
 ### Fixed
 - **Clippy warnings** in binary source (clap-noun-verb-gen.rs):
-  - Fixed 7x `needless_borrow` warnings
-  - Improved code quality and clarity
-  
+ - Fixed 7x `needless_borrow` warnings
+ - Improved code quality and clarity
+ 
 - **Formatting issues** in generated code:
-  - Standardized whitespace handling
-  - Consistent indentation in verb output
+ - Standardized whitespace handling
+ - Consistent indentation in verb output
 
 ### Technical Details
 - **Graph module**: RDF loading (oxigraph), querying, validation framework
@@ -111,8 +111,8 @@ Long flags are now generated in kebab-case (e.g., `--my-flag`) by default to mat
 Example:
 ```bash
 # Both work (old and new)
-myapp services --start_after 2026-06-01   # Still works (snake_case alias)
-myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
+myapp services --start_after 2026-06-01  # Still works (snake_case alias)
+myapp services --start-after 2026-06-01  # Preferred (idiomatic kebab-case)
 ```
 
 ## [26.5.28] - 2026-05-28
@@ -179,16 +179,16 @@ myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
 - **`OutputFormat::description()`** — Returns human-readable description for each format variant.
 - **Registry first-write-wins** — `register_noun()` uses `entry().or_insert()` so the first noun registration wins, preventing later verbs from overwriting the noun description.
 - **Wizard Package v2 Enhancements**
-  - TTL-to-wizard code generation system with comprehensive roadmap
-  - V2 wizard package architecture and core feature specifications
-  - 10-agent swarm coordination for wizard package development
-  - rust-genai integration for multi-provider LLM support
-  - End-to-end wizard code generation pipeline
+ - TTL-to-wizard code generation system with comprehensive roadmap
+ - V2 wizard package architecture and core feature specifications
+ - 10-agent swarm coordination for wizard package development
+ - rust-genai integration for multi-provider LLM support
+ - End-to-end wizard code generation pipeline
 - **Documentation Improvements**
-  - Diataxis framework implementation for production documentation organization
-  - Comprehensive research thesis consolidating analysis and strategic insights
-  - Setup, help, and version documentation enhancements
-  - Hyper-Thesis Framework integration for defense preparation
+ - Diataxis framework implementation for production documentation organization
+ - Comprehensive research thesis consolidating analysis and strategic insights
+ - Setup, help, and version documentation enhancements
+ - Hyper-Thesis Framework integration for defense preparation
 
 ### Removed
 
@@ -211,52 +211,52 @@ myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
 ### Added
 
 - **Agent CLI Builder - Runtime CLI Generation**
-  - New `AgentCliBuilder` for dynamic command composition without compile-time macros
-  - `CommandHandler` trait for pluggable command execution with Send + Sync bounds
-  - `CommandMetadata` for introspectable command structure
-  - `CommandArgs` for type-safe argument handling (named + positional)
-  - Enables MCP agents to generate CLIs at runtime without dependencies
+ - New `AgentCliBuilder` for dynamic command composition without compile-time macros
+ - `CommandHandler` trait for pluggable command execution with Send + Sync bounds
+ - `CommandMetadata` for introspectable command structure
+ - `CommandArgs` for type-safe argument handling (named + positional)
+ - Enables MCP agents to generate CLIs at runtime without dependencies
 
 - **Zero-Cost CLI Abstractions**
-  - Trait objects with single vtable indirection (~50ns overhead)
-  - HashMap-based O(1) command lookup
-  - Arc<dyn CommandHandler> for efficient shared ownership
-  - Sub-microsecond performance: **40.9µs for 64-command (8×8) CLI generation**
+ - Trait objects with single vtable indirection (~50ns overhead)
+ - HashMap-based O(1) command lookup
+ - Arc<dyn CommandHandler> for efficient shared ownership
+ - Sub-microsecond performance: **40.9µs for 64-command (8×8) CLI generation**
 
 - **Chicago TDD Quality Assurance Suite**
-  - 15 adversarial test cases using state-based testing
-  - Real collaborators (CountingHandler, ConditionalHandler) validation
-  - Stress testing: 100+ command registries
-  - Edge cases: Command name patterns, argument handling
-  - Error handling: Failure isolation, graceful degradation
-  - Total: 44 Agent CLI tests passing
+ - 15 adversarial test cases using state-based testing
+ - Real collaborators (CountingHandler, ConditionalHandler) validation
+ - Stress testing: 100+ command registries
+ - Edge cases: Command name patterns, argument handling
+ - Error handling: Failure isolation, graceful degradation
+ - Total: 44 Agent CLI tests passing
 
 - **Batch Command Registration API**
-  - `register_commands()` iterator interface for bulk registration
-  - Error short-circuiting on first invalid registration
-  - Efficient multi-command setup
+ - `register_commands()` iterator interface for bulk registration
+ - Error short-circuiting on first invalid registration
+ - Efficient multi-command setup
 
 - **Comprehensive Documentation**
-  - PhD thesis: "Runtime CLI Generation for MCP Agents" (7 chapters)
-  - JTBD benchmarks with Criterion.rs statistical rigor
-  - End-to-end generation benchmarks with scaling analysis
-  - Performance SLO compliance verification (2,442× faster than 100ms target)
+ - PhD thesis: "Runtime CLI Generation for MCP Agents" (7 chapters)
+ - JTBD benchmarks with Criterion.rs statistical rigor
+ - End-to-end generation benchmarks with scaling analysis
+ - Performance SLO compliance verification (2,442× faster than 100ms target)
 
 ### Fixed
 
 - **Trait Object Debug Implementation**
-  - Added manual Debug impl for DynamicCommand containing trait objects
-  - Enables proper error handling and introspection
+ - Added manual Debug impl for DynamicCommand containing trait objects
+ - Enables proper error handling and introspection
 
 ### Performance
 
 - **Agent CLI Generation Benchmarks**
-  - 2×2 commands: 3.1µs
-  - 4×4 commands: 10.4µs
-  - 8×8 commands: 40.9µs (2.5× faster SLO)
-  - 10×10 commands: 60.8µs
-  - Batch generation: 386.2µs for 10 CLIs
-  - Throughput: 3.3M commands/sec
+ - 2×2 commands: 3.1µs
+ - 4×4 commands: 10.4µs
+ - 8×8 commands: 40.9µs (2.5× faster SLO)
+ - 10×10 commands: 60.8µs
+ - Batch generation: 386.2µs for 10 CLIs
+ - Throughput: 3.3M commands/sec
 
 ### Technical Details
 
@@ -271,37 +271,37 @@ myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
 ### Added
 
 - **ggen Integration & 10-Agent Swarm Phase 1-4 Deliverables**
-  - Complete integration of ggen (generation framework) for ontology-driven code generation
-  - 10-agent swarm coordination system for CLI code generation from Turtle specifications
-  - Phase 1-4 deliverables for ggen-clap-noun-verb integration
-  - Enhanced generated examples demonstrating end-to-end turtle → CLI generation
+ - Complete integration of ggen (generation framework) for ontology-driven code generation
+ - 10-agent swarm coordination system for CLI code generation from Turtle specifications
+ - Phase 1-4 deliverables for ggen-clap-noun-verb integration
+ - Enhanced generated examples demonstrating end-to-end turtle → CLI generation
 
 - **Frontier Package Integration Foundation (v5.4+)**
-  - 10 advanced agent-grade frontier packages with three-tier feature system:
-    - **Meta-framework**: Self-modifying agent frameworks with type-erased interfaces
-    - **RDF Composition**: Semantic ontology composition with SPARQL
-    - **Executable Specs**: Behavior-driven specifications (BDD)
-    - **Fractal Patterns**: Self-similar command hierarchies with arbitrary depth
-    - **Discovery Engine**: Dynamic capability discovery
-    - **Federated Network**: Multi-host agent coordination (libp2p)
-    - **Learning Trajectories**: ReasoningBank learning integration
-    - **Reflexive Testing**: Self-testing systems
-    - **Economic Simulation**: Agent economy simulations
-    - **Quantum-Ready**: Post-quantum cryptography support
-  - Convenience meta-features for bundled capability combinations
-  - Foundation infrastructure for distributed agent systems
+ - 10 advanced agent-grade frontier packages with three-tier feature system:
+ - **Meta-framework**: Self-modifying agent frameworks with type-erased interfaces
+ - **RDF Composition**: Semantic ontology composition with SPARQL
+ - **Executable Specs**: Behavior-driven specifications (BDD)
+ - **Fractal Patterns**: Self-similar command hierarchies with arbitrary depth
+ - **Discovery Engine**: Dynamic capability discovery
+ - **Federated Network**: Multi-host agent coordination (libp2p)
+ - **Learning Trajectories**: ReasoningBank learning integration
+ - **Reflexive Testing**: Self-testing systems
+ - **Economic Simulation**: Agent economy simulations
+ - **Quantum-Ready**: Post-quantum cryptography support
+ - Convenience meta-features for bundled capability combinations
+ - Foundation infrastructure for distributed agent systems
 
 - **Root-Level Verbs Support**
-  - New capability to define root-level verbs without noun prefix
-  - Enhanced command hierarchy flexibility for CLI design patterns
+ - New capability to define root-level verbs without noun prefix
+ - Enhanced command hierarchy flexibility for CLI design patterns
 
 ### Fixed
 
 - **Andon Signal Resolution**
-  - Resolved all compiler errors preventing clean builds
-  - Fixed lint violations and clippy warnings
-  - Improved code quality and removed complexity issues
-  - Enhanced production-readiness validation
+ - Resolved all compiler errors preventing clean builds
+ - Fixed lint violations and clippy warnings
+ - Improved code quality and removed complexity issues
+ - Enhanced production-readiness validation
 
 ### Technical Details
 
@@ -315,15 +315,15 @@ myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
 ### Fixed
 
 - **Critical: VerbArgs string argument extraction with numeric value_parser**
-  - Fixed panic when calling `get_one_str()` or `get_one_str_opt()` on arguments with numeric `value_parser` types (u16, u64, i64, f64, usize)
-  - Root cause: These methods were using `get_one::<String>()` which panics on type mismatch when clap stores values as numeric types
-  - Solution: Changed to use `get_raw()` which returns original CLI string regardless of value_parser type
-  - Affected methods: `VerbArgs::get_one_str()`, `VerbArgs::get_one_str_opt()`, `VerbArgs::get_global_str()`
+ - Fixed panic when calling `get_one_str()` or `get_one_str_opt()` on arguments with numeric `value_parser` types (u16, u64, i64, f64, usize)
+ - Root cause: These methods were using `get_one::<String>()` which panics on type mismatch when clap stores values as numeric types
+ - Solution: Changed to use `get_raw()` which returns original CLI string regardless of value_parser type
+ - Affected methods: `VerbArgs::get_one_str()`, `VerbArgs::get_one_str_opt()`, `VerbArgs::get_global_str()`
 
 - **Comprehensive argument handling tests**
-  - Added JTBD scenario tests for complex argument extraction scenarios
-  - Added 15 end-to-end execution tests covering numeric, boolean, count, and mixed arguments
-  - All tests pass with 100% success rate
+ - Added JTBD scenario tests for complex argument extraction scenarios
+ - Added 15 end-to-end execution tests covering numeric, boolean, count, and mixed arguments
+ - All tests pass with 100% success rate
 
 ### Technical Details
 
@@ -337,17 +337,17 @@ myapp services --start-after 2026-06-01   # Preferred (idiomatic kebab-case)
 ### Changed
 
 - **BREAKING: Telemetry is now optional (autonomic feature)**
-  - The `autonomic` feature is no longer included in default features
-  - Default builds now have only ~10 dependencies (previously ~18)
-  - Telemetry spans in `#[verb]` macros are conditionally generated based on `autonomic` feature
-  - To enable telemetry, add: `clap-noun-verb = { version = "5.3", features = ["autonomic"] }`
+ - The `autonomic` feature is no longer included in default features
+ - Default builds now have only ~10 dependencies (previously ~18)
+ - Telemetry spans in `#[verb]` macros are conditionally generated based on `autonomic` feature
+ - To enable telemetry, add: `clap-noun-verb = { version = "5.3", features = ["autonomic"] }`
 
 ### Fixed
 
 - **#[verb] macro no longer requires autonomic feature**
-  - Telemetry span generation is now wrapped in `#[cfg(feature = "autonomic")]`
-  - Users can now use `#[verb]` with truly minimal dependencies
-  - The `span!` proc macro also conditionally generates telemetry code
+ - Telemetry span generation is now wrapped in `#[cfg(feature = "autonomic")]`
+ - Users can now use `#[verb]` with truly minimal dependencies
+ - The `span!` proc macro also conditionally generates telemetry code
 
 ### Migration Guide
 
@@ -373,32 +373,32 @@ clap-noun-verb = "5.3"
 ### Added
 
 - **Typer-like Doc Comment Syntax for Argument Relationships (Phase 2)**
-  - New doc comment tags for declaring argument relationships inline with descriptions
-  - `[group: name]` - Argument belongs to exclusive group "name"
-  - `[requires: arg]` - Argument requires "arg" to be present
-  - `[conflicts: arg]` - Argument conflicts with "arg"
-  - `[env: VAR]` - Read value from environment variable VAR
-  - `[default: value]` - Default value if not provided
-  - `[value_hint: type]` - Shell completion hint (FilePath, DirPath, Url, etc.)
-  - `[hide]` - Hide argument from help output
-  - `[help_heading: name]` - Group arguments under heading in help
-  - `[global]` - Propagate argument to all subcommands
-  - `[exclusive]` - Argument cannot be used with any other arguments
+ - New doc comment tags for declaring argument relationships inline with descriptions
+ - `[group: name]` - Argument belongs to exclusive group "name"
+ - `[requires: arg]` - Argument requires "arg" to be present
+ - `[conflicts: arg]` - Argument conflicts with "arg"
+ - `[env: VAR]` - Read value from environment variable VAR
+ - `[default: value]` - Default value if not provided
+ - `[value_hint: type]` - Shell completion hint (FilePath, DirPath, Url, etc.)
+ - `[hide]` - Hide argument from help output
+ - `[help_heading: name]` - Group arguments under heading in help
+ - `[global]` - Propagate argument to all subcommands
+ - `[exclusive]` - Argument cannot be used with any other arguments
 
 - **Enhanced ArgMetadata Structure**
-  - New `value_hint` field for shell completion hints
-  - New `global` field for subcommand argument propagation
+ - New `value_hint` field for shell completion hints
+ - New `global` field for subcommand argument propagation
 
 - **Comprehensive Example**
-  - Updated `examples/arg_groups.rs` demonstrating all new Typer-like tags
-  - Real-world usage patterns for argument relationships
+ - Updated `examples/arg_groups.rs` demonstrating all new Typer-like tags
+ - Real-world usage patterns for argument relationships
 
 ### Fixed
 
 - **Critical Variable Shadowing Bug in Macro Generation**
-  - Fixed bug where user function parameters named "input" would shadow the HandlerInput wrapper parameter
-  - Renamed internal wrapper parameter from `input` to `__handler_input` to avoid conflicts
-  - All arg_extractions now use `__handler_input.args`/`__handler_input.opts`
+ - Fixed bug where user function parameters named "input" would shadow the HandlerInput wrapper parameter
+ - Renamed internal wrapper parameter from `input` to `__handler_input` to avoid conflicts
+ - All arg_extractions now use `__handler_input.args`/`__handler_input.opts`
 
 ### Technical Details
 
@@ -411,26 +411,26 @@ clap-noun-verb = "5.3"
 
 ### Added
 - **Quality Analysis & Testing Improvements**
-  - Poka-Yoke unfailable test architecture: Tests designed to be timing-independent and non-flaky
-  - Complete FMEA (Failure Mode & Effects Analysis): 19 failure modes identified across 8 subsystems
-  - Risk Priority Number (RPN) scoring for all identified failure modes (16 CRITICAL, 2 HIGH, 1 MEDIUM)
-  - Mitigation strategies and risk register tracking
+ - Poka-Yoke unfailable test architecture: Tests designed to be timing-independent and non-flaky
+ - Complete FMEA (Failure Mode & Effects Analysis): 19 failure modes identified across 8 subsystems
+ - Risk Priority Number (RPN) scoring for all identified failure modes (16 CRITICAL, 2 HIGH, 1 MEDIUM)
+ - Mitigation strategies and risk register tracking
 
 - **New Quality Documentation**
-  - `docs/quality/FMEA_ANALYSIS.md` - Complete failure mode analysis with RPN thresholds
-  - `docs/quality/POKA_YOKE_TEST_ARCHITECTURE.md` - Zero-flake test design patterns
-  - `docs/quality/MITIGATION_PLAN.md` - Detailed risk mitigation strategies for top risks
-  - `docs/quality/RISK_REGISTER.md` - Risk tracking and acceptance criteria
+ - `docs/quality/FMEA_ANALYSIS.md` - Complete failure mode analysis with RPN thresholds
+ - `docs/quality/POKA_YOKE_TEST_ARCHITECTURE.md` - Zero-flake test design patterns
+ - `docs/quality/MITIGATION_PLAN.md` - Detailed risk mitigation strategies for top risks
+ - `docs/quality/RISK_REGISTER.md` - Risk tracking and acceptance criteria
 
 - **Test Infrastructure**
-  - `tests/common/deterministic.rs` - Deterministic test utilities (TestContext, BoundedExecutor)
-  - Unfailable test tasks in Makefile.toml (test-lib-deterministic, test-unfailable)
-  - Single-threaded isolated test execution (RUST_TEST_THREADS=1)
+ - `tests/common/deterministic.rs` - Deterministic test utilities (TestContext, BoundedExecutor)
+ - Unfailable test tasks in Makefile.toml (test-lib-deterministic, test-unfailable)
+ - Single-threaded isolated test execution (RUST_TEST_THREADS=1)
 
 - **Playground Enhancements**
-  - ArXiv paper generator with full LaTeX output validation
-  - RDF/SPARQL interactive playground examples
-  - Enhanced playground guides and architecture documentation
+ - ArXiv paper generator with full LaTeX output validation
+ - RDF/SPARQL interactive playground examples
+ - Enhanced playground guides and architecture documentation
 
 ### Fixed
 - Test timeout configuration in Makefile.toml (1s → 10s for macro tests)
@@ -454,34 +454,34 @@ clap-noun-verb = "5.3"
 
 ### Fixed
 - **Test Compilation Errors**: Resolved all test compilation issues from v5.0.0
-  - Added missing `std::collections::BTreeMap` import in rdf validation tests
-  - Fixed `Result.len()` call in autonomic governance tests
-  - Removed unused imports causing warnings
-  - Fixed unnecessary mutability warnings in integration config tests
-  - Added `#[derive(Debug)]` to test structs for proper formatting
-  - Resolved duplicate span name conflicts in DX improvement tests
-  - Fixed type mismatch in agent2028 task allocation tests
+ - Added missing `std::collections::BTreeMap` import in rdf validation tests
+ - Fixed `Result.len()` call in autonomic governance tests
+ - Removed unused imports causing warnings
+ - Fixed unnecessary mutability warnings in integration config tests
+ - Added `#[derive(Debug)]` to test structs for proper formatting
+ - Resolved duplicate span name conflicts in DX improvement tests
+ - Fixed type mismatch in agent2028 task allocation tests
 
 - **Code Quality**: Eliminated all unwrap()/expect() usage (46 instances)
-  - Mutex/RwLock: Changed to `unwrap_or_else(|e| e.into_inner())` for poisoned mutex handling
-  - Floating point comparisons: Added `unwrap_or(Ordering::Equal)` for NaN safety
-  - Time operations: Changed to `unwrap_or_default()` for failure resilience
-  - JSON operations: Proper error handling with defaults
-  - All changes maintain full backward compatibility
+ - Mutex/RwLock: Changed to `unwrap_or_else(|e| e.into_inner())` for poisoned mutex handling
+ - Floating point comparisons: Added `unwrap_or(Ordering::Equal)` for NaN safety
+ - Time operations: Changed to `unwrap_or_default()` for failure resilience
+ - JSON operations: Proper error handling with defaults
+ - All changes maintain full backward compatibility
 
 - **Linting**: Resolved all clippy warnings
-  - Added missing `std::cmp::Ordering` imports (8 files)
-  - Configured pedantic lint exceptions for project patterns
-  - Removed unknown lint configurations
+ - Added missing `std::cmp::Ordering` imports (8 files)
+ - Configured pedantic lint exceptions for project patterns
+ - Removed unknown lint configurations
 
 ### Changed
 - **Test Organization**: Disabled incomplete v5.1 feature tests and examples
-  - Advanced capabilities (CapabilityContract, SessionBuilder not yet implemented)
-  - CNv4 integration features (v4 system types pending)
-  - GGEN template generation (partial implementation)
-  - SPARQL advanced features (QueryExecutor, SparqlParser pending)
-  - Kernel tests (grammar module not yet implemented)
-  - Files moved to `.disabled` extension for future re-enablement
+ - Advanced capabilities (CapabilityContract, SessionBuilder not yet implemented)
+ - CNv4 integration features (v4 system types pending)
+ - GGEN template generation (partial implementation)
+ - SPARQL advanced features (QueryExecutor, SparqlParser pending)
+ - Kernel tests (grammar module not yet implemented)
+ - Files moved to `.disabled` extension for future re-enablement
 
 ### Technical Details
 - **Macros**: clap-noun-verb-macros 5.0.0 → 5.1.0
@@ -518,14 +518,14 @@ clap-noun-verb = "5.3"
 ### Breaking Changes
 
 - **Telemetry API**: Direct telemetry access replaced with TelemetryManager facade
-  - Migration: Use `TelemetryManager::instance()` instead of direct telemetry calls
-  - See `docs/MIGRATION_V4_TO_V5.md` for step-by-step upgrade instructions
+ - Migration: Use `TelemetryManager::instance()` instead of direct telemetry calls
+ - See `docs/MIGRATION_V4_TO_V5.md` for step-by-step upgrade instructions
 - **Span API**: Now requires `trace_id` parameter for distributed tracing
-  - Migration: Add trace_id to all span creation calls
-  - Existing spans work but generate warnings
+ - Migration: Add trace_id to all span creation calls
+ - Existing spans work but generate warnings
 - **Dispatcher Architecture**: New routing layer between v4 and v5 execution paths
-  - Migration: Automatic - no user action needed for CLI features
-  - Machine integrations should use v5 introspection API
+ - Migration: Automatic - no user action needed for CLI features
+ - Machine integrations should use v5 introspection API
 
 ### Migration Guide
 
@@ -540,22 +540,22 @@ See `docs/MIGRATION_V4_TO_V5.md` for comprehensive upgrade instructions includin
 The following advanced features are **not included** in v5.0.0 but are planned for v5.1.0:
 
 - **Guards API** (`[v5.1 PLANNED]`) - Autonomic resource constraint enforcement
-  - Runtime budget enforcement for agent operations
-  - Declarative resource limits (memory, CPU, time)
-  - Automatic violation handling and recovery
-  - Status: Deferred (not in critical path for basic CLI usage)
+ - Runtime budget enforcement for agent operations
+ - Declarative resource limits (memory, CPU, time)
+ - Automatic violation handling and recovery
+ - Status: Deferred (not in critical path for basic CLI usage)
 
 - **Delegation API** (`[v5.1 PLANNED]`) - Multi-agent delegation chains
-  - Agent-to-agent capability transfer
-  - Cryptographic delegation proofs
-  - Delegation chain verification
-  - Status: Deferred (Agent2028 advanced feature)
+ - Agent-to-agent capability transfer
+ - Cryptographic delegation proofs
+ - Delegation chain verification
+ - Status: Deferred (Agent2028 advanced feature)
 
 - **Complete MCP Integration** (`[v5.1 PLANNED]`) - Full Model Context Protocol support
-  - MCP server implementation
-  - Tool discovery and registration
-  - Resource management protocol
-  - Status: Partial (introspection API complete, server integration in progress)
+ - MCP server implementation
+ - Tool discovery and registration
+ - Resource management protocol
+ - Status: Partial (introspection API complete, server integration in progress)
 
 **Rationale for Deferral:**
 - These are advanced features for autonomous agent systems
@@ -610,10 +610,10 @@ The following advanced features are **not included** in v5.0.0 but are planned f
 ### Fixed
 
 - **Macro Lint Suppression** - Auto-suppress `non_upper_case_globals` warning in `#[noun]` macro
-  - Both `#[noun]` and `#[verb]` macros now automatically suppress the naming convention warning
-  - Eliminates need for manual `#[allow(non_upper_case_globals)]` attributes
-  - Consistent warning suppression across all macro-generated statics
-  - Improved developer experience and cleaner generated code
+ - Both `#[noun]` and `#[verb]` macros now automatically suppress the naming convention warning
+ - Eliminates need for manual `#[allow(non_upper_case_globals)]` attributes
+ - Consistent warning suppression across all macro-generated statics
+ - Improved developer experience and cleaner generated code
 
 ### Documentation
 
@@ -643,9 +643,9 @@ Breaking changes from v3.x. See migration guide in docs/book/
 ### Changed
 
 - **Documentation** - Refactored README.md using Diátaxis documentation framework
-  - Removed version-specific sections for better maintainability
-  - Organized content by user needs (tutorials, how-to guides, reference, explanation)
-  - Improved structure and clarity
+ - Removed version-specific sections for better maintainability
+ - Organized content by user needs (tutorials, how-to guides, reference, explanation)
+ - Improved structure and clarity
 
 ### Migration Notes
 
@@ -656,10 +656,10 @@ No breaking changes. All v3.7.0 code continues to work without modification.
 ### Changed
 
 - **Registry refactoring** - Improved code organization in `src/cli/registry.rs`
-  - Extracted `build_noun_command()` method for better modularity
-  - Extracted `build_verb_command()` method for cleaner structure
-  - Extracted `add_arg_groups()` and `add_arguments()` helper methods
-  - Improved maintainability and readability
+ - Extracted `build_noun_command()` method for better modularity
+ - Extracted `build_verb_command()` method for cleaner structure
+ - Extracted `add_arg_groups()` and `add_arguments()` helper methods
+ - Improved maintainability and readability
 
 - **Dependencies** - Added `chicago-tdd-tools` as dev dependency for testing
 
@@ -711,11 +711,11 @@ No breaking changes. All v3.6.0 code continues to work without modification.
 ### Changed
 
 - **Dependencies updated**:
-  - Added `tokio` with rt and macros features
-  - Added `async-trait` for trait helper macro
-  - Added `serde_yaml` for YAML serialization
-  - Added `toml` for TOML serialization
-  - Added `clap_complete` for shell completion
+ - Added `tokio` with rt and macros features
+ - Added `async-trait` for trait helper macro
+ - Added `serde_yaml` for YAML serialization
+ - Added `toml` for TOML serialization
+ - Added `clap_complete` for shell completion
 
 - **Version bump**: 3.5.0 → 3.6.0 (minor release)
 
@@ -737,39 +737,39 @@ No breaking changes. All v3.5.0 code continues to work. v3.6.0 features are opt-
 
 #### Comprehensive Examples
 - **env_vars.rs** - Environment variable support example
-  - Reading configuration from environment variables: `#[arg(env = "VAR_NAME")]`
-  - Proper precedence: CLI args override env vars which override defaults
-  - Real-world configuration management scenario
+ - Reading configuration from environment variables: `#[arg(env = "VAR_NAME")]`
+ - Proper precedence: CLI args override env vars which override defaults
+ - Real-world configuration management scenario
 
 - **positional.rs** - Positional arguments example
-  - First positional argument: `#[arg(index = 0)]`
-  - Optional second positional argument: `#[arg(index = 1)]`
-  - Mixed positional and named arguments pattern (e.g., `git clone`)
+ - First positional argument: `#[arg(index = 0)]`
+ - Optional second positional argument: `#[arg(index = 1)]`
+ - Mixed positional and named arguments pattern (e.g., `git clone`)
 
 - **arg_actions.rs** - Advanced argument actions example
-  - Count action: `-v`, `-vv`, `-vvv` → 1, 2, 3
-  - SetFalse action: `--no-cache` style inverted flags
-  - Type-based auto-inference for actions
+ - Count action: `-v`, `-vv`, `-vvv` → 1, 2, 3
+ - SetFalse action: `--no-cache` style inverted flags
+ - Type-based auto-inference for actions
 
 - **arg_groups.rs** - Argument groups and constraints example
-  - Exclusive argument groups (mutually exclusive options)
-  - Argument dependencies: `#[arg(requires = "...")]`
-  - Argument conflicts: `#[arg(conflicts_with = "...")]`
+ - Exclusive argument groups (mutually exclusive options)
+ - Argument dependencies: `#[arg(requires = "...")]`
+ - Argument conflicts: `#[arg(conflicts_with = "...")]`
 
 #### Integration Testing
 - **Enabled 12 integration tests** - All tests in `tests/integration_examples.rs` now enabled
-  - `test_basic_example_help` - Basic example help output
-  - `test_basic_example_services_status` - Basic example command execution
-  - `test_services_example` - Services example functionality
-  - `test_services_example_logs` - Services with arguments
-  - `test_collector_example` - Collector pattern example
-  - `test_arguments_example` - Arguments with required/optional fields
-  - `test_arguments_example_with_flag` - Boolean flag support
-  - `test_validation_example` - Input validation
-  - `test_nested_example` - Nested command structures
-  - `test_framework_example` - Framework usage patterns
-  - `test_attribute_macro_example` - Attribute macro basics
-  - `test_attribute_macro_example_with_args` - Attribute macro with arguments
+ - `test_basic_example_help` - Basic example help output
+ - `test_basic_example_services_status` - Basic example command execution
+ - `test_services_example` - Services example functionality
+ - `test_services_example_logs` - Services with arguments
+ - `test_collector_example` - Collector pattern example
+ - `test_arguments_example` - Arguments with required/optional fields
+ - `test_arguments_example_with_flag` - Boolean flag support
+ - `test_validation_example` - Input validation
+ - `test_nested_example` - Nested command structures
+ - `test_framework_example` - Framework usage patterns
+ - `test_attribute_macro_example` - Attribute macro basics
+ - `test_attribute_macro_example_with_args` - Attribute macro with arguments
 
 ### Changed
 
@@ -783,19 +783,19 @@ No breaking changes. All existing code continues to work. v3.5.0 is a feature-co
 **New in this release:**
 1. All 12 integration tests are now enabled and part of the standard test suite
 2. Four additional examples demonstrating v3.2.0+ features:
-   - env_vars.rs: Environment variable handling
-   - positional.rs: Positional arguments
-   - arg_actions.rs: Advanced argument actions (count, set_false)
-   - arg_groups.rs: Argument groups and constraints
+ - env_vars.rs: Environment variable handling
+ - positional.rs: Positional arguments
+ - arg_actions.rs: Advanced argument actions (count, set_false)
+ - arg_groups.rs: Argument groups and constraints
 
 ## [3.4.0] - 2025-01-07
 
 ### Fixed
 - **Option<Option<T>> type inference bug** - Fixed double-wrapping of Option types in macro-generated code
-  - Changed `None::<Option<String>>` to `None` in ArgMetadata initialization (lines 789, 798, 866)
-  - Allows Rust compiler to correctly infer types from struct field context
-  - Resolves type mismatch errors when using Option<T> function parameters
-  - Validated with comprehensive TDD test suite
+ - Changed `None::<Option<String>>` to `None` in ArgMetadata initialization (lines 789, 798, 866)
+ - Allows Rust compiler to correctly infer types from struct field context
+ - Resolves type mismatch errors when using Option<T> function parameters
+ - Validated with comprehensive TDD test suite
 
 ### Changed
 - Disabled work-in-progress `arg_attributes` test files to unblock release
@@ -813,12 +813,12 @@ No breaking changes. All existing code continues to work. v3.5.0 is a feature-co
 ```rust
 #[verb("deploy")]
 fn deploy_service(
-    #[arg(value_parser = clap::value_parser!(PathBuf))]
-    config_file: PathBuf,
-    #[arg(value_parser = clap::value_parser!(IpAddr))]
-    host: IpAddr,
+  #[arg(value_parser = clap::value_parser!(PathBuf))]
+  config_file: PathBuf,
+  #[arg(value_parser = clap::value_parser!(IpAddr))]
+  host: IpAddr,
 ) -> Result<DeployOutput> {
-    Ok(deploy(config_file, host))
+  Ok(deploy(config_file, host))
 }
 ```
 
@@ -840,13 +840,13 @@ fn deploy_service(
 /// explanations and examples.
 #[verb("deploy")]
 fn deploy_service(
-    /// Port number (short help)
-    /// Detailed explanation of port configuration
-    /// appears on the next line in help output.
-    #[arg(long_help = "Detailed explanation of port configuration", next_line_help)]
-    port: u16,
+  /// Port number (short help)
+  /// Detailed explanation of port configuration
+  /// appears on the next line in help output.
+  #[arg(long_help = "Detailed explanation of port configuration", next_line_help)]
+  port: u16,
 ) -> Result<DeployOutput> {
-    Ok(deploy(port))
+  Ok(deploy(port))
 }
 ```
 
@@ -859,14 +859,14 @@ fn deploy_service(
 ```rust
 #[verb("config")]
 fn set_config(
-    #[arg(display_order = 1)]  // Appears first
-    host: String,
-    #[arg(display_order = 2)]  // Appears second
-    port: u16,
-    #[arg(display_order = 99)] // Appears last
-    debug: bool,
+  #[arg(display_order = 1)] // Appears first
+  host: String,
+  #[arg(display_order = 2)] // Appears second
+  port: u16,
+  #[arg(display_order = 99)] // Appears last
+  debug: bool,
 ) -> Result<Config> {
-    Ok(get_config(host, port, debug))
+  Ok(get_config(host, port, debug))
 }
 ```
 
@@ -879,12 +879,12 @@ fn set_config(
 ```rust
 #[verb("filter")]
 fn filter_items(
-    #[arg(group = "filter", exclusive = true)]
-    by_name: Option<String>,
-    #[arg(group = "filter", exclusive = true)]
-    by_id: Option<u64>,
+  #[arg(group = "filter", exclusive = true)]
+  by_name: Option<String>,
+  #[arg(group = "filter", exclusive = true)]
+  by_id: Option<u64>,
 ) -> Result<FilteredItems> {
-    Ok(filter(by_name, by_id))
+  Ok(filter(by_name, by_id))
 }
 ```
 
@@ -897,10 +897,10 @@ fn filter_items(
 ```rust
 #[verb("copy")]
 fn copy_files(
-    #[arg(trailing_vararg)]
-    files: Vec<String>,
+  #[arg(trailing_vararg)]
+  files: Vec<String>,
 ) -> Result<CopyResult> {
-    Ok(copy(files))
+  Ok(copy(files))
 }
 ```
 
@@ -918,10 +918,10 @@ myapp file copy file1.txt file2.txt file3.txt
 ```rust
 #[verb("offset")]
 fn apply_offset(
-    #[arg(allow_negative_numbers)]
-    offset: i32,
+  #[arg(allow_negative_numbers)]
+  offset: i32,
 ) -> Result<OffsetResult> {
-    Ok(apply(offset))
+  Ok(apply(offset))
 }
 ```
 
@@ -956,10 +956,10 @@ No breaking changes. All existing code continues to work. New features are opt-i
 ```rust
 #[verb("config")]
 fn set_config(
-    #[arg(env = "SERVER_PORT", default_value = "8080")]
-    port: u16,
+  #[arg(env = "SERVER_PORT", default_value = "8080")]
+  port: u16,
 ) -> Result<Config> {
-    Ok(get_config(port))
+  Ok(get_config(port))
 }
 ```
 
@@ -967,10 +967,10 @@ fn set_config(
 ```bash
 # Uses env var if set
 export SERVER_PORT=3000
-myapp config set  # Uses 3000
+myapp config set # Uses 3000
 
 # CLI arg overrides env var
-myapp config set --port 9090  # Uses 9090
+myapp config set --port 9090 # Uses 9090
 ```
 
 #### Positional Arguments
@@ -982,14 +982,14 @@ myapp config set --port 9090  # Uses 9090
 ```rust
 #[verb("clone")]
 fn clone_repo(
-    #[arg(index = 0)]
-    url: String,
-    #[arg(index = 1)]
-    destination: Option<String>,
-    #[arg(short = 'b')]
-    branch: Option<String>,
+  #[arg(index = 0)]
+  url: String,
+  #[arg(index = 1)]
+  destination: Option<String>,
+  #[arg(short = 'b')]
+  branch: Option<String>,
 ) -> Result<Repo> {
-    Ok(clone(url, destination, branch))
+  Ok(clone(url, destination, branch))
 }
 ```
 
@@ -1011,12 +1011,12 @@ myapp git clone https://example.com/repo.git ./local-dir --branch main
 ```rust
 #[verb("build")]
 fn build_project(
-    verbose: usize, // Auto-inferred as Count action (-v, -vv, -vvv)
-    #[arg(action = "set_false")]
-    cache: bool,    // SetFalse action (--no-cache)
-    debug: bool,    // Auto-inferred as SetTrue
+  verbose: usize, // Auto-inferred as Count action (-v, -vv, -vvv)
+  #[arg(action = "set_false")]
+  cache: bool,  // SetFalse action (--no-cache)
+  debug: bool,  // Auto-inferred as SetTrue
 ) -> Result<BuildResult> {
-    Ok(build(verbose, cache, debug))
+  Ok(build(verbose, cache, debug))
 }
 ```
 
@@ -1037,33 +1037,33 @@ myapp build --verbose --verbose --verbose --no-cache --debug
 ```rust
 #[verb("filter")]
 fn filter_items(
-    #[arg(group = "filter", requires = "value")]
-    by_name: Option<String>,
-    #[arg(group = "filter", requires = "value")]
-    by_id: Option<u64>,
-    #[arg(short = 'v')]
-    value: Option<String>,
-    #[arg(conflicts_with = "by_name")]
-    all: bool,
+  #[arg(group = "filter", requires = "value")]
+  by_name: Option<String>,
+  #[arg(group = "filter", requires = "value")]
+  by_id: Option<u64>,
+  #[arg(short = 'v')]
+  value: Option<String>,
+  #[arg(conflicts_with = "by_name")]
+  all: bool,
 ) -> Result<FilteredItems> {
-    Ok(filter(by_name, by_id, value, all))
+  Ok(filter(by_name, by_id, value, all))
 }
 ```
 
 **Usage:**
 ```bash
 # Exclusive group: by_name OR by_id
-myapp filter --by-name "test" --value "test-value"  # OK
-myapp filter --by-id 123 --value "test-value"      # OK
-myapp filter --by-name "test" --by-id 123          # Error: mutually exclusive
+myapp filter --by-name "test" --value "test-value" # OK
+myapp filter --by-id 123 --value "test-value"   # OK
+myapp filter --by-name "test" --by-id 123     # Error: mutually exclusive
 
 # Requires: by_name needs value
-myapp filter --by-name "test"                      # Error: requires value
-myapp filter --by-name "test" --value "test"      # OK
+myapp filter --by-name "test"           # Error: requires value
+myapp filter --by-name "test" --value "test"   # OK
 
 # Conflicts: all conflicts with by_name
-myapp filter --all                                # OK
-myapp filter --all --by-name "test"               # Error: conflicts
+myapp filter --all                # OK
+myapp filter --all --by-name "test"        # Error: conflicts
 ```
 
 #### Improved Help Generation
@@ -1079,13 +1079,13 @@ myapp filter --all --by-name "test"               # Error: conflicts
 /// in the detailed help output.
 #[verb("command")]
 fn my_command(
-    /// Visible argument
-    visible: String,
-    /// Hidden argument (not shown in help)
-    #[arg(hide = true)]
-    hidden: String,
+  /// Visible argument
+  visible: String,
+  /// Hidden argument (not shown in help)
+  #[arg(hide = true)]
+  hidden: String,
 ) -> Result<Output> {
-    Ok(create_output(visible, hidden))
+  Ok(create_output(visible, hidden))
 }
 ```
 
@@ -1126,21 +1126,21 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 struct Status {
-    services: Vec<String>,
-    healthy: bool,
+  services: Vec<String>,
+  healthy: bool,
 }
 
 /// Show service status
 #[verb] // Verb "status" auto-inferred, noun "services" auto-inferred from filename
 fn show_status() -> Result<Status> {
-    Ok(Status {
-        services: vec!["api".to_string()],
-        healthy: true,
-    })
+  Ok(Status {
+    services: vec!["api".to_string()],
+    healthy: true,
+  })
 }
 
 fn main() -> Result<()> {
-    clap_noun_verb::run() // Auto-discovers all commands!
+  clap_noun_verb::run() // Auto-discovers all commands!
 }
 ```
 
@@ -1171,8 +1171,8 @@ From v1.x to v3.0.0:
 ```rust
 // Old (v1.x)
 let cli = CliBuilder::new("myapp")
-    .noun("services", "Manage services")
-    .verb("services", "status", "Show status", handler);
+  .noun("services", "Manage services")
+  .verb("services", "status", "Show status", handler);
 cli.run()
 
 // New (v3.0.0)

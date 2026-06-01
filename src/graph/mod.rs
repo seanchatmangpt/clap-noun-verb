@@ -5,15 +5,15 @@
 //!
 //! Provides core types and operations for RDF triple management and querying.
 
+pub mod impl_generated;
 pub mod loader;
 pub mod query;
 pub mod validator;
-pub mod impl_generated;
 
+pub use impl_generated::{GeneratedLoader, GeneratedValidator, QueryPlanner};
 pub use loader::GraphLoadedOutput;
 pub use query::QueryResultOutput;
 pub use validator::ValidationResultOutput;
-pub use impl_generated::{GeneratedLoader, QueryPlanner, GeneratedValidator};
 
 use serde::{Deserialize, Serialize};
 

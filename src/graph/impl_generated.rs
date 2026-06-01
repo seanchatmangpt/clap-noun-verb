@@ -7,7 +7,7 @@
 //! loading, querying, and validation operations. These replace stub implementations
 //! with fully-featured domain logic.
 
-use super::{Graph, Triple, QueryResult, ValidationError};
+use super::{Graph, QueryResult, Triple, ValidationError};
 use std::fs;
 use std::time::Instant;
 
@@ -144,12 +144,7 @@ impl QueryPlanner {
             "predicate" => graph.query_by_predicate(&pattern),
             "object" => {
                 // Simple object matching: check if object contains pattern
-                graph
-                    .triples()
-                    .iter()
-                    .filter(|t| t.object.contains(&pattern))
-                    .cloned()
-                    .collect()
+                graph.triples().iter().filter(|t| t.object.contains(&pattern)).cloned().collect()
             }
             _ => {
                 return Err(crate::error::NounVerbError::execution_error(format!(

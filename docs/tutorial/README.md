@@ -31,44 +31,44 @@ By the end of this tutorial series, you'll be able to:
 **For**: Absolute beginners who want to build their first CLI
 
 1. **[Domain Separation Architecture](01-domain-separation.md)**
-   - The Golden Rule: CLI validates, domain computes
-   - Why separation matters
-   - Testable business logic
-   - **Time**: 10-15 minutes
+ - The Golden Rule: CLI validates, domain computes
+ - Why separation matters
+ - Testable business logic
+ - **Time**: 10-15 minutes
 
 2. **[Adding Multiple Commands](02-adding-multiple.md)**
-   - Multi-command CLIs
-   - File organization patterns
-   - Noun-verb naming conventions
-   - **Time**: 10-15 minutes
+ - Multi-command CLIs
+ - File organization patterns
+ - Noun-verb naming conventions
+ - **Time**: 10-15 minutes
 
 ### 📚 Core Features (1-2 hours)
 
 **For**: Developers building production CLIs
 
 3. **[Testing Basics](03-testing-basics.md)**
-   - Chicago TDD fundamentals
-   - State-based testing
-   - Real collaborators vs mocks
-   - **Time**: 20-30 minutes
+ - Chicago TDD fundamentals
+ - State-based testing
+ - Real collaborators vs mocks
+ - **Time**: 20-30 minutes
 
 4. **[Output Formats](04-output-formats.md)**
-   - JSON, YAML, TOML outputs
-   - ASCII table formatting
-   - Custom format selection
-   - **Time**: 15-20 minutes
+ - JSON, YAML, TOML outputs
+ - ASCII table formatting
+ - Custom format selection
+ - **Time**: 15-20 minutes
 
 5. **[Async Operations](05-async-operations.md)**
-   - Async command handlers
-   - Tokio runtime integration
-   - HTTP requests and database queries
-   - **Time**: 30-45 minutes
+ - Async command handlers
+ - Tokio runtime integration
+ - HTTP requests and database queries
+ - **Time**: 30-45 minutes
 
 6. **[Error Handling](06-error-handling.md)**
-   - Result<T,E> patterns
-   - Custom error types
-   - Structured error output
-   - **Time**: 30-45 minutes
+ - Result<T,E> patterns
+ - Custom error types
+ - Structured error output
+ - **Time**: 30-45 minutes
 
 ---
 

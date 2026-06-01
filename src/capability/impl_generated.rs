@@ -136,12 +136,7 @@ impl GeneratedRegistry {
     fn generate_package_id(&self, name: &str) -> String {
         format!(
             "pkg-{}",
-            name.to_lowercase()
-                .replace(' ', "-")
-                .replace('_', "-")
-                .chars()
-                .take(30)
-                .collect::<String>()
+            name.to_lowercase().replace([' ', '_'], "-").chars().take(30).collect::<String>()
         )
     }
 

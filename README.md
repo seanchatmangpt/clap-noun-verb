@@ -13,7 +13,7 @@ Add to `Cargo.toml`:
 ```toml
 [dependencies]
 clap-noun-verb = "26.6.1"
-clap-noun-verb-macros = "26.6.1"  # For proc-macros
+clap-noun-verb-macros = "26.6.1" # For proc-macros
 ```
 
 Or with `cargo add`:
@@ -27,8 +27,8 @@ cargo add clap-noun-verb clap-noun-verb-macros
 A **noun-verb command** separates domain concepts from actions. Instead of flat command names like `login` or `logout`, organize commands hierarchically:
 
 ```
-myapp session login          # noun: session, verb: login
-myapp session verify         # noun: session, verb: verify
+myapp session login     # noun: session, verb: login
+myapp session verify     # noun: session, verb: verify
 myapp user create --name Bob # noun: user, verb: create (with flags)
 ```
 
@@ -57,37 +57,37 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct CalcResult {
-    result: i32,
+  result: i32,
 }
 
 // Pure domain logic
 fn add(x: i32, y: i32) -> i32 {
-    x + y
+  x + y
 }
 
 // Thin CLI wrapper
 #[verb("add")]
 fn cmd_add(x: i32, y: i32) -> Result<CalcResult> {
-    Ok(CalcResult {
-        result: add(x, y),
-    })
+  Ok(CalcResult {
+    result: add(x, y),
+  })
 }
 
 #[verb("multiply")]
 fn cmd_multiply(
-    x: i32,
-    y: i32,
-    /// Profile to use [default: default]
-    #[arg(long)]
-    profile_id: Option<String>,
+  x: i32,
+  y: i32,
+  /// Profile to use [default: default]
+  #[arg(long)]
+  profile_id: Option<String>,
 ) -> Result<CalcResult> {
-    Ok(CalcResult {
-        result: x * y,
-    })
+  Ok(CalcResult {
+    result: x * y,
+  })
 }
 
 fn main() -> Result<()> {
-    clap_noun_verb::run()
+  clap_noun_verb::run()
 }
 ```
 
@@ -130,12 +130,12 @@ $ cargo run -- --help
 1. **Create a minimal noun:**
 
 ```rust
-mod services;  // Create src/services.rs
+mod services; // Create src/services.rs
 
 // src/services.rs
 #[clap_noun_verb_macros::verb("status")]
 fn cmd_status() -> clap_noun_verb::Result<Status> {
-    Ok(Status { healthy: true })
+  Ok(Status { healthy: true })
 }
 ```
 
@@ -146,7 +146,7 @@ fn cmd_status() -> clap_noun_verb::Result<Status> {
 mod services;
 
 fn main() -> Result<()> {
-    clap_noun_verb::run()
+  clap_noun_verb::run()
 }
 ```
 
@@ -162,13 +162,13 @@ $ cargo run -- services status
 ```rust
 #[verb("deploy")]
 fn cmd_deploy(
-    /// Service name
-    service: String,
-    /// Skip health checks [default: false]
-    #[arg(long)]
-    dry_run: bool,
+  /// Service name
+  service: String,
+  /// Skip health checks [default: false]
+  #[arg(long)]
+  dry_run: bool,
 ) -> Result<DeployResult> {
-    // Your logic here
+  // Your logic here
 }
 ```
 

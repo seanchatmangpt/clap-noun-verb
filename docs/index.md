@@ -1,8 +1,8 @@
 # clap-noun-verb Documentation Index
 
-**Version**: 26.5.28
+**Version**: 26.6.1
 **Framework**: [Diataxis](https://diataxis.fr/)
-**Last Updated**: 2026-05-28
+**Last Updated**: 2026-06-01
 
 ---
 
@@ -44,6 +44,11 @@ This documentation follows the **Diataxis framework**, organizing content into f
 - [Setup Help and Version](howto/setup-help-and-version.md) - `--help` and `--version` setup
 - [Testing](howto/testing.md) - Test strategies
 - [Validation](howto/validation.md) - Input validation techniques
+
+### Advanced Features (v26.6.1+)
+- [Graph Operations](howto/graph-operations.md) - Loading, querying, and validating RDF graphs
+- [Capability Packing](howto/capability-packing.md) - Registry-based capability management
+- [System Diagnostics](howto/diagnostics.md) - Health checks and status reporting
 
 ### Production Patterns
 - [Configure Applications](howto/production/configuration.md) - Config management
