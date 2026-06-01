@@ -20,7 +20,7 @@
 //! ```
 //!
 //! Generated output:
-//! ```rust
+//! ```rust,ignore
 //! /// Load a graph from file
 //! #[verb("load")]
 //! pub fn graph_load(
