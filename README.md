@@ -1,77 +1,54 @@
 # clap-noun-verb
 
-**Machine-grade CLI framework for AI agents and autonomous systems**
-
 [![Crates.io](https://img.shields.io/crates/v/clap-noun-verb)](https://crates.io/crates/clap-noun-verb)
 [![Documentation](https://docs.rs/clap-noun-verb/badge.svg)](https://docs.rs/clap-noun-verb)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](LICENSE)
 
-**Current Version**: "26.5.28" | [Changelog](CHANGELOG.md) | [API Reference](docs/reference/api-catalog.md)
-
-> **Architecture First:** CLI is interface, not application. Separate domain logic from CLI.
-
----
-
-## Documentation by Use Case
-
-### 🎓 Learning from Scratch?
-**Start:** [Domain Separation Architecture](docs/tutorial/02-domain-separation.md)
-→ [Tutorial Series](docs/tutorial/README.md) — 6 progressive lessons (10 mins - 2 hours)
-
-### 🔧 Solving a Problem?
-**Start:** [How-To Guides](docs/howto/README.md)
-→ [How-To Production Guides](docs/howto/production/deployment.md) — Deployment, monitoring, configuration, security
-
-### 📖 Looking Up an API?
-**Start:** [Reference: #[verb] Macro](docs/reference/api/verb-macro.md)
-→ [API Reference](docs/reference/README.md) — Types, errors, CLI runner
-
-### 🤔 Understanding Design?
-**Start:** [Architecture Philosophy](docs/explanation/README.md)
-→ Why domain separation, type-first thinking, agent-grade CLIs
-
----
-
-## Architecture Principle
-
-**The Golden Rule:** CLI validates, domain computes, integration connects.
-
-```
-┌─────────────┐
-│   CLI Layer │  ← clap-noun-verb (this crate)
-│  (thin, UI) │
-└──────┬──────┘
-       │
-┌──────▼──────────┐
-│ Integration     │  ← Glue code (minimal)
-└──────┬──────────┘
-       │
-┌──────▼──────────┐
-│  Domain Logic   │  ← Your business logic (pure, testable)
-│  (pure, tested) │
-└─────────────────┘
-```
-
-**Why this matters:**
-- CLI layer is thin validation and routing
-- Domain logic is pure Rust functions (testable, reusable)
-- Integration glues CLI to domain
-- Tests focus on domain, not CLI parsing
-
----
+**Declarative noun-verb CLI framework for type-safe, agent-ready command registration.**
 
 ## Installation
 
+Add to `Cargo.toml`:
+
 ```toml
 [dependencies]
-clap-noun-verb = "26.5.28"
+clap-noun-verb = "26.6.1"
+clap-noun-verb-macros = "26.6.1"  # For proc-macros
 ```
 
-For development: also add `clap-noun-verb-macros = "26.5.28"`
+Or with `cargo add`:
 
----
+```bash
+cargo add clap-noun-verb clap-noun-verb-macros
+```
 
-## 2-Minute Example
+## The Noun-Verb Pattern
+
+A **noun-verb command** separates domain concepts from actions. Instead of flat command names like `login` or `logout`, organize commands hierarchically:
+
+```
+myapp session login          # noun: session, verb: login
+myapp session verify         # noun: session, verb: verify
+myapp user create --name Bob # noun: user, verb: create (with flags)
+```
+
+This pattern naturally maps to your domain model:
+
+- **Noun** = a resource or entity (user, session, config)
+- **Verb** = an action on that noun (create, list, delete, verify)
+
+The `#[noun]` and `#[verb]` proc-macros auto-discover and register all commands at compile time. No manual routing.
+
+## Quick Start
+
+Here's a working example in 2 minutes. Create a new Rust project:
+
+```bash
+cargo new myapp && cd myapp
+cargo add clap-noun-verb clap-noun-verb-macros serde
+```
+
+Add to `src/main.rs`:
 
 ```rust
 use clap_noun_verb_macros::verb;
@@ -79,17 +56,34 @@ use clap_noun_verb::Result;
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct CalcResult { result: i32 }
+pub struct CalcResult {
+    result: i32,
+}
 
-// Business logic (pure, testable)
-fn add(x: i32, y: i32) -> i32 { x + y }
+// Pure domain logic
+fn add(x: i32, y: i32) -> i32 {
+    x + y
+}
 
-// CLI wrapper (thin, delegating)
-//
-// Noun "calc" is auto-detected from the filename (e.g., calc.rs)
+// Thin CLI wrapper
 #[verb("add")]
 fn cmd_add(x: i32, y: i32) -> Result<CalcResult> {
-    Ok(CalcResult { result: add(x, y) })
+    Ok(CalcResult {
+        result: add(x, y),
+    })
+}
+
+#[verb("multiply")]
+fn cmd_multiply(
+    x: i32,
+    y: i32,
+    /// Profile to use [default: default]
+    #[arg(long)]
+    profile_id: Option<String>,
+) -> Result<CalcResult> {
+    Ok(CalcResult {
+        result: x * y,
+    })
 }
 
 fn main() -> Result<()> {
@@ -97,160 +91,106 @@ fn main() -> Result<()> {
 }
 ```
 
-**Usage:**
+Run it:
+
 ```bash
-$ myapp calc add 2 3
+$ cargo run -- calc add 2 3
 {"result": 5}
+
+$ cargo run -- calc multiply 4 5 --profile-id premium
+{"result": 20}
+
+$ cargo run -- --help
 ```
 
-**Key:** Delegate to pure domain logic immediately. CLI only validates.
+**Key Points:**
+- Verbs are registered via `#[verb("name")]` macro.
+- Nouns are auto-detected from module structure.
+- Flags are kebab-case by convention (`--profile-id`, `--dry-run`).
+- Output is JSON by default (agent-ready).
 
----
+## Feature Matrix
 
-## Doc Comment Tags
+| Feature | Type | Example |
+|---------|------|---------|
+| Noun-verb auto-discovery | Required | `#[verb("add")]` registers `calc add` |
+| Doc comment tags (`#[arg]`) | Required | `[default: json]`, `[group: format]`, `[env: VAR]` |
+| Kebab-case flag normalization | Required | `--profile-id`, `--dry-run` (idiomatic CLI) |
+| JSON output formatting | Required | All results serialize to JSON by default |
+| In-process command chaining (`++`) | Optional | `myapp session login ++ session verify @{1.token}` |
+| Stdin extraction (`@-`, `@-::json.path`) | Optional | `echo '{"x": 5}' \| myapp cmd @-::x` |
+| Dynamic shell completions | Optional | `myapp completions zsh` |
+| LLM introspection (`--introspect`) | Optional | Output tool schema for OpenAI/Anthropic |
+| Structured errors (`--structured-errors`) | Optional | JSON error format with action templates |
+| Interactive REPL mode | Feature-gated (`repl`) | `clap_noun_verb::Repl::new(registry).run()` |
+| Tracing & telemetry | Feature-gated (`telemetry`) | OpenTelemetry integration with W3C traceparent |
 
-**Typer-like Doc Comment Syntax** for argument configuration:
+## Playground How-To
+
+1. **Create a minimal noun:**
 
 ```rust
-/// # Arguments
-/// * `format` - Output format [env: OUTPUT_FORMAT] [default: json]
-/// * `json` - Export as JSON [group: format]
-/// * `yaml` - Export as YAML [group: format]
-/// * `output` - Output file [requires: format] [value_hint: FilePath]
-#[verb("export")]
-fn export(json: bool, yaml: bool, format: Option<String>, output: Option<String>) -> Result<Output> {
-    // [group:] makes json and yaml mutually exclusive
-    // [requires:] ensures output needs format
-    // [env:] and [value_hint:] provide sensible defaults/hints
+mod services;  // Create src/services.rs
+
+// src/services.rs
+#[clap_noun_verb_macros::verb("status")]
+fn cmd_status() -> clap_noun_verb::Result<Status> {
+    Ok(Status { healthy: true })
 }
 ```
 
-**New tags in v5.2.0:**
-- `[group: name]` - Exclusive argument group
-- `[requires: arg]` - Argument dependency
-- `[conflicts: arg]` - Mutually exclusive arguments
-- `[env: VAR]` - Read from environment
-- `[default: value]` - Default value
-- `[value_hint: type]` - Shell completion hint
-- `[hide]` - Hide from help
-- `[help_heading: name]` - Organize help output
-- `[global]` - Propagate to subcommands
-- `[exclusive]` - Can't combine with other args
-
-See [API Catalog](docs/reference/api-catalog.md) for complete details.
-
----
-
-## Advanced Features (v5.6+)
-
-### ⛓️ In-Process Command Chaining (`++`)
-Execute multiple commands sequentially within a single process run. Separate independent steps using `++`. Steps are executed in order, and results from preceding steps can be interpolated into subsequent step arguments using standard JSONPath-like notation `@{<step_index>.<key>}` (1-based index):
-```bash
-$ myapp session login john_doe ++ session verify @{1.token}
-```
-
-### 📥 Stdin Stream Extraction (`@-` and `@-::key`)
-Inject standard input streams dynamically into command arguments:
-- Use `@-` to read the entire stdin buffer as a raw string argument.
-- Use `@-::json.path` to parse stdin as JSON and extract nested attributes.
-
-```bash
-# Read raw stdin string:
-$ echo "my-secret-key" | myapp auth login --key @-
-
-# Extract specific JSON key:
-$ echo '{"user": {"token": "abc123xyz"}}' | myapp session verify @-::user.token
-```
-
-### 🐚 Dynamic Shell Completions Command
-Generate dynamic tab-completions scripts for `bash`, `zsh`, `fish`, and `powershell`. Simply register the completions subcommand using the fluent builder:
+2. **Register the noun in main:**
 
 ```rust
+// src/main.rs
+mod services;
+
 fn main() -> Result<()> {
-    clap_noun_verb::build_cli()
-        .with_completions_subcommand()
-        .run()
-}
-```
-Users can then run:
-```bash
-$ myapp completions zsh > ~/.zsh/completion/_myapp
-```
-
-### 🤖 LLM Agent Introspection (`--introspect`)
-Query capability metadata dynamically. Passing the global `--introspect` flag instructs the CLI to output all registered commands as a standard JSON Schema array of tools. This format is fully compatible with OpenAI, Anthropic, and Model Context Protocol (MCP) tool-calling specifications:
-```bash
-$ myapp --introspect
-```
-
-### 🚨 Autonomic Structured Errors (`--structured-errors`)
-The `--structured-errors` (or `--autonomic`) global flag formats errors using a machine-readable JSON format matching the autonomic MAPE-K control loop pattern:
-```bash
-$ myapp calc add invalid_arg --structured-errors
-```
-Output:
-```json
-{
-  "kind": "InvalidInput",
-  "severity": "Error",
-  "message": "Argument parsing failed: invalid digit found in string",
-  "details": {
-    "message": "invalid digit found in string"
-  },
-  "action_templates": []
-}
-```
-If a command is misspelled, suggestion action templates are returned:
-```json
-{
-  "kind": "CommandNotFound",
-  "severity": "Error",
-  "message": "Command 'cal' not found. Did you mean: calc?",
-  "details": {
-    "noun": "cal",
-    "suggestion": ". Did you mean: calc?"
-  },
-  "action_templates": [
-    {
-      "suggested_command": "calc",
-      "reason": "Suggested correction for misspelled command 'cal'"
-    }
-  ]
+    clap_noun_verb::run()
 }
 ```
 
-### 💬 Interactive REPL Mode
-Start an interactive shell loop with auto-completions and persistent history. (Requires the `repl` feature flag).
-To run:
+3. **Run:**
+
+```bash
+$ cargo run -- services status
+{"healthy": true}
+```
+
+4. **Add arguments to verbs:**
+
 ```rust
-#[cfg(feature = "repl")]
-{
-    let registry = clap_noun_verb::CommandRegistry::get();
-    let repl = clap_noun_verb::Repl::new(registry.lock().unwrap().clone())
-        .with_history_file(std::path::PathBuf::from(".myapp_history"));
-    repl.run()?;
+#[verb("deploy")]
+fn cmd_deploy(
+    /// Service name
+    service: String,
+    /// Skip health checks [default: false]
+    #[arg(long)]
+    dry_run: bool,
+) -> Result<DeployResult> {
+    // Your logic here
 }
 ```
-Inside the interactive REPL shell:
-```bash
-myapp> calc add 2 3
-{"result": 5}
-myapp> exit
-```
 
-For more details on completions, parameter chaining, stdin extraction, LLM introspection, and REPL mode, see the [Advanced Features Reference](docs/reference/api/advanced-features.md). For distributed tracing, metrics, and W3C traceparents, see the [Telemetry Reference](docs/reference/api/telemetry.md).
+## Learn More
 
----
+### Tutorials
+- [Domain Separation Architecture](docs/tutorial/02-domain-separation.md) — Learn the separation of concerns pattern
+- [Tutorial Series](docs/tutorial/README.md) — 6 progressive lessons (10 mins to 2 hours)
 
-## Key Highlights
+### How-Tos
+- [How-To Guides](docs/howto/README.md) — Solve specific problems (testing, errors, custom formatting)
+- [Production Guides](docs/howto/production/deployment.md) — Deployment, monitoring, configuration, security
 
-✅ **Type-Safe By Construction** - Compile-time validation of commands
-✅ **Zero-Cost Abstractions** - Generics & macros, no runtime overhead
-✅ **Domain-Separated** - Thin CLI layer + pure domain logic
-✅ **Agent-Ready** - JSON output, introspection, MCP compatible
-✅ **Production Tested** - 100% pass rate, comprehensive examples
+### Reference
+- [#[verb] Macro API](docs/reference/api/verb-macro.md) — Detailed syntax and options
+- [API Reference](docs/reference/README.md) — Types, errors, CLI runner, telemetry
+- [Advanced Features](docs/reference/api/advanced-features.md) — Chaining, introspection, REPL, completions
+- [API Catalog](docs/reference/api-catalog.md) — Doc comment tags, argument configuration
 
----
+### Explanations
+- [Architecture Philosophy](docs/explanation/README.md) — Why noun-verb design, type-first thinking, agent-grade CLIs
+- [Changelog](CHANGELOG.md) — Version history and breaking changes
 
 ## Contributing
 
