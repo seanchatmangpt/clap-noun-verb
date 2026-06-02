@@ -1,11 +1,15 @@
 [package]
 name = "cargo-cicd"
-version = "26.6.1"
+version = "26.6.2"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
 authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
-description = "Cargo CI/CD toolkit: target inspection, test selection, and trybuild fixture management"
+description = "Local-first CI/CD helpers for Rust workspaces: clean target dirs, run changed tests, check git state, and publish cicd.toml"
+homepage = "https://github.com/seanchatmangpt/clap-noun-verb/tree/main/crates/cargo-cicd"
+repository = "https://github.com/seanchatmangpt/clap-noun-verb"
+keywords = ["cargo", "cicd", "workspace", "testing", "git"]
+categories = ["development-tools::cargo-plugins"]
 
 [[bin]]
 name = "cargo-cicd"
