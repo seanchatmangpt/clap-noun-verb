@@ -406,10 +406,15 @@ impl CommandRegistry {
 
         if steps.is_empty() {
             let cmd = self.build_command();
-            let matches = cmd
-                .clone()
-                .try_get_matches_from(vec![binary_name])
-                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+            let matches = cmd.clone().try_get_matches_from(vec![binary_name]).map_err(|e| {
+                if e.kind() == clap::error::ErrorKind::DisplayHelp
+                    || e.kind() == clap::error::ErrorKind::DisplayVersion
+                {
+                    e.print().ok();
+                    std::process::exit(0);
+                }
+                NounVerbError::argument_error(e.to_string())
+            })?;
 
             if matches.get_flag("introspect") {
                 let tools = collect_tools_from_cmd(&cmd, "");
@@ -433,10 +438,15 @@ impl CommandRegistry {
             step_args.extend(processed_args);
 
             let cmd = self.build_command();
-            let matches = cmd
-                .clone()
-                .try_get_matches_from(step_args)
-                .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+            let matches = cmd.clone().try_get_matches_from(step_args).map_err(|e| {
+                if e.kind() == clap::error::ErrorKind::DisplayHelp
+                    || e.kind() == clap::error::ErrorKind::DisplayVersion
+                {
+                    e.print().ok();
+                    std::process::exit(0);
+                }
+                NounVerbError::argument_error(e.to_string())
+            })?;
 
             if matches.get_flag("introspect") {
                 let tools = collect_tools_from_cmd(&cmd, "");
