@@ -18,16 +18,16 @@
 //! # Examples
 //!
 //! ```no_run
-//! use cargo_cicd::{TargetScanning, TestPlan};
+//! use cargo_cicd::{TargetScanning, adapters::GitDiff};
 //! use std::path::PathBuf;
 //!
 //! // Scan target directory
 //! let info = TargetScanning::scan(PathBuf::from("target"))?;
 //! println!("Target size: {} GB", info.total_size_gb);
 //!
-//! // Determine which tests to run
-//! let plan = TestPlan::discover()?;
-//! println!("Test suites affected: {:?}", plan);
+//! // Determine which files changed
+//! let changed = GitDiff::changed_files(Some("origin/main".to_string()))?;
+//! println!("Changed files: {:?}", changed.changed_files);
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
