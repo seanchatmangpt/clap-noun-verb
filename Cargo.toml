@@ -1,5 +1,5 @@
 [workspace]
-members = ["unibit-cli", "speckit-ralph", "utils", "clap-noun-verb-macros"]
+members = ["unibit-cli", "speckit-ralph", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments"]
 # Exclude standalone playground CLI (uses published crates.io version) and vendors directory
 exclude = ["playground", "examples/playground", "vendors"]
 

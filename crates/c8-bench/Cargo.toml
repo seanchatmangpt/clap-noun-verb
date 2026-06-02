@@ -1,0 +1,18 @@
+[package]
+name = "c8-bench"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+description = "CONSTRUCT8 Performance Benchmarks - branchless hot path validation"
+
+[dependencies]
+c8-core = { path = "../c8-core" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "construct8_apply"
+harness = false
