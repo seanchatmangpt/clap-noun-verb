@@ -5,6 +5,7 @@
 
 use cargo_cicd::commands::{
     TargetPruneOutput, TargetShowOutput, TestChangedOutput, TrybuildChangedOutput,
+    GitStatusOutput, WorkspaceDoctorOutput, WorkspaceStatusOutput, PublishOutput,
 };
 
 #[test]
@@ -80,4 +81,72 @@ fn test_trybuild_changed_serialization() {
 
     assert!(json.is_object());
     assert!(json["scope"].is_string());
+}
+
+#[test]
+fn test_git_status_output_structure() {
+    // Test that GitStatusOutput can be serialized
+    let json = serde_json::json!({
+        "branch_name": "main",
+        "dirty_count": 0,
+        "dirty_sample": [],
+        "staged_count": 0,
+        "untracked_count": 0,
+        "ahead": 0,
+        "behind": 0,
+        "has_upstream": true,
+        "recommended_action": "All clean; ready to push"
+    });
+
+    assert!(json.is_object());
+    assert_eq!(json["branch_name"], "main");
+}
+
+#[test]
+fn test_workspace_doctor_output_structure() {
+    // Test that WorkspaceDoctorOutput can be serialized
+    let json = serde_json::json!({
+        "verdict": "healthy",
+        "metadata_healthy": true,
+        "git_healthy": true,
+        "target_healthy": true,
+        "target_size_gb": 2.5,
+        "dirty_files": 0,
+        "untracked_files": 0,
+        "workspace_members": 2
+    });
+
+    assert!(json.is_object());
+    assert_eq!(json["verdict"], "healthy");
+}
+
+#[test]
+fn test_workspace_status_output_structure() {
+    // Test that WorkspaceStatusOutput can be serialized
+    let json = serde_json::json!({
+        "dirty_count": 0,
+        "target_size_gb": 2.5,
+        "changed_files": 0,
+        "git_phase": "clean",
+        "verdict": "ready",
+        "recommended_next_action": "Ready for CI"
+    });
+
+    assert!(json.is_object());
+    assert_eq!(json["git_phase"], "clean");
+}
+
+#[test]
+fn test_publish_output_structure() {
+    // Test that PublishOutput can be serialized
+    let json = serde_json::json!({
+        "success": true,
+        "cicd_toml_path": "cicd.toml",
+        "workspace_members": 1,
+        "event_recorded": true,
+        "message": "Published cicd.toml as process carrier"
+    });
+
+    assert!(json.is_object());
+    assert_eq!(json["cicd_toml_path"], "cicd.toml");
 }

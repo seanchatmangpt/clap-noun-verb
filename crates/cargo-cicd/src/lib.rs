@@ -19,5 +19,8 @@
 pub mod adapters;
 pub mod commands;
 
-pub use adapters::{CargoMetadata, FixtureDetection, GitDiff, TargetScanning, TestPlan};
-pub use commands::{TargetPruneOutput, TargetShowOutput, TestChangedOutput, TrybuildChangedOutput};
+pub use adapters::{CargoMetadata, FixtureDetection, GitDiff, GitStatus, GitCommit, TargetScanning, TestPlan, WorkspaceDoctor};
+pub use commands::{
+    TargetPruneOutput, TargetShowOutput, TestChangedOutput, TrybuildChangedOutput, GitStatusOutput,
+    GitCloseOutput, WorkspaceDoctorOutput, WorkspaceStatusOutput, PublishOutput,
+};
