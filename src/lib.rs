@@ -67,6 +67,9 @@ pub mod telemetry;
 pub mod tree;
 pub mod verb;
 
+// Autonomic CI/CD policies
+pub mod policies;
+
 // =============================================================================
 // SPECIMEN INTEGRATION - Production-ready modules from specimen CLI
 // =============================================================================
@@ -132,6 +135,12 @@ pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
+
+// Autonomic policies
+pub use policies::{
+    GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict,
+    TargetPressurePolicy, ToolchainMismatchPolicy, TrybuildChangedPolicy,
+};
 
 // Context and formatting (always available)
 pub use context::AppContext;

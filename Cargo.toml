@@ -61,6 +61,18 @@ name = "clap-noun-verb-gen"
 path = "src/bin/clap-noun-verb-gen.rs"
 
 [features]
+default = []
+
+# Process data pipeline features (serde/serde_json already always present)
+process-data = []
+
+# Autonomic CI/CD policies
+autonomic = ["process-data"]
+
+# Contributor features
+contrib = ["process-data"]
+
+# Interactive REPL
 repl = ["dep:rustyline"]
 
 # =============================================================================
