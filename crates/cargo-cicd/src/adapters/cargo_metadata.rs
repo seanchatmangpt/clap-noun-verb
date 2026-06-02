@@ -23,17 +23,10 @@ impl CargoMetadata {
 
         let root = metadata.workspace_root.clone().into();
         let target_directory = metadata.target_directory.clone().into();
-        let members = metadata
-            .workspace_members
-            .iter()
-            .map(|id| metadata[id].name.clone())
-            .collect();
+        let members =
+            metadata.workspace_members.iter().map(|id| metadata[id].name.clone()).collect();
 
-        Ok(WorkspaceInfo {
-            root,
-            members,
-            target_directory,
-        })
+        Ok(WorkspaceInfo { root, members, target_directory })
     }
 
     /// Get all crates in workspace

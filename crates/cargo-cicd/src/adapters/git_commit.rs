@@ -78,10 +78,7 @@ impl GitCommit {
             Ok(CommitResult {
                 success: false,
                 commit_hash: None,
-                message: format!(
-                    "Commit failed: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                ),
+                message: format!("Commit failed: {}", String::from_utf8_lossy(&output.stderr)),
                 event_recorded: false,
             })
         }
@@ -89,10 +86,8 @@ impl GitCommit {
 
     /// Push to remote if configured
     pub fn push() -> Result<bool> {
-        let output = Command::new("git")
-            .args(&["push"])
-            .output()
-            .context("Failed to execute git push")?;
+        let output =
+            Command::new("git").args(&["push"]).output().context("Failed to execute git push")?;
 
         Ok(output.status.success())
     }
@@ -103,10 +98,7 @@ impl GitCommit {
             .output()
             .context("Failed to get dirty files")?;
 
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .map(|l| l.to_string())
-            .collect())
+        Ok(String::from_utf8_lossy(&output.stdout).lines().map(|l| l.to_string()).collect())
     }
 
     fn get_staged_files() -> Result<Vec<String>> {
@@ -115,24 +107,15 @@ impl GitCommit {
             .output()
             .context("Failed to get staged files")?;
 
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .map(|l| l.to_string())
-            .collect())
+        Ok(String::from_utf8_lossy(&output.stdout).lines().map(|l| l.to_string()).collect())
     }
 
     fn stage_file(file: &str) -> Result<()> {
-        let output = Command::new("git")
-            .args(&["add", file])
-            .output()
-            .context("Failed to stage file")?;
+        let output =
+            Command::new("git").args(&["add", file]).output().context("Failed to stage file")?;
 
         if !output.status.success() {
-            anyhow::bail!(
-                "Failed to stage {}: {}",
-                file,
-                String::from_utf8_lossy(&output.stderr)
-            );
+            anyhow::bail!("Failed to stage {}: {}", file, String::from_utf8_lossy(&output.stderr));
         }
 
         Ok(())
@@ -144,8 +127,6 @@ impl GitCommit {
             .output()
             .context("Failed to get commit hash")?;
 
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string())
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 }

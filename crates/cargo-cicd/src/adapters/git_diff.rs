@@ -67,13 +67,7 @@ impl GitDiff {
                 let is_macro = f.contains("macro") || f.contains("derive");
                 let module_path = Self::extract_module_path(f);
 
-                FileClassification {
-                    path: f.clone(),
-                    is_test,
-                    is_lib,
-                    is_macro,
-                    module_path,
-                }
+                FileClassification { path: f.clone(), is_test, is_lib, is_macro, module_path }
             })
             .collect()
     }
@@ -81,9 +75,7 @@ impl GitDiff {
     fn extract_module_path(file_path: &str) -> String {
         if let Some(src_idx) = file_path.find("src/") {
             let rest = &file_path[src_idx + 4..];
-            rest.replace("/", "::")
-                .replace(".rs", "")
-                .replace("mod", "")
+            rest.replace("/", "::").replace(".rs", "").replace("mod", "")
         } else {
             file_path.to_string()
         }

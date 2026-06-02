@@ -181,14 +181,11 @@ fn handle_git(command: GitCommand) -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&output)?);
             Ok(())
         }
-        GitCommand::Close {
-            message,
-            files,
-            push,
-        } => {
+        GitCommand::Close { message, files, push } => {
             let default_message = "feat(cicd): phase boundary close";
             let commit_msg = message.as_deref().unwrap_or(default_message);
-            let files_to_stage = files.map(|f| f.split(',').map(|s| s.trim().to_string()).collect());
+            let files_to_stage =
+                files.map(|f| f.split(',').map(|s| s.trim().to_string()).collect());
             let output = commands::GitCloseOutput::execute(commit_msg, files_to_stage, push)?;
             println!("{}", serde_json::to_string_pretty(&output)?);
             Ok(())

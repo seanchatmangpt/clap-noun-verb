@@ -8,8 +8,8 @@
 
 use anyhow::{Context, Result};
 use serde::Serialize;
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 /// Fixture detection for trybuild
 pub struct FixtureDetection;
@@ -31,11 +31,8 @@ pub enum FixtureScope {
 impl FixtureDetection {
     /// Detect changed fixtures from git changes
     pub fn detect(changed_files: &[String]) -> Result<FixtureInfo> {
-        let changed_fixtures: Vec<String> = changed_files
-            .iter()
-            .filter(|f| f.contains("trybuild/"))
-            .map(|f| f.clone())
-            .collect();
+        let changed_fixtures: Vec<String> =
+            changed_files.iter().filter(|f| f.contains("trybuild/")).map(|f| f.clone()).collect();
 
         // Count total fixtures in the project
         let total_fixtures = Self::count_total_fixtures()?;
@@ -48,11 +45,7 @@ impl FixtureDetection {
             FixtureScope::Full
         };
 
-        Ok(FixtureInfo {
-            changed_fixtures,
-            total_fixtures,
-            scope,
-        })
+        Ok(FixtureInfo { changed_fixtures, total_fixtures, scope })
     }
 
     /// List all fixtures that need updating
@@ -78,11 +71,7 @@ impl FixtureDetection {
             .flatten()
             .filter(|entry| {
                 if let Ok(metadata) = entry.metadata() {
-                    metadata.is_file()
-                        && entry
-                            .file_name()
-                            .to_string_lossy()
-                            .ends_with(".rs")
+                    metadata.is_file() && entry.file_name().to_string_lossy().ends_with(".rs")
                 } else {
                     false
                 }

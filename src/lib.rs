@@ -138,8 +138,8 @@ pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
 // Autonomic policies
 pub use policies::{
-    GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict,
-    TargetPressurePolicy, ToolchainMismatchPolicy, TrybuildChangedPolicy,
+    GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict, TargetPressurePolicy,
+    ToolchainMismatchPolicy, TrybuildChangedPolicy,
 };
 
 // Context and formatting (always available)

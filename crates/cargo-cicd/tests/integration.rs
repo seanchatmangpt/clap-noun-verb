@@ -4,8 +4,8 @@
 //! Integration tests for cargo-cicd commands
 
 use cargo_cicd::commands::{
-    TargetPruneOutput, TargetShowOutput, TestChangedOutput, TrybuildChangedOutput,
-    GitStatusOutput, WorkspaceDoctorOutput, WorkspaceStatusOutput, PublishOutput,
+    GitStatusOutput, PublishOutput, TargetPruneOutput, TargetShowOutput, TestChangedOutput,
+    TrybuildChangedOutput, WorkspaceDoctorOutput, WorkspaceStatusOutput,
 };
 
 #[test]

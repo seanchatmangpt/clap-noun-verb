@@ -55,9 +55,7 @@ impl GitStatus {
             anyhow::bail!("git rev-parse failed");
         }
 
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string())
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
     fn get_dirty_files() -> Result<(usize, Vec<String>)> {
@@ -70,10 +68,8 @@ impl GitStatus {
             anyhow::bail!("git diff failed");
         }
 
-        let dirty: Vec<String> = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .map(|l| l.to_string())
-            .collect();
+        let dirty: Vec<String> =
+            String::from_utf8_lossy(&output.stdout).lines().map(|l| l.to_string()).collect();
 
         let count = dirty.len();
         let sample: Vec<String> = dirty.iter().take(5).cloned().collect();
@@ -91,9 +87,7 @@ impl GitStatus {
             anyhow::bail!("git diff --cached failed");
         }
 
-        let count = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .count();
+        let count = String::from_utf8_lossy(&output.stdout).lines().count();
 
         Ok(count)
     }
@@ -108,9 +102,7 @@ impl GitStatus {
             anyhow::bail!("git ls-files failed");
         }
 
-        let count = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .count();
+        let count = String::from_utf8_lossy(&output.stdout).lines().count();
 
         Ok(count)
     }

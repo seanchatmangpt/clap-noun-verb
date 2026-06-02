@@ -44,8 +44,8 @@ impl TargetScanning {
             });
         }
 
-        let total_size = Self::dir_size(&target_path)
-            .context("Failed to calculate target directory size")?;
+        let total_size =
+            Self::dir_size(&target_path).context("Failed to calculate target directory size")?;
         let total_size_gb = total_size as f64 / (1024.0 * 1024.0 * 1024.0);
 
         let profiles = Self::profile_breakdown(&target_path)?;
@@ -130,7 +130,8 @@ impl TargetScanning {
             for entry in entries.flatten() {
                 if let Ok(metadata) = entry.metadata() {
                     if let Ok(modified) = metadata.modified() {
-                        if let Ok(duration) = std::time::SystemTime::now().duration_since(modified) {
+                        if let Ok(duration) = std::time::SystemTime::now().duration_since(modified)
+                        {
                             if duration.as_secs() > 7 * 24 * 3600 {
                                 if let Some(name) = entry.file_name().to_str() {
                                     stale.push(format!("debug/{}", name));

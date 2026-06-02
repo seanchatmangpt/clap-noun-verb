@@ -5,7 +5,9 @@
 //!
 //! Comprehensive workspace diagnostics including metadata, git status, and target directory.
 
-use crate::adapters::{cargo_metadata::CargoMetadata, git_status::GitStatus, target_scanning::TargetScanning};
+use crate::adapters::{
+    cargo_metadata::CargoMetadata, git_status::GitStatus, target_scanning::TargetScanning,
+};
 use anyhow::Result;
 use serde::Serialize;
 use std::path::PathBuf;
@@ -37,9 +39,7 @@ impl WorkspaceDoctor {
     pub fn diagnose() -> Result<WorkspaceHealth> {
         let metadata_result = CargoMetadata::load(None);
         let metadata_healthy = metadata_result.is_ok();
-        let workspace_members = metadata_result
-            .map(|m| m.members.len())
-            .unwrap_or(0);
+        let workspace_members = metadata_result.map(|m| m.members.len()).unwrap_or(0);
 
         let git_result = GitStatus::status();
         let (dirty_files, untracked_files) = if let Ok(status) = &git_result {
@@ -50,10 +50,7 @@ impl WorkspaceDoctor {
         let git_healthy = git_result.is_ok();
 
         let target_result = TargetScanning::scan(PathBuf::from("target"));
-        let target_size_gb = target_result
-            .as_ref()
-            .map(|t| t.total_size_gb)
-            .unwrap_or(0.0);
+        let target_size_gb = target_result.as_ref().map(|t| t.total_size_gb).unwrap_or(0.0);
         let target_healthy = target_result.is_ok() && target_size_gb < 15.0; // Reasonable threshold
 
         let verdict = Self::compute_verdict(metadata_healthy, git_healthy, target_healthy);

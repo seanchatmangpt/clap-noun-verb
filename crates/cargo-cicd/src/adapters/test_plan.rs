@@ -42,20 +42,14 @@ impl TestPlan {
 
         // Determine test selection strategy
         let (is_conservative, reason) = if classifications.iter().any(|c| c.is_lib) {
-            (
-                true,
-                "Library-level changes detected; running comprehensive tests".to_string(),
-            )
+            (true, "Library-level changes detected; running comprehensive tests".to_string())
         } else if classifications.iter().any(|c| c.is_macro) {
             (
                 true,
                 "Macro changes detected; running all tests (macros affect compilation)".to_string(),
             )
         } else {
-            (
-                false,
-                format!("Selected tests for {} affected modules", affected_modules.len()),
-            )
+            (false, format!("Selected tests for {} affected modules", affected_modules.len()))
         };
 
         // Generate test selections

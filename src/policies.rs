@@ -119,10 +119,8 @@ impl TargetPressurePolicy {
                 "target size {} GB exceeds max {} GB by {} GB",
                 self.target_size_gb, self.max_size_gb, excess
             ));
-            self.recommendation = format!(
-                "Run: cargo cicd target prune --force\nEstimated recovery: {} GB",
-                excess
-            );
+            self.recommendation =
+                format!("Run: cargo cicd target prune --force\nEstimated recovery: {} GB", excess);
             self.verdict = PolicyVerdict::Suggest;
         }
 
@@ -309,10 +307,7 @@ impl TrybuildChangedPolicy {
 
         if !self.changed_fixtures.is_empty() {
             let files = self.changed_fixtures.join(", ");
-            self.observed_signals.push(format!(
-                "Changed trybuild fixtures detected: {}",
-                files
-            ));
+            self.observed_signals.push(format!("Changed trybuild fixtures detected: {}", files));
             self.recommendation =
                 "Run: cargo cicd trybuild changed\nBefore running all fixtures".to_string();
             self.verdict = PolicyVerdict::Suggest;
@@ -413,9 +408,8 @@ impl GitPhaseDirtyPolicy {
 
         if self.require_clean_tree {
             if self.has_uncommitted {
-                self.observed_signals.push(
-                    "Uncommitted changes detected in working tree".to_string(),
-                );
+                self.observed_signals
+                    .push("Uncommitted changes detected in working tree".to_string());
                 self.verdict = PolicyVerdict::Warn;
             }
             if self.has_untracked {
@@ -524,9 +518,7 @@ mod tests {
 
     #[test]
     fn test_target_pressure_policy_pass() {
-        let mut policy = TargetPressurePolicy::new()
-            .with_size(2.0)
-            .with_max_size(5.0);
+        let mut policy = TargetPressurePolicy::new().with_size(2.0).with_max_size(5.0);
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Pass);
@@ -535,9 +527,7 @@ mod tests {
 
     #[test]
     fn test_target_pressure_policy_suggest() {
-        let mut policy = TargetPressurePolicy::new()
-            .with_size(6.0)
-            .with_max_size(5.0);
+        let mut policy = TargetPressurePolicy::new().with_size(6.0).with_max_size(5.0);
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Suggest);
@@ -547,9 +537,8 @@ mod tests {
 
     #[test]
     fn test_toolchain_mismatch_policy_pass() {
-        let mut policy = ToolchainMismatchPolicy::new()
-            .with_expected("nightly")
-            .with_actual("nightly");
+        let mut policy =
+            ToolchainMismatchPolicy::new().with_expected("nightly").with_actual("nightly");
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Pass);
@@ -557,9 +546,8 @@ mod tests {
 
     #[test]
     fn test_toolchain_mismatch_policy_warn() {
-        let mut policy = ToolchainMismatchPolicy::new()
-            .with_expected("nightly")
-            .with_actual("stable");
+        let mut policy =
+            ToolchainMismatchPolicy::new().with_expected("nightly").with_actual("stable");
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Warn);
@@ -598,9 +586,7 @@ mod tests {
 
     #[test]
     fn test_git_phase_dirty_policy_uncommitted() {
-        let mut policy = GitPhaseDirtyPolicy::new()
-            .require_clean(true)
-            .with_uncommitted(true);
+        let mut policy = GitPhaseDirtyPolicy::new().require_clean(true).with_uncommitted(true);
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Warn);
@@ -609,9 +595,7 @@ mod tests {
 
     #[test]
     fn test_git_phase_dirty_policy_untracked() {
-        let mut policy = GitPhaseDirtyPolicy::new()
-            .require_clean(true)
-            .with_untracked(true);
+        let mut policy = GitPhaseDirtyPolicy::new().require_clean(true).with_untracked(true);
 
         let verdict = policy.evaluate();
         assert_eq!(verdict, PolicyVerdict::Warn);
@@ -619,9 +603,7 @@ mod tests {
 
     #[test]
     fn test_policy_event_emission() {
-        let mut policy = TargetPressurePolicy::new()
-            .with_size(6.0)
-            .with_max_size(5.0);
+        let mut policy = TargetPressurePolicy::new().with_size(6.0).with_max_size(5.0);
 
         policy.evaluate();
         let event = policy.emit_event();
@@ -635,9 +617,7 @@ mod tests {
     #[test]
     fn test_policy_set_evaluate() {
         let mut set = PolicySet::new();
-        set.target_pressure = TargetPressurePolicy::new()
-            .with_size(6.0)
-            .with_max_size(5.0);
+        set.target_pressure = TargetPressurePolicy::new().with_size(6.0).with_max_size(5.0);
 
         let verdicts = set.evaluate_all();
         assert_eq!(verdicts.len(), 4);

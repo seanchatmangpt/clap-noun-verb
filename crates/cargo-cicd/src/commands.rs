@@ -34,11 +34,8 @@ impl TargetShowOutput {
         let target_path = target_dir.unwrap_or_else(|| PathBuf::from("target"));
         let target_info = TargetScanning::scan(target_path)?;
 
-        let profiles = target_info
-            .profiles
-            .iter()
-            .map(|p| (p.profile.clone(), p.size_gb))
-            .collect();
+        let profiles =
+            target_info.profiles.iter().map(|p| (p.profile.clone(), p.size_gb)).collect();
 
         let verdict = TargetScanning::verdict(&target_info, max_gb);
 
@@ -82,10 +79,7 @@ impl TargetPruneOutput {
                 candidates_found: candidates,
                 force_required: true,
                 event_recorded: false,
-                summary: format!(
-                    "Found {} stale candidates. Use --force to prune.",
-                    candidates
-                ),
+                summary: format!("Found {} stale candidates. Use --force to prune.", candidates),
             });
         }
 
@@ -181,11 +175,8 @@ impl GitStatusOutput {
     pub fn execute() -> Result<Self> {
         let status = GitStatus::status()?;
 
-        let recommended_action = Self::recommend_action(
-            status.dirty_count,
-            status.staged_count,
-            status.untracked_count,
-        );
+        let recommended_action =
+            Self::recommend_action(status.dirty_count, status.staged_count, status.untracked_count);
 
         Ok(GitStatusOutput {
             branch_name: status.branch_name,
