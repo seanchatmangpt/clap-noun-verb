@@ -35,15 +35,9 @@ impl Construct8Delta {
     /// A new delta with `validated=false`.
     pub fn new(slot: u8, value: u64) -> C8Result<Self> {
         if slot >= CONSTRUCT8_SLOTS as u8 {
-            return Err(C8Error::OperationFailed(
-                "slot index out of bounds".to_string(),
-            ));
+            return Err(C8Error::OperationFailed("slot index out of bounds".to_string()));
         }
-        Ok(Self {
-            slot,
-            value,
-            validated: false,
-        })
+        Ok(Self { slot, value, validated: false })
     }
 
     /// Mark this delta as validated.
@@ -68,17 +62,19 @@ impl Construct8Delta {
 ///
 /// # Returns
 /// An iterator over references to populated slots selected by the mask.
-pub fn apply_branchless_mask<'a, T>(
+pub fn apply_branchless_mask<T>(
     mask: u8,
-    slots: &'a [Option<T>; CONSTRUCT8_SLOTS],
-) -> impl Iterator<Item = &'a T> {
-    (0..CONSTRUCT8_SLOTS).filter_map(move |i| {
-        if (mask & (1 << i)) != 0 {
-            slots[i].as_ref()
-        } else {
-            None
-        }
-    })
+    slots: &[Option<T>; CONSTRUCT8_SLOTS],
+) -> impl Iterator<Item = &T> {
+    (0..CONSTRUCT8_SLOTS).filter_map(
+        move |i| {
+            if (mask & (1 << i)) != 0 {
+                slots[i].as_ref()
+            } else {
+                None
+            }
+        },
+    )
 }
 
 /// Batch validate CONSTRUCT8 deltas with fixed iteration (no dynamic branching).
@@ -142,9 +138,7 @@ pub fn apply_validated_deltas(
 ) -> C8Result<()> {
     for delta in deltas {
         if delta.slot as usize >= CONSTRUCT8_SLOTS {
-            return Err(C8Error::OperationFailed(
-                "delta slot out of bounds".to_string(),
-            ));
+            return Err(C8Error::OperationFailed("delta slot out of bounds".to_string()));
         }
         // XOR application (idempotent operation)
         buffer[delta.slot as usize] ^= delta.value;
@@ -172,20 +166,10 @@ mod tests {
 
     #[test]
     fn test_branchless_mask_iteration_is_correct() {
-        let slots: [Option<u64>; CONSTRUCT8_SLOTS] = [
-            Some(1),
-            None,
-            Some(2),
-            None,
-            Some(3),
-            None,
-            None,
-            Some(4),
-        ];
+        let slots: [Option<u64>; CONSTRUCT8_SLOTS] =
+            [Some(1), None, Some(2), None, Some(3), None, None, Some(4)];
         let mask = 0b10010101; // bits 0, 2, 4, 7
-        let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-            .copied()
-            .collect();
+        let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
         assert_eq!(values, vec![1, 2, 3, 4]);
     }
 
@@ -193,28 +177,16 @@ mod tests {
     fn test_branchless_mask_empty() {
         let slots: [Option<u64>; CONSTRUCT8_SLOTS] = [None; CONSTRUCT8_SLOTS];
         let mask = 0x00; // no bits set
-        let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-            .copied()
-            .collect();
+        let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
         assert!(values.is_empty());
     }
 
     #[test]
     fn test_branchless_mask_all_selected() {
-        let slots: [Option<u64>; CONSTRUCT8_SLOTS] = [
-            Some(1),
-            Some(2),
-            Some(3),
-            Some(4),
-            Some(5),
-            Some(6),
-            Some(7),
-            Some(8),
-        ];
+        let slots: [Option<u64>; CONSTRUCT8_SLOTS] =
+            [Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)];
         let mask = 0xFF; // all bits set
-        let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-            .copied()
-            .collect();
+        let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
         assert_eq!(values.len(), 8);
         assert_eq!(values, vec![1, 2, 3, 4, 5, 6, 7, 8]);
     }
@@ -247,7 +219,7 @@ mod tests {
         let results = batch_validate_construct8(&deltas);
         // Second delta should be invalid because 1 < 2
         assert_eq!(results.len(), 2);
-        assert!(results[1] == false); // Out of order
+        assert!(!results[1]); // Out of order
     }
 
     #[test]
@@ -259,7 +231,7 @@ mod tests {
         }];
         let results = batch_validate_construct8(&deltas);
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0], false); // Zero value invalid
+        assert!(!results[0]); // Zero value invalid
     }
 
     #[test]
@@ -271,16 +243,14 @@ mod tests {
         }];
         let results = batch_validate_construct8(&deltas);
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0], false); // Out of bounds
+        assert!(!results[0]); // Out of bounds
     }
 
     #[test]
     fn test_apply_validated_deltas_xor() {
         let mut buffer = [0u64; CONSTRUCT8_SLOTS];
-        let deltas = [
-            Construct8Delta::new(0, 0xFF).unwrap(),
-            Construct8Delta::new(3, 0x0F).unwrap(),
-        ];
+        let deltas =
+            [Construct8Delta::new(0, 0xFF).unwrap(), Construct8Delta::new(3, 0x0F).unwrap()];
         apply_validated_deltas(&mut buffer, &deltas).unwrap();
         assert_eq!(buffer[0], 0xFF);
         assert_eq!(buffer[3], 0x0F);
@@ -304,17 +274,13 @@ mod tests {
         // Verify that apply_branchless_mask never panics on valid inputs
         let slots: [Option<u64>; CONSTRUCT8_SLOTS] = [None; CONSTRUCT8_SLOTS];
         for mask in 0..=255u8 {
-            let _result: Vec<u64> = apply_branchless_mask(mask, &slots)
-                .copied()
-                .collect();
+            let _result: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
             // No panic should occur
         }
 
         // Verify batch_validate_construct8 never panics
-        let deltas = vec![
-            Construct8Delta::new(0, 1).unwrap(),
-            Construct8Delta::new(7, 255).unwrap(),
-        ];
+        let deltas =
+            vec![Construct8Delta::new(0, 1).unwrap(), Construct8Delta::new(7, 255).unwrap()];
         let _results = batch_validate_construct8(&deltas);
         // No panic should occur
     }

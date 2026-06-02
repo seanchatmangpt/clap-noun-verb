@@ -114,15 +114,7 @@ impl TickRelation {
         ask: u64,
         volume: u64,
     ) -> Self {
-        Self {
-            instrument_id,
-            venue_id,
-            timestamp,
-            mid_price,
-            bid,
-            ask,
-            volume,
-        }
+        Self { instrument_id, venue_id, timestamp, mid_price, bid, ask, volume }
     }
 
     /// Compute spread between ask and bid
@@ -133,7 +125,7 @@ impl TickRelation {
     /// Check if spread is normal (typical market spread)
     pub fn is_normal_spread(&self) -> bool {
         let spread = self.spread();
-        spread > 0 && spread < 1000  // Example: less than 0.1% of mid price
+        spread > 0 && spread < 1000 // Example: less than 0.1% of mid price
     }
 }
 
@@ -155,29 +147,15 @@ mod tests {
 
     #[test]
     fn test_tick_relation_spread() {
-        let tick = TickRelation::new(
-            InstrumentId::new(1),
-            VenueId::new(1),
-            1000,
-            100,
-            99,
-            101,
-            1000,
-        );
+        let tick =
+            TickRelation::new(InstrumentId::new(1), VenueId::new(1), 1000, 100, 99, 101, 1000);
         assert_eq!(tick.spread(), 2);
     }
 
     #[test]
     fn test_tick_relation_normal_spread() {
-        let tick = TickRelation::new(
-            InstrumentId::new(1),
-            VenueId::new(1),
-            1000,
-            100,
-            99,
-            101,
-            1000,
-        );
+        let tick =
+            TickRelation::new(InstrumentId::new(1), VenueId::new(1), 1000, 100, 99, 101, 1000);
         assert!(tick.is_normal_spread());
     }
 }

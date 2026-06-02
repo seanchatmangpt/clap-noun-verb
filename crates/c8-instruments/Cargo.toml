@@ -1,0 +1,19 @@
+[package]
+name = "c8-instruments"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+description = "Market Astrophysics Instruments - telescope, event horizon, and collider primitives for causal market analysis"
+
+[dependencies]
+c8-core = { path = "../c8-core", version = "0.1.0" }
+c8-graph = { path = "../c8-graph", version = "0.1.0" }
+c8-market = { path = "../c8-market", version = "0.1.0" }
+c8-time = { path = "../c8-time", version = "0.1.0" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+[dev-dependencies]

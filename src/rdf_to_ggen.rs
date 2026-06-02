@@ -254,20 +254,12 @@ pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
                 format!("Option<{}>", arg.value_type)
             };
 
-            code.push_str(&format!(
-                "    {}: {},\n",
-                arg.name.replace('-', "_"),
-                arg_type
-            ));
+            code.push_str(&format!("    {}: {},\n", arg.name.replace('-', "_"), arg_type));
         }
     }
 
     // Add return type
-    let return_keyword = if verb.is_async { " -> " } else { " -> " };
-    code.push_str(&format!(
-        "){} Result<{}> {{\n",
-        return_keyword, verb.return_type
-    ));
+    code.push_str(&format!(") -> Result<{}> {{\n", verb.return_type));
 
     // Add skeleton handler
     code.push_str("    // Auto-generated handler skeleton from RDF\n");
@@ -317,18 +309,10 @@ pub fn sparql_results_to_verb_definitions(
 
     for binding in results.results.bindings {
         // Extract verb URI (required)
-        let verb_uri = binding
-            .get("verb")
-            .ok_or("Missing ?verb binding")?
-            .value
-            .clone();
+        let verb_uri = binding.get("verb").ok_or("Missing ?verb binding")?.value.clone();
 
         // Extract verb name (required)
-        let name = binding
-            .get("verbName")
-            .ok_or("Missing ?verbName binding")?
-            .value
-            .clone();
+        let name = binding.get("verbName").ok_or("Missing ?verbName binding")?.value.clone();
 
         // Initialize verb if not seen before
         let verb = verbs.entry(verb_uri.clone()).or_insert_with(|| {
@@ -340,10 +324,7 @@ pub fn sparql_results_to_verb_definitions(
             RdfVerbDefinition {
                 verb_uri: verb_uri.clone(),
                 name,
-                description: binding
-                    .get("verbAbout")
-                    .map(|b| b.value.clone())
-                    .unwrap_or_default(),
+                description: binding.get("verbAbout").map(|b| b.value.clone()).unwrap_or_default(),
                 noun_uri: binding.get("noun").map(|b| b.value.clone()),
                 noun_name,
                 arguments: Vec::new(),
@@ -352,14 +333,8 @@ pub fn sparql_results_to_verb_definitions(
                     .map(|b| b.value.clone())
                     .unwrap_or_else(|| "serde_json::Value".to_string()),
                 trait_bounds: Vec::new(),
-                docstring: binding
-                    .get("docstring")
-                    .map(|b| b.value.clone())
-                    .unwrap_or_default(),
-                is_async: binding
-                    .get("isAsync")
-                    .map(|b| b.value == "true")
-                    .unwrap_or(false),
+                docstring: binding.get("docstring").map(|b| b.value.clone()).unwrap_or_default(),
+                is_async: binding.get("isAsync").map(|b| b.value == "true").unwrap_or(false),
             }
         });
 
@@ -368,7 +343,7 @@ pub fn sparql_results_to_verb_definitions(
             let trait_name = trait_binding
                 .value
                 .split('#')
-                .last()
+                .next_back()
                 .unwrap_or(&trait_binding.value)
                 .to_string();
             if !verb.trait_bounds.contains(&trait_name) {
@@ -405,19 +380,17 @@ pub fn rdf_triples_to_verb_definitions(
         }
 
         // Initialize verb from subject
-        let verb = verb_map.entry(triple.subject.clone()).or_insert_with(|| {
-            RdfVerbDefinition {
-                verb_uri: triple.subject.clone(),
-                name: String::new(),
-                description: String::new(),
-                noun_uri: None,
-                noun_name: None,
-                arguments: Vec::new(),
-                return_type: "serde_json::Value".to_string(),
-                trait_bounds: Vec::new(),
-                docstring: String::new(),
-                is_async: false,
-            }
+        let verb = verb_map.entry(triple.subject.clone()).or_insert_with(|| RdfVerbDefinition {
+            verb_uri: triple.subject.clone(),
+            name: String::new(),
+            description: String::new(),
+            noun_uri: None,
+            noun_name: None,
+            arguments: Vec::new(),
+            return_type: "serde_json::Value".to_string(),
+            trait_bounds: Vec::new(),
+            docstring: String::new(),
+            is_async: false,
         });
 
         // Match predicate and extract value
@@ -435,12 +408,8 @@ pub fn rdf_triples_to_verb_definitions(
                 verb.return_type = triple.object.trim_matches('"').to_string();
             }
             p if p.contains("HasTraitBound") => {
-                let trait_name = triple
-                    .object
-                    .split('#')
-                    .last()
-                    .unwrap_or(&triple.object)
-                    .to_string();
+                let trait_name =
+                    triple.object.split('#').next_back().unwrap_or(&triple.object).to_string();
                 if !verb.trait_bounds.contains(&trait_name) {
                     verb.trait_bounds.push(trait_name);
                 }

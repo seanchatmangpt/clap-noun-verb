@@ -64,7 +64,9 @@ struct ArgDefinition {
 
 /// Load verb definitions from ontology TTL files
 /// In a real scenario, this would query a SPARQL endpoint
-fn load_verbs_from_ontology(ontology_dir: &Path) -> Result<Vec<VerbDefinition>, Box<dyn std::error::Error>> {
+fn load_verbs_from_ontology(
+    ontology_dir: &Path,
+) -> Result<Vec<VerbDefinition>, Box<dyn std::error::Error>> {
     let mut verbs = Vec::new();
 
     // Scan TTL files in ontology
@@ -81,7 +83,9 @@ fn load_verbs_from_ontology(ontology_dir: &Path) -> Result<Vec<VerbDefinition>, 
                 if line.contains(":Verb") || line.contains("rdf:type cnv:Verb") {
                     // Extract verb name (simplified)
                     if let Some(start) = line.find("ex:") {
-                        if let Some(end) = line[start + 3..].find(|c: char| !c.is_alphanumeric() && c != '_') {
+                        if let Some(end) =
+                            line[start + 3..].find(|c: char| !c.is_alphanumeric() && c != '_')
+                        {
                             let verb_name = line[start + 3..start + 3 + end].to_lowercase();
                             verbs.push(VerbDefinition {
                                 name: verb_name,
@@ -107,11 +111,8 @@ fn load_verbs_from_ontology(ontology_dir: &Path) -> Result<Vec<VerbDefinition>, 
 /// Generate Rust code for a verb
 fn generate_verb_code(verb: &VerbDefinition) -> String {
     let fn_name = verb.name.to_lowercase().replace('-', "_");
-    let noun_prefix = verb
-        .noun
-        .as_ref()
-        .map(|n| format!("{}_", n.to_lowercase()))
-        .unwrap_or_default();
+    let noun_prefix =
+        verb.noun.as_ref().map(|n| format!("{}_", n.to_lowercase())).unwrap_or_default();
 
     let mut params = String::new();
     for arg in &verb.args {
@@ -119,7 +120,8 @@ fn generate_verb_code(verb: &VerbDefinition) -> String {
             params.push_str(", ");
         }
         let arg_name = arg.name.to_lowercase().replace('-', "_");
-        let arg_type = if arg.required { arg.arg_type.clone() } else { format!("Option<{}>", arg.arg_type) };
+        let arg_type =
+            if arg.required { arg.arg_type.clone() } else { format!("Option<{}>", arg.arg_type) };
         params.push_str(&format!("{}: {}", arg_name, arg_type));
     }
 
@@ -271,7 +273,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("STEP 2-3: Generating Rust code");
         for verb in &example_verbs {
             let code = generate_verb_code(verb);
-            println!("  Generated: {}::{}", verb.noun.as_ref().unwrap_or(&"commands".to_string()), verb.name);
+            println!(
+                "  Generated: {}::{}",
+                verb.noun.as_ref().unwrap_or(&"commands".to_string()),
+                verb.name
+            );
             println!("{}", code);
         }
 

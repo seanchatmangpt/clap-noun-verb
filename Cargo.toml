@@ -1,5 +1,5 @@
 [workspace]
-members = ["unibit-cli", "speckit-ralph", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments"]
+members = ["unibit-cli", "speckit-ralph", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments", "crates/c8-adversary", "crates/c8-receipts"]
 # Exclude standalone playground CLI (uses published crates.io version) and vendors directory
 exclude = ["playground", "examples/playground", "vendors"]
 
@@ -92,10 +92,19 @@ atty = "0.2"
 tokio = { workspace = true }
 parking_lot = "0.12"
 
-
 # Configuration formats
 serde_yaml = "0.9"
 toml = { workspace = true }
+
+# Construct8 Market Physics Crates
+c8-core = { path = "crates/c8-core" }
+c8-graph = { path = "crates/c8-graph" }
+c8-market = { path = "crates/c8-market" }
+c8-instruments = { path = "crates/c8-instruments" }
+c8-receipts = { path = "crates/c8-receipts" }
+c8-time = { path = "crates/c8-time" }
+c8-adversary = { path = "crates/c8-adversary" }
+c8-bench = { path = "crates/c8-bench" }
 
 # File watching
 notify = "6.1"

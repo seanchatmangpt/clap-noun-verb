@@ -808,7 +808,8 @@ fn run_ontology_generate(
     }
 
     // Load TTL files from ontology
-    for entry in walkdir::WalkDir::new(&ontology_dir).into_iter()
+    for entry in walkdir::WalkDir::new(&ontology_dir)
+        .into_iter()
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "ttl"))
     {
         if let Ok(content) = fs::read_to_string(entry.path()) {
@@ -923,7 +924,11 @@ fn run_ontology_export(
     for (i, verb) in verbs.iter().enumerate() {
         let uri = format!("<http://clap-noun-verb.io/verbs/verb{}>", i);
         rdf_output.push_str(&format!("{} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Verb> .\n", uri));
-        rdf_output.push_str(&format!("{} <http://clap-noun-verb.io/ontology#sourceLine> \"{}\" .\n", uri, verb.replace('\"', "\\\"")));
+        rdf_output.push_str(&format!(
+            "{} <http://clap-noun-verb.io/ontology#sourceLine> \"{}\" .\n",
+            uri,
+            verb.replace('\"', "\\\"")
+        ));
     }
 
     if let Some(out_path) = output {

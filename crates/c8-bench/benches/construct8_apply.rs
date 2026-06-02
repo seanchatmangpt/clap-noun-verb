@@ -8,20 +8,10 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 fn construct8_apply_1_triple(c: &mut Criterion) {
     c.bench_function("construct8_apply_1_triple", |b| {
         b.iter(|| {
-            let slots = black_box([
-                Some(100u64),
-                Some(200u64),
-                Some(300u64),
-                None,
-                None,
-                None,
-                None,
-                None,
-            ]);
+            let slots =
+                black_box([Some(100u64), Some(200u64), Some(300u64), None, None, None, None, None]);
             let mask = black_box(0b00000111u8); // First 3 slots
-            let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-                .copied()
-                .collect();
+            let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
             black_box(values)
         })
     });
@@ -42,9 +32,7 @@ fn construct8_apply_2_triples(c: &mut Criterion) {
                 None,
             ]);
             let mask = black_box(0b00111111u8); // First 6 slots
-            let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-                .copied()
-                .collect();
+            let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
             black_box(values)
         })
     });
@@ -65,9 +53,7 @@ fn construct8_apply_4_triples(c: &mut Criterion) {
                 Some(800u64),
             ]);
             let mask = black_box(0xFFu8); // All 8 slots
-            let values: Vec<u64> = apply_branchless_mask(mask, &slots)
-                .copied()
-                .collect();
+            let values: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
             black_box(values)
         })
     });
@@ -78,46 +64,14 @@ fn construct8_apply_8_triples(c: &mut Criterion) {
     c.bench_function("construct8_apply_8_triples_validation", |b| {
         b.iter(|| {
             let deltas = black_box([
-                Construct8Delta {
-                    slot: 0,
-                    value: 100,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 1,
-                    value: 200,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 2,
-                    value: 300,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 3,
-                    value: 400,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 4,
-                    value: 500,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 5,
-                    value: 600,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 6,
-                    value: 700,
-                    validated: false,
-                },
-                Construct8Delta {
-                    slot: 7,
-                    value: 800,
-                    validated: false,
-                },
+                Construct8Delta { slot: 0, value: 100, validated: false },
+                Construct8Delta { slot: 1, value: 200, validated: false },
+                Construct8Delta { slot: 2, value: 300, validated: false },
+                Construct8Delta { slot: 3, value: 400, validated: false },
+                Construct8Delta { slot: 4, value: 500, validated: false },
+                Construct8Delta { slot: 5, value: 600, validated: false },
+                Construct8Delta { slot: 6, value: 700, validated: false },
+                Construct8Delta { slot: 7, value: 800, validated: false },
             ]);
             let results = batch_validate_construct8(&deltas);
             black_box(results)

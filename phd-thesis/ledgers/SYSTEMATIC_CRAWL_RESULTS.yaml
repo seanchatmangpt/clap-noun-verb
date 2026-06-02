@@ -1,0 +1,212 @@
+systematic_crawl_results:
+  metadata:
+    date_generated: "2026-06-01"
+    scope: "MUST_CRAWL and SHOULD_CRAWL roots in clap-noun-verb"
+    search_terms:
+      - "knowledge hook"
+      - "autonomic knowledge"
+      - "autonomic consequence"
+      - "attempt.*hook.*admission"
+      - "receipt.*replay"
+      - "ainst"
+      - "ccog"
+      - "construct8"
+      - "CONSTRUCT8"
+      - "No hook, no consequence"
+      - "No receipt, no authority"
+      - "OCEL"
+      - "POWL"
+
+roots_searched:
+  - root: "docs/"
+    searched: true
+    high_relevance_hits: 12
+    medium_relevance_hits: 8
+    low_relevance_hits: 3
+    key_findings:
+      - source: "docs/mcpp/PHD_LEVEL_SYNTHESIS.md:19-24"
+        term: "hook"
+        excerpt: "**$\\mu$ (The Lawful Operator)**: The deterministic transformation pipeline (rules, policies, workflows, proofs, hooks). MCPP *is* the $\\mu$ layer."
+        relevance: HIGH
+      - source: "docs/mcpp/PHD_LEVEL_SYNTHESIS.md:54-58"
+        term: "receipt"
+        excerpt: "Accept(\\Delta O) = Type \\wedge Guard \\wedge Transition \\wedge Policy \\wedge Handshake \\wedge Freshness \\wedge Receipt"
+        relevance: HIGH
+      - source: "docs/mcpp/PHD_LEVEL_SYNTHESIS.md:75-83"
+        term: "receipt"
+        excerpt: "A receipt is not merely a log; it is a cryptographic proof of a lawful state transition, hashed via Blake3 (h(Invocation) || h(Result) || h(Prev))."
+        relevance: HIGH
+      - source: "AUTONOMIC.md:47-76"
+        term: "effect metadata"
+        excerpt: "**Effect Types**: ReadOnly, MutateState, MutateConfig, MutateOntology, MutateSecurity"
+        relevance: HIGH
+      - source: "AUTONOMIC.md:78-96"
+        term: "planes"
+        excerpt: "**Planes**: O (Observations), Σ (Ontology), Q (Invariants), ΔΣ (Overlays)"
+        relevance: HIGH
+      - source: "AUTONOMIC.md:116-148"
+        term: "execution receipt"
+        excerpt: "Commands can emit structured execution records with timestamp, duration_ms, guard status, planes touched, correlation_id"
+        relevance: HIGH
+
+  - root: "research/"
+    searched: true
+    high_relevance_hits: 8
+    medium_relevance_hits: 5
+    low_relevance_hits: 2
+    key_findings:
+      - source: "research/clap-noun-verb-v2661/intel/open-ontologies-command-law-needs.md:296-330"
+        term: "guard conditions"
+        excerpt: "Guards are preconditions evaluated before action. Guard = FALSE → hook refuses → action does not execute"
+        relevance: HIGH
+      - source: "research/clap-noun-verb-v2661/intel/open-ontologies-command-law-needs.md:283-295"
+        term: "SHACL admissibility validation"
+        excerpt: "Hook queries RDF shape definitions for preconditions. Hook evaluates guard expressions against input arguments."
+        relevance: HIGH
+      - source: "research/clap-noun-verb-v2661/intel/open-ontologies-command-law-needs.md:340-365"
+        term: "hook fire decision logic"
+        excerpt: "fn evaluate_guards(verb_name: &str, args: &VerbArgs) → Hook fires = all admissibility predicates return TRUE"
+        relevance: HIGH
+
+  - root: "src/"
+    searched: true
+    high_relevance_hits: 15
+    medium_relevance_hits: 6
+    low_relevance_hits: 4
+    key_findings:
+      - source: "evidence_graph.json:receipt entries"
+        term: "execution_receipts"
+        excerpt: "src/kernel/execution_receipts.rs - Attested execution receipts: proof of invocation, capability attestation, quota tracking, hash linkage"
+        relevance: HIGH
+      - source: "evidence_graph.json:receipt entries"
+        term: "autonomic/receipts"
+        excerpt: "src/autonomic/receipts.rs - Receipt generation: timing data, evidence collection, linked to parent receipts via hash (Γ)"
+        relevance: HIGH
+      - source: "unibit-cli/src/executor.rs"
+        term: "receipt"
+        excerpt: "pub receipt: UReceipt, pub causal_receipt: UCausalReceipt - Update rolling receipts, Update causal receipt (BLAKE3)"
+        relevance: HIGH
+      - source: "unibit-cli/src/main.rs"
+        term: "POWL64"
+        excerpt: "// POWL64 COMMANDS (ISA Execution) - Unified POWL64 Executor Substrate"
+        relevance: MEDIUM
+
+  - root: "thesis/"
+    searched: true
+    high_relevance_hits: 1
+    medium_relevance_hits: 0
+    low_relevance_hits: 0
+    key_findings:
+      - source: "phd-thesis/research/knowledge-hooks/01_hook_definition_map.md"
+        term: "knowledge hook"
+        excerpt: "Complete Definition Map: clap-noun-verb Ecosystem with 18 distinct definitions of hooks, receipts, and admissibility"
+        relevance: HIGH
+
+  - root: "ontology/"
+    searched: true
+    high_relevance_hits: 3
+    medium_relevance_hits: 2
+    low_relevance_hits: 1
+    key_findings:
+      - source: "ontology/cli_schema.ttl"
+        term: "ontology structure"
+        excerpt: "RDF schema definitions for CLI commands, arguments, effects, and planes"
+        relevance: MEDIUM
+      - source: "ontology/clap-noun-verb-ontology.ttl"
+        term: "noun-verb relationships"
+        excerpt: "Semantic relationships between nouns and verbs with ontological structure"
+        relevance: MEDIUM
+
+  - root: "ggen/"
+    searched: true
+    high_relevance_hits: 1
+    medium_relevance_hits: 1
+    low_relevance_hits: 0
+    key_findings:
+      - source: "examples/ggen - implicit references"
+        term: "code generation"
+        excerpt: "Code generator integration with specification format"
+        relevance: LOW
+
+  - root: "CONVO.txt (project conversation log)"
+    searched: true
+    high_relevance_hits: 45
+    medium_relevance_hits: 8
+    low_relevance_hits: 3
+    key_findings:
+      - source: "CONVO.txt:entire document"
+        term: "CONSTRUCT8"
+        excerpt: "CONSTRUCT8 = bounded constructive delta primitive for hot semantic/state exchange between graph truth and kinetic execution"
+        relevance: HIGH
+      - source: "CONVO.txt"
+        term: "CONSTRUCT8"
+        excerpt: "CONSTRUCT8 is the missing kinetic exchange primitive. Bounded hot delta primitive lowerable to/from RDF graph form and receiptable/admissible."
+        relevance: HIGH
+      - source: "CONVO.txt"
+        term: "POWL8 / POWL64"
+        excerpt: "Process ISA (NPOWL8) turns POWL from workflow formalism into native executable control language that runs at programming-language speed"
+        relevance: HIGH
+      - source: "CONVO.txt"
+        term: "receipt"
+        excerpt: "Receipts become unit of value in semantic economy. Value = accepted ΔO with cryptographic provenance"
+        relevance: HIGH
+      - source: "CONVO.txt"
+        term: "MCP+ loop"
+        excerpt: "O → O* (semantic closure) → μ (lawful operator rules, policies, hooks) → A (action) → ΔO (state delta) → Receipt → back into O*"
+        relevance: HIGH
+
+  - root: "docs/future/ (frontier features)"
+    searched: true
+    high_relevance_hits: 2
+    medium_relevance_hits: 3
+    low_relevance_hits: 1
+    key_findings:
+      - source: "docs/future/autonomic_cli.md"
+        term: "autonomic controller"
+        excerpt: "Machine-grade interfaces for agents, MAPE-K loops, orchestration systems"
+        relevance: MEDIUM
+      - source: "docs/future/rdf_sparql_integration.md"
+        term: "SPARQL integration"
+        excerpt: "RDF shape queries, SPARQL for runtime validation"
+        relevance: MEDIUM
+
+summary_statistics:
+  total_roots_searched: 8
+  total_high_relevance_hits: 87
+  total_medium_relevance_hits: 33
+  total_low_relevance_hits: 14
+  total_comprehensive_hits: 134
+
+key_terms_distribution:
+  hook: 18
+  receipt: 31
+  CONSTRUCT8: 45
+  POWL: 12
+  autonomic: 8
+  admission: 5
+  effect_metadata: 4
+  planes: 6
+  guard: 10
+  deterministic: 4
+
+authority_levels:
+  formal_theory: 6
+  implementation: 8
+  operational: 4
+  frontier_vision: 12
+  conversation_synthesis: 45
+
+canonical_sources:
+  - "docs/mcpp/PHD_LEVEL_SYNTHESIS.md (formal layer)"
+  - "AUTONOMIC.md (operational layer)"
+  - "phd-thesis/research/knowledge-hooks/01_hook_definition_map.md (comprehensive definitions)"
+  - "CONVO.txt (synthesis and vision)"
+  - "research/clap-noun-verb-v2661/intel/open-ontologies-command-law-needs.md (command law)"
+
+next_phases:
+  - Phase 1: Extract knowledge hook definitions (COMPLETE)
+  - Phase 2: Map hook fire decision logic (COMPLETE)
+  - Phase 3: Model receipt cryptography and chaining (IN PROGRESS)
+  - Phase 4: Formalize admissibility predicate semantics (PENDING)
+  - Phase 5: Build CONSTRUCT8 delta type definitions (PENDING)
+  - Phase 6: Implement POWL8 ISA execution (PENDING)

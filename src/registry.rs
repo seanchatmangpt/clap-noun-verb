@@ -195,10 +195,9 @@ impl CommandRegistry {
         let mut seen_nouns = std::collections::HashSet::new();
         for noun_name in self.nouns.keys() {
             if !seen_nouns.insert(noun_name) {
-                return Err(NounVerbError::InvalidStructure { message: format!(
-                    "Duplicate noun name: '{}'",
-                    noun_name
-                )});
+                return Err(NounVerbError::InvalidStructure {
+                    message: format!("Duplicate noun name: '{}'", noun_name),
+                });
             }
         }
 
@@ -206,10 +205,9 @@ impl CommandRegistry {
         for (noun_name, noun) in &self.nouns {
             // Check for empty nouns (no verbs or sub-nouns)
             if noun.verbs().is_empty() && noun.sub_nouns().is_empty() {
-                return Err(NounVerbError::InvalidStructure { message: format!(
-                    "Noun '{}' has no verbs or sub-nouns",
-                    noun_name
-                )});
+                return Err(NounVerbError::InvalidStructure {
+                    message: format!("Noun '{}' has no verbs or sub-nouns", noun_name),
+                });
             }
 
             // Check for duplicate verb names within a noun
@@ -217,10 +215,12 @@ impl CommandRegistry {
             for verb in noun.verbs() {
                 let verb_name = verb.name();
                 if !seen_verbs.insert(verb_name) {
-                    return Err(NounVerbError::InvalidStructure { message: format!(
-                        "Duplicate verb name '{}' in noun '{}'",
-                        verb_name, noun_name
-                    )});
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Duplicate verb name '{}' in noun '{}'",
+                            verb_name, noun_name
+                        ),
+                    });
                 }
             }
 
@@ -229,10 +229,12 @@ impl CommandRegistry {
             for sub_noun in noun.sub_nouns() {
                 let sub_noun_name = sub_noun.name();
                 if !seen_sub_nouns.insert(sub_noun_name) {
-                    return Err(NounVerbError::InvalidStructure { message: format!(
-                        "Duplicate sub-noun name '{}' in noun '{}'",
-                        sub_noun_name, noun_name
-                    )});
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Duplicate sub-noun name '{}' in noun '{}'",
+                            sub_noun_name, noun_name
+                        ),
+                    });
                 }
             }
 
@@ -242,10 +244,12 @@ impl CommandRegistry {
             for sub_noun in noun.sub_nouns() {
                 let sub_noun_name = sub_noun.name();
                 if verb_names.contains(sub_noun_name) {
-                    return Err(NounVerbError::InvalidStructure { message: format!(
-                        "Verb and sub-noun cannot have the same name '{}' in noun '{}'",
-                        sub_noun_name, noun_name
-                    )});
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Verb and sub-noun cannot have the same name '{}' in noun '{}'",
+                            sub_noun_name, noun_name
+                        ),
+                    });
                 }
             }
         }
@@ -305,9 +309,9 @@ impl CommandRegistry {
     /// Route a command based on clap matches
     pub fn route(&self, matches: &ArgMatches) -> Result<()> {
         // Get the top-level subcommand (noun)
-        let (noun_name, noun_matches) = matches
-            .subcommand()
-            .ok_or_else(|| NounVerbError::InvalidStructure { message: "No subcommand found".to_string() })?;
+        let (noun_name, noun_matches) = matches.subcommand().ok_or_else(|| {
+            NounVerbError::InvalidStructure { message: "No subcommand found".to_string() }
+        })?;
 
         if noun_name == "completions" && self.has_completions_subcommand {
             let noun = self.build_completions_noun();
@@ -472,10 +476,7 @@ impl CommandRegistry {
     /// registry.load_ontology_verbs(None)?; // Uses ~/open-ontologies
     /// let cmd = registry.build_command();
     /// ```
-    pub fn load_ontology_verbs(
-        &mut self,
-        ontology_dir: Option<PathBuf>,
-    ) -> Result<usize> {
+    pub fn load_ontology_verbs(&mut self, ontology_dir: Option<PathBuf>) -> Result<usize> {
         let dir = ontology_dir.unwrap_or_else(|| {
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
             PathBuf::from(home).join("open-ontologies")

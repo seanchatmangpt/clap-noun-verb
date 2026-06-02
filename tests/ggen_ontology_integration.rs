@@ -9,7 +9,6 @@
 //! 3. Bidirectional sync consistency
 //! 4. Conformance: declared structure matches ontology
 
-
 // =============================================================================
 // TEST: RDF → ggen → compilation → execution
 // =============================================================================
@@ -23,8 +22,7 @@ fn test_rdf_to_ggen_round_trip() {
     // 4. Check that generated code matches expected structure
 
     use clap_noun_verb::rdf_to_ggen::{
-        ArgumentType, RdfArgumentDefinition, RdfVerbDefinition,
-        rdf_spec_to_verb_code,
+        rdf_spec_to_verb_code, ArgumentType, RdfArgumentDefinition, RdfVerbDefinition,
     };
 
     let verb = RdfVerbDefinition {
@@ -62,11 +60,7 @@ fn test_rdf_to_ggen_round_trip() {
             },
         ],
         return_type: "Result<GraphLoadedOutput>".to_string(),
-        trait_bounds: vec![
-            "Send".to_string(),
-            "Sync".to_string(),
-            "Serialize".to_string(),
-        ],
+        trait_bounds: vec!["Send".to_string(), "Sync".to_string(), "Serialize".to_string()],
         docstring: "Load a graph from file or stdin".to_string(),
         is_async: false,
     };
@@ -132,11 +126,10 @@ pub async fn graph_query(sparql: String) -> Result<QueryResult> {
 
 #[test]
 fn test_rdf_ggen_bidirectional_consistency() {
-    use clap_noun_verb::rdf_to_ggen::{
-        ArgumentType, RdfArgumentDefinition, RdfVerbDefinition,
-        rdf_spec_to_verb_code,
-    };
     use clap_noun_verb::ggen_to_rdf::parse_rust_source;
+    use clap_noun_verb::rdf_to_ggen::{
+        rdf_spec_to_verb_code, ArgumentType, RdfArgumentDefinition, RdfVerbDefinition,
+    };
 
     // Start with RDF
     let original_verb = RdfVerbDefinition {
@@ -197,10 +190,7 @@ fn test_argument_type_enum_values() {
     let _variadic = ArgumentType::Variadic;
 
     // All should be valid and distinct
-    assert_ne!(
-        std::mem::discriminant(&positional),
-        std::mem::discriminant(&optional)
-    );
+    assert_ne!(std::mem::discriminant(&positional), std::mem::discriminant(&optional));
 }
 
 #[test]
@@ -304,8 +294,8 @@ fn test_sparql_results_parsing() {
         }
     }"#;
 
-    let verbs = sparql_results_to_verb_definitions(sparql_json)
-        .expect("Should parse SPARQL results");
+    let verbs =
+        sparql_results_to_verb_definitions(sparql_json).expect("Should parse SPARQL results");
 
     assert_eq!(verbs.len(), 2);
 
@@ -353,7 +343,11 @@ pub fn graph_load(path: String, retry: bool) -> Result<GraphOutput> {
             continue;
         }
         // Actual N-Triples lines should start with < (full URIs), not abbreviations
-        assert!(line.starts_with('<') || line.trim().is_empty(), "N-Triples line should start with <: {}", line);
+        assert!(
+            line.starts_with('<') || line.trim().is_empty(),
+            "N-Triples line should start with <: {}",
+            line
+        );
     }
 
     // Verify language tags

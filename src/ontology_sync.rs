@@ -93,10 +93,7 @@ pub struct OntologySync {
 impl OntologySync {
     /// Create a new sync engine
     pub fn new(source_paths: Vec<PathBuf>, ontology_path: PathBuf) -> Self {
-        Self {
-            source_paths,
-            ontology_path,
-        }
+        Self { source_paths, ontology_path }
     }
 
     /// Perform bidirectional sync
@@ -182,14 +179,10 @@ impl OntologySync {
         rdf_verbs: &[RdfVerbDefinition],
     ) -> Vec<VerbSyncEntry> {
         let mut changes = Vec::new();
-        let code_map: HashMap<_, _> = code_verbs
-            .iter()
-            .map(|v| ((&v.name, &v.noun_name), v.clone()))
-            .collect();
-        let rdf_map: HashMap<_, _> = rdf_verbs
-            .iter()
-            .map(|v| ((&v.name, &v.noun_name), v.clone()))
-            .collect();
+        let code_map: HashMap<_, _> =
+            code_verbs.iter().map(|v| ((&v.name, &v.noun_name), v.clone())).collect();
+        let rdf_map: HashMap<_, _> =
+            rdf_verbs.iter().map(|v| ((&v.name, &v.noun_name), v.clone())).collect();
 
         // Check for new and modified verbs in code
         for (key, code_verb) in &code_map {
@@ -250,13 +243,8 @@ impl OntologySync {
 
     /// Summarize sync changes
     fn summarize_changes(&self, changes: &[VerbSyncEntry]) -> SyncSummary {
-        let mut summary = SyncSummary {
-            added: 0,
-            modified: 0,
-            removed: 0,
-            unchanged: 0,
-            conformant: true,
-        };
+        let mut summary =
+            SyncSummary { added: 0, modified: 0, removed: 0, unchanged: 0, conformant: true };
 
         for change in changes {
             match change.operation {
@@ -300,9 +288,7 @@ impl OntologySync {
         for (noun, verbs) in verbs_to_write {
             let ntriples = verb_definitions_to_ntriples(&verbs);
             let noun_name = noun.as_deref().unwrap_or("root");
-            let output_path = self
-                .ontology_path
-                .join(format!("{}-verbs.nt", noun_name));
+            let output_path = self.ontology_path.join(format!("{}-verbs.nt", noun_name));
 
             tokio::fs::write(&output_path, &ntriples)
                 .await
@@ -334,10 +320,7 @@ fn compute_verb_differences(code: &RdfVerbDefinition, rdf: &RdfVerbDefinition) -
     }
 
     if code.return_type != rdf.return_type {
-        diffs.push(format!(
-            "Return type: code={}, rdf={}",
-            code.return_type, rdf.return_type
-        ));
+        diffs.push(format!("Return type: code={}, rdf={}", code.return_type, rdf.return_type));
     }
 
     if code.arguments.len() != rdf.arguments.len() {
@@ -374,11 +357,7 @@ fn parse_ntriples(content: &str) -> Result<Vec<RdfTriple>, SyncError> {
         }
 
         // Remove trailing period and whitespace
-        let line = if line.ends_with('.') {
-            &line[..line.len() - 1]
-        } else {
-            line
-        };
+        let line = if line.ends_with('.') { &line[..line.len() - 1] } else { line };
 
         // Split into subject predicate object
         let parts: Vec<&str> = line.split('>').map(|p| p.trim()).collect();
