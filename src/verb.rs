@@ -433,6 +433,29 @@ impl VerbArgs {
     pub fn get_global_flag_count(&self, name: &str) -> u8 {
         self.parent_matches.as_ref().map(|parent| parent.get_count(name)).unwrap_or(0)
     }
+
+    /// Get trailing positional arguments (populated when the verb declares trailing_var_arg = true).
+    ///
+    /// Returns a Vec of the trailing argument strings in order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use clap::{Command, Arg, ArgAction};
+    /// # use clap_noun_verb::VerbArgs;
+    /// let cmd = Command::new("explain")
+    ///     .arg(Arg::new("trailing").num_args(0..).trailing_var_arg(true));
+    /// let matches = cmd.get_matches_from(["explain", "CICD-GIT-001"]);
+    /// let args = VerbArgs::new(matches);
+    /// let trailing = args.trailing();
+    /// assert_eq!(trailing, vec!["CICD-GIT-001".to_string()]);
+    /// ```
+    pub fn trailing(&self) -> Vec<String> {
+        self.matches
+            .get_many::<String>("trailing")
+            .map(|vals| vals.cloned().collect())
+            .unwrap_or_default()
+    }
 }
 
 /// Trait for defining verb commands (e.g., "status", "logs", "restart")
@@ -480,12 +503,49 @@ pub trait VerbCommand: Send + Sync {
     /// Returns `Result::Err` if command execution fails.
     fn run(&self, args: &VerbArgs) -> Result<()>;
 
+    /// Allow trailing positional arguments after this verb.
+    ///
+    /// When overridden to return true, the verb's clap Command will accept
+    /// zero-or-more trailing positional arguments accessible via VerbArgs::trailing().
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use clap_noun_verb::{VerbCommand, VerbArgs, Result};
+    /// struct ExplainVerb;
+    /// impl VerbCommand for ExplainVerb {
+    ///     fn name(&self) -> &'static str { "explain" }
+    ///     fn about(&self) -> &'static str { "Explain a code" }
+    ///     fn trailing_var_arg(&self) -> bool { true }
+    ///     fn run(&self, args: &VerbArgs) -> Result<()> {
+    ///         let codes = args.trailing();
+    ///         println!("codes: {:?}", codes);
+    ///         Ok(())
+    ///     }
+    /// }
+    /// ```
+    fn trailing_var_arg(&self) -> bool {
+        false
+    }
+
     /// Build the clap command for this verb
     ///
     /// Default implementation creates a basic command with name and description.
     /// Override to customize command building.
     fn build_command(&self) -> Command {
-        Command::new(self.name()).about(self.about())
+        let mut cmd = Command::new(self.name()).about(self.about());
+        for arg in self.additional_args() {
+            cmd = cmd.arg(arg);
+        }
+        if self.trailing_var_arg() {
+            cmd = cmd.arg(
+                clap::Arg::new("trailing")
+                    .num_args(0..)
+                    .trailing_var_arg(true)
+                    .help("Trailing positional arguments"),
+            );
+        }
+        cmd
     }
 
     /// Get additional arguments for this verb (override to add custom args)

@@ -294,17 +294,17 @@ fn test_step2_doctor_json_pretty() -> Result<()> {
 fn test_step2_all_36_format_combinations() -> Result<()> {
     // Arrange: Create outputs for all 6 verbs
     let outputs = vec![
-        ("graph_load", serde_json::to_value(&GraphLoadedOutput::new(1, "test.ttl")).unwrap()),
-        ("graph_query", serde_json::to_value(&QueryResultOutput::new("subject", "ex")).unwrap()),
+        ("graph_load", serde_json::to_value(GraphLoadedOutput::new(1, "test.ttl")).unwrap()),
+        ("graph_query", serde_json::to_value(QueryResultOutput::new("subject", "ex")).unwrap()),
         (
             "graph_validate",
-            serde_json::to_value(&clap_noun_verb::graph::ValidationResultOutput::new(0)).unwrap(),
+            serde_json::to_value(clap_noun_verb::graph::ValidationResultOutput::new(0)).unwrap(),
         ),
         (
             "pack_add",
-            serde_json::to_value(&PackAddedOutput::new("cap-001", "Test", "1.0.0")).unwrap(),
+            serde_json::to_value(PackAddedOutput::new("cap-001", "Test", "1.0.0")).unwrap(),
         ),
-        ("doctor_check", serde_json::to_value(&DoctorOutput::new(100, 5)).unwrap()),
+        ("doctor_check", serde_json::to_value(DoctorOutput::new(100, 5)).unwrap()),
     ];
 
     // Act: Verify all outputs serialize to JSON

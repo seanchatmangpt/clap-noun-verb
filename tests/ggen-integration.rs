@@ -48,7 +48,7 @@ fn test_v26_6_1_public_api_surface() {
 #[test]
 fn test_specimen_cli_command_count() {
     let output = Command::new("cargo")
-        .args(&["build", "--example", "tutorial_services"])
+        .args(["build", "--example", "tutorial_services"])
         .current_dir("/Users/sac/clap-noun-verb")
         .output()
         .expect("Failed to build tutorial_services example");
@@ -66,7 +66,7 @@ fn test_specimen_cli_command_count() {
 #[test]
 fn test_specimen_cli_help_output() {
     let output = Command::new("cargo")
-        .args(&["run", "--example", "tutorial_services", "--", "--help"])
+        .args(["run", "--example", "tutorial_services", "--", "--help"])
         .current_dir("/Users/sac/clap-noun-verb")
         .output()
         .expect("Failed to run tutorial_services --help");
@@ -261,7 +261,7 @@ fn test_result_type_usage() {
     assert!(success.is_ok());
 
     let failure: ClapResult<String> =
-        Err(NounVerbError::execution_error("Failure".to_string()).into());
+        Err(NounVerbError::execution_error("Failure".to_string()));
     assert!(failure.is_err());
 
     println!("✓ Result<T> type works correctly");
@@ -279,7 +279,7 @@ fn test_verb_macro_pattern() {
 
     // Build specimen CLI to verify macros work
     let output = Command::new("cargo")
-        .args(&["check", "--example", "tutorial_services"])
+        .args(["check", "--example", "tutorial_services"])
         .current_dir("/Users/sac/clap-noun-verb")
         .output()
         .expect("Failed to check specimen example");
@@ -340,12 +340,12 @@ fn test_v26_6_1_ggen_contract() {
     println!("  - Core noun-verb commands");
     println!("  - Basic output serialization");
     println!("  - Error handling");
-    println!("");
+    println!();
     println!("v26.7.0 (PLANNED):");
     println!("  - Receipt/proof types");
     println!("  - CommandMetadata introspection");
     println!("  - Semantic features");
-    println!("");
+    println!();
 
     println!("\n=== Integration Status ===");
     println!("✓ Ready for ggen: YES");
