@@ -6,8 +6,8 @@ exclude = ["playground", "examples/playground", "vendors"]
 [workspace.dependencies]
 # CLI Framework
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb = { path = ".", version = "26.6.1" }
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.1" }
+clap-noun-verb = { path = ".", version = "26.6.2" }
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.2" }
 
 # Auto-discovery
 linkme = "0.3"
@@ -31,7 +31,7 @@ tokio = { version = "1.40", features = ["full"] }
 
 [package]
 name = "clap-noun-verb"
-version = "26.6.1"
+version = "26.6.2"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -108,15 +108,6 @@ parking_lot = "0.12"
 serde_yaml = "0.9"
 toml = { workspace = true }
 
-# Construct8 Market Physics Crates
-c8-core = { path = "crates/c8-core" }
-c8-graph = { path = "crates/c8-graph" }
-c8-market = { path = "crates/c8-market" }
-c8-instruments = { path = "crates/c8-instruments" }
-c8-receipts = { path = "crates/c8-receipts" }
-c8-time = { path = "crates/c8-time" }
-c8-adversary = { path = "crates/c8-adversary" }
-c8-bench = { path = "crates/c8-bench" }
 
 # File watching
 notify = "6.1"
