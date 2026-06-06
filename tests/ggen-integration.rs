@@ -260,8 +260,7 @@ fn test_result_type_usage() {
     let success: ClapResult<String> = Ok("Success".to_string());
     assert!(success.is_ok());
 
-    let failure: ClapResult<String> =
-        Err(NounVerbError::execution_error("Failure".to_string()));
+    let failure: ClapResult<String> = Err(NounVerbError::execution_error("Failure".to_string()));
     assert!(failure.is_err());
 
     println!("✓ Result<T> type works correctly");
