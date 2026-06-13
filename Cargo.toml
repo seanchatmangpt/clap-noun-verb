@@ -7,7 +7,7 @@ exclude = ["playground", "examples/playground", "vendors"]
 # CLI Framework
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
 clap-noun-verb = { path = ".", version = "26.6.3" }
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.2" }
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.13" }
 
 # Auto-discovery
 linkme = "0.3"
@@ -31,7 +31,7 @@ tokio = { version = "1.40", features = ["full"] }
 
 [package]
 name = "clap-noun-verb"
-version = "26.6.3"
+version = "26.6.13"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
