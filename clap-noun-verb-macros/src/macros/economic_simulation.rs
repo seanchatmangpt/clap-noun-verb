@@ -1,6 +1,3 @@
-// Copyright (c) 2024 Sean Chatman
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 //! Economic Simulation Macros
 //!
 //! This module provides procedural macros for simulating economic behavior
@@ -178,14 +175,9 @@ pub fn generate_economic_agent(input: DeriveInput) -> Result<TokenStream> {
             }
 
             fn execute_task(&mut self, task: Task) -> TaskResult {
-                // Default implementation: succeed only when trust score meets task complexity.
-                // Tasks with complexity > trust_score are beyond the agent's current capability.
-                // This ensures the simulation is falsifiable: low-trust agents fail hard tasks.
-                if task.complexity() > self.trust_score().value() {
-                    TaskResult::failure(task.id(), self.agent_id())
-                } else {
-                    TaskResult::success(task.id(), self.agent_id())
-                }
+                // Default implementation: simulate successful execution with unknown timing.
+                // Implementors should override this method to record real execution_time_ms.
+                TaskResult::success(task.id(), self.agent_id(), 0)
             }
 
             fn update_reputation(&mut self, outcome: &TaskResult) {
@@ -277,13 +269,13 @@ pub struct TaskResult {
 
 impl TaskResult {
     /// Create a successful task result
-    pub fn success(task_id: TaskId, agent_id: AgentId) -> Self {
-        Self { task_id, agent_id, success: true, execution_time_ms: 0 }
+    pub fn success(task_id: TaskId, agent_id: AgentId, execution_time_ms: u64) -> Self {
+        Self { task_id, agent_id, success: true, execution_time_ms }
     }
 
     /// Create a failed task result
-    pub fn failure(task_id: TaskId, agent_id: AgentId) -> Self {
-        Self { task_id, agent_id, success: false, execution_time_ms: 0 }
+    pub fn failure(task_id: TaskId, agent_id: AgentId, execution_time_ms: u64) -> Self {
+        Self { task_id, agent_id, success: false, execution_time_ms }
     }
 
     /// Check if task succeeded
@@ -515,7 +507,6 @@ pub struct SimulationStats {
 // ============================================================================
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

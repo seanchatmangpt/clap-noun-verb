@@ -124,56 +124,104 @@ mod executable_specs_tests {
     /// Test invariant severity levels
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Severity parsing handles all levels
+    /// Verifies: Severity parsing handles all levels, and unknown levels are rejected
     #[test]
     fn test_invariant_severity_levels() {
-        // Arrange - Create severity options
-        let severities = vec!["error", "warning", "info"];
+        // Arrange - valid and invalid severity tokens
+        let valid = vec!["error", "warning", "info"];
+        let invalid = vec!["critical", "debug", ""];
 
-        // Act - Verify all are valid
-        let all_valid = severities.iter().all(|&s| matches!(s, "error" | "warning" | "info"));
+        // Act - classify each
+        let all_valid_accepted = valid.iter().all(|&s| matches!(s, "error" | "warning" | "info"));
+        let all_invalid_rejected =
+            invalid.iter().all(|&s| !matches!(s, "error" | "warning" | "info"));
 
-        // Assert - All severity levels are recognized
-        assert!(all_valid, "All severity levels should be valid");
+        // Assert - valid levels accepted, unknown levels rejected
+        assert!(all_valid_accepted, "Known severity levels should be valid");
+        assert!(all_invalid_rejected, "Unknown severity levels should be rejected");
+
+        // Assert ordering: error is more severe than warning
+        let error_idx = valid.iter().position(|&s| s == "error").unwrap();
+        let warning_idx = valid.iter().position(|&s| s == "warning").unwrap();
+        let info_idx = valid.iter().position(|&s| s == "info").unwrap();
+        assert!(
+            error_idx < warning_idx,
+            "error should come before warning in severity list"
+        );
+        assert!(
+            warning_idx < info_idx,
+            "warning should come before info in severity list"
+        );
     }
 
     /// Test spec versioning is semantic
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Version strings follow semantic versioning
+    /// Verifies: Version strings follow semantic versioning, and non-semver strings are rejected
     #[test]
     fn test_spec_version_is_semantic() {
-        // Arrange - Create version strings
-        let versions = vec!["1.0.0", "2.1.3", "0.5.2"];
+        // Arrange - valid and invalid version strings
+        let valid_versions = vec!["1.0.0", "2.1.3", "0.5.2"];
+        let invalid_versions = vec!["1.0", "v1.0.0", "1.0.0-alpha", "not-a-version"];
 
-        // Act - Verify format
-        let all_semantic = versions.iter().all(|v| {
+        let is_semver = |v: &&str| -> bool {
             let parts: Vec<&str> = v.split('.').collect();
             parts.len() == 3 && parts.iter().all(|p| p.parse::<u32>().is_ok())
-        });
+        };
 
-        // Assert - All versions are semantic
-        assert!(all_semantic, "All versions should follow semver");
+        // Act
+        let all_valid_accepted = valid_versions.iter().all(is_semver);
+        let all_invalid_rejected = invalid_versions.iter().all(|v| !is_semver(v));
+
+        // Assert - valid versions pass, invalid versions fail
+        assert!(all_valid_accepted, "Valid semver strings should be accepted");
+        assert!(all_invalid_rejected, "Non-semver strings should be rejected");
+
+        // Assert version comparison ordering
+        let v1: Vec<u32> = "1.0.0".split('.').map(|p| p.parse().unwrap()).collect();
+        let v2: Vec<u32> = "2.1.3".split('.').map(|p| p.parse().unwrap()).collect();
+        assert!(v2[0] > v1[0], "Major version 2 should be greater than 1");
     }
 
     /// Test property categories are recognized
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Property categorization works correctly
+    /// Verifies: Property categorization accepts known categories and rejects unknown ones
     #[test]
     fn test_property_categories() {
-        // Arrange - Define valid categories
+        // Arrange - Define valid categories and some invalid ones
         let valid_categories = vec!["correctness", "performance", "security"];
+        let unknown_categories = vec!["speed", "accuracy", ""];
 
-        // Act - Check category membership
-        let has_correctness = valid_categories.contains(&"correctness");
-        let has_performance = valid_categories.contains(&"performance");
-        let has_security = valid_categories.contains(&"security");
+        // Act - parse property lines with category tags
+        let lines = vec![
+            "@property[correctness] output == expected",
+            "@property[performance] latency_ms < 100",
+            "@property[security] no_plaintext_passwords",
+        ];
+        let parsed: Vec<(String, String)> =
+            lines.iter().map(|l| parse_property_simple(l)).collect();
 
-        // Assert - All expected categories present
-        assert!(has_correctness, "Should have correctness category");
-        assert!(has_performance, "Should have performance category");
-        assert!(has_security, "Should have security category");
+        // Assert - parsed categories match the known valid set
+        for (cat, _) in &parsed {
+            assert!(
+                valid_categories.contains(&cat.as_str()),
+                "Parsed category '{}' must be in the valid set",
+                cat
+            );
+        }
+
+        // Assert - unknown categories are NOT in the valid set
+        for unk in &unknown_categories {
+            assert!(
+                !valid_categories.contains(unk),
+                "Unknown category '{}' should not appear as valid",
+                unk
+            );
+        }
+
+        // Assert category count matches what we parsed
+        assert_eq!(parsed.len(), 3, "Should have parsed exactly 3 property lines");
     }
 
     /// Test audit trail timestamp presence
