@@ -7,26 +7,13 @@
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust
 //! use clap_noun_verb::context::AppContext;
-//! use std::sync::Arc;
 //!
-//! #[derive(Clone)]
-//! struct AppState {
-//!     db_connection: Arc<Database>,
-//!     config: AppConfig,
-//! }
-//!
-//! // Create context once at startup
-//! let state = AppState {
-//!     db_connection: Arc::new(Database::connect().await?),
-//!     config: load_config()?,
-//! };
-//!
-//! let context = AppContext::new(state);
-//!
-//! // Pass to all handlers
-//! // Handlers can access via: context.state()
+//! let ctx = AppContext::new();
+//! ctx.insert(42_u32).unwrap();
+//! let val: u32 = ctx.get::<u32>().unwrap();
+//! assert_eq!(val, 42);
 //! ```
 
 use std::any::{Any, TypeId};
@@ -59,10 +46,12 @@ impl AppContext {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// # use clap_noun_verb::context::AppContext;
     /// let ctx = AppContext::new();
-    /// ctx.insert(42_i32);
-    /// ctx.insert("hello".to_string());
+    /// ctx.insert(42_i32).unwrap();
+    /// ctx.insert("hello".to_string()).unwrap();
+    /// assert!(ctx.contains::<i32>().unwrap());
     /// ```
     pub fn insert<T: Send + Sync + 'static>(&self, value: T) -> Result<(), ContextError> {
         let type_id = TypeId::of::<T>();
@@ -76,10 +65,11 @@ impl AppContext {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// # use clap_noun_verb::context::AppContext;
     /// let ctx = AppContext::new();
-    /// ctx.insert(42_i32)?;
-    /// let value: i32 = ctx.get::<i32>()?;
+    /// ctx.insert(42_i32).unwrap();
+    /// let value: i32 = ctx.get::<i32>().unwrap();
     /// assert_eq!(value, 42);
     /// ```
     pub fn get<T>(&self) -> Result<T, ContextError>
@@ -120,10 +110,12 @@ impl AppContext {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// # use clap_noun_verb::context::AppContext;
     /// let ctx = AppContext::new();
-    /// ctx.insert("hello".to_string())?;
-    /// ctx.with::<String, _, _>(|s| println!("{}", s))?;
+    /// ctx.insert("hello".to_string()).unwrap();
+    /// let result = ctx.with::<String, _, _>(|s| s.len()).unwrap();
+    /// assert_eq!(result, 5);
     /// ```
     pub fn with<T, F, R>(&self, f: F) -> Result<R, ContextError>
     where

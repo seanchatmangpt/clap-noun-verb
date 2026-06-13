@@ -7,20 +7,17 @@
 //! and emits ready-to-compile Rust code using the #[verb] macro.
 //!
 //! Example RDF input:
-//! ```turtle
+//! ```text
 //! ex:LoadGraphVerb a cnv:Verb ;
 //!     cnv:hasVerbName "load" ;
 //!     cnv:verbAbout "Load a graph from file" ;
 //!     cnv:belongsToNoun ex:GraphNoun ;
 //!     cnv:hasArguments (ex:PathArg ex:FormatArg) ;
-//!     cnv:returnType "GraphLoadedOutput" ;
-//!     cnv:HasTraitBound cnv:Send ;
-//!     cnv:HasTraitBound cnv:Sync ;
-//!     cnv:HasTraitBound cnv:Serialize .
+//!     cnv:returnType "GraphLoadedOutput" .
 //! ```
 //!
 //! Generated output:
-//! ```rust,ignore
+//! ```text
 //! /// Load a graph from file
 //! #[verb("load")]
 //! pub fn graph_load(
@@ -203,20 +200,22 @@ pub struct SparqlResultList {
 /// Ready-to-compile Rust #[verb] function signature + skeleton handler
 ///
 /// # Example
-/// ```ignore
+/// ```rust,no_run
+/// # use clap_noun_verb::rdf_to_ggen::{RdfVerbDefinition, rdf_spec_to_verb_code};
 /// let rdf_def = RdfVerbDefinition {
 ///     verb_uri: "ex:LoadGraphVerb".to_string(),
 ///     name: "load".to_string(),
 ///     description: "Load a graph from file".to_string(),
+///     noun_uri: None,
 ///     noun_name: Some("graph".to_string()),
-///     arguments: vec![/* ... */],
+///     arguments: vec![],
 ///     return_type: "GraphLoadedOutput".to_string(),
-///     trait_bounds: vec!["Send".to_string(), "Sync".to_string(), "Serialize".to_string()],
+///     trait_bounds: vec!["Send".to_string()],
 ///     docstring: "Load a graph from file or stdin".to_string(),
 ///     is_async: false,
 /// };
 /// let code = rdf_spec_to_verb_code(&rdf_def);
-/// println!("{}", code);
+/// assert!(code.contains("#[verb"));
 /// ```
 pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
     let mut code = String::new();

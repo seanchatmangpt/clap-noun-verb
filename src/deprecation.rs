@@ -8,13 +8,14 @@
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust
 //! use clap_noun_verb::deprecation::{Deprecation, DeprecationType};
 //!
 //! let deprecation = Deprecation::new(DeprecationType::Verb)
 //!     .since("3.6.0")
 //!     .note("This command has been replaced with 'new-name'")
 //!     .suggestion("Use 'myapp services new-name' instead");
+//! assert!(deprecation.since.is_some());
 //! ```
 
 use std::fmt;

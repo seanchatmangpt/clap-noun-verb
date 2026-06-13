@@ -29,17 +29,16 @@ use std::collections::HashSet;
 /// - Trait bounds (if present)
 ///
 /// # Example
-/// ```ignore
+/// ```rust,no_run
+/// # use clap_noun_verb::ggen_to_rdf::parse_rust_source;
 /// let rust_code = r#"
-/// /// Load a graph from file
-/// #[verb("load")]
-/// pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOutput> {
-///     // ...
-/// }
+///     /// Load a graph from file
+///     #[verb("load")]
+///     pub fn graph_load(path: String, format: Option<String>) -> Result<String> {
+///         Ok("ok".to_string())
+///     }
 /// "#;
-///
-/// let verbs = parse_rust_source(rust_code)?;
-/// assert_eq!(verbs.len(), 1);
+/// let verbs = parse_rust_source(rust_code).unwrap();
 /// assert_eq!(verbs[0].name, "load");
 /// ```
 pub fn parse_rust_source(source: &str) -> Result<Vec<RdfVerbDefinition>, ParseError> {

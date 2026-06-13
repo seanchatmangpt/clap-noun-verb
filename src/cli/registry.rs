@@ -21,8 +21,8 @@
 //! references requires "leaking" the memory so it persists for the program's
 //! entire duration:
 //!
-//! ```rust,ignore
-//! // What we need to do (16+ instances in this file):
+//!
+//! ```text
 //! let noun_name: &'static str = Box::leak(noun_name.to_string().into_boxed_str());
 //! ```
 //!

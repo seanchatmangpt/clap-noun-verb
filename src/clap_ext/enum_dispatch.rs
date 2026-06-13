@@ -8,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! ```ignore
+//! ```text
 //! use clap::{Parser, Subcommand};
 //! use clap_noun_verb::clap::EnumCommand;
 //!

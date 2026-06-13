@@ -8,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! ```ignore
+//! ```text
 //! use clap_noun_verb::clap::CompletionGenerator;
 //!
 //! let gen = CompletionGenerator::new("myapp");

@@ -481,10 +481,11 @@ impl CommandRegistry {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```rust,no_run
+    /// # use clap_noun_verb::registry::CommandRegistry;
     /// let mut registry = CommandRegistry::new();
     /// registry.load_ontology_verbs(None)?; // Uses ~/open-ontologies
-    /// let cmd = registry.build_command();
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn load_ontology_verbs(&mut self, ontology_dir: Option<PathBuf>) -> Result<usize> {
         let dir = ontology_dir.unwrap_or_else(|| {

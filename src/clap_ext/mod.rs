@@ -19,7 +19,7 @@
 //!
 //! # Example
 //!
-//! ```ignore
+//! ```text
 //! use clap::Parser;
 //! use clap_noun_verb::clap::{EnumCommand, CompletionGenerator, Shell};
 //!
