@@ -547,24 +547,109 @@ impl CommandRegistry {
     fn parse_ttl_verbs(&self, ttl_content: &str) -> Result<Vec<OntologyVerbDef>> {
         let mut verbs = Vec::new();
 
-        // Simple parsing: look for :Verb declarations
+        // First pass: collect @prefix declarations so we know all known prefixes.
+        // Example: @prefix ex: <http://example.org/> .
+        let mut prefixes: Vec<String> = Vec::new();
         for line in ttl_content.lines() {
-            if line.contains(":Verb") || line.contains("rdf:type cnv:Verb") {
-                // Extract verb name (simplified parsing)
-                if let Some(start) = line.find("ex:") {
-                    let remainder = &line[start + 3..];
-                    if let Some(end) = remainder.find(|c: char| !c.is_alphanumeric() && c != '_') {
-                        let verb_name = remainder[..end].to_lowercase();
+            let line = line.trim();
+            if line.starts_with("@prefix") || line.starts_with("PREFIX") {
+                // Extract the local prefix label (the token ending with ':')
+                let tokens: Vec<&str> = line.split_whitespace().collect();
+                // tokens[1] should be "label:" in @prefix form
+                if tokens.len() >= 2 {
+                    let label = tokens[1];
+                    if label.ends_with(':') {
+                        prefixes.push(label.to_string());
+                    }
+                }
+            }
+        }
+        // Always include common prefixes even if not declared in this file
+        for default_prefix in &["ex:", "cnv:", "verb:", "owl:", "rdf:", "rdfs:"] {
+            let owned = default_prefix.to_string();
+            if !prefixes.contains(&owned) {
+                prefixes.push(owned);
+            }
+        }
+
+        // Second pass: collect multi-line blocks and look for Verb type assertions.
+        // We join continuation lines (those that don't start a new subject) so that
+        // statements like:
+        //   ex:myVerb a cnv:Verb ;
+        //       rdfs:label "My verb" .
+        // are handled correctly.
+        //
+        // Strategy: accumulate a logical "statement buffer" that resets on lines
+        // starting a new subject (IRI or prefixed name not beginning with a predicate
+        // keyword), then scan the buffer for known ":Verb" patterns.
+
+        let mut buffer = String::new();
+
+        let flush_buffer = |buf: &str, prefixes: &[String], verbs: &mut Vec<OntologyVerbDef>| {
+            let is_verb_statement = buf.contains(":Verb")
+                || buf.contains("rdf:type cnv:Verb")
+                || buf.contains("a cnv:Verb")
+                || buf.contains("a verb:Verb");
+
+            if !is_verb_statement {
+                return;
+            }
+
+            // Try to extract the subject: the first token that uses a known prefix.
+            let first_line = buf.lines().next().unwrap_or("").trim();
+            let tokens: Vec<&str> = first_line.split_whitespace().collect();
+            let subject = tokens.first().copied().unwrap_or("");
+
+            for prefix in prefixes {
+                if subject.starts_with(prefix.as_str()) {
+                    let local = &subject[prefix.len()..];
+                    // Strip any trailing punctuation (`;`, `.`)
+                    let local = local.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '_');
+                    if !local.is_empty() {
                         verbs.push(OntologyVerbDef {
-                            name: verb_name,
+                            name: local.to_lowercase(),
                             noun: None,
                             doc: "Loaded from ontology".to_string(),
                             args: vec![],
                             return_type: "serde_json::Value".to_string(),
                         });
                     }
+                    return;
                 }
             }
+        };
+
+        for line in ttl_content.lines() {
+            let trimmed = line.trim();
+
+            // Skip comments and empty lines (but keep them from being flushed)
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            // A line that starts with a prefix declaration or a new subject resets the buffer.
+            // Heuristic: if the first non-whitespace character starts an IRI or prefixed name
+            // (not a predicate/object continuation marker like ';', ',', or a blank node
+            // continuation) we treat it as a new statement.
+            let first_char = trimmed.chars().next().unwrap_or(' ');
+            let starts_new_subject = first_char == '<'
+                || first_char == '_'
+                || first_char == '@'
+                || trimmed.starts_with("PREFIX")
+                || prefixes.iter().any(|p| trimmed.starts_with(p.as_str()));
+
+            if starts_new_subject && !buffer.is_empty() {
+                flush_buffer(&buffer, &prefixes, &mut verbs);
+                buffer.clear();
+            }
+
+            buffer.push(' ');
+            buffer.push_str(trimmed);
+        }
+
+        // Flush the final statement buffer
+        if !buffer.is_empty() {
+            flush_buffer(&buffer, &prefixes, &mut verbs);
         }
 
         Ok(verbs)

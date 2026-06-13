@@ -408,8 +408,16 @@ mod tests {
         "#;
         let results = discovery.query_sparql(query);
 
-        // Assert: Filters work together
+        // Assert: Filters work together — only FileReader URI matches both "Reader" and "File"
         assert!(results.is_ok());
+        let results = results.unwrap();
+        assert_eq!(results.len(), 1, "Only FileReader matches both FILTER conditions");
+        let binding = results[0].bindings.get("s").expect("binding 's' must be present");
+        assert!(
+            binding.contains("FileReader"),
+            "Expected FileReader URI but got: {}",
+            binding
+        );
     }
 
     #[test]
@@ -434,9 +442,15 @@ mod tests {
         "#;
         let results = discovery.query_sparql(query);
 
-        // Assert: JOIN succeeds
+        // Assert: JOIN succeeds and returns bindings matching inserted triples
         assert!(results.is_ok());
         let results = results.unwrap();
-        assert!(!results.is_empty());
+        assert!(!results.is_empty(), "JOIN query must return at least one result");
+        // The inserted capability has label "Join Test" and description "Test joins"
+        let first = &results[0];
+        let label = first.bindings.get("label").expect("binding 'label' must be present");
+        let comment = first.bindings.get("comment").expect("binding 'comment' must be present");
+        assert_eq!(label, "Join Test", "label binding must match registered capability name");
+        assert_eq!(comment, "Test joins", "comment binding must match registered capability description");
     }
 }

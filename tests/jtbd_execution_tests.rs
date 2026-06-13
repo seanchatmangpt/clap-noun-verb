@@ -16,6 +16,8 @@ use clap::Arg;
 use clap_noun_verb::error::Result;
 use clap_noun_verb::{noun, verb};
 use clap_noun_verb::{Cli, VerbArgs};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 // =============================================================================
 // Test 1: Numeric Argument Extraction (Critical - Previously Panicked)
@@ -24,12 +26,15 @@ use clap_noun_verb::{Cli, VerbArgs};
 #[test]
 fn test_numeric_args_extraction_port() -> Result<()> {
     // Arrange: CLI with numeric port argument
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("numeric-test").noun(noun!(
         "server",
         "Server commands",
-        [verb!("start", "Start server", |args: &VerbArgs| {
+        [verb!("start", "Start server", move |args: &VerbArgs| {
             let port = args.get_one_str_opt("port").unwrap_or_else(|| "8080".to_string());
             assert_eq!(port, "9000", "Port should be extracted as '9000'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("port")
@@ -50,18 +55,23 @@ fn test_numeric_args_extraction_port() -> Result<()> {
         "9000".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_numeric_args_extraction_timeout() -> Result<()> {
     // Arrange: CLI with u64 timeout argument
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("timeout-test").noun(noun!(
         "request",
         "Request commands",
-        [verb!("send", "Send request", |args: &VerbArgs| {
+        [verb!("send", "Send request", move |args: &VerbArgs| {
             let timeout = args.get_one_str_opt("timeout").unwrap_or_else(|| "30".to_string());
             assert_eq!(timeout, "60", "Timeout should be extracted as '60'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("timeout")
@@ -82,18 +92,23 @@ fn test_numeric_args_extraction_timeout() -> Result<()> {
         "60".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_numeric_args_extraction_workers() -> Result<()> {
     // Arrange: CLI with usize workers argument
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("workers-test").noun(noun!(
         "pool",
         "Worker pool commands",
-        [verb!("scale", "Scale workers", |args: &VerbArgs| {
+        [verb!("scale", "Scale workers", move |args: &VerbArgs| {
             let workers = args.get_one_str_opt("workers").unwrap_or_else(|| "4".to_string());
             assert_eq!(workers, "16", "Workers should be extracted as '16'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("workers")
@@ -114,6 +129,8 @@ fn test_numeric_args_extraction_workers() -> Result<()> {
         "16".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
@@ -124,12 +141,15 @@ fn test_numeric_args_extraction_workers() -> Result<()> {
 #[test]
 fn test_boolean_flag_extraction_verbose() -> Result<()> {
     // Arrange: CLI with boolean verbose flag
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("flag-test").noun(noun!(
         "task",
         "Task commands",
-        [verb!("run", "Run task", |args: &VerbArgs| {
+        [verb!("run", "Run task", move |args: &VerbArgs| {
             let verbose = args.is_flag_set("verbose");
             assert!(verbose, "Verbose flag should be set");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -147,18 +167,23 @@ fn test_boolean_flag_extraction_verbose() -> Result<()> {
         "--verbose".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_boolean_flag_extraction_force() -> Result<()> {
     // Arrange: CLI with boolean force flag
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("force-test").noun(noun!(
         "deploy",
         "Deploy commands",
-        [verb!("push", "Push deployment", |args: &VerbArgs| {
+        [verb!("push", "Push deployment", move |args: &VerbArgs| {
             let force = args.is_flag_set("force");
             assert!(force, "Force flag should be set");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("force")
@@ -176,18 +201,23 @@ fn test_boolean_flag_extraction_force() -> Result<()> {
         "-f".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_boolean_flag_not_set() -> Result<()> {
     // Arrange: CLI with boolean flag not provided
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("no-flag-test").noun(noun!(
         "action",
         "Action commands",
-        [verb!("do", "Do action", |args: &VerbArgs| {
+        [verb!("do", "Do action", move |args: &VerbArgs| {
             let verbose = args.is_flag_set("verbose");
             assert!(!verbose, "Verbose flag should NOT be set");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -200,6 +230,8 @@ fn test_boolean_flag_not_set() -> Result<()> {
     // Act: Run WITHOUT --verbose
     cli.run_with_args(vec!["no-flag-test".to_string(), "action".to_string(), "do".to_string()])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
@@ -210,12 +242,15 @@ fn test_boolean_flag_not_set() -> Result<()> {
 #[test]
 fn test_optional_arg_with_default() -> Result<()> {
     // Arrange: CLI with optional argument using default
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("default-test").noun(noun!(
         "config",
         "Config commands",
-        [verb!("show", "Show config", |args: &VerbArgs| {
+        [verb!("show", "Show config", move |args: &VerbArgs| {
             let format = args.get_one_str_opt("format").unwrap_or_else(|| "json".to_string());
             assert_eq!(format, "json", "Default format should be 'json'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("format")
@@ -227,18 +262,23 @@ fn test_optional_arg_with_default() -> Result<()> {
     // Act: Run WITHOUT --format (use default)
     cli.run_with_args(vec!["default-test".to_string(), "config".to_string(), "show".to_string()])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_optional_arg_with_override() -> Result<()> {
     // Arrange: CLI with optional argument being overridden
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("override-test").noun(noun!(
         "output",
         "Output commands",
-        [verb!("format", "Format output", |args: &VerbArgs| {
+        [verb!("format", "Format output", move |args: &VerbArgs| {
             let format = args.get_one_str_opt("format").unwrap_or_else(|| "json".to_string());
             assert_eq!(format, "yaml", "Format should be overridden to 'yaml'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("format")
@@ -256,6 +296,8 @@ fn test_optional_arg_with_override() -> Result<()> {
         "yaml".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
@@ -266,12 +308,15 @@ fn test_optional_arg_with_override() -> Result<()> {
 #[test]
 fn test_count_action_single() -> Result<()> {
     // Arrange: CLI with count action for verbosity
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("count-single-test").noun(noun!(
         "log",
         "Log commands",
-        [verb!("show", "Show logs", |args: &VerbArgs| {
+        [verb!("show", "Show logs", move |args: &VerbArgs| {
             let verbosity = args.get_flag_count("verbose");
             assert_eq!(verbosity, 1, "Verbosity should be 1 for single -v");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -289,18 +334,23 @@ fn test_count_action_single() -> Result<()> {
         "-v".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_count_action_double() -> Result<()> {
     // Arrange: CLI with count action for verbosity
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("count-double-test").noun(noun!(
         "trace",
         "Trace commands",
-        [verb!("dump", "Dump trace", |args: &VerbArgs| {
+        [verb!("dump", "Dump trace", move |args: &VerbArgs| {
             let verbosity = args.get_flag_count("verbose");
             assert_eq!(verbosity, 2, "Verbosity should be 2 for -vv");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -318,18 +368,23 @@ fn test_count_action_double() -> Result<()> {
         "-vv".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_count_action_triple() -> Result<()> {
     // Arrange: CLI with count action for verbosity
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("count-triple-test").noun(noun!(
         "debug",
         "Debug commands",
-        [verb!("analyze", "Analyze debug info", |args: &VerbArgs| {
+        [verb!("analyze", "Analyze debug info", move |args: &VerbArgs| {
             let verbosity = args.get_flag_count("verbose");
             assert_eq!(verbosity, 3, "Verbosity should be 3 for -vvv");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -347,18 +402,23 @@ fn test_count_action_triple() -> Result<()> {
         "-vvv".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
 #[test]
 fn test_count_action_zero() -> Result<()> {
     // Arrange: CLI with count action not provided
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("count-zero-test").noun(noun!(
         "quiet",
         "Quiet commands",
-        [verb!("run", "Run quietly", |args: &VerbArgs| {
+        [verb!("run", "Run quietly", move |args: &VerbArgs| {
             let verbosity = args.get_flag_count("verbose");
             assert_eq!(verbosity, 0, "Verbosity should be 0 when not provided");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("verbose")
@@ -371,6 +431,8 @@ fn test_count_action_zero() -> Result<()> {
     // Act: Run WITHOUT -v
     cli.run_with_args(vec!["count-zero-test".to_string(), "quiet".to_string(), "run".to_string()])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
@@ -381,29 +443,30 @@ fn test_count_action_zero() -> Result<()> {
 #[test]
 fn test_mixed_numeric_string_args() -> Result<()> {
     // Arrange: CLI with both numeric and string arguments
-    let cli = Cli::new()
-        .name("mixed-test")
-        .noun(noun!(
-            "connection",
-            "Connection commands",
-            [verb!("open", "Open connection", |args: &VerbArgs| {
-                let host = args.get_one_str_opt("host").unwrap_or_else(|| "localhost".to_string());
-                let port = args.get_one_str_opt("port").unwrap_or_else(|| "8080".to_string());
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
+    let cli = Cli::new().name("mixed-test").noun(noun!(
+        "connection",
+        "Connection commands",
+        [verb!("open", "Open connection", move |args: &VerbArgs| {
+            let host = args.get_one_str_opt("host").unwrap_or_else(|| "localhost".to_string());
+            let port = args.get_one_str_opt("port").unwrap_or_else(|| "8080".to_string());
 
-                assert_eq!(host, "example.com", "Host should be 'example.com'");
-                assert_eq!(port, "443", "Port should be '443'");
-                Ok(())
-            }, args: [
-Arg::new("host")
-                    .long("host")
-                    .default_value("localhost"),
-                Arg::new("port")
-                    .long("port")
-                    .short('p')
-                    .default_value("8080")
-                    .value_parser(clap::value_parser!(u16)),
-            ]),]
-        ));
+            assert_eq!(host, "example.com", "Host should be 'example.com'");
+            assert_eq!(port, "443", "Port should be '443'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
+            Ok(())
+        }, args: [
+            Arg::new("host")
+                .long("host")
+                .default_value("localhost"),
+            Arg::new("port")
+                .long("port")
+                .short('p')
+                .default_value("8080")
+                .value_parser(clap::value_parser!(u16)),
+        ]),]
+    ));
 
     // Act: Run with both --host and --port
     cli.run_with_args(vec![
@@ -416,6 +479,8 @@ Arg::new("host")
         "443".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 
@@ -426,12 +491,15 @@ Arg::new("host")
 #[test]
 fn test_negative_numeric_arg() -> Result<()> {
     // Arrange: CLI with i64 argument that can be negative
+    let handler_ran = Arc::new(AtomicBool::new(false));
+    let handler_ran_clone = Arc::clone(&handler_ran);
     let cli = Cli::new().name("negative-test").noun(noun!(
         "offset",
         "Offset commands",
-        [verb!("set", "Set offset", |args: &VerbArgs| {
+        [verb!("set", "Set offset", move |args: &VerbArgs| {
             let offset = args.get_one_str_opt("value").unwrap_or_else(|| "0".to_string());
             assert_eq!(offset, "-100", "Offset should be '-100'");
+            handler_ran_clone.store(true, Ordering::SeqCst);
             Ok(())
         }, args: [
             Arg::new("value")
@@ -450,6 +518,8 @@ fn test_negative_numeric_arg() -> Result<()> {
         "-100".to_string(),
     ])?;
 
+    // Assert: handler actually ran
+    assert!(handler_ran.load(Ordering::SeqCst), "Handler must have executed");
     Ok(())
 }
 

@@ -254,16 +254,35 @@ fn test_error_handling_compatibility() {
     println!("✓ NounVerbError is ggen-compatible");
 }
 
-/// Test that Result<T> type works correctly
+/// Test that Result<T> type works correctly with real crate functions
 #[test]
 fn test_result_type_usage() {
-    let success: ClapResult<String> = Ok("Success".to_string());
+    use clap_noun_verb::format_output;
+    use clap_noun_verb::OutputFormat;
+
+    // Arrange: a serializable value to format
+    #[derive(Serialize)]
+    struct Sample {
+        key: &'static str,
+        value: u32,
+    }
+    let sample = Sample { key: "answer", value: 42 };
+
+    // Act: format_output succeeds for valid input
+    let success = format_output(&sample, OutputFormat::Json);
     assert!(success.is_ok());
+    let json_str = success.unwrap();
+    assert!(json_str.contains("answer"), "JSON output must contain the 'key' field value");
+    assert!(json_str.contains("42"), "JSON output must contain the 'value' field value");
 
-    let failure: ClapResult<String> = Err(NounVerbError::execution_error("Failure".to_string()));
+    // Act: NounVerbError constructors produce errors that carry the expected message
+    let err = NounVerbError::execution_error("bad input".to_string());
+    let failure: ClapResult<String> = Err(err);
     assert!(failure.is_err());
+    let msg = failure.unwrap_err().to_string();
+    assert!(msg.contains("bad input"), "Error message must include the original cause: {msg}");
 
-    println!("✓ Result<T> type works correctly");
+    println!("✓ Result<T> type works correctly with real crate functions");
 }
 
 // ============================================================================

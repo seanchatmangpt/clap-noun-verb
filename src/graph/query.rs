@@ -43,12 +43,9 @@ fn execute_query(query_type: &str, pattern: &str, graph: &super::Graph) -> Vec<Q
     let triples = match query_type {
         "subject" => graph.query_by_subject(pattern),
         "predicate" => graph.query_by_predicate(pattern),
-        "object" => graph
-            .triples()
-            .iter()
-            .filter(|t| t.object.contains(pattern))
-            .cloned()
-            .collect(),
+        "object" => {
+            graph.triples().iter().filter(|t| t.object.contains(pattern)).cloned().collect()
+        }
         _ => graph
             .triples()
             .iter()
@@ -109,10 +106,15 @@ fn parse_query_string(query_string: &str) -> crate::Result<(String, String)> {
 /// myapp graph query "subject:ex:alice"
 /// ```
 pub fn query_graph(query_string: String) -> crate::Result<QueryResultOutput> {
-    let (query_type, pattern) = parse_query_string(&query_string)?;
-    let empty_graph = super::Graph::new();
-    let results = execute_query(&query_type, &pattern, &empty_graph);
-    Ok(QueryResultOutput::new(query_type, pattern).with_results(results))
+    // There is no global graph store in this codebase — graph state is not shared
+    // across verb handler calls. Returning zero results from an empty graph would
+    // silently mislead the user. Return a clear error instead.
+    Err(crate::error::NounVerbError::execution_error(
+        "No graph loaded — use 'graph load' first to load RDF data before querying. \
+         Query string was: "
+            .to_string()
+            + &query_string,
+    ))
 }
 
 /// Query the graph using generated planner
@@ -152,12 +154,8 @@ mod tests {
     #[test]
     fn test_execute_query_subject() {
         let mut graph = super::super::Graph::new();
-        graph
-            .add_triple(super::super::Triple::new("ex:test", "rdf:type", "ex:Entity"))
-            .unwrap();
-        graph
-            .add_triple(super::super::Triple::new("ex:test", "foaf:name", "Alice"))
-            .unwrap();
+        graph.add_triple(super::super::Triple::new("ex:test", "rdf:type", "ex:Entity")).unwrap();
+        graph.add_triple(super::super::Triple::new("ex:test", "foaf:name", "Alice")).unwrap();
         let results = execute_query("subject", "ex:test", &graph);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].subject, "ex:test");

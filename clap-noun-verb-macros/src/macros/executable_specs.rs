@@ -285,10 +285,14 @@ impl ProofGenerator {
                 let assertion = &prop.assertion;
                 let category = &prop.category;
 
-                // Parse assertion as Rust expression (simple parsing for now)
-                let assertion_expr: TokenStream = assertion.parse().unwrap_or_else(|_| {
-                    quote! { true }
-                });
+                // Parse assertion as Rust expression — emit compile_error! on failure
+                let assertion_expr: TokenStream = match assertion.parse::<TokenStream>() {
+                    Ok(ts) => ts,
+                    Err(_) => {
+                        let msg = format!("@property expression is not valid Rust: {}", assertion);
+                        quote! { compile_error!(#msg) }
+                    }
+                };
 
                 quote! {
                     #[test]
@@ -449,8 +453,36 @@ pub fn generate_invariant(
     let inv_expr_str = &invariant.expression;
     let severity = &invariant.severity;
 
-    // Parse invariant expression
-    let inv_expr: TokenStream = inv_expr_str.parse().unwrap_or_else(|_| quote! { true });
+    // Parse invariant expression — emit compile_error! on failure
+    let inv_expr: TokenStream = match inv_expr_str.parse::<TokenStream>() {
+        Ok(ts) => ts,
+        Err(_) => {
+            let msg = format!("@invariant expression is not valid Rust: {}", inv_expr_str);
+            quote! { compile_error!(#msg) }
+        }
+    };
+
+    // Collect parameters and argument names to forward in the wrapper
+    let params = &input_fn.sig.inputs;
+    let arg_names: Vec<TokenStream> = input_fn
+        .sig
+        .inputs
+        .iter()
+        .filter_map(|arg| match arg {
+            syn::FnArg::Typed(pat_type) => {
+                if let syn::Pat::Ident(pat_ident) = pat_type.pat.as_ref() {
+                    let ident = &pat_ident.ident;
+                    Some(quote! { #ident })
+                } else {
+                    None
+                }
+            }
+            syn::FnArg::Receiver(_) => Some(quote! { self }),
+        })
+        .collect();
+
+    // Return type of the wrapper matches the original function
+    let ret_ty = &input_fn.sig.output;
 
     // Generate wrapper function with invariant checking
     let original_fn = input_fn;
@@ -461,7 +493,7 @@ pub fn generate_invariant(
 
         // Wrapper function with invariant validation
         #[doc = concat!("Invariant-validated wrapper for ", stringify!(#fn_name))]
-        pub fn #wrapper_name() {
+        pub fn #wrapper_name(#params) #ret_ty {
             // Pre-condition: Check invariant
             let invariant_holds = #inv_expr;
 
@@ -481,8 +513,8 @@ pub fn generate_invariant(
                 );
             }
 
-            // Execute original function
-            #fn_name();
+            // Execute original function, forwarding all parameters
+            let result = #fn_name(#(#arg_names),*);
 
             // Post-condition: Check invariant again
             let invariant_holds_post = #inv_expr;
@@ -502,6 +534,8 @@ pub fn generate_invariant(
                     #severity
                 );
             }
+
+            result
         }
 
         // Invariant metadata (compile-time constant)

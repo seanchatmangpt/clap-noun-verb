@@ -29,10 +29,20 @@ fn parse_triples_from_content(content: &str) -> usize {
             continue;
         }
 
-        // Very simple parser: split by whitespace and take first 3 tokens
+        // N-Triples parser: split by whitespace and take first 3 tokens.
+        // Valid subject forms: IRI (<...>) or blank node (_:)
+        // Valid predicate form: IRI (<...>)
+        // Valid object forms: IRI (<...>), blank node (_:), or literal ("...)
         let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 3 && parts[0].starts_with('<') && parts[1].starts_with('<') {
-            triple_count += 1;
+        if parts.len() >= 3 {
+            let s_ok = parts[0].starts_with('<') || parts[0].starts_with("_:");
+            let p_ok = parts[1].starts_with('<');
+            let o_ok = parts[2].starts_with('<')
+                || parts[2].starts_with("_:")
+                || parts[2].starts_with('"');
+            if s_ok && p_ok && o_ok {
+                triple_count += 1;
+            }
         }
     }
     triple_count

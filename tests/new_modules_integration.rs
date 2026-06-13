@@ -193,12 +193,36 @@ fn test_step1_all_six_verbs_callable() -> Result<()> {
     let pack_json = serde_json::to_value(&pack_added).unwrap();
     let doctor_json = serde_json::to_value(&doctor).unwrap();
 
-    // Assert: All verbs produce valid JSON
+    // Assert: All verbs produce valid JSON with expected fields
     assert!(load_json.is_object());
+    assert!(load_json["triples_loaded"].is_number());
+    assert_eq!(load_json["triples_loaded"], 5);
+    assert!(load_json["source"].is_string());
+    assert!(load_json["status"].is_string());
+
     assert!(query_json.is_object());
+    assert!(query_json["query_type"].is_string());
+    assert_eq!(query_json["query_type"], "subject");
+    assert!(query_json["match_count"].is_number());
+    assert!(query_json["results"].is_array());
+
     assert!(validate_json.is_object());
+    assert!(validate_json["valid"].is_boolean());
+    assert!(validate_json["total_triples"].is_number());
+    assert_eq!(validate_json["total_triples"], 0);
+    assert!(validate_json["errors"].is_array());
+
     assert!(pack_json.is_object());
+    assert_eq!(pack_json["id"], "cap-001");
+    assert_eq!(pack_json["name"], "Test");
+    assert_eq!(pack_json["version"], "1.0.0");
+    assert!(pack_json["status"].is_string());
+
     assert!(doctor_json.is_object());
+    assert!(doctor_json["healthy"].is_boolean());
+    assert!(doctor_json["status"].is_string());
+    assert_eq!(doctor_json["graph_triples"], 100);
+    assert_eq!(doctor_json["registry_packages"], 5);
 
     Ok(())
 }
@@ -506,10 +530,21 @@ fn test_step4_output_formatters_still_work() -> Result<()> {
     let query_json = serde_json::to_value(&query_output).unwrap();
     let doctor_json = serde_json::to_value(&doctor).unwrap();
 
-    // Assert: All formatters still work
+    // Assert: All formatters still work with correct field values
     assert!(load_json.is_object());
+    assert_eq!(load_json["triples_loaded"], 5);
+    assert_eq!(load_json["source"], "test.ttl");
+    assert!(load_json["status"].is_string());
+
     assert!(query_json.is_object());
+    assert_eq!(query_json["query_type"], "subject");
+    assert_eq!(query_json["pattern"], "ex");
+    assert_eq!(query_json["match_count"], 0);
+
     assert!(doctor_json.is_object());
+    assert!(doctor_json["healthy"].is_boolean());
+    assert_eq!(doctor_json["graph_triples"], 100);
+    assert_eq!(doctor_json["registry_packages"], 5);
 
     Ok(())
 }
@@ -554,35 +589,6 @@ fn test_step4_help_text_available() -> Result<()> {
 
     // Assert: Help should be derivable from types
     assert_eq!(load_output.status, "success");
-
-    Ok(())
-}
-
-// =============================================================================
-// INTEGRATION TEST SUMMARY
-// =============================================================================
-
-#[test]
-fn test_integration_summary_all_steps() -> Result<()> {
-    // STEP 1: Cross-module integration
-    assert!(test_step1_full_workflow_load_query_validate().is_ok());
-    assert!(test_step1_all_six_verbs_callable().is_ok());
-
-    // STEP 2: OutputFormat compatibility (sampled)
-    assert!(test_step2_graph_load_json_compact().is_ok());
-    assert!(test_step2_graph_load_json_pretty().is_ok());
-    assert!(test_step2_query_result_json_compact().is_ok());
-    assert!(test_step2_doctor_json_compact().is_ok());
-
-    // STEP 3: Argument validation
-    assert!(test_step3_graph_load_missing_file().is_ok());
-    assert!(test_step3_triple_invalid_subject().is_ok());
-    assert!(test_step3_capability_invalid_id().is_ok());
-
-    // STEP 4: Backward compatibility
-    assert!(test_step4_existing_registry_api_unchanged().is_ok());
-    assert!(test_step4_existing_traits_unchanged().is_ok());
-    assert!(test_step4_output_formatters_still_work().is_ok());
 
     Ok(())
 }
