@@ -39,36 +39,37 @@ impl QueryResultOutput {
     }
 }
 
-/// Domain logic: Execute query and generate results
-fn execute_query(query_type: &str, pattern: &str) -> Vec<QueryMatch> {
-    match query_type {
-        "subject" => vec![
-            QueryMatch {
-                index: 0,
-                subject: pattern.to_string(),
-                predicate: "rdf:type".to_string(),
-                object: "ex:Entity".to_string(),
-            },
-            QueryMatch {
-                index: 1,
-                subject: pattern.to_string(),
-                predicate: "foaf:name".to_string(),
-                object: "Example Name".to_string(),
-            },
-        ],
-        "predicate" => vec![QueryMatch {
-            index: 0,
-            subject: "ex:alice".to_string(),
-            predicate: pattern.to_string(),
-            object: "ex:bob".to_string(),
-        }],
-        _ => vec![QueryMatch {
-            index: 0,
-            subject: "ex:unknown".to_string(),
-            predicate: "rdf:comment".to_string(),
-            object: format!("Query type '{}' not recognized", query_type),
-        }],
-    }
+fn execute_query(query_type: &str, pattern: &str, graph: &super::Graph) -> Vec<QueryMatch> {
+    let triples = match query_type {
+        "subject" => graph.query_by_subject(pattern),
+        "predicate" => graph.query_by_predicate(pattern),
+        "object" => graph
+            .triples()
+            .iter()
+            .filter(|t| t.object.contains(pattern))
+            .cloned()
+            .collect(),
+        _ => graph
+            .triples()
+            .iter()
+            .filter(|t| {
+                t.subject.contains(pattern)
+                    || t.predicate.contains(pattern)
+                    || t.object.contains(pattern)
+            })
+            .cloned()
+            .collect(),
+    };
+    triples
+        .into_iter()
+        .enumerate()
+        .map(|(i, t)| QueryMatch {
+            index: i,
+            subject: t.subject,
+            predicate: t.predicate,
+            object: t.object,
+        })
+        .collect()
 }
 
 /// Domain logic: Parse query string
@@ -109,7 +110,8 @@ fn parse_query_string(query_string: &str) -> crate::Result<(String, String)> {
 /// ```
 pub fn query_graph(query_string: String) -> crate::Result<QueryResultOutput> {
     let (query_type, pattern) = parse_query_string(&query_string)?;
-    let results = execute_query(&query_type, &pattern);
+    let empty_graph = super::Graph::new();
+    let results = execute_query(&query_type, &pattern, &empty_graph);
     Ok(QueryResultOutput::new(query_type, pattern).with_results(results))
 }
 
@@ -122,11 +124,10 @@ pub fn query_graph_generated(
     graph: &super::Graph,
 ) -> crate::Result<QueryResultOutput> {
     let mut planner = super::impl_generated::QueryPlanner::new();
-    let _results = planner.execute(&query_string, graph)?;
+    planner.execute(&query_string, graph)?;
 
-    // Parse for output formatting
     let (query_type, pattern) = parse_query_string(&query_string)?;
-    let results = execute_query(&query_type, &pattern);
+    let results = execute_query(&query_type, &pattern, graph);
 
     Ok(QueryResultOutput::new(query_type, pattern).with_results(results))
 }
@@ -150,7 +151,14 @@ mod tests {
 
     #[test]
     fn test_execute_query_subject() {
-        let results = execute_query("subject", "ex:test");
+        let mut graph = super::super::Graph::new();
+        graph
+            .add_triple(super::super::Triple::new("ex:test", "rdf:type", "ex:Entity"))
+            .unwrap();
+        graph
+            .add_triple(super::super::Triple::new("ex:test", "foaf:name", "Alice"))
+            .unwrap();
+        let results = execute_query("subject", "ex:test", &graph);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].subject, "ex:test");
     }

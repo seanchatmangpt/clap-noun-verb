@@ -251,12 +251,20 @@ impl GeneratedHealthChecker {
         let packages = reg.list();
         let active_count = packages.iter().filter(|p| p.status == "active").count();
 
+        let mut issues = Vec::new();
+        for pkg in &packages {
+            if pkg.status != "active" {
+                issues.push(format!("package {} has non-active status: {}", pkg.id, pkg.status));
+            }
+        }
+        let healthy = issues.is_empty();
+
         Ok(RegistryHealthStatus {
-            healthy: true,
+            healthy,
             total_packages: packages.len(),
             active_packages: active_count,
             last_check: format!("{:?}", std::time::SystemTime::now()),
-            issues: Vec::new(),
+            issues,
         })
     }
 

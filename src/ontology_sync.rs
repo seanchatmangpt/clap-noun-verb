@@ -278,7 +278,34 @@ impl OntologySync {
                     }
                 }
                 SyncOperation::RemoveFromOntology => {
-                    // TODO: Remove from ontology
+                    if let Some(rdf_version) = &entry.rdf_version {
+                        let noun_name = entry.noun.as_deref().unwrap_or("root");
+                        let nt_path =
+                            self.ontology_path.join(format!("{}-verbs.nt", noun_name));
+                        if nt_path.exists() {
+                            let content = tokio::fs::read_to_string(&nt_path)
+                                .await
+                                .map_err(|e| SyncError::IoError(e.to_string()))?;
+                            let subject_iri = rdf_version
+                                .verb_uri
+                                .trim_start_matches('<')
+                                .trim_end_matches('>');
+                            let filtered: String = content
+                                .lines()
+                                .filter(|line| {
+                                    let trimmed = line.trim();
+                                    if trimmed.is_empty() || trimmed.starts_with('#') {
+                                        return true;
+                                    }
+                                    !trimmed.contains(subject_iri)
+                                })
+                                .map(|line| format!("{}\n", line))
+                                .collect();
+                            tokio::fs::write(&nt_path, filtered.as_bytes())
+                                .await
+                                .map_err(|e| SyncError::IoError(e.to_string()))?;
+                        }
+                    }
                 }
                 SyncOperation::NoChange => {}
             }

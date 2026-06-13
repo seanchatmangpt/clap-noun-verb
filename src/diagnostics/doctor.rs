@@ -42,13 +42,11 @@ impl DoctorOutput {
     }
 }
 
-/// Domain logic: Perform all health checks
 fn perform_health_checks() -> DoctorOutput {
-    let mut output = DoctorOutput::new(42, 5);
+    let mut output = DoctorOutput::new(0, 0);
 
     let graph_accessible = check_graph_accessible();
     let registry_operational = check_registry_operational();
-    let memory_ok = check_memory_availability();
 
     if !graph_accessible {
         output.add_issue("error", "Graph store not accessible");
@@ -56,10 +54,6 @@ fn perform_health_checks() -> DoctorOutput {
 
     if !registry_operational {
         output.add_issue("error", "Capability registry is not responding");
-    }
-
-    if !memory_ok {
-        output.add_issue("warning", "Memory usage above 80% threshold");
     }
 
     output.add_issue("info", "All core services operational");
@@ -82,25 +76,20 @@ pub fn health_check() -> crate::Result<DoctorOutput> {
     Ok(perform_health_checks())
 }
 
-/// Check if graph store is accessible
 fn check_graph_accessible() -> bool {
-    // Simulate graph store accessibility check
-    // In production, would attempt actual connection
-    true
+    #[cfg(feature = "rdf-composition")]
+    {
+        let _ = crate::rdf::ontology::Ontology::new();
+        true
+    }
+    #[cfg(not(feature = "rdf-composition"))]
+    {
+        false
+    }
 }
 
-/// Check if registry is operational
 fn check_registry_operational() -> bool {
-    // Simulate registry operational check
-    // In production, would query actual registry
-    true
-}
-
-/// Check if sufficient memory is available
-fn check_memory_availability() -> bool {
-    // Simulate memory check
-    // In production, would check system memory
-    true
+    crate::registry::CommandRegistry::new().validate().is_ok()
 }
 
 #[cfg(test)]
@@ -108,28 +97,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_health_check_success() {
+    fn test_health_check_returns_result() {
         let result = health_check();
         assert!(result.is_ok());
-        let output = result.unwrap();
-        assert!(output.healthy);
-        assert_eq!(output.graph_triples, 42);
-        assert_eq!(output.registry_packages, 5);
     }
 
     #[test]
-    fn test_check_graph_accessible() {
-        assert!(check_graph_accessible());
+    fn test_health_check_honest_counts() {
+        let result = health_check().unwrap();
+        assert_eq!(result.graph_triples, 0);
+        assert_eq!(result.registry_packages, 0);
     }
 
     #[test]
     fn test_check_registry_operational() {
-        assert!(check_registry_operational());
-    }
-
-    #[test]
-    fn test_check_memory_availability() {
-        assert!(check_memory_availability());
+        let result = check_registry_operational();
+        assert!(result, "registry should initialize without error");
     }
 
     #[test]

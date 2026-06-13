@@ -1,6 +1,3 @@
-// Copyright (c) 2024 Sean Chatman
-// SPDX-License-Identifier: MIT OR Apache-2.0
-
 //! Compile-time validation for telemetry spans
 //!
 //! This module prevents the "48 RPN failure mode" - spans registered but never emitted (dead telemetry).
@@ -149,16 +146,17 @@ pub fn generate_span_declaration(ident: &syn::Ident, name: &str) -> TokenStream 
             (#ident_str, #name_str, concat!(file!(), ":", line!()))
         };
 
-        /// Compile-time usage validation
+        /// Compile-time span-name reference.
         ///
-        /// This const will cause a compile error if the span is never used.
-        /// The error is generated when no span! macro references this constant.
+        /// This const references the declared span constant so that the name
+        /// binding is present in the generated code. It does NOT enforce that
+        /// `span!` is called with this span — enforcement would require a
+        /// build-script that cross-references __SPAN_REGISTRY with __SPAN_USAGE
+        /// at link time (see `generate_build_validation`). Until that build-script
+        /// integration is wired, callers should treat usage validation as
+        /// best-effort rather than guaranteed compile-time rejection.
         #[doc(hidden)]
-        const #usage_check_ident: () = {
-            // This will be checked by the build system
-            // If no span! macro uses this constant, a compile error is generated
-            ()
-        };
+        const #usage_check_ident: &str = #ident_str;
     }
 }
 
@@ -195,9 +193,18 @@ pub fn generate_span_usage(span_ident: &syn::Ident) -> TokenStream {
     }
 }
 
-/// Validate that a span is used
+/// Emit a compile-time error for a span that was determined to be unused.
 ///
-/// Generates compile-time error if span declaration exists but no span! usage.
+/// This function is **only** correct to call when the invoking macro-expansion
+/// logic has already confirmed that no `span!(IDENT, …)` usage exists in the
+/// current expansion context. Calling it unconditionally will always fail to
+/// compile regardless of actual usage.
+///
+/// NOTE: True cross-crate usage detection (catching spans declared in one
+/// module but used in another) requires a build-script that cross-references
+/// `__SPAN_REGISTRY` with `__SPAN_USAGE` at link time. This function handles
+/// only the simpler case where the macro expander has local knowledge that the
+/// span is unreferenced.
 pub fn validate_span_usage(span_ident: &syn::Ident) -> TokenStream {
     let error_message = format!(
         "Span '{}' is declared but never used\n\
@@ -212,13 +219,13 @@ pub fn validate_span_usage(span_ident: &syn::Ident) -> TokenStream {
         span_ident, span_ident, span_ident
     );
 
-    let check_ident = quote::format_ident!("__SPAN_CHECK_{}", span_ident);
+    let check_ident = quote::format_ident!("__SPAN_UNUSED_{}", span_ident);
 
     quote! {
         #[doc(hidden)]
         const #check_ident: () = {
-            // This check is enforced by the build system
-            // If no span! usage is found, compilation fails with error above
+            // compile_error! is unconditional — this block must only be emitted
+            // when the caller has confirmed no span! usage was found.
             compile_error!(#error_message);
         };
     }
@@ -340,7 +347,6 @@ fn main() {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use syn::parse_quote;

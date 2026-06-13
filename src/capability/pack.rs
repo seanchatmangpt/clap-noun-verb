@@ -81,9 +81,9 @@ fn register_package(name: &str, version: &str) -> crate::Result<(String, String,
     Ok((package_id, name.to_string(), version.to_string()))
 }
 
-/// Check if a package exists in the registry (simulated)
 fn package_exists(id: &str) -> bool {
-    id.starts_with("pkg-")
+    let generated = super::impl_generated::GeneratedRegistry::new();
+    generated.package_exists(id)
 }
 
 /// Domain logic: Validate and remove package

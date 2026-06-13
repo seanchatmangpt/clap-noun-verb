@@ -502,14 +502,12 @@ impl CommandRegistry {
         let verbs = self.discover_verbs_from_ontology(&dir)?;
         let count = verbs.len();
 
-        for verb_def in verbs {
-            // Create a simple stub verb for now
-            // In production, this would generate actual Rust code and compile it
-            // For now, we register the verb definition in metadata
-            if let Some(_noun_name) = verb_def.noun {
-                // In a full implementation, we'd create a VerbCommand from the definition
-                // This would require dynamic code generation and compilation
-            }
+        if count > 0 {
+            return Err(NounVerbError::Generic(
+                "Runtime ontology verb loading is not yet implemented: verbs were discovered \
+                 but cannot be registered without dynamic compilation support"
+                    .to_string(),
+            ));
         }
 
         Ok(count)

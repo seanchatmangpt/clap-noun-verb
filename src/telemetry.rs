@@ -441,8 +441,9 @@ impl TelemetryManager {
             format!("span_ended: {}", span.name()),
         );
         if let Ok(json) = serde_json::to_string(&envelope) {
-            // Emitted log simulation
-            let _ = json;
+            if std::env::var("RUST_LOG").is_ok() {
+                eprintln!("[telemetry] {}", json);
+            }
         }
         Ok(span)
     }
@@ -494,7 +495,9 @@ impl TelemetryManager {
             (name.to_string(), details.to_string()),
         );
         if let Ok(json) = serde_json::to_string(&envelope) {
-            let _ = json;
+            if std::env::var("RUST_LOG").is_ok() {
+                eprintln!("[telemetry] {}", json);
+            }
         }
         Ok(())
     }

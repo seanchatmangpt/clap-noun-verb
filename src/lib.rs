@@ -83,6 +83,10 @@ pub mod capability;
 // Diagnostics: health checks and system monitoring
 pub mod diagnostics;
 
+// Federation support
+#[cfg(feature = "federated-network")]
+pub mod federation;
+
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
 // =============================================================================
