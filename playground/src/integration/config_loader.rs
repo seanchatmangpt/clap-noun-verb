@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Configuration loading integration layer
 //!
 //! Handles loading, merging, and validating ggen.toml configuration files.

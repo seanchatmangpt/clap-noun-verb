@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! ggen CLI - General Projection Engine
 //!
 //! A production-ready implementation of ggen with enhanced error handling

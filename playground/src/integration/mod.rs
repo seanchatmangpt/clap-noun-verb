@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration Layer - Glue Code Between CLI and Domain
 //!
 //! This module connects the CLI layer to the domain layer.
@@ -33,6 +36,10 @@ pub mod registry_client;
 pub mod config_loader;
 pub mod pack_store;
 pub mod agent;
+
+#[cfg(feature = "agent-sandbox")]
+pub mod sandbox;
+
 
 // Re-export integration functions
 pub use templates::{render_paper_latex, get_template_engine};

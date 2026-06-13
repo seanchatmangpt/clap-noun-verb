@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Economic Simulation Macros
 //!
 //! This module provides procedural macros for simulating economic behavior
@@ -175,8 +178,14 @@ pub fn generate_economic_agent(input: DeriveInput) -> Result<TokenStream> {
             }
 
             fn execute_task(&mut self, task: Task) -> TaskResult {
-                // Default implementation: simulate successful execution
-                TaskResult::success(task.id(), self.agent_id())
+                // Default implementation: succeed only when trust score meets task complexity.
+                // Tasks with complexity > trust_score are beyond the agent's current capability.
+                // This ensures the simulation is falsifiable: low-trust agents fail hard tasks.
+                if task.complexity() > self.trust_score().value() {
+                    TaskResult::failure(task.id(), self.agent_id())
+                } else {
+                    TaskResult::success(task.id(), self.agent_id())
+                }
             }
 
             fn update_reputation(&mut self, outcome: &TaskResult) {
@@ -506,6 +515,7 @@ pub struct SimulationStats {
 // ============================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

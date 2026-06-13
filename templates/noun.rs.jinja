@@ -1,0 +1,125 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! {{ module_name }} noun - {{ brief_description }}
+//!
+//! Encapsulates all {{ noun_name }} domain operations and state.
+
+use crate::domain::{{ domain_struct_name }};
+use clap_noun_verb::{NounCommand, NounVerbError, Result};
+use serde::{Deserialize, Serialize};
+
+/// {{ noun_name_title }} command handler
+///
+/// Implements the `NounCommand` trait for {{ noun_name }} operations.
+///
+/// # Examples
+///
+/// ```ignore
+/// // Auto-discovered and registered by clap-noun-verb
+/// // Usage: app {{ noun_name }} [subcommand]
+/// ```
+#[derive(Debug, Clone)]
+pub struct {{ noun_struct_name }} {
+    // PLACEHOLDER: Add {{ noun_name }}-specific state
+    // Example:
+    // config_path: PathBuf,
+    // session: Arc<Mutex<{{ domain_struct_name }}State>>,
+}
+
+impl Default for {{ noun_struct_name }} {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl {{ noun_struct_name }} {
+    /// Create a new {{ noun_name }} command handler
+    ///
+    /// # Returns
+    ///
+    /// A new instance ready to dispatch {{ noun_name }} subcommands.
+    pub fn new() -> Self {
+        Self {
+            // PLACEHOLDER: Initialize state
+            // Example:
+            // config_path: PathBuf::from(env!("HOME")),
+            // session: Arc::new(Mutex::new({{ domain_struct_name }}State::default())),
+        }
+    }
+
+    /// Validate {{ noun_name }} prerequisites
+    ///
+    /// Called before subcommand execution. Override in implementations
+    /// that require setup (e.g., file permissions, external service checks).
+    ///
+    /// # Errors
+    ///
+    /// Returns `NounVerbError` if prerequisites are not met.
+    fn validate_prerequisites(&self) -> Result<()> {
+        // PLACEHOLDER: Add prerequisite checks
+        // Example:
+        // if !self.config_path.exists() {
+        //     return Err(NounVerbError::validation_error(
+        //         "config".to_string(),
+        //         format!("{:?}", self.config_path),
+        //         Some("Configuration file not found. Run 'app {{ noun_name }} init' first."),
+        //     ));
+        // }
+        Ok(())
+    }
+}
+
+// PLACEHOLDER: Uncomment and implement NounCommand trait if noun-level dispatch needed
+//
+// impl NounCommand for {{ noun_struct_name }} {
+//     fn name(&self) -> &'static str {
+//         "{{ noun_name }}"
+//     }
+//
+//     fn description(&self) -> &'static str {
+//         "{{ brief_description }}"
+//     }
+//
+//     fn pre_dispatch(&self) -> Result<()> {
+//         self.validate_prerequisites()
+//     }
+//
+//     fn post_dispatch(&self) -> Result<()> {
+//         // PLACEHOLDER: Add post-dispatch cleanup
+//         Ok(())
+//     }
+// }
+
+/// Output type for {{ noun_name }} operations
+///
+/// Serializes to JSON for agent consumption. Follows the shape of `{{ domain_struct_name }}`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ noun_output_struct }}Output {
+    /// PLACEHOLDER: Add output fields
+    /// Example:
+    /// pub id: String,
+    /// pub status: String,
+    /// pub created_at: String,
+    /// pub metadata: serde_json::Value,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_{{ noun_name }}_initialization() {
+        let noun = {{ noun_struct_name }}::new();
+        // PLACEHOLDER: Assert initial state
+        assert_eq!(noun.name(), "{{ noun_name }}");
+    }
+
+    #[test]
+    fn test_{{ noun_name }}_prerequisites() {
+        let noun = {{ noun_struct_name }}::new();
+        // PLACEHOLDER: Test prerequisite validation
+        let result = noun.validate_prerequisites();
+        assert!(result.is_ok());
+    }
+}

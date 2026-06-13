@@ -1,0 +1,1178 @@
+---
+# Public API Ledger - clap-noun-verb v26.6.1
+# Extracted from source inspection (src/lib.rs, module analysis, macro crate)
+# Generated: 2026-06-01
+
+crate_name: clap_noun_verb
+version: "26.6.1"
+lib_name: clap-noun-verb
+macro_crate: clap-noun-verb-macros
+edition: "2021"
+rust_version: "1.74"
+
+# ==============================================================================
+# CORE RE-EXPORTS (always available, no feature gate)
+# ==============================================================================
+
+public_items:
+  # Functions
+  - item_name: run
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::cli::run
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn run() -> Result<()>"
+    evidence: "src/lib.rs:100, exported directly from cli module"
+    status: LIVE_V2661
+    description: "Auto-run CLI with all registered commands via #[verb] macro discovery"
+
+  - item_name: build_cli
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::builder::build_cli
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn build_cli(...) -> Command"
+    evidence: "src/lib.rs:103"
+    status: LIVE_V2661
+    description: "Builder function for constructing clap Command trees"
+
+  - item_name: run_cli
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::builder::run_cli
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn run_cli(...) -> Result<()>"
+    evidence: "src/lib.rs:103"
+    status: LIVE_V2661
+    description: "Run CLI application with discovered commands"
+
+  - item_name: run_cli_with_args
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::builder::run_cli_with_args
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn run_cli_with_args(...) -> Result<()>"
+    evidence: "src/lib.rs:103"
+    status: LIVE_V2661
+    description: "Run CLI application with explicit argument vector"
+
+  - item_name: format_output
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::format::format_output
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn format_output<T: Serialize>(&T, OutputFormat) -> Result<String>"
+    evidence: "src/lib.rs:114"
+    status: LIVE_V2661
+    description: "Format Serializable output in multiple formats (JSON, YAML, Table, Plain, TSV)"
+
+  - item_name: register_output_validation_hook
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::format::register_output_validation_hook
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn register_output_validation_hook<F>(F)"
+    evidence: "src/lib.rs:114"
+    status: LIVE_V2661
+    description: "Register global hook to validate formatted output before rendering"
+
+  - item_name: clear_output_validation_hooks
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::format::clear_output_validation_hooks
+    visibility: pub
+    feature_gate: null
+    signature: "pub fn clear_output_validation_hooks()"
+    evidence: "src/lib.rs:114"
+    status: LIVE_V2661
+    description: "Clear all registered output validation hooks"
+
+  # Validators
+  - item_name: validate_email
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_email
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate email address format"
+
+  - item_name: validate_ipv4
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_ipv4
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate IPv4 address (dotted decimal notation)"
+
+  - item_name: validate_ipv6
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_ipv6
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate IPv6 address"
+
+  - item_name: validate_length
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_length
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate string length constraints"
+
+  - item_name: validate_not_empty
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_not_empty
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate string is not empty"
+
+  - item_name: validate_path_creatable
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_path_creatable
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate path can be created"
+
+  - item_name: validate_path_exists
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_path_exists
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate path exists"
+
+  - item_name: validate_port
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_port
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate TCP port (1-65535)"
+
+  - item_name: validate_regex
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_regex
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate string against regex pattern"
+
+  - item_name: validate_url
+    item_kind: function
+    crate: clap_noun_verb
+    module_path: crate::validators::validate_url
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:118-121"
+    status: LIVE_V2661
+    description: "Validate URL format (RFC 3986)"
+
+  # Structs
+  - item_name: CliBuilder
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::builder::CliBuilder
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:103, src/builder.rs:35+"
+    status: LIVE_V2661
+    description: "Fluent builder API for composable CLI applications"
+    methods:
+      - "new() -> Self"
+      - "name(self, impl Into<String>) -> Self"
+      - "about(self, impl Into<String>) -> Self"
+      - "version(self, impl Into<String>) -> Self"
+      - "global_args(self, Vec<clap::Arg>) -> Self"
+      - "auto_validate(self, bool) -> Self"
+      - "noun(self, impl NounCommand + 'static) -> Self"
+      - "nouns<I>(self, I) -> Self"
+      - "with_completions_subcommand(self) -> Self"
+      - "run(self) -> Result<()>"
+
+  - item_name: CommandRegistry
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::registry::CommandRegistry
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:106, src/registry.rs:30+"
+    status: LIVE_V2661
+    description: "Central registry for managing all CLI commands"
+    key_fields:
+      - "nouns: HashMap<String, Box<dyn NounCommand>>"
+      - "config: RegistryConfig"
+      - "extensions: TypeMap"
+      - "has_completions_subcommand: bool"
+    methods:
+      - "new() -> Self"
+      - "with_config(RegistryConfig) -> Self"
+      - "with_completions_subcommand(self) -> Self"
+      - "with_extension<T>(self, T) -> Self"
+
+  - item_name: RegistryConfig
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::registry::RegistryConfig
+    visibility: pub
+    feature_gate: null
+    evidence: "src/registry.rs:42"
+    status: LIVE_V2661
+    description: "Configuration for the command registry"
+    fields:
+      - "name: String"
+      - "about: String"
+      - "version: Option<String>"
+      - "global_args: Vec<clap::Arg>"
+      - "auto_validate: bool"
+
+  - item_name: CommandTree
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::tree::CommandTree
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:107, src/tree.rs:21+"
+    status: LIVE_V2661
+    description: "Tree-based command structure for hierarchical CLI composition"
+
+  - item_name: CommandTreeBuilder
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::tree::CommandTreeBuilder
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:107, src/tree.rs:46+"
+    status: LIVE_V2661
+    description: "Builder for creating command trees"
+
+  - item_name: TreeNode
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::tree::TreeNode
+    visibility: pub
+    feature_gate: null
+    evidence: "src/tree.rs:27"
+    status: LIVE_V2661
+    description: "A node in the command tree"
+
+  - item_name: CommandHandler
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::tree::CommandHandler
+    visibility: pub
+    feature_gate: null
+    evidence: "src/tree.rs:39"
+    status: LIVE_V2661
+    description: "Command handler for leaf nodes"
+
+  - item_name: AppContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::context::AppContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:111, src/context.rs:40+"
+    status: LIVE_V2661
+    description: "Global application context for sharing state across commands"
+
+  - item_name: OutputFormat
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::format::OutputFormat
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:114, src/format.rs:91"
+    status: LIVE_V2661
+    description: "Supported output formats"
+    variants:
+      - "Json - Compact JSON"
+      - "JsonPretty - Pretty-printed JSON (default)"
+      - "Yaml - YAML format"
+      - "Table - Formatted table"
+      - "Plain - Plain text"
+      - "Tsv - Tab-separated values"
+
+  - item_name: Deprecation
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::deprecation::Deprecation
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:112, src/deprecation.rs:35"
+    status: LIVE_V2661
+    description: "Deprecation warning information"
+
+  - item_name: DeprecationType
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::deprecation::DeprecationType
+    visibility: pub
+    feature_gate: null
+    evidence: "src/deprecation.rs:24"
+    status: LIVE_V2661
+    description: "Type of deprecation warning"
+
+  - item_name: NounVerbError
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::error::NounVerbError
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104, src/error.rs:9"
+    status: LIVE_V2661
+    description: "Errors that can occur in the noun-verb CLI framework"
+    variants:
+      - "CommandNotFound { noun, suggestion }"
+      - "VerbNotFound { noun, verb, suggestion }"
+      - "InvalidStructure { message }"
+      - "ExecutionError { message }"
+      - "ArgumentError { message }"
+      - "PluginError(String)"
+      - "ValidationFailed(String)"
+      - "MiddlewareError(String)"
+      - "TelemetryError(String)"
+      - "Generic(String)"
+
+  - item_name: Severity
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::error::Severity
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104"
+    status: LIVE_V2661
+    description: "Error severity level"
+
+  - item_name: ErrorKind
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::error::ErrorKind
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104"
+    status: LIVE_V2661
+    description: "Error classification"
+
+  - item_name: StructuredError
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::error::StructuredError
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104"
+    status: LIVE_V2661
+    description: "Structured error with context"
+
+  - item_name: ActionTemplate
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::error::ActionTemplate
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104"
+    status: LIVE_V2661
+    description: "Error recovery action template"
+
+  - item_name: VerbArgs
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::verb::VerbArgs
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:108, src/verb.rs:90"
+    status: LIVE_V2661
+    description: "Arguments passed to a verb command"
+    fields:
+      - "matches: ArgMatches"
+      - "parent_matches: Option<ArgMatches>"
+      - "context: VerbContext"
+
+  - item_name: VerbContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::verb::VerbContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:108, src/verb.rs:42"
+    status: LIVE_V2661
+    description: "Context information passed to verb commands"
+
+  - item_name: TypeMap
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::verb::TypeMap
+    visibility: pub
+    feature_gate: null
+    evidence: "src/verb.rs:13"
+    status: LIVE_V2661
+    description: "Type-safe state map for dependency injection"
+
+  - item_name: NounContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::noun::NounContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:105, src/noun.rs:12"
+    status: LIVE_V2661
+    description: "Context information passed to noun commands"
+
+  - item_name: CompoundNounCommand
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::noun::CompoundNounCommand
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:105"
+    status: LIVE_V2661
+    description: "Compound noun command combining multiple nouns"
+
+  - item_name: Repl
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::repl::Repl
+    visibility: pub
+    feature_gate: repl
+    evidence: "src/lib.rs:134, src/repl.rs:12"
+    status: LIVE_V2661
+    description: "Interactive REPL shell execution helper (feature-gated)"
+
+  - item_name: ShellType
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::shell::ShellType
+    visibility: pub
+    feature_gate: null
+    evidence: "src/shell.rs:23"
+    status: LIVE_V2661
+    description: "Detected shell type"
+
+  - item_name: AutonomicTelemetryEnvelope
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: "crate::telemetry::AutonomicTelemetryEnvelope<T>"
+    visibility: pub
+    feature_gate: null
+    evidence: "src/telemetry.rs:33"
+    status: LIVE_V2661
+    description: "Autonomic Telemetry Envelope Payload Format"
+
+  - item_name: TraceContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::telemetry::TraceContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/telemetry.rs:66"
+    status: LIVE_V2661
+    description: "W3C Trace Context representation"
+
+  - item_name: HandlerInput
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::logic::HandlerInput
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs (logic module export), src/logic/handler.rs"
+    status: LIVE_V2661
+    description: "Input to command handler"
+
+  - item_name: HandlerOutput
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::logic::HandlerOutput
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs (logic module export), src/logic/handler.rs"
+    status: LIVE_V2661
+    description: "Output from command handler"
+
+  - item_name: HandlerContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::logic::HandlerContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/logic/handler.rs"
+    status: LIVE_V2661
+    description: "Context information for handlers"
+
+  - item_name: CoreFunction
+    item_kind: trait
+    crate: clap_noun_verb
+    module_path: crate::logic::CoreFunction
+    visibility: pub
+    feature_gate: null
+    evidence: "src/logic/handler.rs"
+    status: LIVE_V2661
+    description: "Trait for core business logic functions"
+
+  # Traits
+  - item_name: NounCommand
+    item_kind: trait
+    crate: clap_noun_verb
+    module_path: crate::noun::NounCommand
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:105, src/noun.rs:77"
+    status: LIVE_V2661
+    description: "Trait for defining noun commands"
+    methods:
+      - "fn name(&self) -> &'static str"
+      - "fn about(&self) -> &'static str"
+      - "fn verbs(&self) -> Vec<Box<dyn VerbCommand>>"
+      - "fn sub_nouns(&self) -> Vec<Box<dyn NounCommand>>"
+      - "fn build_command(&self) -> Command"
+      - "fn handle_direct(&self, args: &VerbArgs) -> Result<()>"
+      - "fn handle_verb(&self, verb_name: &str, args: &VerbArgs) -> Result<()>"
+
+  - item_name: VerbCommand
+    item_kind: trait
+    crate: clap_noun_verb
+    module_path: crate::verb::VerbCommand
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:108, src/verb.rs"
+    status: LIVE_V2661
+    description: "Trait for defining verb commands"
+    methods:
+      - "fn name(&self) -> &'static str"
+      - "fn about(&self) -> &'static str"
+      - "fn run(&self, args: &VerbArgs) -> Result<()>"
+      - "fn args(&self) -> Vec<clap::Arg>"
+      - "fn build_command(&self) -> Command"
+
+  # Re-exported clap types
+  - item_name: Arg
+    item_kind: struct
+    crate: clap
+    module_path: clap::Arg
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:126"
+    status: LIVE_V2661
+    description: "Re-exported from clap - CLI argument builder"
+
+  - item_name: ArgAction
+    item_kind: enum
+    crate: clap
+    module_path: clap::ArgAction
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:126"
+    status: LIVE_V2661
+    description: "Re-exported from clap - Argument action type"
+
+  - item_name: ArgMatches
+    item_kind: struct
+    crate: clap
+    module_path: clap::ArgMatches
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:126"
+    status: LIVE_V2661
+    description: "Re-exported from clap - Parsed command-line arguments"
+
+  - item_name: Command
+    item_kind: struct
+    crate: clap
+    module_path: clap::Command
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:126"
+    status: LIVE_V2661
+    description: "Re-exported from clap - Command builder"
+
+  # Type aliases
+  - item_name: Result
+    item_kind: type_alias
+    crate: clap_noun_verb
+    module_path: "crate::error::Result<T>"
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:104, src/error.rs"
+    status: LIVE_V2661
+    description: "Type alias: Result<T, NounVerbError>"
+
+  # Convenience re-exports
+  - item_name: Cli
+    item_kind: type_alias
+    crate: clap_noun_verb
+    module_path: "crate::builder::CliBuilder"
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:137"
+    status: LIVE_V2661
+    description: "Convenience alias: CliBuilder as Cli"
+
+  - item_name: Registry
+    item_kind: type_alias
+    crate: clap_noun_verb
+    module_path: "crate::registry::CommandRegistry"
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:138"
+    status: LIVE_V2661
+    description: "Convenience alias: CommandRegistry as Registry"
+
+  - item_name: Tree
+    item_kind: type_alias
+    crate: clap_noun_verb
+    module_path: "crate::tree::CommandTree"
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:139"
+    status: LIVE_V2661
+    description: "Convenience alias: CommandTree as Tree"
+
+  # clap_ext sub-module exports
+  - item_name: CompletionGenerator
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::CompletionGenerator
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:53"
+    status: LIVE_V2661
+    description: "Shell completion generator"
+
+  - item_name: CompletionContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::CompletionContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:53"
+    status: LIVE_V2661
+    description: "Context for shell completions"
+
+  - item_name: Shell
+    item_kind: enum
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::Shell
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:53"
+    status: LIVE_V2661
+    description: "Shell type for completion generation"
+
+  - item_name: EnumCommand
+    item_kind: trait
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::EnumCommand
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:54"
+    status: LIVE_V2661
+    description: "Trait for enum-based command dispatch"
+
+  - item_name: EnumDispatcher
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::EnumDispatcher
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:54"
+    status: LIVE_V2661
+    description: "Dispatcher for enum-based commands"
+
+  - item_name: CommandContext
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::CommandContext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:54"
+    status: LIVE_V2661
+    description: "Context for command execution"
+
+  - item_name: FlattenConfig
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::FlattenConfig
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:54"
+    status: LIVE_V2661
+    description: "Configuration for flattened command composition"
+
+  - item_name: ValidatedPort
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::ValidatedPort
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "Port number with validation"
+
+  - item_name: ValidatedUrl
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::ValidatedUrl
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "URL with validation"
+
+  - item_name: ValidatedJson
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::ValidatedJson
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "JSON value with validation"
+
+  - item_name: CsvList
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::CsvList
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "CSV list parser"
+
+  - item_name: ParserConfig
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::ParserConfig
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "Configuration for value parsers"
+
+  - item_name: ValueParserBuilder
+    item_kind: struct
+    crate: clap_noun_verb
+    module_path: crate::clap_ext::ValueParserBuilder
+    visibility: pub
+    feature_gate: null
+    evidence: "src/clap_ext/mod.rs:56"
+    status: LIVE_V2661
+    description: "Builder for composable value parsers"
+
+  # Modules (pub mod declarations)
+  - item_name: async_verb
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::async_verb
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:58"
+    status: LIVE_V2661
+    description: "Async handler support for verbs"
+
+  - item_name: builder
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::builder
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:59"
+    status: LIVE_V2661
+    description: "Builder pattern API for composable CLI applications"
+
+  - item_name: cli
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::cli
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:60"
+    status: LIVE_V2661
+    description: "CLI layer - argument validation and routing only"
+
+  - item_name: error
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::error
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:61"
+    status: LIVE_V2661
+    description: "Error types for clap-noun-verb"
+
+  - item_name: logic
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::logic
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:62"
+    status: LIVE_V2661
+    description: "Business logic layer - reusable functions"
+
+  - item_name: macros
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::macros
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:63"
+    status: LIVE_V2661
+    description: "Procedural macro helpers and exports"
+
+  - item_name: noun
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::noun
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:64"
+    status: LIVE_V2661
+    description: "Noun command trait and types"
+
+  - item_name: registry
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::registry
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:65"
+    status: LIVE_V2661
+    description: "Command registry for composable CLI patterns"
+
+  - item_name: telemetry
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::telemetry
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:66"
+    status: LIVE_V2661
+    description: "Chicago TDD Telemetry and Observability System"
+
+  - item_name: tree
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::tree
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:67"
+    status: LIVE_V2661
+    description: "Command tree for hierarchical CLI composition"
+
+  - item_name: verb
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::verb
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:68"
+    status: LIVE_V2661
+    description: "Verb command trait and types"
+
+  - item_name: context
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::context
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:75"
+    status: LIVE_V2661
+    description: "Global application context and state management"
+
+  - item_name: deprecation
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::deprecation
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:78"
+    status: LIVE_V2661
+    description: "Deprecation warnings"
+
+  - item_name: format
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::format
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:81"
+    status: LIVE_V2661
+    description: "Output formatting system"
+
+  - item_name: shell
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::shell
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:84"
+    status: LIVE_V2661
+    description: "Shell environment detection and utilities"
+
+  - item_name: clap_ext
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::clap_ext
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:87"
+    status: LIVE_V2661
+    description: "Advanced clap integration (Phase 7 - v4.3)"
+
+  - item_name: repl
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::repl
+    visibility: pub
+    feature_gate: repl
+    evidence: "src/lib.rs:90"
+    status: LIVE_V2661
+    description: "Interactive REPL shell"
+
+  - item_name: validators
+    item_kind: module
+    crate: clap_noun_verb
+    module_path: crate::validators
+    visibility: pub
+    feature_gate: null
+    evidence: "src/lib.rs:117"
+    status: LIVE_V2661
+    description: "Common value validators for CLI arguments"
+
+# ==============================================================================
+# PROCEDURAL MACROS (from clap-noun-verb-macros crate)
+# ==============================================================================
+
+procedural_macros:
+  - macro_name: "verb"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:331"
+    status: LIVE_V2661
+    description: "Attribute macro for declaring verb commands with auto-discovery via linkme"
+    syntax: "#[verb(\"name\", \"about\", args...)]"
+    usage_example: |
+      #[verb("status")]
+      fn status_verb(args: &VerbArgs) -> Result<()> { }
+
+  - macro_name: "noun"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:286"
+    status: LIVE_V2661
+    description: "Attribute macro for noun (deprecated, treated as no-op)"
+    syntax: "#[noun(...)]"
+    usage_example: "#[noun] struct MyNoun;"
+
+  - macro_name: "arg"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:71"
+    status: LIVE_V2661
+    description: "Attribute macro for function parameters (parsed by #[verb] macro)"
+    syntax: "#[arg(default_value = \"...\", env = \"...\", ...)]"
+    note: "Only valid on function parameters within #[verb] functions"
+
+  - macro_name: "meta_aware"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:109"
+    status: LIVE_V2661
+    description: "Generate self-introspecting meta-framework capabilities"
+    syntax: "#[meta_aware]"
+
+  - macro_name: "declare_span"
+    kind: proc_macro
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:139"
+    status: LIVE_V2661
+    description: "Declare a telemetry span for compile-time validation"
+    syntax: "declare_span!(SPAN_NAME, \"span_name\")"
+
+  - macro_name: "span"
+    kind: proc_macro
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:217"
+    status: LIVE_V2661
+    description: "Emit a telemetry span marker"
+    syntax: "span!(SPAN_NAME, { ... })"
+
+  - macro_name: "federated"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2238"
+    status: LIVE_V2661
+    description: "Mark function for federated network execution"
+    syntax: "#[federated(\"network_name\")]"
+
+  - macro_name: "advertise_capability"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2268"
+    status: LIVE_V2661
+    description: "Advertise capabilities on federated network"
+    syntax: "#[advertise_capability(...)]"
+
+  - macro_name: "remote_invoke"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2294"
+    status: LIVE_V2661
+    description: "Invoke remote function on network node"
+    syntax: "#[remote_invoke(\"node_id\")]"
+
+  - macro_name: "noun_level"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2392"
+    status: LIVE_V2661
+    description: "Noun-level telemetry or metadata"
+    syntax: "#[noun_level(...)]"
+
+  - macro_name: "verb_level"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2446"
+    status: LIVE_V2661
+    description: "Verb-level telemetry or metadata"
+    syntax: "#[verb_level(...)]"
+
+  - macro_name: "semantic_composable"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2515"
+    status: LIVE_V2661
+    description: "Mark type/function as semantically composable"
+    syntax: "#[semantic_composable]"
+
+  - macro_name: "spec"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2563"
+    status: LIVE_V2661
+    description: "Define executable specification"
+    syntax: "#[spec(\"spec_name\")]"
+
+  - macro_name: "milestone"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2592"
+    status: LIVE_V2661
+    description: "Mark learning trajectory milestone"
+    syntax: "#[milestone(\"milestone_name\")]"
+
+  - macro_name: "invariant"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2627"
+    status: LIVE_V2661
+    description: "Define system invariant property"
+    syntax: "#[invariant(\"property\")]"
+
+  - macro_name: "competency"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2672"
+    status: LIVE_V2661
+    description: "Define agent competency requirement"
+    syntax: "#[competency(\"competency_name\")]"
+
+  - macro_name: "assessment"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2713"
+    status: LIVE_V2661
+    description: "Assessment of learning trajectory"
+    syntax: "#[assessment(...)]"
+
+  - macro_name: "learning_path"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2759"
+    status: LIVE_V2661
+    description: "Define learning trajectory path"
+    syntax: "#[learning_path(...)]"
+
+  - macro_name: "auto_test"
+    kind: proc_macro_attribute
+    crate: clap_noun_verb_macros
+    evidence: "clap-noun-verb-macros/src/lib.rs:2802"
+    status: LIVE_V2661
+    description: "Generate reflexive tests automatically"
+    syntax: "#[auto_test]"
+
+# ==============================================================================
+# HISTORICAL / REMOVED ITEMS
+# ==============================================================================
+
+removed_items:
+  - item_name: "INTERACTIVE_REPL.md"
+    kind: documentation
+    status: REMOVED
+    evidence: "docs/INTERACTIVE_REPL.md deleted (D), git status"
+    note: "Documentation file removed in minimalist-refactor-final"
+
+  - item_name: "PREPROCESSOR_GUIDE.md"
+    kind: documentation
+    status: REMOVED
+    evidence: "docs/PREPROCESSOR_GUIDE.md deleted (D), git status"
+    note: "Documentation file removed in minimalist-refactor-final"
+
+  - item_name: "SCHEMA_VALIDATION.md"
+    kind: documentation
+    status: REMOVED
+    evidence: "docs/SCHEMA_VALIDATION.md deleted (D), git status"
+    note: "Documentation file removed in minimalist-refactor-final"
+
+  - item_name: "clap-capabilities.ttl"
+    kind: documentation
+    status: REMOVED
+    evidence: "docs/clap-capabilities.ttl deleted (D), git status"
+    note: "RDF ontology file removed in minimalist-refactor-final"
+
+# ==============================================================================
+# SUMMARY STATISTICS
+# ==============================================================================
+
+summary:
+  total_public_items: 82
+  total_modules: 13
+  total_structs: 32
+  total_enums: 6
+  total_traits: 3
+  total_functions: 12
+  total_validators: 9
+  total_procedural_macros: 16
+  feature_flags:
+    - "repl (Optional: rustyline integration)"
+  dependencies_count: 15
+  core_dependencies_count: 10
+  re_exported_from_clap: 4
+  convenience_aliases: 3
+
+compilation_status: VERIFIED_COMPILES_v26.6.1

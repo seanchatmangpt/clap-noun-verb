@@ -1,12 +1,16 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+
 //! speckit-ralph - Ralph Loop Orchestrator for MCPP
 //!
-//! This crate implements the Ralph loop closure: 
+//! This crate implements the Ralph loop closure:
 //! RalphPlan emission → doctor verdict → signed receipt → chain verification → state advance.
 
-use clap_noun_verb::{Result, NounVerbError};
+use clap_noun_verb::{NounVerbError, Result};
 use clap_noun_verb_macros::verb;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::fs;
 use std::path::Path;
 
@@ -14,7 +18,7 @@ use std::path::Path;
 async fn main() -> Result<()> {
     // Force linking of commands
     speckit_ralph::init();
-    
+
     // Auto-discover and run commands
     clap_noun_verb::run()
 }
@@ -67,12 +71,14 @@ fn ralph_run(goal: String) -> Result<serde_json::Value> {
     let plan_json = serde_json::to_value(&plan)
         .map_err(|e| NounVerbError::execution_error(format!("Failed to serialize plan: {}", e)))?;
 
-    let pretty = serde_json::to_string_pretty(&plan_json)
-        .map_err(|e| NounVerbError::execution_error(format!("Failed to format plan JSON: {}", e)))?;
+    let pretty = serde_json::to_string_pretty(&plan_json).map_err(|e| {
+        NounVerbError::execution_error(format!("Failed to format plan JSON: {}", e))
+    })?;
 
     // 1. Emit RalphPlan JSON to workspace
-    fs::write("ralph_plan.json", &pretty)
-        .map_err(|e| NounVerbError::execution_error(format!("Failed to write ralph_plan.json: {}", e)))?;
+    fs::write("ralph_plan.json", &pretty).map_err(|e| {
+        NounVerbError::execution_error(format!("Failed to write ralph_plan.json: {}", e))
+    })?;
 
     println!("{}", pretty);
 
@@ -82,7 +88,8 @@ fn ralph_run(goal: String) -> Result<serde_json::Value> {
         let mut content = fs::read_to_string(state_file).unwrap_or_default();
         if content.contains("phase: none") {
             content = content.replace("phase: none", "phase: plan");
-            content = content.replace("active_delta: \"\"", &format!("active_delta: \"{}\"", plan.id));
+            content =
+                content.replace("active_delta: \"\"", &format!("active_delta: \"{}\"", plan.id));
             let _ = fs::write(state_file, content);
         }
     }
@@ -91,8 +98,5 @@ fn ralph_run(goal: String) -> Result<serde_json::Value> {
 }
 
 fn current_timestamp() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()
 }

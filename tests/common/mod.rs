@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Common test utilities for clap-noun-verb tests
 pub mod test_prelude;
 /// Assertion helpers for command structure verification
@@ -24,7 +29,7 @@ pub mod command_assertions {
         let sub = cmd
             .get_subcommands()
             .find(|s| s.get_name() == subcommand)
-            .expect(&format!("Subcommand '{}' not found", subcommand));
+            .unwrap_or_else(|| panic!("Subcommand '{}' not found", subcommand));
         assert!(
             sub.get_subcommands().any(|v| v.get_name() == verb),
             "Subcommand '{}' should have verb '{}'",
@@ -105,7 +110,7 @@ impl OutputCapture {
     }
     pub fn capture<F>(f: F) -> String
     where
-        F: FnOnce() -> (),
+        F: FnOnce(),
     {
         // Placeholder - will implement actual stdout capture
         f();

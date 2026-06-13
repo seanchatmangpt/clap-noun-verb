@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Value parser pattern matching and application
 //!
 //! This module handles parsing and applying value_parser expressions

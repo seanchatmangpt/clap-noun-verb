@@ -195,7 +195,7 @@ Result: Swarm converges to optimum
 - **LayeredBroadcast** - Local-first then propagate
 - **GossipProtocol** - Exponential information spread
 - **EpidemicProtocol** - Resilient to network partitions
-- **TopolgyAdaptation** - Routes reoptimize dynamically
+- **TopologyAdaptation** - Routes reoptimize dynamically
 - **ProtocolNegotiation** - Agents agree on communication style
 
 **Protocol Hierarchy**:

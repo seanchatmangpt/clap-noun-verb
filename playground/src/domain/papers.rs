@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Domain Logic: Academic Paper Generation
 //!
 //! Pure functions for paper structure and content generation.
@@ -36,6 +39,29 @@ impl PaperFamily {
             "narrative" => Some(Self::Narrative),
             _ => None,
         }
+    }
+
+    /// Parse a family name from string with validation
+    pub fn from_str_validated(s: &str) -> Result<Self, String> {
+        let valid = Self::valid_values();
+        if !valid.contains(&s.to_lowercase().as_str()) {
+            return Err(format!(
+                "Invalid family '{}'. Must be one of: {}",
+                s,
+                valid.join(", ")
+            ));
+        }
+
+        Ok(match s.to_lowercase().as_str() {
+            "imrad" => Self::IMRaD,
+            "papers" => Self::Papers,
+            "argument" => Self::Argument,
+            "contribution" => Self::Contribution,
+            "monograph" => Self::Monograph,
+            "dsr" => Self::DSR,
+            "narrative" => Self::Narrative,
+            _ => unreachable!(),
+        })
     }
 
     /// Get the display name
@@ -351,3 +377,31 @@ impl ValidationResult {
         }
     }
 }
+
+impl std::str::FromStr for PaperFamily {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::from_str_validated(s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_family_validation_rejects_invalid() {
+        let result = PaperFamily::from_str_validated("InvalidFamily");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid family"));
+    }
+
+    #[test]
+    fn test_family_validation_accepts_valid() {
+        let result = PaperFamily::from_str_validated("imrad");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), PaperFamily::IMRaD);
+    }
+}
+

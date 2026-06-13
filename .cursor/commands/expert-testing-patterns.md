@@ -333,7 +333,7 @@ fn test_registry_creates_valid_command() -> Result<()> {
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules and standards
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules and standards
 - **[Verify Tests Command](./verify-tests.md)** - Test verification workflow
 - **[80/20 Fill Gaps](./80-20-fill-gaps.md)** - Capability completion
 

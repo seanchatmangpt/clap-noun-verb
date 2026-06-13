@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! CLI router - validation and delegation only
 //!
 //! This router enforces the pattern: validate arguments, then
@@ -5,7 +8,6 @@
 
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
-use crate::runtime::Executor;
 use crate::verb::VerbCommand as LegacyVerbCommand;
 use clap::ArgMatches;
 use std::collections::HashMap;
@@ -17,20 +19,12 @@ use std::collections::HashMap;
 pub struct CommandRouter {
     /// Nouns registered with the router
     nouns: HashMap<String, Box<dyn NounCommand>>,
-    /// Executor for running commands with interceptors
-    #[allow(dead_code)] // Reserved for future use
-    executor: Executor,
 }
 
 impl CommandRouter {
     /// Create a new command router
     pub fn new() -> Self {
-        Self { nouns: HashMap::new(), executor: Executor::new() }
-    }
-
-    /// Create a router with custom executor
-    pub fn with_executor(executor: Executor) -> Self {
-        Self { nouns: HashMap::new(), executor }
+        Self { nouns: HashMap::new() }
     }
 
     /// Register a noun command
@@ -49,8 +43,10 @@ impl CommandRouter {
             .ok_or_else(|| NounVerbError::invalid_structure("No subcommand found"))?;
 
         // Find the noun command
-        let noun =
-            self.nouns.get(noun_name).ok_or_else(|| NounVerbError::command_not_found(noun_name))?;
+        let noun = self.nouns.get(noun_name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+            NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+        })?;
 
         // Route the command recursively with root matches for global args
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)
@@ -83,7 +79,9 @@ impl CommandRouter {
                 self.route_recursive(sub_noun.as_ref(), sub_name, sub_matches, root_matches)
             } else {
                 // Neither verb nor sub-noun found
-                Err(NounVerbError::verb_not_found(noun_name, sub_name))
+                let mut candidates: Vec<&str> = noun.verbs().iter().map(|v| v.name()).collect();
+                candidates.extend(noun.sub_nouns().iter().map(|n| n.name()));
+                Err(NounVerbError::verb_not_found_with_candidates(noun_name, sub_name, &candidates))
             }
         } else {
             // No subcommand, try direct noun execution

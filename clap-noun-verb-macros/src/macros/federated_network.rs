@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Federated Semantic Network Macros
 //!
 //! This module provides procedural macros for enabling CLI federation and semantic networking.
@@ -502,6 +505,7 @@ pub fn parse_remote_invoke_config(args: TokenStream) -> syn::Result<RemoteInvoke
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use quote::quote;

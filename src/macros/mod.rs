@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Convenience macros for composable CLI patterns
 
 /// Helper macro to create a noun command
@@ -5,12 +8,28 @@
 macro_rules! noun {
     ($name:expr, $about:expr, [$($verb:expr),* $(,)?]) => {
         {
-            let verbs: Vec<Box<dyn $crate::VerbCommand>> = vec![
-                $(Box::new($verb)),*
+            use std::sync::Arc;
+
+            // Wrap each verb in an Arc so the verbs() method can hand out new Boxes
+            // without re-evaluating the original expressions (which would fail for
+            // move closures that capture local state).
+            struct ArcVerb(Arc<dyn $crate::VerbCommand>);
+
+            impl $crate::VerbCommand for ArcVerb {
+                fn name(&self) -> &'static str { self.0.name() }
+                fn about(&self) -> &'static str { self.0.about() }
+                fn run(&self, args: &$crate::VerbArgs) -> $crate::Result<()> { self.0.run(args) }
+                fn build_command(&self) -> clap::Command { self.0.build_command() }
+                fn additional_args(&self) -> Vec<clap::Arg> { self.0.additional_args() }
+                fn trailing_var_arg(&self) -> bool { self.0.trailing_var_arg() }
+            }
+
+            let verbs: Vec<Arc<dyn $crate::VerbCommand>> = vec![
+                $(Arc::new($verb)),*
             ];
 
             struct NounImpl {
-                verbs: Vec<Box<dyn $crate::VerbCommand>>,
+                verbs: Vec<Arc<dyn $crate::VerbCommand>>,
             }
 
             impl $crate::NounCommand for NounImpl {
@@ -23,10 +42,10 @@ macro_rules! noun {
                 }
 
                 fn verbs(&self) -> Vec<Box<dyn $crate::VerbCommand>> {
-                    // Create new boxes for each verb since we can't clone Box<dyn VerbCommand>
-                    vec![
-                        $(Box::new($verb)),*
-                    ]
+                    self.verbs
+                        .iter()
+                        .map(|v| Box::new(ArcVerb(Arc::clone(v))) as Box<dyn $crate::VerbCommand>)
+                        .collect()
                 }
 
                 fn sub_nouns(&self) -> Vec<Box<dyn $crate::NounCommand>> {

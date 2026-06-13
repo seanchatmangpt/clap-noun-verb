@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Sync domain - the sacred authoritative transformation
 //!
 //! Sync consumes resolved graph, validates, emits artifacts, writes receipts.
@@ -150,7 +153,7 @@ impl Lockfile {
     pub fn new() -> Self {
         Self {
             version: Self::CURRENT_VERSION,
-            created_at: String::new(), // Caller must populate
+            created_at: chrono::Utc::now().to_rfc3339(),
             git_sha: None,
             packs: Vec::new(),
             policy_profile: "default".to_string(),
@@ -208,6 +211,11 @@ impl Lockfile {
     /// Note: This is a convenience method that wraps I/O. For production code,
     /// prefer using `LockfileStore::load()` from the integration layer.
     pub fn load(path: &Path) -> Result<Self, String> {
+        if !path.exists() {
+            let lockfile = Self::new();
+            lockfile.save(path)?;
+            return Ok(lockfile);
+        }
         let content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read lockfile: {}", e))?;
 
@@ -522,6 +530,12 @@ pub struct SyncPipeline {
     policy_profile: String,
     dry_run: bool,
     force: bool,
+    // Intermediate results for chained flow
+    load_output: Option<LoadOutput>,
+    resolve_output: Option<ResolveOutput>,
+    validate_output: Option<ValidateOutput>,
+    render_output: Option<RenderOutput>,
+    emit_output: Option<EmitOutput>,
 }
 
 impl SyncPipeline {
@@ -532,6 +546,11 @@ impl SyncPipeline {
             policy_profile: "default".to_string(),
             dry_run: false,
             force: false,
+            load_output: None,
+            resolve_output: None,
+            validate_output: None,
+            render_output: None,
+            emit_output: None,
         }
     }
 
@@ -557,6 +576,81 @@ impl SyncPipeline {
     pub fn with_force(mut self, force: bool) -> Self {
         self.force = force;
         self
+    }
+
+    /// Chained stage: Load
+    pub fn load(mut self) -> std::result::Result<Self, clap_noun_verb::NounVerbError> {
+        let load_out = load_stage(LoadInput {
+            lockfile_content: None,
+            workspace_root: ".".to_string(),
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        self.lockfile = load_out.lockfile.clone();
+        self.load_output = Some(load_out);
+        Ok(self)
+    }
+
+    /// Chained stage: Resolve
+    pub fn resolve(mut self) -> std::result::Result<Self, clap_noun_verb::NounVerbError> {
+        let load_out = self.load_output.as_ref().ok_or_else(|| clap_noun_verb::NounVerbError::execution_error("Must load before resolve"))?;
+        let resolve_out = resolve_stage(ResolveInput {
+            lockfile: load_out.lockfile.clone(),
+            workspace_metadata: load_out.workspace_metadata.clone(),
+            force: self.force,
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        self.lockfile = resolve_out.lockfile.clone();
+        self.resolve_output = Some(resolve_out);
+        Ok(self)
+    }
+
+    /// Chained stage: Validate
+    pub fn validate(mut self) -> std::result::Result<Self, clap_noun_verb::NounVerbError> {
+        let resolve_out = self.resolve_output.as_ref().ok_or_else(|| clap_noun_verb::NounVerbError::execution_error("Must resolve before validate"))?;
+        let validate_out = validate_stage(ValidateInput {
+            lockfile: resolve_out.lockfile.clone(),
+            dependency_graph: resolve_out.dependency_graph.clone(),
+            policy_profile: self.policy_profile.clone(),
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        self.lockfile = validate_out.lockfile.clone();
+        self.validate_output = Some(validate_out);
+        Ok(self)
+    }
+
+    /// Chained stage: Render
+    pub fn render(mut self) -> std::result::Result<Self, clap_noun_verb::NounVerbError> {
+        let validate_out = self.validate_output.as_ref().ok_or_else(|| clap_noun_verb::NounVerbError::execution_error("Must validate before render"))?;
+        let render_out = render_stage(RenderInput {
+            lockfile: validate_out.lockfile.clone(),
+            dependency_graph: std::collections::HashMap::new(),
+            template_vars: std::collections::HashMap::new(),
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        self.lockfile = render_out.lockfile.clone();
+        self.render_output = Some(render_out);
+        Ok(self)
+    }
+
+    /// Chained stage: Emit
+    pub fn emit(mut self) -> std::result::Result<Self, clap_noun_verb::NounVerbError> {
+        let render_out = self.render_output.as_ref().ok_or_else(|| clap_noun_verb::NounVerbError::execution_error("Must render before emit"))?;
+        let emit_out = emit_stage(EmitInput {
+            rendered_artifacts: render_out.rendered_artifacts.clone(),
+            lockfile: render_out.lockfile.clone(),
+            dry_run: self.dry_run,
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        self.lockfile = emit_out.lockfile.clone();
+        self.emit_output = Some(emit_out);
+        Ok(self)
+    }
+
+    /// Chained stage: Receipt
+    pub fn receipt(self) -> std::result::Result<SyncResult, clap_noun_verb::NounVerbError> {
+        let emit_out = self.emit_output.as_ref().ok_or_else(|| clap_noun_verb::NounVerbError::execution_error("Must emit before receipt"))?;
+        let receipt_out = receipt_stage(ReceiptInput {
+            lockfile: emit_out.lockfile.clone(),
+            artifact_paths: emit_out.artifact_paths.clone(),
+            receipt_id: format!("sync-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+            duration_ms: 10,
+        }).map_err(clap_noun_verb::NounVerbError::execution_error)?;
+        Ok(receipt_out.sync_result)
     }
 }
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Workspace detection for finding project roots
 //!
 //! This module provides utilities for finding workspace roots by searching upward
@@ -17,7 +20,7 @@ impl WorkspaceDetector {
     ///
     /// # Examples
     /// ```
-    /// use crate::integration::workspace::WorkspaceDetector;
+    /// use mcpp_cli::integration::workspace::WorkspaceDetector;
     ///
     /// let root = WorkspaceDetector::find_workspace_root().unwrap();
     /// println!("Workspace root: {:?}", root);

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Registry commands for searching, info, and listing
 
 use clap_noun_verb_macros::verb;

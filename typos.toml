@@ -2,13 +2,13 @@
 # https://github.com/crate-ci/typos
 
 [default]
-extended = true
 
 [files]
 extend-exclude = [
   "Cargo.lock",
   "target",
   ".git",
+  "CONVO.txt",
 ]
 
 [default.extend-words]
@@ -21,4 +21,12 @@ rustfmt = "rustfmt"
 github = "github"
 crates = "crates"
 cargo = "cargo"
+mape = "mape"
+servises = "servises"
+servise = "servise"
+servces = "servces"
+systm = "systm"
+systemm = "systemm"
+lov = "lov"
+ba = "ba"
 

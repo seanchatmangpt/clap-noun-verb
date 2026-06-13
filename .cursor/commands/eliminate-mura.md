@@ -198,7 +198,7 @@ cargo make test
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules
 - **[Eliminate Muda](./eliminate-muda.md)** - Waste elimination
 - **[Kaizen Improvement](./kaizen-improvement.md)** - Continuous improvement
 

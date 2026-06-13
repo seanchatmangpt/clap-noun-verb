@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration: RDF/Ontology with Oxigraph
 //!
 //! Glue code for RDF operations using Oxigraph.
@@ -127,65 +130,61 @@ pub fn execute_sparql_with_timeout(
     query: &str,
     timeout_ms: u64,
 ) -> Result<Vec<Vec<String>>, String> {
-    use std::time::{Duration, Instant};
+    use std::sync::mpsc;
+    use std::thread;
+    use std::time::Duration;
 
-    let start = Instant::now();
+    let store_clone = store.clone();
+    let query_str = query.to_string();
     let timeout = Duration::from_millis(timeout_ms);
 
-    // Execute query with timeout check
-    let results = match store.query(query) {
-        Ok(r) => r,
-        Err(e) => {
-            // FMEA-3: Graceful degradation - return empty results on query parse/execution error
-            eprintln!("SPARQL query warning: {} - returning empty results", e);
-            return Ok(Vec::new());
-        }
-    };
+    let (tx, rx) = mpsc::channel();
 
-    // Check timeout after query execution
-    if start.elapsed() > timeout {
-        eprintln!(
-            "SPARQL query timeout warning: exceeded {}ms - returning partial/empty results",
-            timeout_ms
-        );
-        return Ok(Vec::new());
-    }
-
-    match results {
-        QueryResults::Solutions(solutions) => {
-            let mut rows = Vec::new();
-            for solution in solutions {
-                // FMEA-5: Check timeout during result iteration
-                if start.elapsed() > timeout {
-                    eprintln!(
-                        "SPARQL result iteration timeout: exceeded {}ms after {} rows",
-                        timeout_ms,
-                        rows.len()
-                    );
-                    break;
-                }
-
-                match solution {
-                    Ok(sol) => {
-                        let row: Vec<String> = sol.iter()
-                            .map(|(_, term)| term_to_string(term))
-                            .collect();
-                        rows.push(row);
-                    }
-                    Err(e) => {
-                        // FMEA-3: Graceful degradation - skip problematic solutions
-                        eprintln!("SPARQL solution warning: {} - skipping row", e);
-                        continue;
-                    }
-                }
+    thread::spawn(move || {
+        let results = match store_clone.query(&query_str) {
+            Ok(r) => r,
+            Err(e) => {
+                let _ = tx.send(Err(format!("SPARQL query error: {}", e)));
+                return;
             }
-            Ok(rows)
+        };
+
+        match results {
+            QueryResults::Solutions(solutions) => {
+                let mut rows = Vec::new();
+                for solution in solutions {
+                    match solution {
+                        Ok(sol) => {
+                            let row: Vec<String> = sol.iter()
+                                .map(|(_, term)| term_to_string(term))
+                                .collect();
+                            rows.push(row);
+                        }
+                        Err(e) => {
+                            eprintln!("SPARQL solution warning: {} - skipping row", e);
+                            continue;
+                        }
+                    }
+                }
+                let _ = tx.send(Ok(rows));
+            }
+            QueryResults::Boolean(b) => {
+                let _ = tx.send(Ok(vec![vec![b.to_string()]]));
+            }
+            QueryResults::Graph(_) => {
+                eprintln!("SPARQL warning: Graph results not supported - returning empty");
+                let _ = tx.send(Ok(Vec::new()));
+            }
         }
-        QueryResults::Boolean(b) => Ok(vec![vec![b.to_string()]]),
-        QueryResults::Graph(_) => {
-            // FMEA-3: Graceful degradation for unsupported result types
-            eprintln!("SPARQL warning: Graph results not supported - returning empty");
-            Ok(Vec::new())
+    });
+
+    match rx.recv_timeout(timeout) {
+        Ok(res) => res,
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            Err(format!("SPARQL query timed out after {}ms", timeout_ms))
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            Err("SPARQL query thread disconnected".to_string())
         }
     }
 }
@@ -244,6 +243,36 @@ mod tests {
         let store = init_ontology_store(&caps).unwrap();
         let results = execute_sparql(&store, "SELECT (COUNT(*) as ?count) WHERE { ?s ?p ?o }");
         assert!(results.is_ok());
+    }
+
+    #[test]
+    fn test_sparql_timeout_returns_error() {
+        let caps = build_playground_ontology();
+        let store = init_ontology_store(&caps).unwrap();
+
+        // Query with an extremely short timeout (0ms) to guarantee timeout
+        let result = execute_sparql_with_timeout(
+            &store,
+            "SELECT * WHERE { ?s ?p ?o . ?s1 ?p1 ?o1 . ?s2 ?p2 ?o2 }",
+            0,
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("timed out"));
+    }
+
+    #[test]
+    fn test_sparql_completes_before_timeout() {
+        let caps = build_playground_ontology();
+        let store = init_ontology_store(&caps).unwrap();
+
+        let result = execute_sparql_with_timeout(
+            &store,
+            "SELECT ?s WHERE { ?s ?p ?o } LIMIT 1",
+            5000,
+        );
+
+        assert!(result.is_ok());
     }
 
     #[test]

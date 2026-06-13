@@ -30,45 +30,45 @@ By the end of this tutorial series, you'll be able to:
 
 **For**: Absolute beginners who want to build their first CLI
 
-1. **[Domain Separation Architecture](02-domain-separation.md)**
-   - The Golden Rule: CLI validates, domain computes
-   - Why separation matters
-   - Testable business logic
-   - **Time**: 10-15 minutes
+1. **[Domain Separation Architecture](01-domain-separation.md)**
+ - The Golden Rule: CLI validates, domain computes
+ - Why separation matters
+ - Testable business logic
+ - **Time**: 10-15 minutes
 
-2. **[Adding Multiple Commands](03-adding-commands.md)**
-   - Multi-command CLIs
-   - File organization patterns
-   - Noun-verb naming conventions
-   - **Time**: 10-15 minutes
+2. **[Adding Multiple Commands](02-adding-multiple.md)**
+ - Multi-command CLIs
+ - File organization patterns
+ - Noun-verb naming conventions
+ - **Time**: 10-15 minutes
 
 ### 📚 Core Features (1-2 hours)
 
 **For**: Developers building production CLIs
 
-3. **[Testing Basics](04-testing-basics.md)**
-   - Chicago TDD fundamentals
-   - State-based testing
-   - Real collaborators vs mocks
-   - **Time**: 20-30 minutes
+3. **[Testing Basics](03-testing-basics.md)**
+ - Chicago TDD fundamentals
+ - State-based testing
+ - Real collaborators vs mocks
+ - **Time**: 20-30 minutes
 
-4. **[Output Formats](05-output-formats.md)**
-   - JSON, YAML, TOML outputs
-   - ASCII table formatting
-   - Custom format selection
-   - **Time**: 15-20 minutes
+4. **[Output Formats](04-output-formats.md)**
+ - JSON, YAML, TOML outputs
+ - ASCII table formatting
+ - Custom format selection
+ - **Time**: 15-20 minutes
 
-5. **[Async Operations](07-async-operations.md)**
-   - Async command handlers
-   - Tokio runtime integration
-   - HTTP requests and database queries
-   - **Time**: 30-45 minutes
+5. **[Async Operations](05-async-operations.md)**
+ - Async command handlers
+ - Tokio runtime integration
+ - HTTP requests and database queries
+ - **Time**: 30-45 minutes
 
-6. **[Error Handling](08-error-handling.md)**
-   - Result<T,E> patterns
-   - Custom error types
-   - Structured error output
-   - **Time**: 30-45 minutes
+6. **[Error Handling](06-error-handling.md)**
+ - Result<T,E> patterns
+ - Custom error types
+ - Structured error output
+ - **Time**: 30-45 minutes
 
 ---
 
@@ -94,7 +94,7 @@ This tutorial series follows **learning-oriented** principles:
 ### Stuck on a tutorial?
 - **Re-read the instructions** - Most issues come from skipped steps
 - **Check the examples** - Each tutorial has a working example in `examples/`
-- **Ask for help** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Ask for help** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb)
 
 ### Found a bug in a tutorial?
 - **Report it** - [GitHub Issues](https://github.com/seanchatmangpt/clap-noun-verb/issues)
@@ -122,12 +122,12 @@ This tutorial series follows **learning-oriented** principles:
 
 | Tutorial | Status | Estimated Time |
 |----------|--------|----------------|
-| [02. Domain Separation](02-domain-separation.md) | ✅ **Available** | 10-15 min |
-| [03. Adding Commands](03-adding-commands.md) | ✅ **Available** | 10-15 min |
-| [04. Testing Basics](04-testing-basics.md) | ✅ **Available** | 20-30 min |
-| [05. Output Formats](05-output-formats.md) | ✅ **Available** | 15-20 min |
-| [07. Async Operations](07-async-operations.md) | ✅ **Available** | 30-45 min |
-| [08. Error Handling](08-error-handling.md) | ✅ **Available** | 30-45 min |
+| [01. Domain Separation](01-domain-separation.md) | ✅ **Available** | 10-15 min |
+| [02. Adding Commands](02-adding-multiple.md) | ✅ **Available** | 10-15 min |
+| [03. Testing Basics](03-testing-basics.md) | ✅ **Available** | 20-30 min |
+| [04. Output Formats](04-output-formats.md) | ✅ **Available** | 15-20 min |
+| [05. Async Operations](05-async-operations.md) | ✅ **Available** | 30-45 min |
+| [06. Error Handling](06-error-handling.md) | ✅ **Available** | 30-45 min |
 
 **Total Estimated Time**: 2-3 hours for complete series
 
@@ -135,7 +135,7 @@ This tutorial series follows **learning-oriented** principles:
 
 ## Ready to Start?
 
-👉 **[Begin with Tutorial 02: Domain Separation](02-domain-separation.md)**
+👉 **[Begin with Tutorial 01: Domain Separation](01-domain-separation.md)**
 
 ---
 

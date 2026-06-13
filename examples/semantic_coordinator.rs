@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Semantic Agent Coordinator CLI Example
 //!
 //! FUTURE: This example will demonstrate the complete semantic agent coordinator system with:

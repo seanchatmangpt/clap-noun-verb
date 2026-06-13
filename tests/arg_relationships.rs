@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Comprehensive Argument Relationship Tests (Typer-like Doc Comment Syntax)
 //!
 //! Tests for Typer-like doc comment syntax for argument relationships:
@@ -6,6 +9,9 @@
 //! - `[conflicts: arg]` - Conflicts_with relationships
 //!
 //! This follows Python Typer's approach: relationships in doc comments, not code attributes.
+
+mod common;
+use common::test_prelude::*;
 
 use clap_noun_verb::Result;
 use clap_noun_verb_macros::verb;
@@ -63,7 +69,7 @@ fn test_conflicts(format: Option<String>, raw: bool) -> Result<ConflictsTestOutp
 fn test_argument_groups_registered() {
     // Verify commands are registered
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let reg = registry.lock().unwrap();
+    let reg = registry.lock().test_unwrap();
 
     let verbs = reg.get_verbs("testcli");
     let verb_names: Vec<&str> = verbs.iter().map(|(name, _)| *name).collect();
@@ -89,7 +95,7 @@ fn test_argument_groups_registered() {
 fn test_commands_exist() {
     // Basic smoke test - verify commands can be discovered
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let reg = registry.lock().unwrap();
+    let reg = registry.lock().test_unwrap();
 
     let nouns = reg.get_nouns();
     let noun_names: Vec<&str> = nouns.iter().map(|(name, _)| *name).collect();
@@ -105,7 +111,7 @@ fn test_commands_exist() {
 fn test_group_metadata_extracted() {
     // Verify that group metadata is extracted from doc comments
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let reg = registry.lock().unwrap();
+    let reg = registry.lock().test_unwrap();
 
     let verbs = reg.get_verbs_with_metadata("testcli");
     let group_test = verbs.iter().find(|(name, _, _)| *name == "group-test");
@@ -136,7 +142,7 @@ fn test_group_metadata_extracted() {
 fn test_requires_metadata_extracted() {
     // Verify that requires metadata is extracted from doc comments
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let reg = registry.lock().unwrap();
+    let reg = registry.lock().test_unwrap();
 
     let verbs = reg.get_verbs_with_metadata("testcli");
     let requires_test = verbs.iter().find(|(name, _, _)| *name == "requires-test");
@@ -158,7 +164,7 @@ fn test_requires_metadata_extracted() {
 fn test_conflicts_metadata_extracted() {
     // Verify that conflicts_with metadata is extracted from doc comments
     let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
-    let reg = registry.lock().unwrap();
+    let reg = registry.lock().test_unwrap();
 
     let verbs = reg.get_verbs_with_metadata("testcli");
     let conflicts_test = verbs.iter().find(|(name, _, _)| *name == "conflicts-test");

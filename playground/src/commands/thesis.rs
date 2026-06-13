@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Thesis structure operations
 //!
 //! Commands for exploring HTF framework and thesis families.
@@ -68,16 +71,21 @@ fn list_families(format: Option<String>) -> Result<()> {
 /// * `family` - Thesis family [default: IMRaD]
 /// * `format` - Output format (json, yaml, table, plain) [default: json-pretty]
 #[verb("schedule")]
-fn show_schedule(family: Option<String>, format: Option<String>) -> Result<()> {
+fn show_schedule(
+    #[arg(index = 1)]
+    family: Option<String>,
+    #[arg(index = 2)]
+    format: Option<String>,
+) -> Result<()> {
     emit_deprecation("Thesis commands moved to MCP/A2A surface");
 
     // 1. Validate inputs (CLI validates)
     let family_str = family.unwrap_or_else(|| "IMRaD".to_string());
-    let family = PaperFamily::from_str(&family_str)
-        .ok_or_else(|| NounVerbError::validation_error(
+    let family = PaperFamily::from_str_validated(&family_str)
+        .map_err(|e| NounVerbError::validation_error(
             "family".to_string(),
             family_str.clone(),
-            Some("Unknown thesis family")
+            Some(&e)
         ))?;
 
     // 2. Parse format

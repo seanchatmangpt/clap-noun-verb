@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Policy domain - governance profiles, validation rules, and constraints
 //!
 //! This module provides policy enforcement for sync operations, including

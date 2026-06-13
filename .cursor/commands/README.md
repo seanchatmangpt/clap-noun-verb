@@ -220,6 +220,6 @@ When adding new commands:
 ## References
 
 - clap-noun-verb - Project using these commands
-- [Core Team Best Practices](../.cursorrules) - Project-specific rules
+- [Core Team Best Practices](../../.cursorrules) - Project-specific rules
 - [Makefile.toml](../../Makefile.toml) - Build system configuration
 

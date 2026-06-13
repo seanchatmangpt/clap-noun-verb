@@ -1,4 +1,7 @@
 #!/usr/bin/env rust-script
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! ```cargo
 //! [dependencies]
 //! regex = "1.10"

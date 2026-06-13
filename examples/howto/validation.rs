@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Automatic Validation
 //!
 //! This example demonstrates automatic validation from types and explicit
@@ -38,8 +41,8 @@ fn create_user(name: String, age: u8, email: String, port: Option<u16>) -> User 
 /// * `port` - Optional port number (u16 gives 0-65535 range automatically)
 #[verb("create", "users")] // Explicit noun since filename is "validation.rs"
 fn create_user_command(
-    name: String,
-    age: u8, // Automatically validates to 0-255 range
+    #[validate(min_length = 1, max_length = 50)] name: String,
+    #[validate(min = 18, max = 120)] age: u8, // Automatically validates to 0-255 range
     email: String,
     port: Option<u16>, // Automatically validates to 0-65535 when provided
 ) -> Result<User> {

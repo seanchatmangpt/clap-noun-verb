@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // Manual wrapper test to verify the logic
 
 use clap_noun_verb::error::Result;
@@ -9,9 +12,9 @@ fn test_opt(opt: Option<String>) -> Result<()> {
 }
 
 fn test_opt_wrapper(input: HandlerInput) -> Result<HandlerOutput> {
-    let opt = input.args.get("opt").map(|v| v.clone());
-    let result = test_opt(opt)?;
-    HandlerOutput::from_data(result)
+    let opt = input.args.get("opt").cloned();
+    test_opt(opt)?;
+    HandlerOutput::from_data(())
 }
 
 #[test]

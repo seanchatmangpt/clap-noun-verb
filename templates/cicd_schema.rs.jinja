@@ -1,0 +1,261 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! Cargo CI/CD Schema Types
+//!
+//! Auto-generated type definitions for all cargo-cicd command inputs and outputs.
+//! Derived from `ontology/cargo-cicd.ttl`.
+
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+// ============================================================================
+// NOUN ENUMS - Domain entities
+// ============================================================================
+
+/// Supported noun commands in cargo-cicd
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum NounKind {
+    {% for noun in nouns -%}
+    /// {{ noun.description }}
+    #[serde(rename = "{{ noun.name }}")]
+    {{ noun.name | title | replace("-", "") }},
+    {% endfor %}
+}
+
+impl std::fmt::Display for NounKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            {% for noun in nouns -%}
+            NounKind::{{ noun.name | title | replace("-", "") }} => "{{ noun.name }}",
+            {% endfor %}
+        };
+        write!(f, "{}", name)
+    }
+}
+
+impl std::str::FromStr for NounKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            {% for noun in nouns -%}
+            "{{ noun.name }}" => Ok(NounKind::{{ noun.name | title | replace("-", "") }}),
+            {% endfor %}
+            _ => Err(format!("Unknown noun: {}", s)),
+        }
+    }
+}
+
+// ============================================================================
+// VERB ENUMS - Command actions
+// ============================================================================
+
+/// Supported verb commands grouped by noun
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum VerbKind {
+    {% for noun in nouns -%}
+    {% for verb in noun.verbs -%}
+    /// {{ verb.description }}
+    #[serde(rename = "{{ verb.name }}")]
+    {{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }},
+    {% endfor %}
+    {% endfor %}
+}
+
+impl VerbKind {
+    /// Get the parent noun for this verb
+    pub fn noun(&self) -> NounKind {
+        match self {
+            {% for noun in nouns -%}
+            {% for verb in noun.verbs -%}
+            VerbKind::{{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }} => NounKind::{{ noun.name | title | replace("-", "") }},
+            {% endfor %}
+            {% endfor %}
+        }
+    }
+
+    /// Get the verb name as a string
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            {% for noun in nouns -%}
+            {% for verb in noun.verbs -%}
+            VerbKind::{{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }} => "{{ verb.name }}",
+            {% endfor %}
+            {% endfor %}
+        }
+    }
+}
+
+// ============================================================================
+// OUTPUT TYPES - Result structures
+// ============================================================================
+
+/// Generic command result wrapper
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandResult<T> {
+    /// Whether the operation succeeded
+    pub success: bool,
+    /// Human-readable message
+    pub message: String,
+    /// Operation-specific data
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<T>,
+    /// Error details if failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+impl<T> CommandResult<T> {
+    /// Create a successful result
+    pub fn ok(message: impl Into<String>, data: T) -> Self {
+        Self {
+            success: true,
+            message: message.into(),
+            data: Some(data),
+            error: None,
+        }
+    }
+
+    /// Create a failed result
+    pub fn err(message: impl Into<String>, error: impl Into<String>) -> Self {
+        Self {
+            success: false,
+            message: message.into(),
+            data: None,
+            error: Some(error.into()),
+        }
+    }
+}
+
+{% for noun in nouns %}
+// ============================================================================
+// {{ noun.name | upper }} TYPES
+// ============================================================================
+
+/// {{ noun.description }}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ noun.name | title | replace("-", "") }} {
+    // PLACEHOLDER: Add domain-specific fields
+    // Examples:
+    // pub name: String,
+    // pub status: String,
+    // pub tags: Vec<String>,
+}
+
+{% for verb in noun.verbs %}
+/// Request type for {{ noun.name }} {{ verb.name }}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }}Request {
+    {% for arg in verb.arguments -%}
+    /// {{ arg.description }}
+    {% if arg.is_required -%}
+    pub {{ arg.name | replace("-", "_") }}: {{ arg.type }},
+    {% else -%}
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub {{ arg.name | replace("-", "_") }}: Option<{{ arg.type }}>,
+    {% endif -%}
+    {% endfor -%}
+}
+
+/// Response type for {{ noun.name }} {{ verb.name }}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }}Response {
+    /// Operation result status
+    pub success: bool,
+    /// Human-readable message
+    pub message: String,
+    /// Timestamp of operation
+    pub timestamp: String,
+    /// Detailed output
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
+}
+
+{% endfor %}
+{% endfor %}
+
+// ============================================================================
+// ARGUMENT VALUE TYPES
+// ============================================================================
+
+/// String-based argument wrapper for type-safe handling
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StringArg(pub String);
+
+impl std::str::FromStr for StringArg {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(StringArg(s.to_string()))
+    }
+}
+
+/// Path argument with validation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PathArg(pub PathBuf);
+
+impl std::str::FromStr for PathArg {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(PathArg(PathBuf::from(s)))
+    }
+}
+
+/// Numeric argument with range validation
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct NumericArg(pub u32);
+
+impl std::str::FromStr for NumericArg {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<u32>()
+            .map(NumericArg)
+            .map_err(|e| e.to_string())
+    }
+}
+
+// ============================================================================
+// VALIDATION & CONVERSION
+// ============================================================================
+
+/// Validate command request integrity
+pub trait ValidateRequest {
+    fn validate(&self) -> Result<(), String>;
+}
+
+/// Convert between request/response types
+pub trait CommandConvert {
+    type Input;
+    type Output;
+
+    fn convert(input: Self::Input) -> Result<Self::Output, String>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_noun_kinds_all_defined() {
+        // Ensure all nouns from ontology are represented
+        let _noun = NounKind::{% for noun in nouns | first %}{{ noun.name | title | replace("-", "") }}{% endfor %};
+        assert!(true);
+    }
+
+    #[test]
+    fn test_verb_kinds_all_defined() {
+        // Ensure all verbs from ontology are represented
+        let _verb = VerbKind::{% for noun in nouns | first %}{% for verb in noun.verbs | first %}{{ noun.name | title | replace("-", "") }}{{ verb.name | title | replace("-", "") }}{% endfor %}{% endfor %};
+        assert!(true);
+    }
+
+    #[test]
+    fn test_command_result_serialization() {
+        let result: CommandResult<String> = CommandResult::ok("Test", "data".to_string());
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("success"));
+    }
+}

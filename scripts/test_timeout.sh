@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # MCPP Test Timeout Enforcer (Poka-Yoke)
 # Usage: ./scripts/test_timeout.sh [package_dir] [timeout_duration]
 

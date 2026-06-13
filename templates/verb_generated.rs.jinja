@@ -1,0 +1,220 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+//! {{ verb_name }} verb handler - {{ brief_description }}
+//!
+//! Business logic, CLI binding, and integration layer for {{ noun_name }} {{ verb_name }} operation.
+//! Auto-generated from cargo-cicd ontology.
+
+use clap_noun_verb_macros::verb;
+use clap_noun_verb::{NounVerbError, OutputFormat, Result, HandlerInput, HandlerOutput};
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+// ============================================================================
+// DOMAIN LAYER - Pure business logic (no I/O, no CLI)
+// ============================================================================
+
+/// {{ verb_name_title }} domain state
+///
+/// Pure business logic representation of {{ noun_name }} {{ verb_name }} operation.
+/// This struct contains no I/O, CLI, or side effects.
+///
+/// # Examples
+///
+/// ```ignore
+/// let state = {{ verb_domain_struct }}::new();
+/// let result = state.execute()?;
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ verb_domain_struct }} {
+    {% for arg in arguments -%}
+    /// {{ arg.description }}
+    pub {{ arg.name | replace("-", "_") }}: {{ arg.type }},
+    {% endfor -%}
+}
+
+impl {{ verb_domain_struct }} {
+    /// Create a new {{ verb_name }} domain state
+    ///
+    /// # Arguments
+    ///
+    {% for arg in arguments -%}
+    /// * `{{ arg.name | replace("-", "_") }}` - {{ arg.description }}
+    /// {% endfor %}
+    /// # Returns
+    ///
+    /// A new domain state ready for execution.
+    pub fn new({% for arg in arguments -%}
+        {{ arg.name | replace("-", "_") }}: {{ arg.type }}{{ "," if not loop.last else "" }}
+        {% endfor -%}
+    ) -> Self {
+        Self {
+            {% for arg in arguments -%}
+            {{ arg.name | replace("-", "_") }},
+            {% endfor -%}
+        }
+    }
+
+    /// Execute the {{ verb_name }} operation
+    ///
+    /// # Returns
+    ///
+    /// {{ return_type }} containing operation results
+    pub fn execute(&self) -> Result<{{ return_type_name }}> {
+        // TODO: Implement domain logic for {{ noun_name }} {{ verb_name }}
+        // This is the core business logic, independent of CLI/IO
+        Err(NounVerbError::NotImplemented(
+            format!("{{ noun_name }} {{ verb_name }} handler not yet implemented")
+        ))
+    }
+}
+
+/// Output type for {{ noun_name }} {{ verb_name }}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{ return_type_name }} {
+    /// Operation status
+    pub success: bool,
+    /// Result message
+    pub message: String,
+    /// Detailed output (implementation-specific)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<serde_json::Value>,
+}
+
+impl {{ return_type_name }} {
+    /// Create successful result
+    pub fn ok(message: impl Into<String>) -> Self {
+        Self {
+            success: true,
+            message: message.into(),
+            details: None,
+        }
+    }
+
+    /// Create result with details
+    pub fn with_details(message: impl Into<String>, details: serde_json::Value) -> Self {
+        Self {
+            success: true,
+            message: message.into(),
+            details: Some(details),
+        }
+    }
+
+    /// Create error result
+    pub fn error(message: impl Into<String>) -> Self {
+        Self {
+            success: false,
+            message: message.into(),
+            details: None,
+        }
+    }
+}
+
+// ============================================================================
+// CLI LAYER - Verb handler
+// ============================================================================
+
+/// Handler function for {{ verb_name }} verb
+///
+/// Maps CLI input to domain logic and formats output.
+///
+/// # Arguments
+///
+/// * `input` - Parsed CLI arguments and options
+/// * `format` - Desired output format (JSON, Table, etc.)
+///
+/// # Returns
+///
+/// Formatted command output
+pub async fn handle_{{ verb_name | replace("-", "_") }}(
+    input: HandlerInput,
+    format: OutputFormat,
+) -> Result<HandlerOutput> {
+    // Parse CLI arguments into domain state
+    {% if arguments -%}
+    let domain = {{ verb_domain_struct }}::new(
+        {% for arg in arguments -%}
+        input.get_arg::<{{ arg.type }}>("{{ arg.name }}")?{{ "," if not loop.last else "" }}
+        {% endfor -%}
+    );
+    {% else -%}
+    let domain = {{ verb_domain_struct }}::new();
+    {% endif %}
+
+    // Execute domain logic
+    let result = domain.execute()?;
+
+    // Format output according to user preference
+    let output = match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(&result)
+                .map_err(|e| NounVerbError::SerializationError(e.to_string()))?
+        }
+        OutputFormat::Text => {
+            result.message.clone()
+        }
+        OutputFormat::Table => {
+            format!("{{ verb_name }}: {}", result.message)
+        }
+        _ => result.message.clone(),
+    };
+
+    Ok(HandlerOutput::new(output))
+}
+
+// ============================================================================
+// TESTS (Auto-generated fixtures)
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_{{ verb_name | replace("-", "_") }}_domain_creation() {
+        {% if arguments %}
+        let domain = {{ verb_domain_struct }}::new(
+            {% for arg in arguments -%}
+            Default::default(){{ "," if not loop.last else "" }}
+            {% endfor -%}
+        );
+        assert!(!domain.{{ arguments[0].name | replace("-", "_") }}.to_string().is_empty());
+        {% else %}
+        let domain = {{ verb_domain_struct }}::new();
+        assert!(true);
+        {% endif %}
+    }
+
+    #[test]
+    fn test_{{ verb_name | replace("-", "_") }}_result_creation() {
+        let result = {{ return_type_name }}::ok("Operation successful");
+        assert!(result.success);
+        assert_eq!(result.message, "Operation successful");
+    }
+
+    #[test]
+    fn test_{{ verb_name | replace("-", "_") }}_result_with_details() {
+        let details = serde_json::json!({
+            "count": 42,
+            "items": []
+        });
+        let result = {{ return_type_name }}::with_details("Details included", details.clone());
+        assert!(result.success);
+        assert_eq!(result.details, Some(details));
+    }
+
+    #[test]
+    fn test_{{ verb_name | replace("-", "_") }}_error_result() {
+        let result = {{ return_type_name }}::error("Operation failed");
+        assert!(!result.success);
+        assert_eq!(result.message, "Operation failed");
+    }
+
+    #[tokio::test]
+    async fn test_{{ verb_name | replace("-", "_") }}_handler_signature() {
+        // Verify handler exists and is callable
+        // Actual implementation testing deferred to integration tests
+        assert!(true);
+    }
+}

@@ -1,14 +1,17 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Shell environment detection and utilities
 //!
 //! This module detects the user's shell and provides shell-specific utilities.
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust,no_run
 //! use clap_noun_verb::shell::detect_shell;
 //!
 //! if let Some(shell) = detect_shell() {
-//!     println!("Detected shell: {}", shell);
+//!     println!("Detected shell: {}", shell.as_str());
 //! }
 //! ```
 
@@ -153,7 +156,7 @@ fn dirs_home() -> Option<PathBuf> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust,no_run
 /// use clap_noun_verb::shell::{ShellType, get_completions_dir};
 ///
 /// if let Some(completion_dir) = get_completions_dir(ShellType::Bash) {
@@ -197,7 +200,7 @@ pub fn get_completions_dir(shell: ShellType) -> Option<PathBuf> {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust,no_run
 /// use clap_noun_verb::shell::is_interactive;
 ///
 /// if is_interactive() {
@@ -229,7 +232,7 @@ pub fn is_interactive() -> bool {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust,no_run
 /// use clap_noun_verb::shell::{ShellType, line_ending};
 ///
 /// let ending = line_ending(ShellType::PowerShell);

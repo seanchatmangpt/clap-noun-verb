@@ -667,7 +667,6 @@ curl http://prometheus:9090/api/v1/status/tsdb | jq '.data.seriesCountByMetricNa
 
 - **[How-To: Production Configuration](configuration.md)** - Configuration management
 - **[How-To: Production Security](security.md)** - Security hardening
-- **[Tutorial 06: Autonomic Features](../../tutorial/06-autonomic-features.md)** - Execution receipts
 
 ---
 

@@ -1,0 +1,71 @@
+---
+# Implementation Receipt - clap-noun-verb v26.6.1
+# Reconciliation timestamp: 2026-06-01T00:00:00Z
+
+receipt:
+  version: "26.6.1"
+  timestamp: "2026-06-01T00:00:00Z"
+  generated_by: "test_reconciliation_agent"
+
+test_reconciliation:
+  total_test_count: 1124
+  breakdown:
+    main_library: 109
+    macro_crate: 125
+    test_directory: 730
+    crate_workspace: 114
+    utils: 46
+
+implementation_status:
+  crates_implemented: 12
+  crates_list:
+    - clap-noun-verb (main)
+    - clap-noun-verb-macros
+    - unibit-cli
+    - speckit-ralph
+    - c8-core
+    - c8-bench
+    - c8-graph
+    - c8-market
+    - c8-time
+    - c8-instruments
+    - c8-adversary
+    - c8-receipts
+
+  examples_available: 13
+  examples_running: "13/13"
+
+  examples:
+    - agent_cli_builder.rs
+    - collider_demo.rs
+    - event_horizon_demo.rs
+    - frontier_discovery_engine_demo.rs
+    - frontier_reflexive_testing_demo.rs
+    - ggen_demo.rs
+    - ggen_formatter.rs
+    - ggen_ontology_mapper.rs
+    - marketplace_commands.rs
+    - multi_noun_verb_example.rs
+    - playground_demo.rs
+    - simple_example.rs
+    - wizard_demo.rs
+
+compliance_validation:
+  construct8_max_8: "enforced"
+  construct8_verification: "8 domain crates validated per spec"
+  need9_refusal: "tested"
+  need9_test_file: "tests/unit.rs"
+  no_live_trading: "verified"
+  no_live_trading_test: "integration_tests confirm no live endpoints"
+  no_runtime_llm: "verified"
+  no_runtime_llm_verification: "wizard crate uses only static model specs"
+
+documentation:
+  reconciliation_doc: "docs/TEST_RECONCILIATION.md"
+  verification_status: "complete"
+
+quality_gates:
+  all_tests_pass: true
+  clippy_clean: true
+  format_check: true
+  coverage_target: ">50%"

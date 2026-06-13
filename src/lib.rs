@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
+
 //! clap-noun-verb - A framework for building composable CLI patterns
 //!
 //! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns
@@ -23,7 +28,7 @@
 //! - `rdf` - RDF/Ontology with MCP
 //! - `kernel` - Deterministic execution
 //!
-//! ## Version 5.3.0 Architecture
+//! ## Version 26.6.1 Architecture
 //!
 //! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
@@ -40,7 +45,7 @@
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 5.3.0 provides:
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 26.6.1 provides:
 //!
 //! - **Public APIs** are stable within the same major version
 //! - **Breaking changes** only in major version bumps
@@ -50,6 +55,7 @@
 // CORE MODULES - Always available (no feature flags)
 // =============================================================================
 
+pub mod async_verb;
 pub mod builder;
 pub mod cli;
 pub mod error;
@@ -57,30 +63,33 @@ pub mod logic;
 pub mod macros;
 pub mod noun;
 pub mod registry;
-pub mod router;
-pub mod runtime;
+pub mod telemetry;
 pub mod tree;
 pub mod verb;
 
-// Capability Discovery Engine (requires agent2028 feature for swarm optimization)
-#[cfg(feature = "agent2028")]
-pub mod macros_discovery_engine;
+// Autonomic CI/CD policies
+pub mod policies;
+
+// =============================================================================
+// SPECIMEN INTEGRATION - Production-ready modules from specimen CLI
+// =============================================================================
+
+// Graph operations: load, query, validate RDF data
+pub mod graph;
+
+// Capability management: registry and packing
+pub mod capability;
+
+// Diagnostics: health checks and system monitoring
+pub mod diagnostics;
+
+// Federation support
+#[cfg(feature = "federated-network")]
+pub mod federation;
 
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
 // =============================================================================
-
-// Async verb support (requires "async" feature)
-#[cfg(feature = "async")]
-pub mod async_verb;
-
-// Shell completion generation (requires "completions" feature)
-#[cfg(feature = "completions")]
-pub mod completion;
-
-// Configuration formats (requires "config-formats" feature)
-#[cfg(feature = "config-formats")]
-pub mod config;
 
 // Execution context
 pub mod context;
@@ -91,87 +100,27 @@ pub mod deprecation;
 // Output formatting
 pub mod format;
 
-// Man page generation (requires "mangen" feature)
-#[cfg(feature = "mangen")]
-pub mod mangen;
-
 // Shell utilities
 pub mod shell;
-
-// URL/Regex validators (requires "validators" feature)
-#[cfg(feature = "validators")]
-pub mod validators;
-
-// Autonomic CLI Layer (requires "autonomic" feature)
-#[cfg(feature = "autonomic")]
-pub mod autonomic;
-
-// CNV Kernel Capabilities (requires "kernel" feature)
-#[cfg(feature = "kernel")]
-pub mod kernel;
-
-// I/O Integration (requires "io" feature)
-#[cfg(feature = "io")]
-pub mod io;
 
 // Advanced clap Integration
 pub mod clap_ext;
 
-// Plugin System (requires "full" feature)
-#[cfg(feature = "full")]
-pub mod plugin;
+// Interactive REPL shell
+pub mod repl;
 
-// Middleware System (requires "full" feature)
-#[cfg(feature = "full")]
-pub mod middleware;
+// =============================================================================
+// RDF ↔ GGEN BIDIRECTIONAL GENERATORS - Ontology and code synchronization
+// =============================================================================
 
-// Telemetry & Observability (requires "observability" feature)
-#[cfg(feature = "observability")]
-pub mod telemetry;
+// RDF to ggen: convert RDF ontology definitions to compilable Rust code
+pub mod rdf_to_ggen;
 
-// Integration Layer (requires "full" feature)
-#[cfg(feature = "full")]
-pub mod integration;
+// ggen to RDF: convert Rust source code to RDF ontology triples
+pub mod ggen_to_rdf;
 
-// Production Plugins (requires "full" feature)
-#[cfg(feature = "full")]
-pub mod plugins;
-
-// Agent2028 - Trillion-Agent Ecosystems (requires "agent2028" feature)
-#[cfg(feature = "agent2028")]
-pub mod agent2028;
-
-// RDF/Ontology Control Layer (requires "rdf" feature)
-#[cfg(feature = "rdf")]
-pub mod rdf;
-
-// Semantic Agent Coordinator (requires "agent2028" feature + optional "rdf", "autonomic")
-#[cfg(feature = "agent2028")]
-pub mod agents;
-
-// Semantic CLI Composition (requires "rdf" feature for SPARQL and RDF metadata)
-#[cfg(feature = "rdf")]
-pub mod semantic;
-
-// Frontier Packages - 10 Advanced Agent-Grade Packages (v5.4+)
-// Requires any frontier feature (meta-framework, rdf-composition, etc.)
-#[cfg(any(
-    feature = "meta-framework",
-    feature = "rdf-composition",
-    feature = "executable-specs",
-    feature = "fractal-patterns",
-    feature = "discovery-engine",
-    feature = "federated-network",
-    feature = "learning-trajectories",
-    feature = "reflexive-testing",
-    feature = "economic-sim",
-    feature = "quantum-ready"
-))]
-pub mod frontier;
-
-// Wizard - Interactive multi-step CLI workflows with AI assistance (requires "wizard" feature)
-#[cfg(feature = "wizard")]
-pub mod wizard;
+// Bidirectional sync: keep Rust code and RDF ontology in sync
+pub mod ontology_sync;
 
 // Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
 // They don't need to be re-exported - they're used directly as attributes
@@ -185,17 +134,30 @@ pub use cli::run;
 
 // Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
-pub use error::{NounVerbError, Result};
+pub use error::{ActionTemplate, ErrorKind, NounVerbError, Result, Severity, StructuredError};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
-pub use router::CommandRouter;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
+
+// Autonomic policies
+pub use policies::{
+    GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict, TargetPressurePolicy,
+    ToolchainMismatchPolicy, TrybuildChangedPolicy,
+};
 
 // Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
-pub use format::{format_output, OutputFormat};
+pub use format::{
+    clear_output_validation_hooks, format_output, register_output_validation_hook, OutputFormat,
+    OutputValidationHook,
+};
+pub mod validators;
+pub use validators::{
+    validate_email, validate_ipv4, validate_ipv6, validate_length, validate_not_empty,
+    validate_path_creatable, validate_path_exists, validate_port, validate_regex, validate_url,
+};
 
 // Re-export clap types so users don't need clap as a direct dependency
 // This follows the facade pattern used by serde, tokio, and tracing
@@ -203,21 +165,27 @@ pub use format::{format_output, OutputFormat};
 pub use clap::{Arg, ArgAction, ArgMatches, Command};
 
 // =============================================================================
+// SPECIMEN INTEGRATION RE-EXPORTS
+// =============================================================================
+
+// Graph operations
+pub use graph::{Graph, GraphLoadedOutput, QueryResultOutput, Triple, ValidationResultOutput};
+
+// Capability management
+pub use capability::{CapabilityPackage, CapabilityRegistry, PackAddedOutput, PackRemovedOutput};
+
+// Diagnostics
+pub use diagnostics::{DoctorOutput, HealthIssue};
+
+// =============================================================================
 // FEATURE-GATED RE-EXPORTS
 // =============================================================================
 
-// Async support (requires "async" feature)
-#[cfg(feature = "async")]
-pub use async_verb::{create_runtime, run_async};
-
-// Shell completion (requires "completions" feature)
-#[cfg(feature = "completions")]
-pub use completion::{generate_completion, print_completion, Shell};
-
 // Macros are exported at crate root via #[macro_export]
+
+pub use repl::Repl;
 
 // Framework-level re-exports for easy composition
 pub use builder::CliBuilder as Cli;
 pub use registry::CommandRegistry as Registry;
 pub use tree::CommandTree as Tree;
-pub mod agent_cli;

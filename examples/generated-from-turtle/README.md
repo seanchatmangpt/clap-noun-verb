@@ -603,11 +603,11 @@ cargo test -- --nocapture
 
 ## Related Documentation
 
-- [Turtle Specifications README](/home/user/clap-noun-verb/examples/turtle-specs/README.md) - Specification format guide
-- [USAGE_GUIDE.md](/home/user/clap-noun-verb/docs/USAGE_GUIDE.md) - Complete usage workflow
-- [EXAMPLES_SHOWCASE.md](/home/user/clap-noun-verb/docs/EXAMPLES_SHOWCASE.md) - Before/after showcase
-- [ggen-clap-noun-verb-quickstart.md](/home/user/clap-noun-verb/docs/ggen-clap-noun-verb-quickstart.md) - Implementation guide
+- [Turtle Specifications README](../turtle-specs/README.md) - Specification format guide
+- [Documentation Index](../../docs/INDEX.md) - Main documentation and guides
+- [Schema Validation Guide](../../docs/SCHEMA_VALIDATION.md) - Schema validation details
+- [Preprocessor Guide](../../docs/PREPROCESSOR_GUIDE.md) - Preprocessor specifications
 
 ---
 
-**Ready to generate your own CLI?** Start with the [USAGE_GUIDE.md](/home/user/clap-noun-verb/docs/USAGE_GUIDE.md) for step-by-step instructions!
+**Ready to generate your own CLI?** Start with the [Turtle Specifications README](../turtle-specs/README.md) for step-by-step instructions!

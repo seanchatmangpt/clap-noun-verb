@@ -382,6 +382,6 @@ Use online SPARQL endpoint: https://dbpedia.org/sparql
 ---
 
 **Related**:
-- [How-to: Validate Ontologies](validation.md)
-- [How-to: Query with SPARQL](sparql-queries.md)
-- [Explanation: Semantic Web Fundamentals](../explanation/semantic-web.md)
+- [How-to: Validate Input](validation.md)
+- [How-to: Testing](testing.md)
+- [Explanation: Architecture Overview](../explanation/architecture.md)

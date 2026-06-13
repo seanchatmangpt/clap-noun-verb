@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! RevOps Sales Pipeline Tracker
 //!
 //! Minimal CLI for tracking leads, deals, and revenue pipeline

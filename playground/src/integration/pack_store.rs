@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Pack storage integration layer
 //!
 //! Handles pack installation, storage, and management on the filesystem.

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Positional Arguments
 //!
 //! This example demonstrates how to use positional arguments in CLI commands.
@@ -51,10 +54,8 @@ fn clone_repository(url: String, destination: Option<String>) -> Repo {
 /// This makes arguments positional (accessed by position rather than name).
 #[verb("clone", "git")]
 fn clone_repo(
-    // In v3.2.0: #[arg(index = 0)] - Repository URL (first positional argument)
-    url: String,
-    // In v3.2.0: #[arg(index = 1)] - Destination directory (second positional argument, optional)
-    destination: Option<String>,
+    #[arg(index = 0)] url: String,
+    #[arg(index = 1)] destination: Option<String>,
 ) -> Result<Repo> {
     Ok(clone_repository(url, destination))
 }

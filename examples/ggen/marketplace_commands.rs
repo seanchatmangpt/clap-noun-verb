@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Marketplace command implementations with enhanced error handling
 //!
 //! This module implements ggen's marketplace commands with user-friendly

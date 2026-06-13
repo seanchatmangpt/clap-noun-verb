@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Custom value parsers for advanced type validation.
 //!
 //! Provides composable value parsers for URLs, paths, JSON, CSV, and more,
@@ -5,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! ```ignore
+//! ```text
 //! use clap::Parser;
 //! use clap_noun_verb::clap::ValueParserBuilder;
 //!

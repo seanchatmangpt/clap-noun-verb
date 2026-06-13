@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Configuration management
 //!
 //! Get, set, and show configuration values.
@@ -10,6 +13,7 @@ use clap_noun_verb::Result;
 use std::str::FromStr;
 use clap_noun_verb::{OutputFormat, format_output};
 use crate::domain::Config;
+use clap_noun_verb_utils::adapters::LayeredConfigAdapter;
 
 /// Emit deprecation warning for migrated commands
 fn emit_deprecation(message: &str) {
@@ -25,7 +29,12 @@ fn emit_deprecation(message: &str) {
 /// * `key` - Configuration key
 /// * `format` - Output format (json, yaml, table, plain) [default: json-pretty]
 #[verb("get")]
-fn get_config(key: String, format: Option<String>) -> Result<()> {
+fn get_config(
+    #[arg(index = 1)]
+    key: String,
+    #[arg(index = 2)]
+    format: Option<String>,
+) -> Result<()> {
     emit_deprecation("Config moved to environment variables and policy profiles");
 
     let fmt = format
@@ -33,7 +42,14 @@ fn get_config(key: String, format: Option<String>) -> Result<()> {
         .and_then(|s| OutputFormat::from_str(s).ok())
         .unwrap_or(OutputFormat::JsonPretty);
 
-    let config = Config::default();
+    let adapter = LayeredConfigAdapter::<Config>::new(
+        Some(std::path::PathBuf::from("ggen.toml")),
+        Some("GGEN_".to_string()),
+    );
+    let empty_matches = clap_noun_verb::ArgMatches::default();
+    let config = adapter
+        .resolve(&empty_matches)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     let output = format_output(
         &crate::outputs::ConfigValueOutput {
             key: key.clone(),
@@ -56,7 +72,14 @@ fn get_config(key: String, format: Option<String>) -> Result<()> {
 /// * `value` - Configuration value
 /// * `format` - Output format (json, yaml, table, plain) [default: json-pretty]
 #[verb("set")]
-fn set_config(key: String, value: String, format: Option<String>) -> Result<()> {
+fn set_config(
+    #[arg(index = 1)]
+    key: String,
+    #[arg(index = 2)]
+    value: String,
+    #[arg(index = 3)]
+    format: Option<String>,
+) -> Result<()> {
     emit_deprecation("Config moved to environment variables and policy profiles");
 
     let fmt = format
@@ -94,7 +117,14 @@ fn show_config(format: Option<String>) -> Result<()> {
         .and_then(|s| OutputFormat::from_str(s).ok())
         .unwrap_or(OutputFormat::JsonPretty);
 
-    let config = Config::default();
+    let adapter = LayeredConfigAdapter::<Config>::new(
+        Some(std::path::PathBuf::from("ggen.toml")),
+        Some("GGEN_".to_string()),
+    );
+    let empty_matches = clap_noun_verb::ArgMatches::default();
+    let config = adapter
+        .resolve(&empty_matches)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     let entries: std::collections::HashMap<_, _> = config
         .all_entries()
         .into_iter()

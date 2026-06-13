@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Multiple nouns example demonstrating compound commands
 //!
 //! Note: v3 attribute macro API doesn't support nested nouns.

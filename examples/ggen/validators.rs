@@ -1,9 +1,13 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Input validation helpers for ggen CLI
 //!
 //! Provides validation functions that return user-friendly errors
 //! with actionable recovery suggestions.
 
 use super::errors::{ErrorCategory, UserError};
+use clap_noun_verb_utils::adapters::parse_key_val;
 
 /// Supported AI model identifiers
 const SUPPORTED_MODELS: &[&str] = &[
@@ -99,21 +103,23 @@ pub fn validate_template_vars(vars: &[String]) -> Result<Vec<(String, String)>, 
     let mut parsed = Vec::new();
 
     for var in vars {
-        if let Some((key, value)) = var.split_once('=') {
-            if key.trim().is_empty() {
-                return Err(UserError::new(
-                    ErrorCategory::Validation,
-                    format!("Variable '{}' has empty key", var),
-                    "Variable keys must not be empty:\n  \
-                    ✓ Correct: name=value\n  \
-                    ✗ Wrong: =value"
-                        .to_string(),
-                ));
+        match parse_key_val(var) {
+            Ok((key, value)) => {
+                if key.is_empty() {
+                    return Err(UserError::new(
+                        ErrorCategory::Validation,
+                        format!("Variable '{}' has empty key", var),
+                        "Variable keys must not be empty:\n  \
+                        ✓ Correct: name=value\n  \
+                        ✗ Wrong: =value"
+                            .to_string(),
+                    ));
+                }
+                parsed.push((key, value));
             }
-
-            parsed.push((key.trim().to_string(), value.trim().to_string()));
-        } else {
-            return Err(super::errors::invalid_var_format(var));
+            Err(_) => {
+                return Err(super::errors::invalid_var_format(var));
+            }
         }
     }
 

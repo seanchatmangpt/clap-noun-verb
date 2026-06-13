@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Unit tests for receipt verification
 //!
 //! Tests Ed25519 signature verification and SHA-256 hashing.

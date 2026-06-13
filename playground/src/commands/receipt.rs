@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Receipt commands - Audit, verification, and lockchain integration
 
 use clap_noun_verb_macros::verb;

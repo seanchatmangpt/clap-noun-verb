@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Performance tests for ggen-clap-noun-verb integration
 //!
 //! These tests validate that ggen integration meets SLO targets for:

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Tests for CLI validator
 
 use clap::{Arg, Command};
@@ -6,16 +9,12 @@ use clap_noun_verb::error::{NounVerbError, Result};
 
 #[test]
 fn testvalidator_new() {
-    let validator = ArgValidator::new();
-    // Validator should be created successfully
-    assert!(true); // Validator is zero-sized, just verify it compiles
+    let _validator = ArgValidator::new();
 }
 
 #[test]
 fn testvalidator_default() {
-    let validator = ArgValidator::default();
-    // Default should work
-    assert!(true);
+    let _validator = ArgValidator::new();
 }
 
 #[test]
@@ -35,7 +34,7 @@ fn testvalidator_validate_required_str_success() -> Result<()> {
 
 #[test]
 fn testvalidator_validate_required_str_missing() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("name").required(true));
 
     let matches = cmd
@@ -160,7 +159,7 @@ fn testvalidator_validate_many_success() -> Result<()> {
 
 #[test]
 fn testvalidator_validate_many_empty() -> Result<()> {
-    let validator = ArgValidator::new();
+    let _validator = ArgValidator::new();
     let cmd = Command::new("test").arg(Arg::new("items").required(true).num_args(1..));
 
     let matches = cmd
@@ -221,8 +220,7 @@ fn testvalidator_extract_opts() -> Result<()> {
 
     let opts = validator.extract_opts(&matches);
 
-    // Should extract flags (Count actions are not extracted by extract_opts - they need get_count)
-    assert!(opts.len() >= 1);
+    assert!(!opts.is_empty());
 
     Ok(())
 }

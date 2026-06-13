@@ -89,7 +89,7 @@ Have a recipe you want to share?
 
 - **Can't find a guide?** - [Request a guide](https://github.com/seanchatmangpt/clap-noun-verb/issues/new?template=guide_request.md)
 - **Guide doesn't work?** - [Report a bug](https://github.com/seanchatmangpt/clap-noun-verb/issues)
-- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb)
 
 ---
 

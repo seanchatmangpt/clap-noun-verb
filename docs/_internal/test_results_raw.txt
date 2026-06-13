@@ -1,0 +1,69 @@
+Test Matrix Execution Results - Thu May 28 20:07:50 PDT 2026
+========================================
+
+[0;34m[Tier 0][0m Baseline (default features): RUNNING features: default
+[0;34m[Tier 0][0m Baseline (default features): [0;32mPASSED[0m (139s, N/A)
+PASSED: Baseline (default features) (139s)
+[0;34m[Tier 1][0m meta-framework: RUNNING features: meta-framework
+[0;34m[Tier 1][0m meta-framework: [0;32mPASSED[0m (28s, N/A)
+PASSED: meta-framework (28s)
+[0;34m[Tier 1][0m rdf-composition: RUNNING features: rdf-composition
+[0;34m[Tier 1][0m rdf-composition: [0;32mPASSED[0m (28s, N/A)
+PASSED: rdf-composition (28s)
+[0;34m[Tier 1][0m executable-specs: RUNNING features: executable-specs
+[0;34m[Tier 1][0m executable-specs: [0;32mPASSED[0m (41s, N/A)
+PASSED: executable-specs (41s)
+[0;34m[Tier 1][0m fractal-patterns: RUNNING features: fractal-patterns
+[0;34m[Tier 1][0m fractal-patterns: [0;32mPASSED[0m (28s, N/A)
+PASSED: fractal-patterns (28s)
+[0;34m[Tier 1][0m discovery-engine: RUNNING features: discovery-engine
+[0;34m[Tier 1][0m discovery-engine: [0;32mPASSED[0m (31s, N/A)
+PASSED: discovery-engine (31s)
+[0;34m[Tier 1][0m federated-network: RUNNING features: federated-network
+[0;34m[Tier 1][0m federated-network: [0;32mPASSED[0m (31s, N/A)
+PASSED: federated-network (31s)
+[0;34m[Tier 1][0m learning-trajectories: RUNNING features: learning-trajectories
+[0;34m[Tier 1][0m learning-trajectories: [0;32mPASSED[0m (45s, N/A)
+PASSED: learning-trajectories (45s)
+[0;34m[Tier 1][0m reflexive-testing: RUNNING features: reflexive-testing
+[0;34m[Tier 1][0m reflexive-testing: [0;32mPASSED[0m (39s, N/A)
+PASSED: reflexive-testing (39s)
+[0;34m[Tier 1][0m economic-sim: RUNNING features: economic-sim
+[0;34m[Tier 1][0m economic-sim: [0;32mPASSED[0m (31s, N/A)
+PASSED: economic-sim (31s)
+[0;34m[Tier 1][0m quantum-ready: RUNNING features: quantum-ready
+[0;34m[Tier 1][0m quantum-ready: [0;32mPASSED[0m (33s, N/A)
+PASSED: quantum-ready (33s)
+[0;34m[Tier 2][0m frontier-semantic: RUNNING features: frontier-semantic
+[0;34m[Tier 2][0m frontier-semantic: [0;32mPASSED[0m (31s, N/A)
+PASSED: frontier-semantic (31s)
+[0;34m[Tier 2][0m frontier-intelligence: RUNNING features: frontier-intelligence
+[0;34m[Tier 2][0m frontier-intelligence: [0;32mPASSED[0m (29s, N/A)
+PASSED: frontier-intelligence (29s)
+[0;34m[Tier 2][0m frontier-quality: RUNNING features: frontier-quality
+[0;34m[Tier 2][0m frontier-quality: [0;32mPASSED[0m (28s, N/A)
+PASSED: frontier-quality (28s)
+[0;34m[Tier 3][0m meta-framework + rdf-composition: RUNNING features: meta-framework,rdf-composition
+[0;34m[Tier 3][0m meta-framework + rdf-composition: [0;32mPASSED[0m (28s, N/A)
+PASSED: meta-framework + rdf-composition (28s)
+[0;34m[Tier 3][0m discovery-engine + learning-trajectories: RUNNING features: discovery-engine,learning-trajectories
+[0;34m[Tier 3][0m discovery-engine + learning-trajectories: [0;32mPASSED[0m (28s, N/A)
+PASSED: discovery-engine + learning-trajectories (28s)
+[0;34m[Tier 3][0m federated-network + rdf-composition: RUNNING features: federated-network,rdf-composition
+[0;34m[Tier 3][0m federated-network + rdf-composition: [0;32mPASSED[0m (32s, N/A)
+PASSED: federated-network + rdf-composition (32s)
+[0;34m[Tier 3][0m economic-sim + learning-trajectories: RUNNING features: economic-sim,learning-trajectories
+[0;34m[Tier 3][0m economic-sim + learning-trajectories: [0;32mPASSED[0m (58s, N/A)
+PASSED: economic-sim + learning-trajectories (58s)
+[0;34m[Tier 3][0m fractal-patterns + meta-framework: RUNNING features: fractal-patterns,meta-framework
+[0;34m[Tier 3][0m fractal-patterns + meta-framework: [0;32mPASSED[0m (61s, N/A)
+PASSED: fractal-patterns + meta-framework (61s)
+[0;34m[Tier 3][0m executable-specs + reflexive-testing: RUNNING features: executable-specs,reflexive-testing
+[0;34m[Tier 3][0m executable-specs + reflexive-testing: [0;32mPASSED[0m (62s, N/A)
+PASSED: executable-specs + reflexive-testing (62s)
+[0;34m[Tier 4][0m frontier-all (all features): RUNNING features: frontier-all
+[0;34m[Tier 4][0m frontier-all (all features): [0;32mPASSED[0m (55s, N/A)
+PASSED: frontier-all (all features) (55s)
+[0;34m[Tier 4][0m minimal (no-default-features): RUNNING features: no-default
+[0;34m[Tier 4][0m minimal (no-default-features): [0;32mPASSED[0m (28s, N/A)
+PASSED: minimal (no-default-features) (28s)

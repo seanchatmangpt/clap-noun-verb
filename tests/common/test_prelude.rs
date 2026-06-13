@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Test Prelude - Elegant, Lint-Compliant Test Utilities
 //!
 //! This module provides hyperadvanced Rust patterns for test assertions that:
@@ -18,7 +23,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```rust,ignore
 //! use tests::common::test_prelude::*;
 //!
 //! #[test]

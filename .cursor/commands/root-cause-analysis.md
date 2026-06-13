@@ -185,7 +185,7 @@ Verified fix with cargo make test
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules
 - **[Kaizen Improvement](./kaizen-improvement.md)** - Continuous improvement
 - **[Poka-Yoke Design](./poka-yoke-design.md)** - Error prevention
 

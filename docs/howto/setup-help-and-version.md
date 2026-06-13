@@ -532,12 +532,12 @@ cargo build
 - **Add more commands**: Follow the same `#[verb]` pattern
 - **Customize help categories**: Use the HelpSystem API (advanced)
 - **Add shell completions**: Use `clap`'s built-in shell completion support
-- **Configure output formats**: See [Output Formats](../tutorial/05-output-formats.md)
+- **Configure output formats**: See [Output Formats](../tutorial/04-output-formats.md)
 
 ---
 
 ## Reference
 
-- [Tutorial: Your First CLI](../tutorial/01-your-first-cli.md)
-- [Tutorial: Output Formats](../tutorial/05-output-formats.md)
+- [Tutorial: Domain Separation](../tutorial/01-domain-separation.md)
+- [Tutorial: Output Formats](../tutorial/04-output-formats.md)
 - [Explanation: Architecture](../explanation/architecture.md)

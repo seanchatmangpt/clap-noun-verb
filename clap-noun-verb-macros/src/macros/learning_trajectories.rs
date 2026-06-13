@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // FUTURE: These types are part of the frontier feature set and will be integrated in future phases
 
 //! Learning Trajectory Macros for clap-noun-verb-macros-frontier
@@ -543,7 +546,7 @@ impl ConsensusValidator {
 
         // Sort scores for median calculation
         let mut scores: Vec<f64> = votes.iter().map(|v| v.score).collect();
-        scores.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        scores.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         // Calculate median
         let median = if scores.len() % 2 == 0 {
@@ -751,6 +754,7 @@ pub fn parse_learning_path_args(args: TokenStream) -> Result<CompetencyLevel, sy
 // ============================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

@@ -1,0 +1,38 @@
+[package]
+name = "cargo-cicd"
+version = "26.6.2"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+description = "Local-first CI/CD helpers for Rust workspaces: clean target dirs, run changed tests, check git state, and publish cicd.toml"
+homepage = "https://github.com/seanchatmangpt/clap-noun-verb/tree/main/crates/cargo-cicd"
+repository = "https://github.com/seanchatmangpt/clap-noun-verb"
+keywords = ["cargo", "cicd", "workspace", "testing", "git"]
+categories = ["development-tools::cargo-plugins"]
+
+[[bin]]
+name = "cargo-cicd"
+path = "src/main.rs"
+
+[dependencies]
+clap-noun-verb = { path = "../..", version = "26.6.1" }
+clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+anyhow = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.40", features = ["full"] }
+log = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+
+# For cargo metadata inspection
+cargo_metadata = "0.18"
+
+# For git operations
+git2 = { version = "0.21", optional = true }
+
+[features]
+default = []
+git = ["git2"]

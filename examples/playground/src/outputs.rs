@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Output types for CLI commands
 //!
 //! All CLI commands return these types for JSON serialization.

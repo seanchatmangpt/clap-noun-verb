@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Chicago TDD tests for Plugin System CLI Integration
 //!
 //! Tests the 10 production plugins through CLI commands:

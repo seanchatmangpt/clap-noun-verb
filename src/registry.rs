@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Command registry for composable CLI patterns
 //!
 //! The CommandRegistry provides a central hub for registering and composing
@@ -13,11 +16,11 @@
 
 use crate::error::{NounVerbError, Result};
 use crate::noun::NounCommand;
-use crate::verb::{VerbArgs, VerbContext, TypeMap};
-#[cfg(feature = "full")]
-use crate::middleware::MiddlewarePipeline;
+use crate::verb::{TypeMap, VerbArgs, VerbContext};
 use clap::{ArgMatches, Command};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 /// Central registry for managing all CLI commands
 ///
@@ -33,9 +36,8 @@ pub struct CommandRegistry {
     config: RegistryConfig,
     /// Typed context extensions shared across all commands
     extensions: TypeMap,
-    /// Middleware pipeline
-    #[cfg(feature = "full")]
-    pipeline: Option<MiddlewarePipeline>,
+    /// Add completions subcommand
+    pub has_completions_subcommand: bool,
 }
 
 /// Configuration for the command registry
@@ -68,36 +70,33 @@ impl Default for RegistryConfig {
 impl CommandRegistry {
     /// Create a new command registry
     pub fn new() -> Self {
-        Self { 
-            nouns: HashMap::new(), 
+        Self {
+            nouns: HashMap::new(),
             config: RegistryConfig::default(),
             extensions: TypeMap::new(),
-            #[cfg(feature = "full")]
-            pipeline: None,
+            has_completions_subcommand: false,
         }
     }
 
     /// Create a new registry with configuration
     pub fn with_config(config: RegistryConfig) -> Self {
-        Self { 
-            nouns: HashMap::new(), 
+        Self {
+            nouns: HashMap::new(),
             config,
             extensions: TypeMap::new(),
-            #[cfg(feature = "full")]
-            pipeline: None,
+            has_completions_subcommand: false,
         }
+    }
+
+    /// Enable fluent completions subcommand
+    pub fn with_completions_subcommand(mut self) -> Self {
+        self.has_completions_subcommand = true;
+        self
     }
 
     /// Add a typed extension to the global context
     pub fn with_extension<T: Send + Sync + 'static>(mut self, val: T) -> Self {
         self.extensions.insert(val);
-        self
-    }
-
-    #[cfg(feature = "full")]
-    /// Set the middleware pipeline
-    pub fn with_pipeline(mut self, pipeline: MiddlewarePipeline) -> Self {
-        self.pipeline = Some(pipeline);
         self
     }
 
@@ -196,10 +195,9 @@ impl CommandRegistry {
         let mut seen_nouns = std::collections::HashSet::new();
         for noun_name in self.nouns.keys() {
             if !seen_nouns.insert(noun_name) {
-                return Err(NounVerbError::invalid_structure(format!(
-                    "Duplicate noun name: '{}'",
-                    noun_name
-                )));
+                return Err(NounVerbError::InvalidStructure {
+                    message: format!("Duplicate noun name: '{}'", noun_name),
+                });
             }
         }
 
@@ -207,10 +205,9 @@ impl CommandRegistry {
         for (noun_name, noun) in &self.nouns {
             // Check for empty nouns (no verbs or sub-nouns)
             if noun.verbs().is_empty() && noun.sub_nouns().is_empty() {
-                return Err(NounVerbError::invalid_structure(format!(
-                    "Noun '{}' has no verbs or sub-nouns",
-                    noun_name
-                )));
+                return Err(NounVerbError::InvalidStructure {
+                    message: format!("Noun '{}' has no verbs or sub-nouns", noun_name),
+                });
             }
 
             // Check for duplicate verb names within a noun
@@ -218,10 +215,12 @@ impl CommandRegistry {
             for verb in noun.verbs() {
                 let verb_name = verb.name();
                 if !seen_verbs.insert(verb_name) {
-                    return Err(NounVerbError::invalid_structure(format!(
-                        "Duplicate verb name '{}' in noun '{}'",
-                        verb_name, noun_name
-                    )));
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Duplicate verb name '{}' in noun '{}'",
+                            verb_name, noun_name
+                        ),
+                    });
                 }
             }
 
@@ -230,10 +229,12 @@ impl CommandRegistry {
             for sub_noun in noun.sub_nouns() {
                 let sub_noun_name = sub_noun.name();
                 if !seen_sub_nouns.insert(sub_noun_name) {
-                    return Err(NounVerbError::invalid_structure(format!(
-                        "Duplicate sub-noun name '{}' in noun '{}'",
-                        sub_noun_name, noun_name
-                    )));
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Duplicate sub-noun name '{}' in noun '{}'",
+                            sub_noun_name, noun_name
+                        ),
+                    });
                 }
             }
 
@@ -243,10 +244,12 @@ impl CommandRegistry {
             for sub_noun in noun.sub_nouns() {
                 let sub_noun_name = sub_noun.name();
                 if verb_names.contains(sub_noun_name) {
-                    return Err(NounVerbError::invalid_structure(format!(
-                        "Verb and sub-noun cannot have the same name '{}' in noun '{}'",
-                        sub_noun_name, noun_name
-                    )));
+                    return Err(NounVerbError::InvalidStructure {
+                        message: format!(
+                            "Verb and sub-noun cannot have the same name '{}' in noun '{}'",
+                            sub_noun_name, noun_name
+                        ),
+                    });
                 }
             }
         }
@@ -281,9 +284,23 @@ impl CommandRegistry {
             cmd = cmd.arg(arg.clone());
         }
 
+        // Add global --introspect flag
+        cmd = cmd.arg(
+            clap::Arg::new("introspect")
+                .long("introspect")
+                .action(clap::ArgAction::SetTrue)
+                .global(true)
+                .help("Introspect CLI capabilities as JSON Schema array for LLM tool-calling"),
+        );
+
         // Add noun subcommands
         for noun in self.nouns.values() {
             cmd = cmd.subcommand(noun.build_command());
+        }
+
+        if self.has_completions_subcommand {
+            let completions_noun = self.build_completions_noun();
+            cmd = cmd.subcommand(completions_noun.build_command());
         }
 
         cmd
@@ -292,13 +309,20 @@ impl CommandRegistry {
     /// Route a command based on clap matches
     pub fn route(&self, matches: &ArgMatches) -> Result<()> {
         // Get the top-level subcommand (noun)
-        let (noun_name, noun_matches) = matches
-            .subcommand()
-            .ok_or_else(|| NounVerbError::invalid_structure("No subcommand found"))?;
+        let (noun_name, noun_matches) = matches.subcommand().ok_or_else(|| {
+            NounVerbError::InvalidStructure { message: "No subcommand found".to_string() }
+        })?;
+
+        if noun_name == "completions" && self.has_completions_subcommand {
+            let noun = self.build_completions_noun();
+            return self.route_recursive(&noun, noun_name, noun_matches, matches);
+        }
 
         // Find the noun command
-        let noun =
-            self.nouns.get(noun_name).ok_or_else(|| NounVerbError::command_not_found(noun_name))?;
+        let noun = self.nouns.get(noun_name).ok_or_else(|| {
+            let candidates: Vec<&str> = self.nouns.keys().map(|s| s.as_str()).collect();
+            NounVerbError::command_not_found_with_candidates(noun_name, &candidates)
+        })?;
 
         // Route the command recursively with root matches for global args access
         self.route_recursive(noun.as_ref(), noun_name, noun_matches, matches)
@@ -324,45 +348,15 @@ impl CommandRegistry {
                     .with_parent(root_matches.clone())
                     .with_context(context);
 
-                #[cfg(feature = "full")]
-                if let Some(pipeline) = &self.pipeline {
-                    let mut req = crate::middleware::MiddlewareRequest::new(sub_name);
-                    for arg in sub_matches.ids() {
-                        if let Some(vals) = sub_matches.get_many::<String>(arg.as_str()) {
-                            for val in vals {
-                                req = req.with_arg(val);
-                            }
-                        }
-                    }
-                    if let Err(e) = pipeline.execute_before(&req) {
-                        return Err(NounVerbError::execution_error(format!("Middleware rejected request: {}", e)));
-                    }
-                }
-
-                let result = verb.run(&args);
-
-                #[cfg(feature = "full")]
-                if let Some(pipeline) = &self.pipeline {
-                    match &result {
-                        Ok(_) => {
-                            let _ = pipeline.execute_after(&crate::middleware::MiddlewareResponse::success("Success"));
-                        }
-                        Err(e) => {
-                            let _ = pipeline.execute_after(&crate::middleware::MiddlewareResponse::failure(e.to_string()));
-                            if let Ok(Some(_)) = pipeline.handle_error(e) {
-                                // If middleware recovered, we could theoretically return Ok(())
-                            }
-                        }
-                    }
-                }
-
-                result
+                verb.run(&args)
             } else if let Some(sub_noun) = noun.sub_nouns().iter().find(|n| n.name() == sub_name) {
                 // Recursively route to sub-noun, passing root matches for global args
                 self.route_recursive(sub_noun.as_ref(), sub_name, sub_matches, root_matches)
             } else {
                 // Neither verb nor sub-noun found
-                Err(NounVerbError::verb_not_found(noun_name, sub_name))
+                let mut candidates: Vec<&str> = noun.verbs().iter().map(|v| v.name()).collect();
+                candidates.extend(noun.sub_nouns().iter().map(|n| n.name()));
+                Err(NounVerbError::verb_not_found_with_candidates(noun_name, sub_name, &candidates))
             }
         } else {
             // No subcommand, try direct noun execution
@@ -376,31 +370,367 @@ impl CommandRegistry {
 
     /// Run the CLI with the current process arguments
     pub fn run(self) -> Result<()> {
+        let args: Vec<String> = std::env::args().collect();
+        self.run_with_args(args)
+    }
+
+    /// Run the CLI with custom arguments
+    pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
         // Auto-validate if enabled
         if self.config.auto_validate {
             self.validate()?;
         }
 
-        let cmd = self.build_command();
-        let matches =
-            cmd.try_get_matches().map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+        if args.is_empty() {
+            return Err(NounVerbError::argument_error("No arguments provided"));
+        }
 
-        self.route(&matches)
-    }
+        // Split args by "++"
+        let mut steps = Vec::new();
+        let mut current_step = Vec::new();
+        let binary_name = args[0].clone();
 
-    /// Run the CLI with custom arguments
-    pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
-        let cmd = self.build_command();
-        let matches = cmd
-            .try_get_matches_from(args)
-            .map_err(|e| NounVerbError::argument_error(e.to_string()))?;
+        for arg in args.into_iter().skip(1) {
+            if arg == "++" {
+                if !current_step.is_empty() {
+                    steps.push(current_step);
+                    current_step = Vec::new();
+                }
+            } else {
+                current_step.push(arg);
+            }
+        }
+        if !current_step.is_empty() {
+            steps.push(current_step);
+        }
 
-        self.route(&matches)
+        if steps.is_empty() {
+            let cmd = self.build_command();
+            let matches = cmd.clone().try_get_matches_from(vec![binary_name]).map_err(|e| {
+                if e.kind() == clap::error::ErrorKind::DisplayHelp
+                    || e.kind() == clap::error::ErrorKind::DisplayVersion
+                {
+                    e.print().ok();
+                    std::process::exit(0);
+                }
+                NounVerbError::argument_error(e.to_string())
+            })?;
+
+            if matches.get_flag("introspect") {
+                let tools = collect_tools_from_cmd(&cmd, "");
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&tools)
+                        .map_err(|e| NounVerbError::execution_error(e.to_string()))?
+                );
+                return Ok(());
+            }
+            return self.route(&matches);
+        }
+
+        let stdin_val = crate::cli::preprocessor::read_stdin_if_needed(&steps);
+        let mut step_results: Vec<serde_json::Value> = Vec::new();
+
+        for step in steps {
+            let mut step_args = vec![binary_name.clone()];
+            let processed_args =
+                crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
+            step_args.extend(processed_args);
+
+            let cmd = self.build_command();
+            let matches = cmd.clone().try_get_matches_from(step_args).map_err(|e| {
+                if e.kind() == clap::error::ErrorKind::DisplayHelp
+                    || e.kind() == clap::error::ErrorKind::DisplayVersion
+                {
+                    e.print().ok();
+                    std::process::exit(0);
+                }
+                NounVerbError::argument_error(e.to_string())
+            })?;
+
+            if matches.get_flag("introspect") {
+                let tools = collect_tools_from_cmd(&cmd, "");
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&tools)
+                        .map_err(|e| NounVerbError::execution_error(e.to_string()))?
+                );
+                return Ok(());
+            }
+
+            self.route(&matches)?;
+            step_results.push(serde_json::Value::Null);
+        }
+
+        Ok(())
     }
 
     /// Get the built command for testing or manual execution
     pub fn command(self) -> Command {
         self.build_command()
+    }
+
+    /// Load and hot-register verbs from ontology directory
+    ///
+    /// This method scans ~/open-ontologies for TTL files and registers
+    /// any new verbs found there. This enables:
+    ///
+    /// 1. Dynamic CLI expansion without recompilation
+    /// 2. Ontology-driven development (declare verbs in RDF, generate Rust)
+    /// 3. Live synchronization between code and ontology
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use clap_noun_verb::registry::CommandRegistry;
+    /// let mut registry = CommandRegistry::new();
+    /// registry.load_ontology_verbs(None)?; // Uses ~/open-ontologies
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn load_ontology_verbs(&mut self, ontology_dir: Option<PathBuf>) -> Result<usize> {
+        let dir = ontology_dir.unwrap_or_else(|| {
+            let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            PathBuf::from(home).join("open-ontologies")
+        });
+
+        if !dir.exists() {
+            return Err(NounVerbError::Generic(format!(
+                "Ontology directory not found: {}",
+                dir.display()
+            )));
+        }
+
+        let verbs = self.discover_verbs_from_ontology(&dir)?;
+        let count = verbs.len();
+
+        if count > 0 {
+            return Err(NounVerbError::Generic(
+                "Runtime ontology verb loading is not yet implemented: verbs were discovered \
+                 but cannot be registered without dynamic compilation support"
+                    .to_string(),
+            ));
+        }
+
+        Ok(count)
+    }
+
+    /// Discover verb definitions from TTL/RDF files
+    fn discover_verbs_from_ontology(&self, dir: &PathBuf) -> Result<Vec<OntologyVerbDef>> {
+        let mut verbs = Vec::new();
+
+        // Scan for TTL files
+        match std::fs::read_dir(dir) {
+            Ok(entries) => {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().map_or(false, |ext| ext == "ttl") {
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            // Parse TTL for verb definitions
+                            // This is a simplified parser - in production use proper RDF libraries
+                            let parsed = self.parse_ttl_verbs(&content)?;
+                            verbs.extend(parsed);
+                        }
+                    }
+                }
+            }
+            Err(_) => {
+                return Err(NounVerbError::Generic(format!(
+                    "Cannot read ontology directory: {}",
+                    dir.display()
+                )))
+            }
+        }
+
+        Ok(verbs)
+    }
+
+    /// Parse TTL file for verb definitions
+    fn parse_ttl_verbs(&self, ttl_content: &str) -> Result<Vec<OntologyVerbDef>> {
+        let mut verbs = Vec::new();
+
+        // First pass: collect @prefix declarations so we know all known prefixes.
+        // Example: @prefix ex: <http://example.org/> .
+        let mut prefixes: Vec<String> = Vec::new();
+        for line in ttl_content.lines() {
+            let line = line.trim();
+            if line.starts_with("@prefix") || line.starts_with("PREFIX") {
+                // Extract the local prefix label (the token ending with ':')
+                let tokens: Vec<&str> = line.split_whitespace().collect();
+                // tokens[1] should be "label:" in @prefix form
+                if tokens.len() >= 2 {
+                    let label = tokens[1];
+                    if label.ends_with(':') {
+                        prefixes.push(label.to_string());
+                    }
+                }
+            }
+        }
+        // Always include common prefixes even if not declared in this file
+        for default_prefix in &["ex:", "cnv:", "verb:", "owl:", "rdf:", "rdfs:"] {
+            let owned = default_prefix.to_string();
+            if !prefixes.contains(&owned) {
+                prefixes.push(owned);
+            }
+        }
+
+        // Second pass: collect multi-line blocks and look for Verb type assertions.
+        // We join continuation lines (those that don't start a new subject) so that
+        // statements like:
+        //   ex:myVerb a cnv:Verb ;
+        //       rdfs:label "My verb" .
+        // are handled correctly.
+        //
+        // Strategy: accumulate a logical "statement buffer" that resets on lines
+        // starting a new subject (IRI or prefixed name not beginning with a predicate
+        // keyword), then scan the buffer for known ":Verb" patterns.
+
+        let mut buffer = String::new();
+
+        let flush_buffer = |buf: &str, prefixes: &[String], verbs: &mut Vec<OntologyVerbDef>| {
+            let is_verb_statement = buf.contains(":Verb")
+                || buf.contains("rdf:type cnv:Verb")
+                || buf.contains("a cnv:Verb")
+                || buf.contains("a verb:Verb");
+
+            if !is_verb_statement {
+                return;
+            }
+
+            // Try to extract the subject: the first token that uses a known prefix.
+            let first_line = buf.lines().next().unwrap_or("").trim();
+            let tokens: Vec<&str> = first_line.split_whitespace().collect();
+            let subject = tokens.first().copied().unwrap_or("");
+
+            for prefix in prefixes {
+                if subject.starts_with(prefix.as_str()) {
+                    let local = &subject[prefix.len()..];
+                    // Strip any trailing punctuation (`;`, `.`)
+                    let local = local.trim_end_matches(|c: char| !c.is_alphanumeric() && c != '_');
+                    if !local.is_empty() {
+                        verbs.push(OntologyVerbDef {
+                            name: local.to_lowercase(),
+                            noun: None,
+                            doc: "Loaded from ontology".to_string(),
+                            args: vec![],
+                            return_type: "serde_json::Value".to_string(),
+                        });
+                    }
+                    return;
+                }
+            }
+        };
+
+        for line in ttl_content.lines() {
+            let trimmed = line.trim();
+
+            // Skip comments and empty lines (but keep them from being flushed)
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+
+            // A line that starts with a prefix declaration or a new subject resets the buffer.
+            // Heuristic: if the first non-whitespace character starts an IRI or prefixed name
+            // (not a predicate/object continuation marker like ';', ',', or a blank node
+            // continuation) we treat it as a new statement.
+            let first_char = trimmed.chars().next().unwrap_or(' ');
+            let starts_new_subject = first_char == '<'
+                || first_char == '_'
+                || first_char == '@'
+                || trimmed.starts_with("PREFIX")
+                || prefixes.iter().any(|p| trimmed.starts_with(p.as_str()));
+
+            if starts_new_subject && !buffer.is_empty() {
+                flush_buffer(&buffer, &prefixes, &mut verbs);
+                buffer.clear();
+            }
+
+            buffer.push(' ');
+            buffer.push_str(trimmed);
+        }
+
+        // Flush the final statement buffer
+        if !buffer.is_empty() {
+            flush_buffer(&buffer, &prefixes, &mut verbs);
+        }
+
+        Ok(verbs)
+    }
+
+    /// Export current command registry to RDF/N-Triples format
+    ///
+    /// This creates an RDF representation of all registered nouns and verbs,
+    /// enabling:
+    /// - Ontology synchronization
+    /// - Semantic querying with SPARQL
+    /// - Conformance validation
+    pub fn export_to_rdf(&self, format: RdfFormat) -> Result<String> {
+        match format {
+            RdfFormat::NTriples => self.export_ntriples(),
+            RdfFormat::Turtle => self.export_turtle(),
+            RdfFormat::JsonLd => self.export_jsonld(),
+        }
+    }
+
+    fn export_ntriples(&self) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("# Generated RDF/N-Triples from CommandRegistry\n");
+        output.push_str("# Namespace: http://clap-noun-verb.io/ontology#\n\n");
+
+        for (noun_idx, (noun_name, _noun)) in self.nouns.iter().enumerate() {
+            let noun_uri = format!("<http://clap-noun-verb.io/nouns/noun{}>", noun_idx);
+            output.push_str(&format!(
+                "{} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Noun> .\n",
+                noun_uri
+            ));
+            output.push_str(&format!(
+                "{} <http://clap-noun-verb.io/ontology#nounName> \"{}\" .\n",
+                noun_uri, noun_name
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn export_turtle(&self) -> Result<String> {
+        let mut output = String::new();
+        output.push_str("@prefix cnv: <http://clap-noun-verb.io/ontology#> .\n");
+        output.push_str("@prefix ex: <http://example.org/> .\n\n");
+
+        for (noun_name, _noun) in self.nouns.iter() {
+            output.push_str(&format!(
+                "ex:{} a cnv:Noun ;\n    cnv:nounName \"{}\" .\n\n",
+                noun_name, noun_name
+            ));
+        }
+
+        Ok(output)
+    }
+
+    fn export_jsonld(&self) -> Result<String> {
+        #[derive(Serialize)]
+        struct JsonLdContext {
+            #[serde(rename = "@context")]
+            context: std::collections::HashMap<String, String>,
+            #[serde(rename = "@graph")]
+            graph: Vec<serde_json::Value>,
+        }
+
+        let mut context = std::collections::HashMap::new();
+        context.insert("cnv".to_string(), "http://clap-noun-verb.io/ontology#".to_string());
+        context.insert("ex".to_string(), "http://example.org/".to_string());
+
+        let mut graph = Vec::new();
+        for (noun_name, _noun) in self.nouns.iter() {
+            graph.push(serde_json::json!({
+                "@id": format!("ex:{}", noun_name),
+                "@type": "cnv:Noun",
+                "cnv:nounName": noun_name
+            }));
+        }
+
+        let jsonld = JsonLdContext { context, graph };
+        serde_json::to_string(&jsonld)
+            .map_err(|e| NounVerbError::Generic(format!("JSON-LD serialization error: {}", e)))
     }
 }
 
@@ -408,4 +738,362 @@ impl Default for CommandRegistry {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Dynamically generated completions noun command
+pub struct CompletionsNoun {
+    app_name: String,
+    app_version: Option<String>,
+    commands: Vec<String>,
+    options: Vec<String>,
+}
+
+impl CompletionsNoun {
+    pub fn new(
+        app_name: String,
+        app_version: Option<String>,
+        commands: Vec<String>,
+        options: Vec<String>,
+    ) -> Self {
+        Self { app_name, app_version, commands, options }
+    }
+}
+
+impl NounCommand for CompletionsNoun {
+    fn name(&self) -> &'static str {
+        "completions"
+    }
+
+    fn about(&self) -> &'static str {
+        "Generate shell completion scripts"
+    }
+
+    fn verbs(&self) -> Vec<Box<dyn crate::verb::VerbCommand>> {
+        vec![
+            Box::new(CompletionsVerb {
+                name: "bash",
+                about: "Generate completion script for bash",
+                shell: crate::clap_ext::completions::Shell::Bash,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "zsh",
+                about: "Generate completion script for zsh",
+                shell: crate::clap_ext::completions::Shell::Zsh,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "fish",
+                about: "Generate completion script for fish",
+                shell: crate::clap_ext::completions::Shell::Fish,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+            Box::new(CompletionsVerb {
+                name: "powershell",
+                about: "Generate completion script for PowerShell",
+                shell: crate::clap_ext::completions::Shell::PowerShell,
+                app_name: self.app_name.clone(),
+                app_version: self.app_version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                commands: self.commands.clone(),
+                options: self.options.clone(),
+            }),
+        ]
+    }
+
+    fn build_command(&self) -> Command {
+        let mut cmd = Command::new(self.name()).about(self.about()).arg(
+            clap::Arg::new("shell")
+                .short('s')
+                .long("shell")
+                .help("The shell to generate completions for")
+                .value_parser(["bash", "zsh", "fish", "powershell"]),
+        );
+
+        for verb in self.verbs() {
+            cmd = cmd.subcommand(verb.build_command());
+        }
+
+        cmd
+    }
+
+    fn handle_direct(&self, args: &crate::verb::VerbArgs) -> Result<()> {
+        let shell_str = if let Some(s) = args.get_one_str_opt("shell") {
+            s
+        } else if let Some(detected) = crate::shell::detect_shell() {
+            match detected {
+                crate::shell::ShellType::Bash => "bash".to_string(),
+                crate::shell::ShellType::Zsh => "zsh".to_string(),
+                crate::shell::ShellType::Fish => "fish".to_string(),
+                crate::shell::ShellType::PowerShell => "powershell".to_string(),
+                _ => "bash".to_string(),
+            }
+        } else {
+            "bash".to_string()
+        };
+
+        let shell = match shell_str.as_str() {
+            "bash" => crate::clap_ext::completions::Shell::Bash,
+            "zsh" => crate::clap_ext::completions::Shell::Zsh,
+            "fish" => crate::clap_ext::completions::Shell::Fish,
+            "powershell" => crate::clap_ext::completions::Shell::PowerShell,
+            _ => crate::clap_ext::completions::Shell::Bash,
+        };
+
+        let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
+            .with_version(self.app_version.as_deref().unwrap_or("1.0.0"))
+            .with_commands(self.commands.clone());
+
+        let mut gen = generator;
+        for opt in &self.options {
+            gen = gen.with_option(opt);
+        }
+
+        let script = gen.generate(shell)?;
+        print!("{}", script);
+        Ok(())
+    }
+}
+
+struct CompletionsVerb {
+    name: &'static str,
+    about: &'static str,
+    shell: crate::clap_ext::completions::Shell,
+    app_name: String,
+    app_version: String,
+    commands: Vec<String>,
+    options: Vec<String>,
+}
+
+impl crate::verb::VerbCommand for CompletionsVerb {
+    fn name(&self) -> &'static str {
+        self.name
+    }
+
+    fn about(&self) -> &'static str {
+        self.about
+    }
+
+    fn run(&self, _args: &crate::verb::VerbArgs) -> Result<()> {
+        let generator = crate::clap_ext::completions::CompletionGenerator::new(&self.app_name)
+            .with_version(&self.app_version)
+            .with_commands(self.commands.clone());
+
+        let mut gen = generator;
+        for opt in &self.options {
+            gen = gen.with_option(opt);
+        }
+
+        let script = gen.generate(self.shell)?;
+        print!("{}", script);
+        Ok(())
+    }
+}
+
+impl CommandRegistry {
+    fn build_completions_noun(&self) -> CompletionsNoun {
+        let app_name = self.config.name.clone();
+        let app_version = self.config.version.clone();
+
+        let mut commands = Vec::new();
+        let mut options = Vec::new();
+
+        // Collect all nouns and their verbs/subnouns
+        for (noun_name, noun) in &self.nouns {
+            commands.push(noun_name.clone());
+            for verb in noun.verbs() {
+                commands.push(format!("{} {}", noun_name, verb.name()));
+            }
+            for sub_noun in noun.sub_nouns() {
+                commands.push(format!("{} {}", noun_name, sub_noun.name()));
+            }
+        }
+
+        // Collect options
+        for arg in &self.config.global_args {
+            if let Some(long) = arg.get_long() {
+                options.push(format!("--{}", long));
+            }
+            if let Some(short) = arg.get_short() {
+                options.push(format!("-{}", short));
+            }
+        }
+
+        for noun in self.nouns.values() {
+            for verb in noun.verbs() {
+                for arg in verb.additional_args() {
+                    if let Some(long) = arg.get_long() {
+                        options.push(format!("--{}", long));
+                    }
+                    if let Some(short) = arg.get_short() {
+                        options.push(format!("-{}", short));
+                    }
+                }
+            }
+        }
+
+        CompletionsNoun { app_name, app_version, commands, options }
+    }
+}
+
+/// JSON Schema representation for LLM tool-calling capability
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct ToolDefinition {
+    pub name: String,
+    pub description: String,
+    pub parameters: ToolParameters,
+}
+
+/// Parameters schema inside ToolDefinition
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct ToolParameters {
+    #[serde(rename = "type")]
+    pub param_type: String,
+    pub properties: std::collections::BTreeMap<String, PropertySchema>,
+    pub required: Vec<String>,
+}
+
+/// Standard JSON Schema property descriptor
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct PropertySchema {
+    #[serde(rename = "type")]
+    pub prop_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "items")]
+    pub items: Option<Box<PropertySchema>>,
+}
+
+/// Recursively collect executable tools (commands without subcommands) from a clap command tree
+pub fn collect_tools_from_cmd(cmd: &clap::Command, prefix: &str) -> Vec<ToolDefinition> {
+    let mut tools = Vec::new();
+    let current_name = if prefix.is_empty() {
+        cmd.get_name().to_string()
+    } else {
+        format!("{}_{}", prefix, cmd.get_name())
+    };
+
+    let subcommands: Vec<&clap::Command> = cmd.get_subcommands().collect();
+    if subcommands.is_empty() {
+        let mut properties = std::collections::BTreeMap::new();
+        let mut required = Vec::new();
+
+        for arg in cmd.get_arguments() {
+            let arg_id = arg.get_id().as_str();
+            if arg_id == "help" || arg_id == "version" || arg_id == "introspect" {
+                continue;
+            }
+
+            let name = arg_id.to_string();
+            let help = arg.get_help().map(|s| s.to_string());
+
+            let is_flag = matches!(
+                arg.get_action(),
+                clap::ArgAction::SetTrue | clap::ArgAction::SetFalse | clap::ArgAction::Count
+            );
+            let multiple =
+                matches!(arg.get_action(), clap::ArgAction::Append | clap::ArgAction::Count);
+
+            let prop_type = if is_flag {
+                "boolean".to_string()
+            } else if multiple {
+                "array".to_string()
+            } else {
+                "string".to_string()
+            };
+
+            let items = if multiple {
+                Some(Box::new(PropertySchema {
+                    prop_type: "string".to_string(),
+                    description: None,
+                    default: None,
+                    items: None,
+                }))
+            } else {
+                None
+            };
+
+            let default = arg
+                .get_default_values()
+                .first()
+                .map(|v| serde_json::Value::String(v.to_string_lossy().to_string()));
+
+            if arg.is_required_set() {
+                required.push(name.clone());
+            }
+
+            properties
+                .insert(name, PropertySchema { prop_type, description: help, default, items });
+        }
+
+        tools.push(ToolDefinition {
+            name: current_name,
+            description: cmd.get_about().map(|s| s.to_string()).unwrap_or_default(),
+            parameters: ToolParameters { param_type: "object".to_string(), properties, required },
+        });
+    } else {
+        let pass_prefix = if prefix.is_empty() {
+            if cmd.get_name() == "cli" || cmd.get_name() == "myapp" {
+                "".to_string()
+            } else {
+                cmd.get_name().to_string()
+            }
+        } else {
+            current_name
+        };
+        for sub in subcommands {
+            tools.extend(collect_tools_from_cmd(sub, &pass_prefix));
+        }
+    }
+
+    tools
+}
+
+// =============================================================================
+// ONTOLOGY HOT-LOADING - Runtime verb discovery and registration
+// =============================================================================
+
+/// Ontology verb definition (for hot-loading from RDF)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OntologyVerbDef {
+    /// Verb name (e.g., "load", "validate")
+    pub name: String,
+    /// Associated noun (e.g., "graph", "ontology")
+    pub noun: Option<String>,
+    /// Documentation
+    pub doc: String,
+    /// Argument definitions
+    pub args: Vec<OntologyArgDef>,
+    /// Return type for Rust function
+    pub return_type: String,
+}
+
+/// Ontology argument definition
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OntologyArgDef {
+    pub name: String,
+    pub arg_type: String,
+    pub required: bool,
+    pub doc: Option<String>,
+}
+
+/// RDF export format
+#[derive(Debug, Clone, Copy)]
+pub enum RdfFormat {
+    /// N-Triples format (.nt)
+    NTriples,
+    /// Turtle format (.ttl)
+    Turtle,
+    /// JSON-LD format (.jsonld)
+    JsonLd,
 }

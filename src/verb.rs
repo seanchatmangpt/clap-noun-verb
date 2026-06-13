@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Verb command trait and types for composable CLI patterns
 
 use crate::error::Result;
@@ -230,11 +233,19 @@ impl VerbArgs {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// use clap::{Command, Arg};
+    /// use clap_noun_verb::VerbArgs;
+    ///
+    /// let cmd = Command::new("test")
+    ///     .arg(Arg::new("arg1").default_value("val1"))
+    ///     .arg(Arg::new("arg2").default_value("val2"));
+    /// let matches = cmd.get_matches_from(vec!["test"]);
+    /// let verb_args = VerbArgs::new(matches);
+    ///
     /// let args = verb_args.arg_names_refs();
-    /// for name in args {
-    ///     println!("Argument: {}", name);
-    /// }
+    /// assert!(args.contains(&"arg1"));
+    /// assert!(args.contains(&"arg2"));
     /// ```
     pub fn arg_names_refs(&self) -> Vec<&str> {
         self.matches.ids().map(|id| id.as_str()).collect()
@@ -301,8 +312,24 @@ impl VerbArgs {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// use clap::{Command, Arg, ArgAction};
+    /// use clap_noun_verb::{VerbArgs, Result};
+    ///
+    /// # fn main() -> Result<()> {
+    /// let parent_cmd = Command::new("parent")
+    ///     .arg(Arg::new("hosts").long("host").action(ArgAction::Append));
+    /// let parent_matches = parent_cmd.get_matches_from(vec!["parent", "--host", "localhost", "--host", "127.0.0.1"]);
+    ///
+    /// let cmd = Command::new("child");
+    /// let matches = cmd.get_matches_from(vec!["child"]);
+    ///
+    /// let verb_args = VerbArgs::new(matches).with_parent(parent_matches);
     /// let hosts: Vec<String> = verb_args.get_global_many("hosts")?;
+    ///
+    /// assert_eq!(hosts, vec!["localhost".to_string(), "127.0.0.1".to_string()]);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_global_many<T>(&self, name: &str) -> Result<Vec<T>>
     where
@@ -331,8 +358,21 @@ impl VerbArgs {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// use clap::{Command, Arg, ArgAction};
+    /// use clap_noun_verb::VerbArgs;
+    ///
+    /// let parent_cmd = Command::new("parent")
+    ///     .arg(Arg::new("hosts").long("host").action(ArgAction::Append));
+    /// let parent_matches = parent_cmd.get_matches_from(vec!["parent", "--host", "localhost"]);
+    ///
+    /// let cmd = Command::new("child");
+    /// let matches = cmd.get_matches_from(vec!["child"]);
+    ///
+    /// let verb_args = VerbArgs::new(matches).with_parent(parent_matches);
     /// let hosts: Vec<String> = verb_args.get_global_many_opt("hosts");
+    ///
+    /// assert_eq!(hosts, vec!["localhost".to_string()]);
     /// ```
     pub fn get_global_many_opt<T>(&self, name: &str) -> Vec<T>
     where
@@ -360,9 +400,18 @@ impl VerbArgs {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
-    /// // Works even if the argument was defined with value_parser(value_parser!(u16))
+    /// ```rust
+    /// use clap::{Command, Arg, ArgAction};
+    /// use clap_noun_verb::VerbArgs;
+    ///
+    /// let cmd = Command::new("test")
+    ///     .arg(Arg::new("ports").long("port").action(ArgAction::Append));
+    /// let matches = cmd.get_matches_from(vec!["test", "--port", "80", "--port", "443"]);
+    ///
+    /// let verb_args = VerbArgs::new(matches);
     /// let ports: Vec<String> = verb_args.get_many_opt_str("ports");
+    ///
+    /// assert_eq!(ports, vec!["80".to_string(), "443".to_string()]);
     /// ```
     pub fn get_many_opt_str(&self, name: &str) -> Vec<String> {
         if let Some(raw_values) = self.matches.get_raw(name) {
@@ -383,6 +432,29 @@ impl VerbArgs {
     /// Get global flag count (e.g., -v, -vv, -vvv)
     pub fn get_global_flag_count(&self, name: &str) -> u8 {
         self.parent_matches.as_ref().map(|parent| parent.get_count(name)).unwrap_or(0)
+    }
+
+    /// Get trailing positional arguments (populated when the verb declares trailing_var_arg = true).
+    ///
+    /// Returns a Vec of the trailing argument strings in order.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use clap::{Command, Arg, ArgAction};
+    /// # use clap_noun_verb::VerbArgs;
+    /// let cmd = Command::new("explain")
+    ///     .arg(Arg::new("trailing").num_args(0..).trailing_var_arg(true));
+    /// let matches = cmd.get_matches_from(["explain", "CICD-GIT-001"]);
+    /// let args = VerbArgs::new(matches);
+    /// let trailing = args.trailing();
+    /// assert_eq!(trailing, vec!["CICD-GIT-001".to_string()]);
+    /// ```
+    pub fn trailing(&self) -> Vec<String> {
+        self.matches
+            .get_many::<String>("trailing")
+            .map(|vals| vals.cloned().collect())
+            .unwrap_or_default()
     }
 }
 
@@ -431,12 +503,49 @@ pub trait VerbCommand: Send + Sync {
     /// Returns `Result::Err` if command execution fails.
     fn run(&self, args: &VerbArgs) -> Result<()>;
 
+    /// Allow trailing positional arguments after this verb.
+    ///
+    /// When overridden to return true, the verb's clap Command will accept
+    /// zero-or-more trailing positional arguments accessible via VerbArgs::trailing().
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use clap_noun_verb::{VerbCommand, VerbArgs, Result};
+    /// struct ExplainVerb;
+    /// impl VerbCommand for ExplainVerb {
+    ///     fn name(&self) -> &'static str { "explain" }
+    ///     fn about(&self) -> &'static str { "Explain a code" }
+    ///     fn trailing_var_arg(&self) -> bool { true }
+    ///     fn run(&self, args: &VerbArgs) -> Result<()> {
+    ///         let codes = args.trailing();
+    ///         println!("codes: {:?}", codes);
+    ///         Ok(())
+    ///     }
+    /// }
+    /// ```
+    fn trailing_var_arg(&self) -> bool {
+        false
+    }
+
     /// Build the clap command for this verb
     ///
     /// Default implementation creates a basic command with name and description.
     /// Override to customize command building.
     fn build_command(&self) -> Command {
-        Command::new(self.name()).about(self.about())
+        let mut cmd = Command::new(self.name()).about(self.about());
+        for arg in self.additional_args() {
+            cmd = cmd.arg(arg);
+        }
+        if self.trailing_var_arg() {
+            cmd = cmd.arg(
+                clap::Arg::new("trailing")
+                    .num_args(0..)
+                    .trailing_var_arg(true)
+                    .help("Trailing positional arguments"),
+            );
+        }
+        cmd
     }
 
     /// Get additional arguments for this verb (override to add custom args)

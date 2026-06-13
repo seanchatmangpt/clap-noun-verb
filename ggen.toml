@@ -1,0 +1,176 @@
+# ggen.toml
+# GGen (Code Generation) configuration for clap-noun-verb manufacturing pipeline
+# Defines source ontologies, queries, templates, and output destinations
+# Format: TOML 1.0.0
+
+[ggen]
+# Project metadata
+name = "clap-noun-verb"
+version = "26.6.1"
+description = "Code generation source law and manufacturing templates for clap-noun-verb noun-verb CLI framework"
+
+# Ontology sources (RDF/Turtle definitions of domain model)
+# Primary sources for code generation
+ontology_sources = [
+    # Core framework ontology
+    "ontology/clap-noun-verb-ontology.ttl",
+    "ontology/cli-pattern.ttl",
+    "ontology/verb-traits.ttl",
+    "ontology/ggen-command-vocab.nt",
+    # Domain-specific ontologies
+    "ontology/cargo-cicd.ttl",
+]
+
+# SPARQL query registry (select commands/specs)
+# Queries must match the ontology sources above
+query_registry = [
+    "queries/generate-cli-spec.rq",
+    "queries/find-all-verbs.rq",
+    "queries/extract-arguments.rq",
+    "queries/validate-cli-structure.rq",
+    "queries/generate-trait-impls.rq",
+    # Domain-specific queries
+    "queries/cargo-cicd-commands.rq",
+]
+
+# Template directory (Jinja2/Tera templates for code generation)
+template_dir = "templates"
+
+# Output directory for generated artifacts
+output_dir = "src/generated"
+
+# Manufacturing stages (phases of code production)
+[ggen.stages]
+# Stage 1: Specification extraction from ontology
+spec_extraction = {
+    query = "queries/generate-cli-spec.rq",
+    output = "src/generated/cli_spec.json",
+    format = "json"
+}
+
+# Stage 2: Trait implementation generation
+trait_generation = {
+    query = "queries/generate-trait-impls.rq",
+    template = "templates/verb.rs.jinja",
+    output_pattern = "src/generated/verbs/{noun_name}/{verb_name}.rs",
+    format = "rust"
+}
+
+# Stage 3: CLI validation (conformance check)
+validation = {
+    query = "queries/validate-cli-structure.rq",
+    output = "src/generated/validation_report.json",
+    format = "json"
+}
+
+# Stage 4: Documentation generation
+documentation = {
+    template = "templates/command_doc.md.jinja",
+    output_pattern = "docs/generated/commands/{noun_name}/{verb_name}.md",
+    format = "markdown"
+}
+
+# Stage 5: Test generation
+test_generation = {
+    template = "templates/cli_test.rs.jinja",
+    output_pattern = "tests/generated/{noun_name}_{verb_name}_test.rs",
+    format = "rust"
+}
+
+# Template variable mappings (how to extract context from ontology)
+[ggen.mappings]
+noun_name = "cnv:hasNounName"
+noun_description = "cnv:nounAbout"
+verb_name = "cnv:hasVerbName"
+verb_description = "cnv:verbAbout"
+return_type = "cnv:returnType"
+arguments = "cnv:hasArguments"
+output_format = "cnv:outputFormat"
+
+# Proof gates (quality checks before artifact release)
+[ggen.proof_gates]
+# Proof gate 1: Ontology consistency (no orphaned terms)
+ontology_consistency = {
+    enabled = true,
+    severity = "error",
+    check = "All nouns and verbs must have descriptions"
+}
+
+# Proof gate 2: Generated code compiles
+generated_code_compilation = {
+    enabled = true,
+    severity = "error",
+    check = "Run 'cargo check' on generated code"
+}
+
+# Proof gate 3: Test coverage
+test_coverage = {
+    enabled = true,
+    severity = "warning",
+    minimum_coverage_percent = 50
+}
+
+# Proof gate 4: Documentation completeness
+documentation_completeness = {
+    enabled = true,
+    severity = "warning",
+    check = "All verbs must have doc comments"
+}
+
+# Receipt generation (proof of manufacturing)
+[ggen.receipts]
+# Generate receipt (hash chain proving artifact provenance)
+enabled = true
+receipt_format = "jsonld"
+receipt_dir = "receipts/ggen"
+
+# Hash algorithm for artifact integrity
+hash_algorithm = "sha256"
+
+# Include source inputs in receipt
+include_sources = true
+include_queries = true
+include_templates = true
+
+# Artifact classification
+[ggen.artifacts]
+verb_handlers = { type = "rust_module", directory = "src/generated/verbs" }
+noun_modules = { type = "rust_module", directory = "src/generated/nouns" }
+cli_specs = { type = "json_spec", directory = "src/generated" }
+documentation = { type = "markdown", directory = "docs/generated" }
+tests = { type = "rust_test", directory = "tests/generated" }
+
+# Manufacturing pipeline orchestration
+[ggen.pipeline]
+# Execution order: stages run sequentially unless parallelizable is true
+stages_order = [
+    "spec_extraction",
+    "validation",
+    "trait_generation",
+    "documentation",
+    "test_generation"
+]
+
+# Which stages can run in parallel (independent outputs)
+parallelizable = ["documentation", "test_generation"]
+
+# Dependency graph (stage X must complete before stage Y)
+[ggen.pipeline.dependencies]
+"trait_generation" = ["spec_extraction", "validation"]
+"documentation" = ["spec_extraction"]
+"test_generation" = ["spec_extraction", "trait_generation"]
+
+# Cache configuration
+[ggen.cache]
+# Cache generated artifacts to avoid re-generation on unchanged ontology
+enabled = true
+# Cache directory
+cache_dir = ".cache/ggen"
+# Hash ontology files to detect changes
+hash_sources = true
+
+# Logging and diagnostics
+[ggen.logging]
+level = "info"
+format = "json"
+output = "ggen.log"

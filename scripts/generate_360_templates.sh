@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 #
 # Generate 360 ggen Templates for clap-noun-verb
 # Covers: 60 nouns × 6 categories (commands, verbs, errors, tests, async, middleware)

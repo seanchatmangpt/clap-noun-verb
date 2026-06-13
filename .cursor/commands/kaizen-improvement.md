@@ -208,7 +208,7 @@ Applied same pattern to other magic numbers in codebase
 
 ## Documentation References
 
-- **[Core Team Best Practices](../.cursorrules)** - Project-specific rules
+- **[Core Team Best Practices](../../.cursorrules)** - Project-specific rules
 - **[Root Cause Analysis](./root-cause-analysis.md)** - Problem solving
 - **[Eliminate Muda](./eliminate-muda.md)** - Waste elimination
 

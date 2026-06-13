@@ -1,0 +1,24 @@
+use clap_noun_verb::Result;
+use crate::cli::domain_traits::CalculatorHandler;
+
+{% for verb, args in sparql_results | groupBy("?verb_name") %}
+/// {{ args[0]["?verb_about"] }}
+///
+/// # Arguments
+{% for row in args %}
+/// * `{{ row["?arg_name"] }}` - {{ row["?arg_about"] }}{% if row["?arg_short"] %} [short: {{ row["?arg_short"] }}]{% endif %}{% if row["?arg_required"] == "true" %} [required]{% endif %}
+{% endfor %}
+#[clap_noun_verb_macros::verb("{{ verb }}", "calculator")]
+pub fn {{ verb }}(
+    {% for row in args %}
+    {{ row["?arg_name"] }}: {{ row["?arg_type"] | zodType | replace("number", "i32") | replace("string", "String") }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+) -> Result<i32> {
+    crate::domain::handlers::Handler::{{ verb }}(
+        {% for row in args %}
+        {{ row["?arg_name"] }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    )
+}
+
+{% endfor %}

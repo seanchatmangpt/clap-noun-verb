@@ -23,19 +23,19 @@ Domain code is:
 // ❌ Mixed: Hard to test, not reusable
 #[verb]
 fn calculate(x: i32, y: i32) -> i32 {
-    if x > 100 { x + y } else { x * y }  // Business logic HERE
+  if x > 100 { x + y } else { x * y } // Business logic HERE
 }
 
 // ✅ Separated: Easy to test, reusable
 // Domain
 pub fn calculate(x: i32, y: i32) -> i32 {
-    if x > 100 { x + y } else { x * y }
+  if x > 100 { x + y } else { x * y }
 }
 
 // CLI
 #[verb]
 fn calculate_cmd(x: i32, y: i32) -> i32 {
-    domain::calculate(x, y)
+  domain::calculate(x, y)
 }
 ```
 
@@ -52,16 +52,16 @@ Rust's type system catches errors at compile time:
 ```rust
 // ❌ Runtime validation
 pub fn process(mode: &str) -> Result<()> {
-    if mode != "fast" && mode != "slow" {
-        return Err("Invalid mode");
-    }
-    // ...
+  if mode != "fast" && mode != "slow" {
+    return Err("Invalid mode");
+  }
+  // ...
 }
 
 // ✅ Compile-time enforcement
 pub enum Mode { Fast, Slow }
 pub fn process(mode: Mode) -> Result<()> {
-    // mode is ALWAYS valid
+  // mode is ALWAYS valid
 }
 ```
 
@@ -116,8 +116,8 @@ fn cmd(x: i32) -> i32 { x + 1 }
 **Builder approach:**
 ```rust
 Registry::new()
-    .verb("cmd", |x: i32| x + 1)
-    .build();
+  .verb("cmd", |x: i32| x + 1)
+  .build();
 ```
 
 **Reasoning:**
@@ -167,17 +167,65 @@ fn process<R: BufRead>(reader: R) -> Stats { }
 
 // CLI: Provides file
 fn process_cmd(file: PathBuf) -> Stats {
-    let reader = BufReader::new(File::open(file)?);
-    domain::process(reader)
+  let reader = BufReader::new(File::open(file)?);
+  domain::process(reader)
 }
 
 // Tests: Provide string
 #[test]
 fn test_process() {
-    let data = "test".as_bytes();
-    let stats = process(data);
-    assert_eq!(stats.lines, 1);
+  let data = "test".as_bytes();
+  let stats = process(data);
+  assert_eq!(stats.lines, 1);
 }
+```
+
+## System Architecture Diagram
+
+The following diagram shows the major components and their relationships:
+
+```
+            CLI Entry Point
+               |
+          CommandRegistry (core)
+          /     |     \
+          /      |      \
+      Graph Module  Capability   Diagnostics
+      (v26.6.1)    Module    Module
+        |       |       |
+        |       |       |
+     ┌─────┴─────┐  ┌───┴───┐  ┌───┴────┐
+     |      |  |    |  |    |
+    Loader   Validator Packer Lister Doctor
+    Query        Registry   Check
+    
+          Output Serialization
+          (JSON, YAML, Table, TSV)
+```
+
+### Core Components
+
+1. **CommandRegistry** - Central command dispatch and registration
+2. **Graph Module** - RDF file loading, querying, and validation
+3. **Capability Module** - Registry-based capability management
+4. **Diagnostics Module** - System health checks and reporting
+
+### Data Flow
+
+```
+User Input (CLI)
+  ↓
+ArgumentParser (clap)
+  ↓
+CommandRouter
+  ↓
+  ├→ Graph: load/query/validate RDF
+  ├→ Packs: add/remove/list capabilities
+  ├→ Doctor: run health checks
+  ↓
+Output Formatter (JSON/YAML/Table/TSV)
+  ↓
+stdout/stderr
 ```
 
 ### Pattern: State Machines
@@ -186,20 +234,20 @@ fn test_process() {
 Complex state transitions are pure logic:
 ```rust
 pub enum State {
-    Idle,
-    Running,
-    Failed(Error),
+  Idle,
+  Running,
+  Failed(Error),
 }
 
 impl State {
-    // Pure state transition
-    pub fn handle(self, event: Event) -> Self {
-        match (self, event) {
-            (Idle, Event::Start) => Running,
-            (Running, Event::Fail(e)) => Failed(e),
-            // ...
-        }
+  // Pure state transition
+  pub fn handle(self, event: Event) -> Self {
+    match (self, event) {
+      (Idle, Event::Start) => Running,
+      (Running, Event::Fail(e)) => Failed(e),
+      // ...
     }
+  }
 }
 ```
 
@@ -291,6 +339,6 @@ Design for scale:
 
 ## Further Reading
 
-- [Domain Separation Patterns](../how-to/domain-separation-patterns.md)
+- [Domain Separation Patterns](../tutorial/01-domain-separation.md)
 - [AUTONOMIC.md](../../AUTONOMIC.md) - Machine-grade interface
 - [Agent2028 Whitepaper](../../PhD_THESIS.md)

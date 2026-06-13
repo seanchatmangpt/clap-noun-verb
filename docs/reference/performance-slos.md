@@ -280,5 +280,5 @@ fn test_parse_slo() {
 
 **Related**:
 - [How-to: Optimize Performance](../howto/performance-optimization.md)
-- [How-to: Validate Ontologies](../howto/validation.md)
-- [Explanation: Performance Optimization](../explanation/performance.md)
+- [How-to: Validate Input](../howto/validation.md)
+- [Explanation: Architecture Overview](../explanation/architecture.md)

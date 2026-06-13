@@ -1,4 +1,7 @@
 #![allow(clippy::needless_borrows_for_generic_args)]
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // FUTURE: These types are part of the frontier feature set and will be integrated in future phases
 
 //! Semantic CLI Composition - Type-safe capability discovery and composition
@@ -396,6 +399,7 @@ fn generate_mcp_descriptor(
 // =============================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use syn::parse_quote;

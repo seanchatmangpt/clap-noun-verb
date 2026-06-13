@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Advanced clap integration (Phase 7 - v4.3)
 //!
 //! This module provides cutting-edge integration with clap 4.5.51, featuring:
@@ -16,7 +19,7 @@
 //!
 //! # Example
 //!
-//! ```ignore
+//! ```text
 //! use clap::Parser;
 //! use clap_noun_verb::clap::{EnumCommand, CompletionGenerator, Shell};
 //!

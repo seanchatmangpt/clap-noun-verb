@@ -34,7 +34,7 @@ fn show_status() -> Result<Status> {
 }
 ```
 
-**See also:** [README - How-to Guides](../README.md#how-to-guides)
+**See also:** [How-to Guides Index](README.md)
 
 ---
 
@@ -100,7 +100,7 @@ fn show_logs(
 ) -> Result<String> { /* ... */ }
 ```
 
-**See also:** [README - Argument Attributes](../README.md#argument-attributes)
+**See also:** [Reference - Argument Attributes](../reference/api/arg-attributes.md)
 
 ---
 
@@ -165,7 +165,7 @@ fn configure_server(
 ) -> Result<String> { /* ... */ }
 ```
 
-**See also:** [README - How to configure arguments](../README.md#how-to-configure-arguments)
+**See also:** [Reference - Argument Attributes](../reference/api/arg-attributes.md)
 
 ---
 
@@ -226,7 +226,7 @@ When the noun is auto-inferred from the filename (`collector.rs` → noun: `coll
 | **Explicit verb** | `#[verb("status")]` | `fn whatever_name()` | `collector status` |
 | **Explicit both** | `#[verb("status", "collector")]` | `fn any_name()` | `collector status` |
 
-**See also:** [README - Verb Registration](../README.md#verb-registration)
+**See also:** [Reference - #[verb] Macro](../reference/api/verb-macro.md)
 
 ---
 
@@ -261,7 +261,7 @@ fn configure(
 ) -> Result<String> { /* ... */ }
 ```
 
-**See also:** [README - How to configure arguments](../README.md#how-to-configure-arguments), [Example: env_vars.rs](../examples/env_vars.rs)
+**See also:** [Reference - Argument Attributes](../reference/api/arg-attributes.md), [Example: env_vars.rs](../../examples/howto/env_vars.rs)
 
 ---
 
@@ -341,7 +341,7 @@ fn upload_file(
 ) -> Result<String> { /* ... */ }
 ```
 
-**See also:** [README - Argument Attributes](../README.md#argument-attributes)
+**See also:** [Reference - Argument Attributes](../reference/api/arg-attributes.md)
 
 ---
 
@@ -349,34 +349,34 @@ fn upload_file(
 
 | Mistake | Quick Fix | Where to Learn More |
 |---------|-----------|---------------------|
-| Missing return type | Add `-> Result<T>` where `T: Serialize` | [README - Type Inference](../README.md#type-inference) |
-| Missing quotes in `#[verb(...)]` | Use `#[verb("name")]` not `#[verb(name)]` | [README - Verb Registration](../README.md#verb-registration) |
-| Wrong quotes for `short` | Use `short = 'v'` not `short = "v"` | [README - Argument Attributes](../README.md#argument-attributes) |
-| Missing `Serialize` derive | Add `#[derive(Serialize)]` to struct | [README - Quick Start](../README.md#quick-start) |
-| `#[arg]` on function | Put `#[arg(...)]` on **parameters** | [README - How to configure arguments](../README.md#how-to-configure-arguments) |
-| Duplicate verbs | Use unique verb names per noun | [tests/compile_time_validation.rs](../tests/compile_time_validation.rs) |
-| Redundant noun prefix | Use `#[verb("status")]` not `#[verb("noun_status")]` | [README - Verb Registration](../README.md#verb-registration) |
-| Missing env quotes | Use `env = "PORT"` not `env = PORT` | [examples/env_vars.rs](../examples/env_vars.rs) |
-| Too many verb args | Max 2 args: `#[verb("verb", "noun")]` | [README - Verb Registration](../README.md#verb-registration) |
-| Mixing positional/named | Use `index` OR `short`/`long`, not both | [README - Argument Attributes](../README.md#argument-attributes) |
+| Missing return type | Add `-> Result<T>` where `T: Serialize` | [Reference - Types](../reference/api/types.md) |
+| Missing quotes in `#[verb(...)]` | Use `#[verb("name")]` not `#[verb(name)]` | [Reference - #[verb] Macro](../reference/api/verb-macro.md) |
+| Wrong quotes for `short` | Use `short = 'v'` not `short = "v"` | [Reference - Argument Attributes](../reference/api/arg-attributes.md) |
+| Missing `Serialize` derive | Add `#[derive(Serialize)]` to struct | [README - Quick Start](../../README.md#2-minute-example) |
+| `#[arg]` on function | Put `#[arg(...)]` on **parameters** | [Reference - Argument Attributes](../reference/api/arg-attributes.md) |
+| Duplicate verbs | Use unique verb names per noun | [tests/compile_time_validation.rs](../../tests/compile_time_validation.rs) |
+| Redundant noun prefix | Use `#[verb("status")]` not `#[verb("noun_status")]` | [Reference - #[verb] Macro](../reference/api/verb-macro.md) |
+| Missing env quotes | Use `env = "PORT"` not `env = PORT` | [examples/env_vars.rs](../../examples/howto/env_vars.rs) |
+| Too many verb args | Max 2 args: `#[verb("verb", "noun")]` | [Reference - #[verb] Macro](../reference/api/verb-macro.md) |
+| Mixing positional/named | Use `index` OR `short`/`long`, not both | [Reference - Argument Attributes](../reference/api/arg-attributes.md) |
 
 ---
 
 ## Additional Resources
 
-- **Main Documentation:** [README.md](../README.md)
-- **Complete Examples:** [examples/](../examples/)
-- **Validation Tests:** [tests/compile_time_validation.rs](../tests/compile_time_validation.rs)
-- **Argument Examples:** [examples/arg_groups.rs](../examples/arg_groups.rs)
-- **Environment Variables:** [examples/env_vars.rs](../examples/env_vars.rs)
+- **Main Documentation:** [README.md](../../README.md)
+- **Complete Examples:** [examples/](../../examples/howto/)
+- **Validation Tests:** [tests/compile_time_validation.rs](../../tests/compile_time_validation.rs)
+- **Argument Examples:** [examples/arg_groups.rs](../../examples/howto/arg_groups.rs)
+- **Environment Variables:** [examples/env_vars.rs](../../examples/howto/env_vars.rs)
 
 ## Getting Help
 
 If you encounter an error not covered here:
 
 1. Check the **compiler error message** - it includes hints
-2. Review **[README.md](../README.md)** for patterns and examples
-3. Look at **[examples/](../examples/)** for working code
+2. Review **[README.md](../../README.md)** for patterns and examples
+3. Look at **[examples/](../../examples/howto/)** for working code
 4. Search **existing issues** on GitHub
 5. Open a new issue with the error message and code sample
 

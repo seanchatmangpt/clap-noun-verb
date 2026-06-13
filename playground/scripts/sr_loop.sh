@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 set -euo pipefail
 
 # Default target name

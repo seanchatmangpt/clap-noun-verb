@@ -47,6 +47,9 @@ Thumbs.db
 # Benchmark results
 /benches/target/
 
+# Agent workspace files
+.agents/
+
 # Hive Mind session artifacts (if any)
 .hive-mind/sessions/
 .hive-mind/*.db-wal

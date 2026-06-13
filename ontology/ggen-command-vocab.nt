@@ -1,0 +1,213 @@
+# ggen Command Vocabulary Ontology
+# Namespace: https://chatmangpt.com/ontologies/ggen/command-vocab#
+# Format: N-Triples (RDF)
+# Purpose: Defines semantic vocabulary for CLI commands, parameters, outputs, and receipts
+#          Bridges ggen code generation with RDF-based ontologies
+
+# Ontology declaration
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Ontology> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://www.w3.org/2000/01/rdf-schema#label> "ggen Command Vocabulary Ontology"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://www.w3.org/2000/01/rdf-schema#comment> "Defines semantic vocabulary for CLI commands, their parameters, outputs, and proof receipts. Bridges ggen code generation with RDF-based ontologies."@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://purl.org/dc/terms/creator> "Sean Chatman" .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://purl.org/dc/terms/created> "2026-06-01"^^<http://www.w3.org/2001/XMLSchema#date> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://purl.org/dc/terms/license> <https://opensource.org/licenses/MIT> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#> <http://www.w3.org/2002/07/owl#versionInfo> "5.6.0" .
+
+# ============================================================================
+# CORE CLASSES
+# ============================================================================
+
+# CommandSpec: Abstract container for noun-verb definitions
+<https://chatmangpt.com/ontologies/ggen/command-vocab#CommandSpec> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#CommandSpec> <http://www.w3.org/2000/01/rdf-schema#label> "Command Specification"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#CommandSpec> <http://www.w3.org/2000/01/rdf-schema#comment> "Specification for a CLI command; parent container for nouns and verbs"@en .
+
+# NounSpec: Domain entity container (services, users, database)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://chatmangpt.com/ontologies/ggen/command-vocab#CommandSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> <http://www.w3.org/2000/01/rdf-schema#label> "Noun Specification"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> <http://www.w3.org/2000/01/rdf-schema#comment> "Specification for a noun (domain entity); contains verbs and sub-nouns"@en .
+
+# VerbSpec: Action on a noun (load, query, validate, check)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://chatmangpt.com/ontologies/ggen/command-vocab#CommandSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> <http://www.w3.org/2000/01/rdf-schema#label> "Verb Specification"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> <http://www.w3.org/2000/01/rdf-schema#comment> "Specification for a verb (action); always a child of a noun"@en .
+
+# ParameterSpec: CLI argument (flag, option, positional)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> <http://www.w3.org/2000/01/rdf-schema#label> "Parameter Specification"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> <http://www.w3.org/2000/01/rdf-schema#comment> "Specification for a command-line parameter (argument, flag, option)"@en .
+
+# OutputTypeSpec: Serializable return value (JSON, YAML)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> <http://www.w3.org/2000/01/rdf-schema#label> "Output Type Specification"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> <http://www.w3.org/2000/01/rdf-schema#comment> "Specification for a verb's return type; must implement serde::Serialize"@en .
+
+# Receipt: Proof of execution (immutable event record)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> <http://www.w3.org/2000/01/rdf-schema#label> "Execution Receipt"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> <http://www.w3.org/2000/01/rdf-schema#comment> "Immutable record of command execution; contains proof data for Process Mining Chicago TDD conformance"@en .
+
+# ============================================================================
+# NOUN PROPERTIES
+# ============================================================================
+
+# nounName: CLI identifier (e.g., "graph", "services")
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounName> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounName> <http://www.w3.org/2000/01/rdf-schema#label> "noun name"@en .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounName> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounName> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# nounDocstring: Human-readable description (for --help)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounDocstring> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounDocstring> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#nounDocstring> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# hasVerb: Links noun to verbs
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <http://www.w3.org/2000/01/rdf-schema#range> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+
+# hasSubNoun: Links noun to child nouns (for nesting)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasSubNoun> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasSubNoun> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasSubNoun> <http://www.w3.org/2000/01/rdf-schema#range> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+
+# ============================================================================
+# VERB PROPERTIES
+# ============================================================================
+
+# verbName: Action identifier (e.g., "load", "query")
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# verbDocstring: Human-readable description
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# belongsToNoun: Parent noun
+<https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <http://www.w3.org/2000/01/rdf-schema#range> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+
+# hasParameter: Parameters accepted by the verb
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <http://www.w3.org/2000/01/rdf-schema#range> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+
+# returnsType: Output type specification
+<https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <http://www.w3.org/2000/01/rdf-schema#range> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+
+# canFail: Whether verb may emit errors
+<https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+
+# ============================================================================
+# PARAMETER PROPERTIES
+# ============================================================================
+
+# paramName: CLI argument name (--verbose, path, --output)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# paramType: Rust type (String, u32, PathBuf, bool)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# isRequired: Whether parameter is mandatory
+<https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#boolean> .
+
+# paramDocstring: Help text for --help
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# shortForm: Short flag (e.g., -v for --verbose)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#shortForm> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#shortForm> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#shortForm> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# defaultValue: Default value if not provided
+<https://chatmangpt.com/ontologies/ggen/command-vocab#defaultValue> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#defaultValue> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#defaultValue> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# validation: Validation rule (regex, enum values, range)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#validation> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#validation> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#validation> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# ============================================================================
+# OUTPUT TYPE PROPERTIES
+# ============================================================================
+
+# outputName: Struct name for the return type
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# outputDescription: What this output represents
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# hasField: Properties in the output struct
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# ============================================================================
+# RECEIPT PROPERTIES (PROOF)
+# ============================================================================
+
+# receiptId: Unique identifier (UUID or hash)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#receiptId> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#receiptId> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#receiptId> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# executionTimestamp: Unix milliseconds
+<https://chatmangpt.com/ontologies/ggen/command-vocab#executionTimestamp> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#executionTimestamp> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#executionTimestamp> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#long> .
+
+# commandPath: Noun/verb sequence (["graph", "load"])
+<https://chatmangpt.com/ontologies/ggen/command-vocab#commandPath> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#commandPath> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#commandPath> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# exitCode: Exit status (0 = success)
+<https://chatmangpt.com/ontologies/ggen/command-vocab#exitCode> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#exitCode> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#exitCode> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#integer> .
+
+# inputArguments: JSON-serialized args
+<https://chatmangpt.com/ontologies/ggen/command-vocab#inputArguments> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#inputArguments> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#inputArguments> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# outputData: JSON-serialized output
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputData> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputData> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#outputData> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# durationMillis: Execution time
+<https://chatmangpt.com/ontologies/ggen/command-vocab#durationMillis> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#durationMillis> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#durationMillis> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#long> .
+
+# stderrOutput: Error messages if any
+<https://chatmangpt.com/ontologies/ggen/command-vocab#stderrOutput> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DatatypeProperty> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#stderrOutput> <http://www.w3.org/2000/01/rdf-schema#domain> <https://chatmangpt.com/ontologies/ggen/command-vocab#Receipt> .
+<https://chatmangpt.com/ontologies/ggen/command-vocab#stderrOutput> <http://www.w3.org/2000/01/rdf-schema#range> <http://www.w3.org/2001/XMLSchema#string> .
+
+# End of ggen-command-vocab.nt

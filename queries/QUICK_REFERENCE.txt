@@ -1,0 +1,242 @@
+================================================================================
+SPARQL QUERIES - QUICK REFERENCE
+================================================================================
+
+Directory: queries/
+
+================================================================================
+1. find-all-verbs.rq - Discover All Verbs
+================================================================================
+
+Purpose:   List all verbs with parent nouns and return types
+Type:      SELECT query
+Results:   16 verbs (services, users, database, network nouns)
+
+Key Columns:
+  ?verb              - URI: ex:StatusVerb, ex:StartVerb, etc.
+  ?verbName          - String: "status", "start", "stop"
+  ?nounName          - String: "services", "users", "database"
+  ?returnType        - String: "ServiceStatus (JSON)", "Result<()>"
+  ?argumentCount     - Integer: count of arguments
+
+Example Result:
+  ex:StatusVerb | status | Show current status... | services | ServiceStatus | 2
+
+Usage: Generate verb enum, CLI help, verb registry, test matrices
+
+================================================================================
+2. extract-arguments.rq - Get Arguments for a Verb
+================================================================================
+
+Purpose:   Extract detailed argument specs for a specific verb
+Type:      SELECT query (parameterized)
+Results:   0 results in test data (list structure not instantiated)
+
+Key Columns:
+  ?argument          - URI of the argument
+  ?argumentName      - String: "service", "verbose", "timeout"
+  ?shortName         - String: "v", "t" (single char)
+  ?argumentAbout     - String: description/help text
+  ?argumentTypeLabel - String: "Required", "Optional", "Flag"
+  ?valueType         - String: "String", "bool", "u16"
+  ?required          - Boolean: true/false
+  ?defaultValue      - String: default value
+
+Parameterization:
+  Line 21: BIND(ex:StatusVerb AS ?targetVerb)
+  Change to query different verbs
+
+Usage: Generate function signatures, clap Command builders, validation
+
+================================================================================
+3. validate-cli-structure.rq - Check Pattern Conformance
+================================================================================
+
+Purpose:   Find violations of noun-verb pattern rules
+Type:      SELECT query (returns issues when found)
+Results:   9 violations in test data
+
+Checks (7 total):
+  1. Orphaned verbs      - Verb without cnv:belongsToNoun
+  2. Unnamed verbs       - Verb without cnv:hasVerbName
+  3. Unnamed nouns       - Noun without cnv:hasNounName
+  4. Multiple parents    - Verb with 2+ parent nouns
+  5. Untyped arguments   - Required arg without cnv:valueType
+  6. Missing Send        - Verb without cnv:HasTraitBound cnv:Send
+  7. Missing Sync        - Verb without cnv:HasTraitBound cnv:Sync
+
+Output Columns:
+  ?issue              - Title: "Orphaned verb: ex:AddVerb"
+  ?affectedResource   - URI: ex:AddVerb
+  ?description        - Details: "Verb does not belong to any noun"
+
+Usage: CI/CD validation gate, pre-compilation checks, QA reports
+
+================================================================================
+4. generate-trait-impls.rq - Extract Trait Requirements
+================================================================================
+
+Purpose:   Get trait bounds and return types for code generation
+Type:      SELECT query with COUNT aggregation
+Results:   622 results (includes all trait relationships)
+
+Key Columns:
+  ?resource          - URI of noun/verb
+  ?resourceType      - "Noun" or "Verb"
+  ?resourceName      - String: "services", "status"
+  ?traitRequirement  - URI: cnv:Send, cnv:Sync, cnv:Serialize
+  ?traitLabel        - String: "Send marker trait", "Sync marker trait"
+  ?returnType        - String: "Result<()>", "ServiceStatus (JSON)"
+  ?argumentCount     - Integer: aggregated argument count
+
+Usage: Generate impl blocks, verify trait bounds, create wrappers
+
+================================================================================
+5. generate-cli-spec.rq - Normalize CLI Specification
+================================================================================
+
+Purpose:   Build normalized RDF spec for code generation
+Type:      CONSTRUCT query (generates new RDF triples)
+Results:   No results in test data (empty result for non-existing data)
+
+Output Format: RDF triples with spec: namespace
+
+Triple Pattern:
+  ?noun a spec:NounSpec
+  ?noun spec:nounName "services"
+  ?noun spec:hasVerbSpec ?verbRef
+
+  ?verbRef a spec:VerbSpec
+  ?verbRef spec:verbName "status"
+  ?verbRef spec:returnType "ServiceStatus (JSON)"
+
+Usage: Feed to templates, JSON-LD export, version control, documentation
+
+================================================================================
+NAMESPACE PREFIXES
+================================================================================
+
+cnv:  http://clap-noun-verb.io/ontology#      Core noun-verb schema
+ex:   http://clap-noun-verb.io/examples#      Example instances
+spec: http://clap-noun-verb.io/spec#          Normalized specs
+rdf:  http://www.w3.org/1999/02/22-...        RDF primitives
+rdfs: http://www.w3.org/2000/01/rdf-...       RDF Schema
+owl:  http://www.w3.org/2002/07/owl#          OWL language
+xsd:  http://www.w3.org/2001/XMLSchema#       XML Schema types
+
+================================================================================
+COMMON QUERY PATTERNS
+================================================================================
+
+Pattern: Find by Name
+  ?verb cnv:hasVerbName "status"@en .
+
+Pattern: Optional Properties
+  OPTIONAL { ?verb cnv:verbAbout ?description . }
+
+Pattern: Count Relationships
+  SELECT ?verb (COUNT(?arg) AS ?argumentCount)
+  WHERE { ?verb cnv:hasArguments ?arg . }
+  GROUP BY ?verb
+
+Pattern: Find Missing Properties
+  FILTER NOT EXISTS { ?verb cnv:belongsToNoun ?noun . }
+
+Pattern: Case/When Mapping
+  BIND(CASE
+    WHEN ?argType = cnv:ArgumentType_Flag THEN spec:BoolFlag
+    ELSE spec:Unknown
+  END AS ?argumentKind)
+
+Pattern: Construct URI
+  BIND(IRI(CONCAT(STR(spec:), ?nounName, ":", ?verbName)) AS ?ref)
+
+================================================================================
+EXECUTION
+================================================================================
+
+Run All Queries:
+  python3 run-sparql-queries.py
+
+Run Single Query (Python):
+  from rdflib import Graph
+  from rdflib.plugins.sparql import prepareQuery
+
+  graph = Graph()
+  graph.parse("ontology/cli-pattern.ttl", format="turtle")
+
+  with open("queries/find-all-verbs.rq") as f:
+      query = prepareQuery(f.read())
+
+  for row in graph.query(query):
+      print(row.verbName, row.returnType)
+
+Parameterized Query:
+  from rdflib import Variable, Literal
+
+  results = graph.query(query, initBindings={
+      Variable("targetVerbName"): Literal("status")
+  })
+
+Export Results:
+  # Convert SELECT results to CSV
+  import csv
+  with open("verbs.csv", "w") as f:
+      writer = csv.writer(f)
+      for row in graph.query(query):
+          writer.writerow([row.verbName, row.returnType])
+
+================================================================================
+INTEGRATION CHECKLIST
+================================================================================
+
+□ Run find-all-verbs.rq to discover verbs
+□ Run validate-cli-structure.rq to check conformance
+□ Run extract-arguments.rq to parameterize code gen
+□ Run generate-trait-impls.rq to get trait data
+□ Run generate-cli-spec.rq to produce normalized RDF
+□ Feed results into Handlebars/Askama templates
+□ Generate Rust code with trait impl blocks
+□ Export to JSON-LD for documentation
+□ Add validation gate to CI/CD pipeline
+□ Version specifications in git
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+No Results from Query:
+  1. Check namespace prefixes in query
+  2. Run: SELECT ?s ?p ?o LIMIT 10 (verify data exists)
+  3. Try simpler query: ?s a cnv:Verb
+  4. Add debug OPTIONAL blocks to trace missing properties
+
+Syntax Error:
+  - CONSTRUCT: Cannot use BIND() in WHERE clause (only in SELECT)
+  - Prefixes: All PREFIX lines must come before query start
+  - IRIs: Use full URIs in CONSTRUCT template
+
+Performance:
+  - Add early FILTER to reduce result set
+  - Use LIMIT during development
+  - Pre-filter in Python before querying
+
+================================================================================
+REFERENCES
+================================================================================
+
+Documentation:        queries/README.md
+Execution Script:     queries/run-sparql-queries.py
+Full Summary:         SPARQL_QUERIES_SUMMARY.txt
+Query Files:          queries/*.rq
+
+Core Ontology:        ontology/clap-noun-verb-ontology.ttl
+Examples:             ontology/cli-pattern.ttl
+Traits:               ontology/verb-traits.ttl
+Schema:               ontology/cli_schema.ttl
+
+Project Info:         CLAUDE.md
+Version:              5.6.0
+Created:              2026-06-01
+
+================================================================================

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # 21-Point Test Matrix Execution Script
 # Validates all feature configurations for clap-noun-verb project
 # Follows Andon signal workflow: Stop the Line on errors
@@ -13,11 +16,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Test result tracking
-TOTAL_TESTS=21
+TOTAL_TESTS=23
 PASSED=0
 FAILED=0
 SKIPPED=0
-TEST_RESULTS_FILE="/home/user/clap-noun-verb/docs/test_results_raw.txt"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+TEST_RESULTS_FILE="$PROJECT_ROOT/docs/test_results_raw.txt"
 
 # Initialize results file
 echo "Test Matrix Execution Results - $(date)" > "$TEST_RESULTS_FILE"
@@ -49,18 +55,18 @@ test_config() {
     local temp_output=$(mktemp)
 
     # Build command based on features
-    local check_cmd="cargo make check"
-    local test_cmd="cargo make test"
-    local lint_cmd="cargo make lint"
+    local check_cmd="cargo make --no-workspace check"
+    local test_cmd="cargo make --no-workspace test"
+    local lint_cmd="cargo make --no-workspace lint"
 
     if [ "$features" != "default" ] && [ "$features" != "no-default" ]; then
-        check_cmd="cargo make check --features $features"
-        test_cmd="cargo make test --features $features"
-        lint_cmd="cargo make lint --features $features"
+        check_cmd="cargo make --no-workspace check --features $features"
+        test_cmd="cargo make --no-workspace test --features $features"
+        lint_cmd="cargo make --no-workspace lint --features $features"
     elif [ "$features" = "no-default" ]; then
-        check_cmd="cargo make check --no-default-features"
-        test_cmd="cargo make test --no-default-features"
-        lint_cmd="cargo make lint --no-default-features"
+        check_cmd="cargo make --no-workspace check --no-default-features"
+        test_cmd="cargo make --no-workspace test --no-default-features"
+        lint_cmd="cargo make --no-workspace lint --no-default-features"
     fi
 
     # Step 1: Compilation check (CRITICAL ANDON SIGNAL)
@@ -184,15 +190,16 @@ test_config "Tier 3" "fractal-patterns + meta-framework" "fractal-patterns,meta-
 test_config "Tier 3" "executable-specs + reflexive-testing" "executable-specs,reflexive-testing" || true
 
 # ============================================================================
-# TIER 4: EXTREMES (2 tests)
+# TIER 4: EXTREMES (3 tests)
 # ============================================================================
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║    TIER 4: EXTREMES (2 configs)       ║${NC}"
+echo -e "${GREEN}║    TIER 4: EXTREMES (3 configs)       ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
 
 test_config "Tier 4" "frontier-all (all features)" "frontier-all" || true
 test_config "Tier 4" "minimal (no-default-features)" "no-default" || true
+test_config "Tier 4" "repl feature" "repl" || true
 
 # ============================================================================
 # FINAL SUMMARY

@@ -566,7 +566,7 @@ kubectl get pod <pod-name> -o yaml | grep securityContext -A 10
 
 - **[How-To: Production Deployment](deployment.md)** - Secure deployment practices
 - **[How-To: Production Configuration](configuration.md)** - Secure configuration management
-- **[Tutorial 08: Error Handling](../../tutorial/08-error-handling.md)** - Secure error handling
+- **[Tutorial 06: Error Handling](../../tutorial/06-error-handling.md)** - Secure error handling
 
 ---
 

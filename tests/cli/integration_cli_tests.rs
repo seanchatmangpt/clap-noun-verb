@@ -39,11 +39,12 @@ fn test_full_cli_execution_pipeline() {
     input.set_arg("key", "app.name");
     input.set_arg("value", "test-app");
 
-    let _ = middleware_chain.lock().execute(&mut input);
-    let _ = telemetry.end_span(span);
+    let middleware_result = middleware_chain.lock().execute(&mut input);
+    let end_span_result = telemetry.end_span(span);
 
     // Assert
-    assert!(true, "Full pipeline execution should succeed");
+    assert!(middleware_result.is_ok(), "Middleware chain execution should succeed");
+    assert!(end_span_result.is_ok(), "Telemetry end_span should succeed");
 }
 
 #[test]
@@ -91,11 +92,13 @@ fn test_cached_api_response_workflow() {
 
     if cached.is_none() {
         // Rate limit check
-        let _ = rate_limiter.check_rate_limit("user123");
+        let rate_result = rate_limiter.check_rate_limit("user123");
+        assert!(rate_result.is_ok(), "Rate limit check should succeed on first request");
 
         // Simulate API call
         let api_response = "{\"id\": 123, \"name\": \"John\"}";
-        let _ = cache.set(cache_key, api_response);
+        let set_result = cache.set(cache_key, api_response);
+        assert!(set_result.is_ok(), "Cache set should succeed");
 
         metrics.increment_counter("cache_misses");
         metrics.increment_counter("api_calls");

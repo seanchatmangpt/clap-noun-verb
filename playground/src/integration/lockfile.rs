@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Lockfile persistence integration layer
 //!
 //! Handles reading and writing lockfiles for sync state tracking with

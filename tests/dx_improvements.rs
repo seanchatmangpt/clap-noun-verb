@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Acceptance tests for DX improvements: verb name inference and noun auto-detection
 //!
 //! These tests verify the improved developer experience features:

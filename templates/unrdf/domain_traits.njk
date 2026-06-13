@@ -1,0 +1,13 @@
+/// Domain traits for the generated CLI
+///
+/// This trait must be implemented by the domain logic handlers.
+
+pub trait CalculatorHandler {
+{% for verb, args in sparql_results | groupBy("?verb_name") %}
+    fn {{ verb }}(
+        {% for row in args %}
+        {{ row["?arg_name"] }}: {{ row["?arg_type"] | zodType | replace("number", "i32") | replace("string", "String") }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ) -> clap_noun_verb::Result<i32>;
+{% endfor %}
+}

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Example: Enhanced ArgAction Support
 //!
 //! This example demonstrates enhanced ArgAction support in v3.2.0:
@@ -46,11 +49,8 @@ fn create_build_config(verbosity: usize, cache: bool, debug: bool, quiet: bool) 
 /// - Explicit action: `#[arg(action = "set_false")]` for inverse flags
 #[verb("project", "build")]
 fn build_project(
-    // In v3.2.0: #[arg(short = 'v')] - Verbosity level (Count action: -v = 1, -vv = 2, -vvv = 3)
-    // Auto-inferred as Count action from usize type
-    verbosity: usize,
-    // In v3.2.0: #[arg(action = "set_false")] - Disable cache (SetFalse action: --no-cache)
-    cache: bool,
+    #[arg(short = 'v')] verbosity: usize,
+    #[arg(action = "set_false")] cache: bool,
     // Enable debug mode (SetTrue action: --debug) - Auto-inferred from bool type
     debug: bool,
     // Suppress output (SetTrue action: --quiet) - Auto-inferred from bool type

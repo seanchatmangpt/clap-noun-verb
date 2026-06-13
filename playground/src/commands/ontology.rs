@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Ontology commands - Semantic alignment and SPARQL interactions
 
 use clap_noun_verb_macros::verb;

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Frontier Feature Demo: Discovery Engine
 //!
 //! Demonstrates dynamic capability discovery for agent-based CLIs.

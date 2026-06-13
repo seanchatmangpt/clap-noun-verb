@@ -1,0 +1,442 @@
+---
+# ggen Consumer Contract for clap-noun-verb v26.6.1
+# Generated: 2026-06-01
+# Consumer Project: mcpp-cli (ggen CLI implementation)
+
+contract_version: "1.0"
+consumer_name: "mcpp-cli (ggen playground)"
+framework_name: "clap-noun-verb"
+framework_version: "26.6.1"
+analysis_date: "2026-06-01"
+
+# =============================================================================
+# MACRO API CONTRACT
+# =============================================================================
+
+macros:
+  verb:
+    stability: "REQUIRED_STABLE"
+    usage_count: 17
+    pattern: "#[verb(\"action\")]"
+    attributes:
+      - name: "action_name"
+        type: "string"
+        description: "Subcommand name (e.g., 'add', 'remove', 'list')"
+        required: true
+    signature_examples:
+      - "fn handler(arg1: String) -> Result<()>"
+      - "fn handler(arg1: String, opt: Option<String>) -> Result<OutputType>"
+    locations:
+      - "src/commands/config.rs:31,74,111"
+      - "src/commands/pack.rs:12,34,51,67,84,101,113"
+      - "src/commands/receipt.rs:18,61,117,170"
+      - "src/commands/capability.rs:multiple"
+      - "src/commands/meta.rs:multiple"
+      - "src/commands/papers.rs:multiple"
+      - "src/commands/policy.rs:multiple"
+      - "src/commands/sync.rs:multiple"
+      - "src/commands/telco.rs:multiple"
+      - "src/commands/wizard.rs:multiple"
+      - "src/commands/ontology.rs:1"
+      - "src/commands/spec.rs:1"
+      - "src/commands/registry.rs:1"
+      - "src/commands/accept.rs:1"
+      - "src/commands/thesis.rs:1"
+      - "src/commands/powl8.rs:1"
+    note: "Requires linkme distributed slice auto-discovery"
+
+  arg:
+    stability: "REQUIRED_STABLE"
+    usage_count: 45
+    pattern: "#[arg(index = N)]"
+    attributes:
+      - name: "index"
+        type: "usize"
+        description: "Positional argument index (1-based)"
+        required: true
+    examples:
+      - "#[arg(index = 1)] key: String"
+      - "#[arg(index = 2)] value: String"
+      - "#[arg(index = 3)] format: Option<String>"
+    note: "Used for positional arguments in verb handlers"
+
+# =============================================================================
+# RUNTIME API CONTRACT
+# =============================================================================
+
+runtime_api:
+  error_type:
+    name: "NounVerbError"
+    stability: "REQUIRED_STABLE"
+    methods:
+      - name: "execution_error"
+        signature: "fn(message: impl Into<String>) -> Self"
+        usage: "config.rs:52, pack.rs:19"
+        return_type: "NounVerbError"
+      - name: "ExecutionError variant"
+        signature: "NounVerbError::ExecutionError { message: String }"
+        usage: "pack.rs:19"
+    examples:
+      - "clap_noun_verb::NounVerbError::execution_error(e.to_string())"
+      - "NounVerbError::ExecutionError { message: e }"
+
+  result_type:
+    name: "clap_noun_verb::Result<T>"
+    stability: "REQUIRED_STABLE"
+    definition: "type Result<T> = std::result::Result<T, NounVerbError>"
+    return_patterns:
+      - return_type: "Result<()>"
+        usage_count: 8
+        examples:
+          - "set_config() -> Result<()>"
+          - "receipt_emit() -> Result<()>"
+        semantics: "Command with side effects, no structured output"
+      - return_type: "Result<StructuredType>"
+        usage_count: 9
+        examples:
+          - "add_pack(...) -> Result<PackAddedOutput>"
+          - "list_packs() -> Result<PackListOutput>"
+        semantics: "Command returning serializable data"
+      - return_type: "Result<serde_json::Value>"
+        usage_count: 3
+        examples:
+          - "receipt_emit(...) -> Result<serde_json::Value>"
+        semantics: "Dynamic JSON output"
+
+  output_format:
+    name: "OutputFormat"
+    stability: "REQUIRED_STABLE"
+    enum_variants:
+      - "Json"
+      - "JsonPretty (default)"
+      - "Yaml"
+      - "Table"
+      - "Plain"
+      - "Tsv"
+      - "Quiet"
+    usage_pattern: "OutputFormat::from_str(s).ok() or OutputFormat::JsonPretty"
+    locations:
+      - "config.rs:40-60"
+      - "meta.rs:introspection"
+      - "papers.rs:output"
+
+  format_function:
+    name: "format_output"
+    stability: "REQUIRED_STABLE"
+    signature: "fn<S: Serialize>(value: &S, fmt: OutputFormat) -> Result<String>"
+    usage_pattern: "format_output(&output_struct, fmt)?"
+    locations:
+      - "config.rs:53,91,134"
+      - "papers.rs:multiple"
+    note: "Auto-serializes Serialize types to selected format"
+
+  run_function:
+    name: "run"
+    stability: "REQUIRED_STABLE"
+    signature: "pub fn run() -> Result<()>"
+    usage: "main.rs:39"
+    behavior: "Auto-discovers all #[verb] commands and executes CLI"
+
+  argmatches_reexport:
+    name: "clap::ArgMatches"
+    stability: "REQUIRED_STABLE"
+    usage: "Imported via pub use clap::ArgMatches"
+    consumer_usage:
+      - "config_loader.rs:49 - Creating empty ArgMatches for adapter"
+      - "LayeredConfigAdapter integration pattern"
+    note: "Used for advanced integration patterns"
+
+# =============================================================================
+# MACRO CRATE CONTRACT
+# =============================================================================
+
+macro_crate:
+  name: "clap-noun-verb-macros"
+  exports:
+    - "verb"
+    - "arg"
+  proc_macro_rules:
+    - input_pattern: "function + attributes"
+      output_pattern: "linkme distributed slice entry + clap Command registration"
+
+# =============================================================================
+# FEATURE USAGE
+# =============================================================================
+
+features:
+  default_features:
+    - "Error handling (NounVerbError)"
+    - "Output formatting (OutputFormat)"
+    - "Registry/auto-discovery (linkme)"
+  features_not_used:
+    - "async"
+    - "io"
+    - "crypto"
+    - "rdf"
+    - "kernel"
+  implicit_usage:
+    - "serde::Serialize (all return types)"
+    - "std::str::FromStr (OutputFormat parsing)"
+
+# =============================================================================
+# INTEGRATION PATTERNS
+# =============================================================================
+
+integration_patterns:
+  - name: "layered_config_integration"
+    file: "config.rs"
+    usage: "LayeredConfigAdapter<Config>::new() + ArgMatches::default()"
+    requirement: "ArgMatches::default() constructor"
+
+  - name: "error_wrapping"
+    files:
+      - "config.rs:52"
+      - "pack.rs:19"
+    requirement: "NounVerbError::execution_error() constructor"
+
+  - name: "output_format_parsing"
+    files:
+      - "config.rs:40-60"
+      - "papers.rs"
+    requirement: "OutputFormat::from_str()"
+
+  - name: "auto_discovery_init"
+    file: "src/lib.rs:16"
+    usage: "mcpp_cli::init() forces linker to include all #[verb] entries"
+    requirement: "linkme integration"
+
+# =============================================================================
+# COMMAND INVENTORY
+# =============================================================================
+
+commands:
+  - module: "config"
+    verbs:
+      - name: "get"
+        handler_signature: "fn get_config(key: String, format: Option<String>) -> Result<()>"
+        line: 31
+      - name: "set"
+        handler_signature: "fn set_config(key: String, value: String, format: Option<String>) -> Result<()>"
+        line: 74
+      - name: "show"
+        handler_signature: "fn show_config(format: Option<String>) -> Result<()>"
+        line: 111
+
+  - module: "pack"
+    verbs:
+      - name: "add"
+        handler_signature: "fn add_pack(identifier: String, version: Option<String>, force: bool) -> Result<PackAddedOutput>"
+        line: 12
+      - name: "remove"
+        handler_signature: "fn remove_pack(identifier: String, force: bool) -> Result<PackRemovedOutput>"
+        line: 34
+      - name: "list"
+        handler_signature: "fn list_packs() -> Result<PackListOutput>"
+        line: 51
+      - name: "show"
+        handler_signature: "fn show_pack(identifier: String) -> Result<PackShowOutput>"
+        line: 67
+      - name: "verify"
+        handler_signature: "fn verify_pack(identifier: String) -> Result<PackVerifyOutput>"
+        line: 84
+      - name: "graph"
+        handler_signature: "fn graph_packs(dot_format: bool) -> Result<PackGraphOutput>"
+        line: 101
+      - name: "update"
+        handler_signature: "fn update_packs(dry_run: bool) -> Result<PackUpdateOutput>"
+        line: 113
+
+  - module: "receipt"
+    verbs:
+      - name: "emit"
+        handler_signature: "fn receipt_emit(target: Option<String>, agent: Option<String>) -> Result<serde_json::Value>"
+        line: 18
+      - name: "verify"
+        handler_signature: "fn receipt_verify(target: Option<String>, agent: Option<String>) -> Result<serde_json::Value>"
+        line: 61
+      - name: "sign"
+        handler_signature: "fn receipt_sign(target: Option<String>) -> Result<serde_json::Value>"
+        line: 117
+      - name: "log"
+        handler_signature: "fn receipt_log() -> Result<serde_json::Value>"
+        line: 170
+
+  - module: "others"
+    count: 6
+    note: "capability, meta, papers, policy, sync, telco, wizard, etc."
+
+# =============================================================================
+# OUTPUT TYPE INVENTORY
+# =============================================================================
+
+output_types:
+  structured_types:
+    - name: "PackAddedOutput"
+      fields:
+        - "name: String"
+        - "version: String"
+        - "dependencies: Vec<String>"
+        - "installed_at: String"
+      module: "outputs"
+
+    - name: "PackListOutput"
+      fields:
+        - "packs: Vec<PackInfo>"
+      module: "outputs"
+
+    - name: "ConfigValueOutput"
+      fields:
+        - "key: String"
+        - "value: Option<String>"
+        - "valid_key: bool"
+      module: "outputs"
+
+  json_value_outputs:
+    - "receipt_emit() -> Result<serde_json::Value>"
+    - "receipt_verify() -> Result<serde_json::Value>"
+    - "receipt_sign() -> Result<serde_json::Value>"
+    - "receipt_log() -> Result<serde_json::Value>"
+
+  unit_outputs:
+    - "set_config() -> Result<()"
+    - "Multiple config commands return ()"
+
+# =============================================================================
+# API STABILITY COMMITMENTS
+# =============================================================================
+
+stability_matrix:
+  macro_verb:
+    current: "STABLE"
+    breaking_risk: "HIGH (17 direct usages)"
+    required_compatibility: "Must preserve #[verb] syntax and auto-discovery"
+
+  macro_arg:
+    current: "STABLE"
+    breaking_risk: "MEDIUM (45 usages)"
+    required_compatibility: "Must preserve #[arg(index = N)] syntax"
+
+  error_nounverberror:
+    current: "STABLE"
+    breaking_risk: "MEDIUM"
+    required_compatibility: "Must keep execution_error() and ExecutionError variant"
+
+  result_type:
+    current: "STABLE"
+    breaking_risk: "CRITICAL"
+    required_compatibility: "Type alias must remain compatible"
+
+  output_format:
+    current: "STABLE"
+    breaking_risk: "HIGH"
+    required_compatibility: "All enum variants must remain, from_str() must work"
+
+  format_output:
+    current: "STABLE"
+    breaking_risk: "MEDIUM"
+    required_compatibility: "Function signature must remain compatible"
+
+  run_function:
+    current: "STABLE"
+    breaking_risk: "CRITICAL"
+    required_compatibility: "No-arg entry point is foundational"
+
+# =============================================================================
+# BREAKING CHANGE RISK ANALYSIS
+# =============================================================================
+
+breaking_change_risks:
+  - change: "Removing #[verb] or changing macro syntax"
+    impact: "17 commands + tests fail to compile"
+    severity: "CRITICAL"
+    likelihood: "LOW (core API)"
+
+  - change: "Changing OutputFormat enum variants"
+    impact: "Pattern matching breaks in format parsing"
+    severity: "HIGH"
+    likelihood: "LOW (stable interface)"
+
+  - change: "Removing NounVerbError::execution_error()"
+    impact: "Error wrapping patterns break"
+    severity: "MEDIUM"
+    likelihood: "VERY LOW"
+
+  - change: "Renaming Result type or changing error type"
+    impact: "All 17+ commands fail to compile"
+    severity: "CRITICAL"
+    likelihood: "VERY LOW"
+
+  - change: "Removing run() function"
+    impact: "main.rs cannot call clap_noun_verb::run()"
+    severity: "CRITICAL"
+    likelihood: "VERY LOW"
+
+  - change: "Changing format_output() signature"
+    impact: "format_output(&data, fmt)? pattern breaks"
+    severity: "HIGH"
+    likelihood: "VERY LOW"
+
+# =============================================================================
+# SAFE CHANGES (Can be made without affecting ggen)
+# =============================================================================
+
+safe_changes:
+  - "Internal error type implementation (as long as public API unchanged)"
+  - "Registry mechanics and discovery algorithm (as long as #[verb] works)"
+  - "Output formatter implementations (JSON, YAML, Table backends)"
+  - "Performance optimizations in format_output()"
+  - "Adding new OutputFormat variants (backward compatible)"
+  - "Adding new helper methods to NounVerbError (as long as existing ones stay)"
+  - "Internal refactoring of registry code"
+
+# =============================================================================
+# RECOMMENDATIONS
+# =============================================================================
+
+recommendations:
+  - priority: "CRITICAL"
+    item: "Preserve all 7 core APIs: verb, arg, Result, NounVerbError, OutputFormat, format_output, run()"
+    rationale: "ggen depends on these 100% for functionality"
+
+  - priority: "HIGH"
+    item: "Document macro attribute syntax stability"
+    rationale: "17 verbs rely on exact syntax"
+
+  - priority: "HIGH"
+    item: "Maintain OutputFormat::from_str() capability"
+    rationale: "Used in config.rs for format selection"
+
+  - priority: "MEDIUM"
+    item: "Add deprecation warnings for doc-comment arg syntax (if deprecated)"
+    rationale: "ggen uses inline #[arg(...)] exclusively, but warn users of other patterns"
+
+  - priority: "MEDIUM"
+    item: "Provide migration guide if major version bumps any APIs"
+    rationale: "17 commands + tests would need updates"
+
+# =============================================================================
+# MIGRATION PATH (if v26.6.1 → v27.0.0 required)
+# =============================================================================
+
+migration_requirements:
+  - estimate_effort: "LOW (< 1 hour)"
+    reason: "No custom registry code, all API usage straightforward"
+    assumption: "APIs remain named/shaped the same"
+
+  - breaking_changes_handled:
+    - "#[verb] syntax change → Update all 17 command handlers"
+    - "Result type rename → Update all return types"
+    - "NounVerbError constructor change → Update error wrapping"
+    - "OutputFormat enum restructure → Update format parsing"
+
+# =============================================================================
+# FINAL ASSESSMENT
+# =============================================================================
+
+assessment:
+  consumer_maturity: "PRODUCTION_READY"
+  api_usage_pattern: "CANONICAL (follows all best practices)"
+  migration_risk: "LOW (clean API usage)"
+  vendor_lock_in: "LOW (only uses public APIs)"
+  future_compatibility: "MODERATE (depends on 7 core APIs)"
+  recommendation: "FORWARD_COMPATIBLE - No concerns with v26.6.1 → v27.0.0+ as long as core APIs preserved"

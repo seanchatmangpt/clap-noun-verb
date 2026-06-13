@@ -15,7 +15,7 @@
 #### Noun Decorator — DEPRECATED (v5.6.0)
 
 > `#[noun]` is now a no-op. Nouns are auto-detected from filename + `//!` doc comments.
-> See `docs/reference/api/noun-macro.md` for migration guide.
+> See the [noun-macro.md deprecation guide](api/noun-macro.md) for the migration guide.
 
 #### Verb Decorator
 ```rust
@@ -89,6 +89,7 @@ impl CommandRegistry {
     pub fn route(&self, matches: &ArgMatches) -> Result<()>
     pub fn run(self) -> Result<()>
     pub fn run_with_args(self, args: Vec<String>) -> Result<()>
+    pub fn with_completions_subcommand(mut self) -> Self
 }
 ```
 
@@ -107,6 +108,7 @@ impl CliBuilder {
     pub fn version(self, version: impl Into<String>) -> Self
     pub fn global_args(self, args: Vec<clap::Arg>) -> Self
     pub fn auto_validate(self, enable: bool) -> Self
+    pub fn with_completions_subcommand(self) -> Self
 
     // Registration
     pub fn noun(self, noun: impl NounCommand + 'static) -> Self
@@ -282,7 +284,7 @@ pub type Result<T> = std::result::Result<T, NounVerbError>;
 > fn list() -> Result<()> { }
 > ```
 >
-> See `docs/reference/api/noun-macro.md` for full migration guide.
+> See the [noun-macro.md deprecation guide](api/noun-macro.md) for the full migration guide.
 
 ### #[verb]
 
@@ -581,9 +583,16 @@ fn main() -> Result<()> {
 - `VerbArgs` - Access parsed arguments
 - `VerbContext` - Execution context
 
-**Errors:**
+**Errors & Autonomics:**
 - `NounVerbError` - Error type for all operations
 - `Result<T>` - Alias for `std::result::Result<T, NounVerbError>`
+- `StructuredError` - Machine-readable JSON error format for MAPE-K loop
+- `ErrorKind` - Specific autonomic failure modes (e.g. `CommandNotFound`, `DeadlineExceeded`)
+- `Severity` - Autonomic error severity (`Warning`, `Error`, `Critical`)
+- `ActionTemplate` - Suggested recovery actions (e.g. `TimeoutAdjustment`, `CommandFix`)
+
+**REPL Shell:**
+- `Repl` - Helper to launch interactive shells with autocomplete and history file persistence
 
 **Telemetry (v5):**
 - `TelemetryCollector` - Main telemetry facade
@@ -655,6 +664,54 @@ fn main() -> Result<()> {
 
 ---
 
+## Utility APIs & Output Formatting
+
+### OutputFormat Enum
+
+Enum representing the output formats supported by the CLI registry formatting system.
+
+```rust
+pub enum OutputFormat {
+    Json,
+    JsonPretty,
+    Yaml,
+    Table,
+    Plain,
+    Tsv,
+    Quiet,
+}
+```
+
+- **Quiet Mode (`OutputFormat::Quiet`)**: Silences all console prints to stdout. Errors will still print to stderr. Recommended for automated scripting.
+- **Methods**:
+  - `pub fn format<S: Serialize>(&self, value: &S) -> Result<String, Box<dyn std::error::Error>>`
+  - `pub fn available_formats() -> &'static [&'static str]`
+  - `pub fn description(&self) -> &'static str`
+
+### Shell Completions Utility
+
+Utility function to generate completions scripts for multiple shells.
+
+```rust
+pub fn generate_completions<S: Shell>(cmd: &mut Command, shell: S, buf: &mut dyn Write)
+```
+
+- **Path**: `clap_noun_verb_utils::completions::generate_completions`
+- **Supported Shells**: `clap_complete::Shell::Bash`, `clap_complete::Shell::Zsh`, `clap_complete::Shell::Fish`, `clap_complete::Shell::PowerShell`
+
+### UNIX Manpage Troff Utility
+
+Utility function to generate UNIX manpages in Troff format using `clap_mangen`.
+
+```rust
+pub fn generate_manpage(cmd: &Command, buf: &mut dyn Write) -> std::io::Result<()>
+```
+
+- **Path**: `clap_noun_verb_utils::mangen::generate_manpage`
+
+---
+
 **End of API Catalog**
-**Total Types Documented:** 15 core types, 50+ methods
+**Total Types Documented:** 18 core types, 60+ methods
 **Coverage:** Complete public API surface
+

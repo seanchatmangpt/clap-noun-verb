@@ -1,0 +1,174 @@
+# Example: Graph Commands Instance Data
+# Namespace: urn:ggen:specimen (local identifiers)
+# References: ggen-command-vocab.nt
+# Format: N-Triples (RDF)
+# Purpose: Demonstrates semantic specification of "graph" noun and "load" verb from clap-noun-verb specimen CLI
+
+# ============================================================================
+# NOUN: "graph"
+# ============================================================================
+
+<urn:ggen:specimen:graph> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#NounSpec> .
+
+<urn:ggen:specimen:graph> <https://chatmangpt.com/ontologies/ggen/command-vocab#nounName> "graph"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph> <https://chatmangpt.com/ontologies/ggen/command-vocab#nounDocstring> "Manage RDF graph files and queries"@en .
+
+# Link noun to its verbs (defined below)
+<urn:ggen:specimen:graph> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <urn:ggen:specimen:graph-load-verb> .
+<urn:ggen:specimen:graph> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <urn:ggen:specimen:graph-query-verb> .
+<urn:ggen:specimen:graph> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasVerb> <urn:ggen:specimen:graph-validate-verb> .
+
+# ============================================================================
+# VERB: "graph load"
+# ============================================================================
+
+<urn:ggen:specimen:graph-load-verb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> "load"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> "Load an RDF file from disk into the graph"@en .
+
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <urn:ggen:specimen:graph> .
+
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+# Parameters for "graph load"
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <urn:ggen:specimen:graph-load-path-param> .
+
+# Return type for "graph load"
+<urn:ggen:specimen:graph-load-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <urn:ggen:specimen:graph-load-output> .
+
+# ============================================================================
+# PARAMETER: "path" for "graph load"
+# ============================================================================
+
+<urn:ggen:specimen:graph-load-path-param> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+
+<urn:ggen:specimen:graph-load-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> "path"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> "String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+<urn:ggen:specimen:graph-load-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> "Path to RDF file (.ttl, .nt, .rdf)"@en .
+
+<urn:ggen:specimen:graph-load-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#validation> "path_exists"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+# ============================================================================
+# OUTPUT TYPE: "GraphLoadedOutput" for "graph load"
+# ============================================================================
+
+<urn:ggen:specimen:graph-load-output> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+
+<urn:ggen:specimen:graph-load-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> "GraphLoadedOutput"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> "Result of loading an RDF file"@en .
+
+<urn:ggen:specimen:graph-load-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "triples_loaded: u64"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "source: String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-load-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "status: String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+# ============================================================================
+# VERB: "graph query"
+# ============================================================================
+
+<urn:ggen:specimen:graph-query-verb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> "query"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> "Query graph with SPARQL pattern"@en .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <urn:ggen:specimen:graph> .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <urn:ggen:specimen:graph-query-pattern-param> .
+
+<urn:ggen:specimen:graph-query-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <urn:ggen:specimen:graph-query-output> .
+
+# ============================================================================
+# PARAMETER: "pattern" for "graph query"
+# ============================================================================
+
+<urn:ggen:specimen:graph-query-pattern-param> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+
+<urn:ggen:specimen:graph-query-pattern-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> "pattern"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-pattern-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> "String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-pattern-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+<urn:ggen:specimen:graph-query-pattern-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> "SPARQL query pattern"@en .
+
+# ============================================================================
+# OUTPUT TYPE: "QueryResultOutput" for "graph query"
+# ============================================================================
+
+<urn:ggen:specimen:graph-query-output> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> "QueryResultOutput"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> "Result of querying graph with SPARQL pattern"@en .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "query_type: String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "pattern: String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "results: Vec<serde_json::Value>"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-query-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "match_count: u64"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+# ============================================================================
+# VERB: "graph validate"
+# ============================================================================
+
+<urn:ggen:specimen:graph-validate-verb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#VerbSpec> .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbName> "validate"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#verbDocstring> "Validate RDF file format and structure"@en .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#belongsToNoun> <urn:ggen:specimen:graph> .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#canFail> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasParameter> <urn:ggen:specimen:graph-validate-path-param> .
+
+<urn:ggen:specimen:graph-validate-verb> <https://chatmangpt.com/ontologies/ggen/command-vocab#returnsType> <urn:ggen:specimen:graph-validate-output> .
+
+# ============================================================================
+# PARAMETER: "path" for "graph validate"
+# ============================================================================
+
+<urn:ggen:specimen:graph-validate-path-param> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#ParameterSpec> .
+
+<urn:ggen:specimen:graph-validate-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramName> "path"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramType> "String"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#isRequired> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+<urn:ggen:specimen:graph-validate-path-param> <https://chatmangpt.com/ontologies/ggen/command-vocab#paramDocstring> "Path to RDF file to validate"@en .
+
+# ============================================================================
+# OUTPUT TYPE: "ValidationResultOutput" for "graph validate"
+# ============================================================================
+
+<urn:ggen:specimen:graph-validate-output> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://chatmangpt.com/ontologies/ggen/command-vocab#OutputTypeSpec> .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputName> "ValidationResultOutput"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#outputDescription> "Result of RDF file validation"@en .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "valid: bool"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "errors: Vec<String>"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "total_triples: u64"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+<urn:ggen:specimen:graph-validate-output> <https://chatmangpt.com/ontologies/ggen/command-vocab#hasField> "valid_triples: u64"^^<http://www.w3.org/2001/XMLSchema#string> .
+
+# End of graph-commands.nt

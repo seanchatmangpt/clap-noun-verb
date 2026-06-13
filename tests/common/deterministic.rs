@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Deterministic Test Runtime - Zero-Flake by Design
 //!
 //! Provides controlled execution environments for async tests that eliminate
@@ -224,10 +227,7 @@ impl<const MAX_ITERATIONS: usize> BoundedExecutor<MAX_ITERATIONS> {
             }
         }
 
-        panic!(
-            "Async task exceeded MAX_ITERATIONS ({}) - infinite loop detected",
-            MAX_ITERATIONS
-        );
+        panic!("Async task exceeded MAX_ITERATIONS ({}) - infinite loop detected", MAX_ITERATIONS);
     }
 }
 
@@ -283,16 +283,20 @@ mod tests {
     #[tokio::test]
     async fn test_bounded_executor_async() {
         let executor = BoundedExecutor::<10>;
-        let mut count = 0;
+        let count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count_clone = count.clone();
 
         executor
-            .run_async(|| async {
-                count += 1;
-                tokio::task::yield_now().await;
-                count >= 5
+            .run_async(move || {
+                let count = count_clone.clone();
+                async move {
+                    let prev = count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    tokio::task::yield_now().await;
+                    prev + 1 >= 5
+                }
             })
             .await;
 
-        assert_eq!(count, 5);
+        assert_eq!(count.load(std::sync::atomic::Ordering::SeqCst), 5);
     }
 }

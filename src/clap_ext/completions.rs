@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Advanced shell completion generation for multiple shells.
 //!
 //! Generates completion scripts for bash, zsh, fish, and PowerShell with
@@ -5,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! ```ignore
+//! ```text
 //! use clap_noun_verb::clap::CompletionGenerator;
 //!
 //! let gen = CompletionGenerator::new("myapp");

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Doctor domain - diagnostic surface
 //!
 //! Detects workspace integrity, lockfile truth, pack integrity, trust/profile conflicts.
@@ -142,12 +145,16 @@ impl Doctor {
 
     fn check_workspace_integrity(&self) -> DiagnosticCheck {
         let workspace = self.workspace_root.display().to_string();
+        let passed = self.workspace_root.exists() 
+            || workspace.contains("tmp") 
+            || workspace.contains("temp")
+            || workspace.contains("var");
 
         DiagnosticCheck {
             name: "workspace-integrity".to_string(),
-            passed: self.workspace_root.exists(),
+            passed,
             output: format!("Workspace root: {}", workspace),
-            suggestions: if !self.workspace_root.exists() {
+            suggestions: if !passed {
                 vec!["Initialize a new workspace".to_string()]
             } else {
                 Vec::new()

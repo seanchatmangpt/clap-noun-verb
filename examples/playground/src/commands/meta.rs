@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! v5 autonomic features
 //!
 //! Introspection, ontology, SPARQL, completions, middleware, telemetry.
@@ -9,7 +12,7 @@ use clap_noun_verb::{NounVerbError, Result};
 
 use crate::domain::{
     build_playground_ontology, ExecutionReceipt, ExecutionSpan, IntrospectionResponse,
-    MiddlewareConfig, MiddlewareStats, ShellType, SpanStatus, SparqlQueryType,
+    MiddlewareConfig, MiddlewareStats, SpanStatus, SparqlQueryType,
 };
 use crate::integration::{execute_sparql, export_turtle, get_ontology_store};
 use crate::outputs::{
@@ -81,7 +84,10 @@ fn export_ontology() -> Result<OntologyOutput> {
 /// # Arguments
 /// * `query` - Query type or custom SPARQL [default: capabilities]
 #[verb("sparql")]
-fn run_sparql(query: Option<String>) -> Result<SparqlResultOutput> {
+fn run_sparql(
+    #[arg(index = 1)]
+    query: Option<String>,
+) -> Result<SparqlResultOutput> {
     // 1. Validate inputs (CLI validates)
     let query_type = query.unwrap_or_else(|| "capabilities".to_string());
 
@@ -110,6 +116,17 @@ fn run_sparql(query: Option<String>) -> Result<SparqlResultOutput> {
     })
 }
 
+fn parse_shell(shell: &str) -> Option<clap_complete::Shell> {
+    match shell.to_lowercase().as_str() {
+        "bash" => Some(clap_complete::Shell::Bash),
+        "zsh" => Some(clap_complete::Shell::Zsh),
+        "fish" => Some(clap_complete::Shell::Fish),
+        "powershell" | "pwsh" => Some(clap_complete::Shell::PowerShell),
+        "elvish" => Some(clap_complete::Shell::Elvish),
+        _ => None,
+    }
+}
+
 /// Generate shell completion scripts
 ///
 /// Creates completion scripts for bash, zsh, fish, powershell, or elvish.
@@ -117,25 +134,37 @@ fn run_sparql(query: Option<String>) -> Result<SparqlResultOutput> {
 /// # Arguments
 /// * `shell` - Shell type
 #[verb("completions")]
-fn generate_completions(shell: String) -> Result<CompletionScriptOutput> {
-    // 1. Validate inputs (CLI validates)
-    let shell_type = ShellType::from_str(&shell)
-        .ok_or_else(|| {
-            NounVerbError::validation_error(
-                "shell".to_string(),
-                shell.clone(),
-                Some("Use: bash, zsh, fish, powershell, elvish")
-            )
-        })?;
+fn generate_completions(
+    #[arg(index = 1)]
+    shell: String,
+) -> Result<CompletionScriptOutput> {
+    let shell_variant = parse_shell(&shell).ok_or_else(|| {
+        NounVerbError::validation_error(
+            "shell".to_string(),
+            shell.clone(),
+            Some("Use: bash, zsh, fish, powershell, pwsh, elvish")
+        )
+    })?;
 
-    // 2. Delegate to domain logic
-    let capabilities = build_playground_ontology();
-    let script = crate::domain::generate_completion_script("playground", &capabilities, shell_type);
+    let mut cmd = clap_noun_verb::cli::registry::ACTIVE_COMMAND.with(|cell| {
+        cell.borrow().clone()
+    }).unwrap_or_else(|| {
+        clap_noun_verb::cli::registry::CommandRegistry::get()
+            .lock()
+            .unwrap()
+            .build_command()
+    });
+    cmd = cmd.name("playground_completions");
+
+    let mut script_buffer = Vec::new();
+    clap_noun_verb_utils::completions::generate_completions(&mut cmd, shell_variant, &mut script_buffer);
+    let script_str = String::from_utf8(script_buffer)
+        .map_err(|e| NounVerbError::execution_error(e.to_string()))?;
 
     Ok(CompletionScriptOutput {
-        shell: shell_type.name().to_string(),
-        cli: script.cli_name,
-        script: script.script,
+        shell: shell.clone(),
+        cli: cmd.get_name().to_string(),
+        script: script_str,
     })
 }
 
@@ -209,84 +238,17 @@ fn list_formats() -> Result<Vec<FormatInfoOutput>> {
 /// * (none)
 #[verb("manpage")]
 fn generate_manpage() -> Result<()> {
-    let version = env!("CARGO_PKG_VERSION");
-    println!(
-        ".TH PLAYGROUND 1 \"2024\" \"v{}\" \"Playground CLI Manual\"",
-        version
-    );
-    println!(
-        r#"
-.SH NAME
-playground \- Comprehensive v5 feature showcase for clap-noun-verb
+    let cmd = clap_noun_verb::cli::registry::ACTIVE_COMMAND.with(|cell| {
+        cell.borrow().clone()
+    }).unwrap_or_else(|| {
+        clap_noun_verb::cli::registry::CommandRegistry::get()
+            .lock()
+            .unwrap()
+            .build_command()
+    });
 
-.SH SYNOPSIS
-.B playground
-.I noun
-.I verb
-[OPTIONS]
+    clap_noun_verb_utils::mangen::generate_manpage(&cmd, &mut std::io::stdout())
+        .map_err(|e| NounVerbError::execution_error(e.to_string()))?;
 
-.SH DESCRIPTION
-Playground CLI demonstrates the clap-noun-verb framework for building
-semantic CLIs with RDF/SPARQL integration and AI agent coordination.
-
-.SH NOUNS
-.TP
-.B papers
-Academic paper operations (generate, list, validate)
-.TP
-.B thesis
-Thesis structure operations (structure, families, schedule)
-.TP
-.B config
-Configuration management (get, set, show)
-.TP
-.B meta
-v5 autonomic features (introspect, ontology, sparql, completions, middleware, telemetry, formats, manpage, health)
-
-.SH EXAMPLES
-.TP
-Generate an IMRaD paper:
-.B playground papers generate IMRaD
-.TP
-List paper families:
-.B playground papers list
-.TP
-Get CLI introspection:
-.B playground meta introspect
-.TP
-Generate shell completions:
-.B playground meta completions bash
-
-.SH PAPER FAMILIES
-.TP
-.B IMRaD
-Introduction, Method, Results, Discussion
-.TP
-.B Argument
-Claims, Grounds, Proofs
-.TP
-.B Contribution
-Gap, Design, Evaluation, Impact
-.TP
-.B Monograph
-Context, Canon, Method, Analysis
-.TP
-.B DSR
-Problem, Artifact, Evaluation, Theory
-.TP
-.B Narrative
-Field, Voice, Pattern, Insight
-
-.SH OUTPUT FORMATS
-json, json-pretty, yaml, table, plain
-
-.SH AUTHOR
-clap-noun-verb framework
-
-.SH SEE ALSO
-.BR clap (1),
-.BR tera (1)
-"#
-    );
     Ok(())
 }

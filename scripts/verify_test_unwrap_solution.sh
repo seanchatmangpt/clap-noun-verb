@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2024 Sean Chatman
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
 # Verification script for test_unwrap solution
 #
 # This script verifies that the test_prelude solution:

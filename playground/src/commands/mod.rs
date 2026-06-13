@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! CLI command modules
 //!
 //! Organized by MCPP grammar: doctor, wizard, telco, powl8, receipt, spec, policy, ontology

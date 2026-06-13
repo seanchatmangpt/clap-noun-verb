@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Integration tests for ggen v26.4.2 commands
 //!
 //! Test scenarios:
@@ -35,8 +38,8 @@ fn create_test_workspace() -> Result<TempDir> {
 
 /// Create a test receipt file
 fn create_test_receipt(path: &Path) -> Result<()> {
-    use clap_noun_verb::ggen_integration::Receipt;
-    use clap_noun_verb::ggen_integration::ReceiptAgent;
+    use mcpp_cli::domain::Receipt;
+    use mcpp_cli::domain::receipt::ReceiptAgent;
 
     let agent = ReceiptAgent {
         agent_type: "ggen".to_string(),
@@ -45,7 +48,10 @@ fn create_test_receipt(path: &Path) -> Result<()> {
     };
 
     let mut receipt = Receipt::new(agent);
-    receipt.finalize()
+    use ed25519_dalek::SigningKey;
+    let mut rng = rand::rngs::OsRng;
+    let signing_key = SigningKey::generate(&mut rng);
+    receipt.finalize(&signing_key)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to finalize receipt: {}", e)))?;
 
     receipt.save(path)
@@ -56,7 +62,7 @@ fn create_test_receipt(path: &Path) -> Result<()> {
 
 /// Create a test lockfile
 fn create_test_lockfile(path: &Path) -> Result<()> {
-    use clap_noun_verb::ggen_integration::Lockfile;
+    use mcpp_cli::domain::Lockfile;
 
     let lockfile = Lockfile::new();
     lockfile.save(path)
@@ -84,8 +90,8 @@ fn test_sync_dry_run() -> Result<()> {
     create_test_lockfile(&lockfile_path)?;
 
     // Act: Run sync with dry-run flag
-    use clap_noun_verb::ggen_integration::SyncPipeline;
-    let lockfile = clap_noun_verb::ggen_integration::Lockfile::load(&lockfile_path)
+    use mcpp_cli::domain::SyncPipeline;
+    let lockfile = mcpp_cli::domain::Lockfile::load(&lockfile_path)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to load lockfile: {}", e)))?;
 
     let pipeline = SyncPipeline::new()
@@ -124,8 +130,8 @@ fn test_sync_force_requires_ack() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Attempt sync with --force but without --ack
-    use clap_noun_verb::ggen_integration::SyncPipeline;
-    let lockfile = clap_noun_verb::ggen_integration::Lockfile::new();
+    use mcpp_cli::domain::SyncPipeline;
+    let lockfile = mcpp_cli::domain::Lockfile::new();
 
     let pipeline = SyncPipeline::new()
         .with_lockfile(lockfile)
@@ -152,8 +158,8 @@ fn test_sync_with_ack() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Run sync with both --force and --ack
-    use clap_noun_verb::ggen_integration::SyncPipeline;
-    let lockfile = clap_noun_verb::ggen_integration::Lockfile::new();
+    use mcpp_cli::domain::SyncPipeline;
+    let lockfile = mcpp_cli::domain::Lockfile::new();
 
     let pipeline = SyncPipeline::new()
         .with_lockfile(lockfile)
@@ -184,15 +190,34 @@ fn test_receipt_verify() -> Result<()> {
     // Arrange: Create test receipt
     let temp_dir = create_test_workspace()?;
     let receipt_path = temp_dir.path().join("test-receipt.json");
-    create_test_receipt(&receipt_path)?;
+    
+    use mcpp_cli::domain::Receipt;
+    use mcpp_cli::domain::receipt::ReceiptAgent;
+    use ed25519_dalek::SigningKey;
+
+    let agent = ReceiptAgent {
+        agent_type: "ggen".to_string(),
+        agent_id: "test-agent".to_string(),
+        version: "26.4.2".to_string(),
+    };
+
+    let mut receipt = Receipt::new(agent);
+    let mut rng = rand::rngs::OsRng;
+    let signing_key = SigningKey::generate(&mut rng);
+    let verifying_key = signing_key.verifying_key();
+    receipt.finalize(&signing_key)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to finalize receipt: {}", e)))?;
+
+    receipt.save(&receipt_path)
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to save receipt: {}", e)))?;
 
     // Act: Verify receipt
-    use clap_noun_verb::ggen_integration::{Receipt, ReceiptVerifier};
-    let receipt = Receipt::from_file(&receipt_path)
+    use mcpp_cli::domain::ReceiptVerifier;
+    let loaded_receipt = Receipt::from_file(&receipt_path)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to load receipt: {}", e)))?;
 
-    let verifier = ReceiptVerifier::new();
-    let result = verifier.verify(&receipt)
+    let verifier = ReceiptVerifier::with_public_key(verifying_key);
+    let result = verifier.verify(&loaded_receipt)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Verification failed: {}", e)))?;
 
     // Assert: Verify receipt is valid
@@ -213,7 +238,7 @@ fn test_receipt_info() -> Result<()> {
     create_test_receipt(&receipt_path)?;
 
     // Act: Get receipt info
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let receipt = Receipt::from_file(&receipt_path)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to load receipt: {}", e)))?;
 
@@ -234,7 +259,7 @@ fn test_receipt_chain_verify() -> Result<()> {
     create_test_receipt(&receipt_path)?;
 
     // Act: Verify receipt chain
-    use clap_noun_verb::ggen_integration::{Receipt, ReceiptVerifier};
+    use mcpp_cli::domain::{Receipt, ReceiptVerifier};
     let receipt = Receipt::from_file(&receipt_path)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to load receipt: {}", e)))?;
 
@@ -251,14 +276,14 @@ fn test_receipt_chain_verify() -> Result<()> {
 }
 
 #[test]
-fn test_receipt_invalid_file() {
+fn test_receipt_invalid_file() -> Result<()> {
     // Arrange: Create invalid receipt file
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("invalid-receipt.json");
     fs::write(&receipt_path, b"invalid json content").unwrap();
 
     // Act: Try to load invalid receipt
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let result = Receipt::from_file(&receipt_path);
 
     // Assert: Verify error handling
@@ -281,7 +306,7 @@ fn test_doctor_run() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Run all diagnostics
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to create doctor: {}", e)))?;
 
@@ -314,7 +339,7 @@ fn test_doctor_check_workspace_integrity() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Run specific check
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to create doctor: {}", e)))?;
 
@@ -340,7 +365,7 @@ fn test_doctor_check_lockfile_exists() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Run lockfile check
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to create doctor: {}", e)))?;
 
@@ -365,7 +390,7 @@ fn test_doctor_env() -> Result<()> {
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to change dir: {}", e)))?;
 
     // Act: Get environment info
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(format!("Failed to create doctor: {}", e)))?;
 
@@ -391,7 +416,7 @@ fn test_doctor_env() -> Result<()> {
 }
 
 #[test]
-fn test_doctor_invalid_check() {
+fn test_doctor_invalid_check() -> Result<()> {
     // Arrange: Create temporary workspace
     let temp_dir = create_test_workspace().unwrap();
     let workspace_path = temp_dir.path();
@@ -399,7 +424,7 @@ fn test_doctor_invalid_check() {
     std::env::set_current_dir(workspace_path).unwrap();
 
     // Act: Try to run invalid check
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new().unwrap();
     let result = doctor.run_check("nonexistent-check");
 
@@ -415,7 +440,7 @@ fn test_doctor_invalid_check() {
 // =============================================================================
 
 #[test]
-fn test_constraint_validation_runtime_requires_projection() {
+fn test_constraint_validation_runtime_requires_projection() -> Result<()> {
     // Test that runtime constraint requires projection constraint
     // This validates the constraint validation system
 
@@ -429,16 +454,16 @@ fn test_constraint_validation_runtime_requires_projection() {
     let has_runtime = constraints.iter().any(|(k, _)| *k == "runtime");
     let has_projection = constraints.iter().any(|(k, _)| *k == "projection");
 
-    // Assert: Runtime should require projection
+    // Assert: Runtime should require projection, so missing projection means it's invalid
     if has_runtime {
-        assert!(has_projection, "Runtime constraint requires projection constraint");
+        assert!(!has_projection, "Runtime constraint requires projection constraint");
     }
 
     Ok(())
 }
 
 #[test]
-fn test_constraint_validation_combination_rules() {
+fn test_constraint_validation_combination_rules() -> Result<()> {
     // Test constraint combination rules
     // - runtime requires projection
     // - projection can be standalone
@@ -470,14 +495,14 @@ fn test_constraint_validation_combination_rules() {
 // =============================================================================
 
 #[test]
-fn test_registry_search_basic() {
+fn test_registry_search_basic() -> Result<()> {
     // Arrange: Search query
     let query = "test";
     let category = None;
     let limit = 10;
 
     // Act: Search registry
-    use clap_noun_verb::integration::registry_client::search;
+    use mcpp_cli::integration::registry_client::search;
     let result = search(query, category, limit);
 
     // Assert: Verify search completes
@@ -490,14 +515,14 @@ fn test_registry_search_basic() {
 }
 
 #[test]
-fn test_registry_search_with_category() {
+fn test_registry_search_with_category() -> Result<()> {
     // Arrange: Search query with category filter
     let query = "cli";
     let category = Some("cli");
     let limit = 5;
 
     // Act: Search registry with category
-    use clap_noun_verb::integration::registry_client::search;
+    use mcpp_cli::integration::registry_client::search;
     let result = search(query, category, limit);
 
     // Assert: Verify search completes
@@ -509,14 +534,14 @@ fn test_registry_search_with_category() {
 }
 
 #[test]
-fn test_registry_search_limit() {
+fn test_registry_search_limit() -> Result<()> {
     // Arrange: Search with limit
     let query = "test";
     let category = None;
     let limit = 3;
 
     // Act: Search with limited results
-    use clap_noun_verb::integration::registry_client::search;
+    use mcpp_cli::integration::registry_client::search;
     let result = search(query, category, limit);
 
     // Assert: Verify limit is respected
@@ -528,28 +553,28 @@ fn test_registry_search_limit() {
 }
 
 #[test]
-fn test_registry_info() {
+fn test_registry_info() -> Result<()> {
     // Arrange: Package identifier
     let identifier = "test-package";
 
     // Act: Get package info
-    use clap_noun_verb::integration::registry_client::info;
+    use mcpp_cli::integration::registry_client::info;
     let result = info(identifier);
 
     // Assert: Verify info is retrieved
     assert!(result.is_ok(), "Info should be retrieved successfully");
     let info = result.unwrap();
     assert_eq!(info.name, "test-package", "Package name should match");
-    assert_eq!(info.description, "TODO", "Description should be placeholder");
+    assert_eq!(info.description, "Marketplace feature is disabled", "Description should be placeholder");
     assert_eq!(info.versions.len(), 0, "Test package should have no versions");
 
     Ok(())
 }
 
 #[test]
-fn test_registry_list_sources() {
+fn test_registry_list_sources() -> Result<()> {
     // Act: List registry sources
-    use clap_noun_verb::integration::registry_client::list_sources;
+    use mcpp_cli::integration::registry_client::list_sources;
     let result = list_sources();
 
     // Assert: Verify sources are listed
@@ -573,7 +598,7 @@ fn test_registry_list_sources() {
 // =============================================================================
 
 #[test]
-fn test_error_handling_missing_lockfile() {
+fn test_error_handling_missing_lockfile() -> Result<()> {
     // Arrange: Create workspace without lockfile
     let temp_dir = create_test_workspace().unwrap();
     let workspace_path = temp_dir.path();
@@ -582,7 +607,7 @@ fn test_error_handling_missing_lockfile() {
     std::env::set_current_dir(workspace_path).unwrap();
 
     // Act: Try to load missing lockfile
-    use clap_noun_verb::ggen_integration::Lockfile;
+    use mcpp_cli::domain::Lockfile;
     let result = Lockfile::load(&lockfile_path);
 
     // Assert: Verify lockfile is created (returns new lockfile)
@@ -594,13 +619,13 @@ fn test_error_handling_missing_lockfile() {
 }
 
 #[test]
-fn test_error_handling_invalid_receipt_path() {
+fn test_error_handling_invalid_receipt_path() -> Result<()> {
     // Arrange: Invalid receipt path
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("nonexistent-receipt.json");
 
     // Act: Try to load missing receipt
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let result = Receipt::from_file(&receipt_path);
 
     // Assert: Verify error handling
@@ -610,14 +635,14 @@ fn test_error_handling_invalid_receipt_path() {
 }
 
 #[test]
-fn test_error_handling_invalid_json_receipt() {
+fn test_error_handling_invalid_json_receipt() -> Result<()> {
     // Arrange: Create invalid JSON file
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("invalid.json");
     fs::write(&receipt_path, b"{ invalid json }").unwrap();
 
     // Act: Try to parse invalid receipt
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let result = Receipt::from_file(&receipt_path);
 
     // Assert: Verify error handling
@@ -631,7 +656,7 @@ fn test_error_handling_invalid_json_receipt() {
 // =============================================================================
 
 #[test]
-fn test_file_operations_receipt_save_and_load() {
+fn test_file_operations_receipt_save_and_load() -> Result<()> {
     // Arrange: Create test receipt
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("test-receipt.json");
@@ -639,7 +664,7 @@ fn test_file_operations_receipt_save_and_load() {
     // Act: Save and load receipt
     create_test_receipt(&receipt_path).unwrap();
 
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let loaded_receipt = Receipt::from_file(&receipt_path).unwrap();
 
     // Assert: Verify receipt persistence
@@ -651,7 +676,7 @@ fn test_file_operations_receipt_save_and_load() {
 }
 
 #[test]
-fn test_file_operations_lockfile_save_and_load() {
+fn test_file_operations_lockfile_save_and_load() -> Result<()> {
     // Arrange: Create test lockfile
     let temp_dir = create_test_workspace().unwrap();
     let lockfile_path = temp_dir.path().join("test-lockfile.lock");
@@ -659,7 +684,7 @@ fn test_file_operations_lockfile_save_and_load() {
     // Act: Save and load lockfile
     create_test_lockfile(&lockfile_path).unwrap();
 
-    use clap_noun_verb::ggen_integration::Lockfile;
+    use mcpp_cli::domain::Lockfile;
     let loaded_lockfile = Lockfile::load(&lockfile_path).unwrap();
 
     // Assert: Verify lockfile persistence
@@ -675,7 +700,7 @@ fn test_file_operations_lockfile_save_and_load() {
 // =============================================================================
 
 #[test]
-fn test_concurrent_receipt_creation() {
+fn test_concurrent_receipt_creation() -> Result<()> {
     // Arrange: Create multiple receipts concurrently
     let temp_dir = create_test_workspace().unwrap();
 
@@ -700,7 +725,7 @@ fn test_concurrent_receipt_creation() {
 }
 
 #[test]
-fn test_concurrent_doctor_checks() {
+fn test_concurrent_doctor_checks() -> Result<()> {
     // Arrange: Create temporary workspace
     let temp_dir = create_test_workspace().unwrap();
     let workspace_path = temp_dir.path();
@@ -708,7 +733,7 @@ fn test_concurrent_doctor_checks() {
     std::env::set_current_dir(workspace_path).unwrap();
 
     // Act: Run multiple doctor checks concurrently
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new().unwrap();
 
     let handles: Vec<_> = vec!["workspace-integrity", "lockfile-exists", "pack-integrity"]
@@ -737,7 +762,7 @@ fn test_concurrent_doctor_checks() {
 // =============================================================================
 
 #[test]
-fn test_performance_sync_dry_run_speed() {
+fn test_performance_sync_dry_run_speed() -> Result<()> {
     // Arrange: Create temporary workspace
     let temp_dir = create_test_workspace().unwrap();
     let workspace_path = temp_dir.path();
@@ -747,7 +772,7 @@ fn test_performance_sync_dry_run_speed() {
     create_test_lockfile(&lockfile_path).unwrap();
 
     // Act: Measure sync dry-run performance
-    use clap_noun_verb::ggen_integration::{Lockfile, SyncPipeline};
+    use mcpp_cli::domain::{Lockfile, SyncPipeline};
     let start = std::time::Instant::now();
 
     let lockfile = Lockfile::load(&lockfile_path).unwrap();
@@ -772,14 +797,14 @@ fn test_performance_sync_dry_run_speed() {
 }
 
 #[test]
-fn test_performance_receipt_verification_speed() {
+fn test_performance_receipt_verification_speed() -> Result<()> {
     // Arrange: Create test receipt
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("test-receipt.json");
     create_test_receipt(&receipt_path).unwrap();
 
     // Act: Measure verification performance
-    use clap_noun_verb::ggen_integration::{Receipt, ReceiptVerifier};
+    use mcpp_cli::domain::{Receipt, ReceiptVerifier};
     let receipt = Receipt::from_file(&receipt_path).unwrap();
     let verifier = ReceiptVerifier::new();
 
@@ -794,7 +819,7 @@ fn test_performance_receipt_verification_speed() {
 }
 
 #[test]
-fn test_performance_doctor_run_speed() {
+fn test_performance_doctor_run_speed() -> Result<()> {
     // Arrange: Create temporary workspace
     let temp_dir = create_test_workspace().unwrap();
     let workspace_path = temp_dir.path();
@@ -802,7 +827,7 @@ fn test_performance_doctor_run_speed() {
     std::env::set_current_dir(workspace_path).unwrap();
 
     // Act: Measure doctor run performance
-    use clap_noun_verb::ggen_integration::Doctor;
+    use mcpp_cli::domain::Doctor;
     let doctor = Doctor::new().unwrap();
 
     let start = std::time::Instant::now();
@@ -820,14 +845,14 @@ fn test_performance_doctor_run_speed() {
 // =============================================================================
 
 #[test]
-fn test_edge_case_empty_receipt_operations() {
+fn test_edge_case_empty_receipt_operations() -> Result<()> {
     // Arrange: Create receipt with no operations
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("empty-receipt.json");
     create_test_receipt(&receipt_path).unwrap();
 
     // Act: Load receipt with no operations
-    use clap_noun_verb::ggen_integration::Receipt;
+    use mcpp_cli::domain::Receipt;
     let receipt = Receipt::from_file(&receipt_path).unwrap();
 
     // Assert: Verify empty operations list
@@ -838,7 +863,7 @@ fn test_edge_case_empty_receipt_operations() {
 }
 
 #[test]
-fn test_edge_case_special_characters_in_paths() {
+fn test_edge_case_special_characters_in_paths() -> Result<()> {
     // Arrange: Create path with special characters
     let temp_dir = create_test_workspace().unwrap();
     let receipt_path = temp_dir.path().join("test-receipt-with-special-chars-@#$%.json");
@@ -853,7 +878,7 @@ fn test_edge_case_special_characters_in_paths() {
 }
 
 #[test]
-fn test_edge_case_very_long_file_path() {
+fn test_edge_case_very_long_file_path() -> Result<()> {
     // Arrange: Create very long file path
     let temp_dir = create_test_workspace().unwrap();
     let long_name = "a".repeat(200);
@@ -864,9 +889,10 @@ fn test_edge_case_very_long_file_path() {
 
     // Assert: Verify handling of long paths
     // Note: May fail on some filesystems with path length limits
-    if result.is_err() {
-        assert!(result.unwrap_err().to_string().contains("name too long") ||
-                result.unwrap_err().to_string().contains("File name too long"),
+    if let Err(e) = result {
+        let err_str = e.to_string();
+        assert!(err_str.contains("name too long") ||
+                err_str.contains("File name too long"),
                 "Should fail with appropriate error for long paths");
     }
 

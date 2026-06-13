@@ -101,8 +101,8 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ## Getting Help
 
-- **Want to understand something?** - [Ask a question](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
-- **Found confusing design?** - [Discuss design decisions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Want to understand something?** - [Ask a question](https://github.com/seanchatmangpt/clap-noun-verb)
+- **Found confusing design?** - [Discuss design decisions](https://github.com/seanchatmangpt/clap-noun-verb)
 - **Have feedback?** - [Share your thoughts](https://github.com/seanchatmangpt/clap-noun-verb/issues)
 
 ---

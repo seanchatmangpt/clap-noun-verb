@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Domain Logic Layer - Pure, Testable Business Logic
 //!
 //! This module contains pure functions that implement the core business logic.
@@ -37,7 +40,6 @@ pub mod ontology;
 pub mod introspection;
 pub mod middleware;
 pub mod telemetry;
-pub mod completions;
 
 // ggen v26.4.2 domains
 pub mod sync;
@@ -58,7 +60,6 @@ pub use ontology::{EffectType, SparqlQueryType, build_playground_ontology};
 pub use introspection::IntrospectionResponse;
 pub use middleware::{MiddlewareConfig, MiddlewareStats};
 pub use telemetry::{ExecutionSpan, SpanStatus, ExecutionReceipt};
-pub use completions::{ShellType, generate_completion_script};
 
 // ggen v26.4.2 exports
 pub use sync::{Lockfile, SyncPipeline, SyncResult};

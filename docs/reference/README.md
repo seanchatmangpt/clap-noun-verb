@@ -26,6 +26,9 @@ Use the reference when you:
 - **[API Catalog](api-catalog.md)** - Quick reference for all APIs
 - **[Types Catalog](api/types.md)** - All public types with descriptions
 - **[Errors Catalog](api/errors.md)** - Complete error type hierarchy
+- **[Advanced Features](api/advanced-features.md)** - Completions, chaining, stdin, REPL, and introspection
+- **[Telemetry Reference](api/telemetry.md)** - Distributed tracing context, W3C traceparents, and manager
+- **[#[noun] Macro (DEPRECATED)](api/noun-macro.md)** - Legacy noun subcommand definition macro
 - **[Error Codes](error-codes.md)** - Common errors and solutions
 
 ### CLI Reference
@@ -56,7 +59,10 @@ Each reference page provides:
 | **#[arg] attributes** | [api/arg-attributes.md](api/arg-attributes.md) |
 | **Result<T,E>** | [api/types.md](api/types.md) |
 | **NounVerbError** | [api/errors.md](api/errors.md) |
+| **TraceContext / Telemetry** | [api/telemetry.md](api/telemetry.md) |
 | **OutputFormat** | [api/types.md](api/types.md) |
+| **Advanced Features** | [api/advanced-features.md](api/advanced-features.md) |
+| **#[noun] macro (DEPRECATED)** | [api/noun-macro.md](api/noun-macro.md) |
 | **API Catalog** | [api-catalog.md](api-catalog.md) |
 
 ---
@@ -65,9 +71,9 @@ Each reference page provides:
 
 | Section | Files | Status |
 |---------|-------|--------|
-| **Core API** | 6 files | ✅ **Available** |
+| **Core API** | 9 files | ✅ **Available** |
 | **CLI** | 1 file | ✅ **Available** |
-| **TOTAL** | **7 files** | ✅ **Available** |
+| **TOTAL** | **10 files** | ✅ **Available** |
 
 ---
 
@@ -110,7 +116,7 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 - **Can't find an API?** - [Request documentation](https://github.com/seanchatmangpt/clap-noun-verb/issues/new?template=doc_request.md)
 - **API doesn't work as documented?** - [Report a bug](https://github.com/seanchatmangpt/clap-noun-verb/issues)
-- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+- **Have a question?** - [GitHub Discussions](https://github.com/seanchatmangpt/clap-noun-verb)
 
 ---
 

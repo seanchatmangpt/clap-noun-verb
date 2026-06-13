@@ -96,44 +96,59 @@ fn parse(input: String) -> Result<ParsedData, ParseError> {
 
 **Type Alias**:
 ```rust
-pub type Result<T> = std::result::Result<T, CliError>;
+pub type Result<T> = std::result::Result<T, NounVerbError>;
 ```
 
 ---
 
-## CliError
+## NounVerbError
 
 Error type for CLI operations.
 
 **Signature**:
 ```rust
 #[derive(Error, Debug)]
-pub enum CliError {
-    #[error("Parse error: {0}")]
-    ParseError(String),
+pub enum NounVerbError {
+    #[error("Command '{noun}' not found{suggestion}")]
+    CommandNotFound { noun: String, suggestion: String },
 
-    #[error("Validation error: {0}")]
-    ValidationError(String),
+    #[error("Verb '{verb}' not found for noun '{noun}'{suggestion}")]
+    VerbNotFound { noun: String, verb: String, suggestion: String },
 
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
+    #[error("Invalid command structure: {message}")]
+    InvalidStructure { message: String },
 
-    #[error("Serialization error: {0}")]
-    SerializationError(#[from] serde_json::Error),
+    #[error("Command execution failed: {message}")]
+    ExecutionError { message: String },
 
-    #[error("{0}")]
-    Custom(String),
+    #[error("Argument parsing failed: {message}")]
+    ArgumentError { message: String },
+
+    #[error("Plugin error: {0}")]
+    PluginError(String),
+
+    #[error("Validation failed: {0}")]
+    ValidationFailed(String),
+
+    #[error("Middleware error: {0}")]
+    MiddlewareError(String),
+
+    #[error("Telemetry error: {0}")]
+    TelemetryError(String),
+
+    #[error("Error: {0}")]
+    Generic(String),
 }
 ```
 
 **Usage**:
 ```rust
-use clap_noun_verb::CliError;
+use clap_noun_verb::NounVerbError;
 
 #[verb("validate")]
 fn validate(email: String) -> Result<ValidateResult> {
     if !email.contains('@') {
-        return Err(CliError::ValidationError("Invalid email".to_string()));
+        return Err(NounVerbError::ValidationFailed("Invalid email".to_string()));
     }
     Ok(ValidateResult { valid: true })
 }
@@ -262,6 +277,50 @@ fn create_user(username: String, email: String) -> Result<User> {
 }
 ```
 
+## OutputFormat
+
+Enum representing the supported output rendering styles for CLI execution results.
+
+**Signature**:
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OutputFormat {
+    /// Compact JSON (machine-readable)
+    Json,
+    /// Pretty-printed JSON (human-readable; default)
+    #[default]
+    JsonPretty,
+    /// YAML format
+    Yaml,
+    /// Pretty-printed ASCII table format
+    Table,
+    /// Plain text (key: value pairs)
+    Plain,
+    /// Tab-separated values
+    Tsv,
+    /// Quiet mode (silences stdout output entirely)
+    Quiet,
+}
+```
+
+**Methods**:
+- `pub fn format<S: Serialize>(self, value: &S) -> Result<String, Box<dyn std::error::Error>>`: Formats a serializable value into the selected output format.
+- `pub fn available_formats() -> &'static [&'static str]`: Returns a slice of static string slices representing all valid format flags (`"json"`, `"json-pretty"`, `"yaml"`, `"table"`, `"plain"`, `"tsv"`, `"quiet"`).
+- `pub fn description(&self) -> &'static str`: Returns a human-readable description of the output format variant.
+
+**Usage**:
+```rust
+use clap_noun_verb::format::OutputFormat;
+
+let data = vec![("key", "value")];
+let formatted = OutputFormat::Yaml.format(&data)?;
+println!("{}", formatted);
+```
+
+**Quiet Mode**:
+When `OutputFormat::Quiet` is specified, the CLI execution engine will suppress all standard output printing to standard out (`stdout`), returning an empty string. This is designed for high-performance automation scripting or CI/CD pipelines where outputs should be kept silent unless an error occurs.
+
 ---
 
 ## Type Conversions
@@ -283,6 +342,8 @@ fn create_user(username: String, email: String) -> Result<User> {
 ## See Also
 
 - Result<T> - Return type requirements
-- CliError - Error handling
+- NounVerbError - Error handling
 - Serializable Types - Output serialization
 - serde::Serialize - Trait for JSON serialization
+- OutputFormat - Output formatting system
+

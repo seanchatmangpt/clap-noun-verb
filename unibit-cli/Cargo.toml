@@ -3,22 +3,26 @@ name = "unibit-cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
-clap-noun-verb = { path = ".." }
-clap-noun-verb-macros = { path = "../clap-noun-verb-macros" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.40", features = ["full"] }
-anyhow = "1.0"
-thiserror = "1.0"
-linkme = "0.3"
-once_cell = "1.19"
+clap-noun-verb = { workspace = true }
+clap-noun-verb-macros = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+linkme = { workspace = true }
+once_cell = { workspace = true }
 
 # Unibit Kinetic Substrate Drivers
-unibit-kernel = { path = "/Users/sac/unibit/crates/unibit-kernel" }
-unibit-l1 = { path = "/Users/sac/unibit/crates/unibit-l1" }
-unibit-powl64 = { path = "/Users/sac/unibit/crates/unibit-powl64" }
-unibit-mustar = { path = "/Users/sac/unibit/crates/unibit-mustar" }
-unibit-causality = { path = "/Users/sac/unibit/crates/unibit-causality" }
-unibit-semantics = { path = "/Users/sac/unibit/crates/unibit-semantics" }
+unibit-kernel = { path = "../../unibit/crates/unibit-kernel" }
+unibit-l1 = { path = "../../unibit/crates/unibit-l1" }
+unibit-powl64 = { path = "../../unibit/crates/unibit-powl64" }
+unibit-mustar = { path = "../../unibit/crates/unibit-mustar" }
+unibit-causality = { path = "../../unibit/crates/unibit-causality" }
+unibit-semantics = { path = "../../unibit/crates/unibit-semantics" }
+
+[lints]
+workspace = true

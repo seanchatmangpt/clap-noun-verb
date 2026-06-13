@@ -2,50 +2,35 @@
 # https://github.com/EmbarkStudios/cargo-deny
 
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "deny"
-notice = "warn"
+# advisories checks are enabled by default. Ignore lists can be added below.
+ignore = [
+    "RUSTSEC-2024-0375", # atty is unmaintained
+    "RUSTSEC-2024-0370", # proc-macro-error is unmaintained
+]
 
 [licenses]
-default = "deny"
-copyleft = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
     "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
-]
-deny = [
-    "AGPL-3.0",
-    "GPL-2.0",
-    "GPL-3.0",
-    "LGPL-2.0",
-    "LGPL-2.1",
-    "LGPL-3.0",
+    "Unicode-3.0",
+    "CC0-1.0",
 ]
 
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
 allow = []
-
-[bans.skips]
-# Allow multiple versions of transitive dependencies when necessary
-allow = []
+skip = []
 
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-ssh = "warn"
 allow-registry = [
     "sparse+https://index.crates.io/",
     "https://github.com/rust-lang/crates.io-index",
 ]
 allow-git = []
-
-[metadata]
-# Metadata for cargo-deny reporting
-maintainers = ["seanchatmangpt@gmail.com"]
 

@@ -246,7 +246,7 @@ After discovering version inconsistencies (5.2/5.3 vs 5.6), audited all best pra
 - ✅ `docs/reference/api/noun-macro.md` - Full deprecation notice
 - ✅ `docs/reference/api/verb-macro.md` - Notes deprecation at line 113
 - ✅ `docs/reference/api/arg-attributes.md` - Notes deprecation at line 334
-- ✅ `docs/tutorial/03-adding-commands.md` - v5.6.0 update notice at line 7
+- ✅ `docs/tutorial/02-adding-multiple.md` - v5.6.0 update notice at line 7
 - ✅ `docs/reference/README.md` - Marked as deprecated
 
 **Historical Context**:
@@ -322,7 +322,7 @@ All high-priority and medium-priority issues have been resolved:
 - ✅ Version stamps updated (COMMON_MISTAKES.md: v4.0.1 → v5.6.0)
 
 ### Phase 2: 80/20 Rewrite (Complete)
-- ✅ Documentation reduced from 447 to 33 files (93% reduction)
+- ✅ Documentation reduced from 447 to 32 files (93% reduction)
 - ✅ Archive/ folder eliminated (378 internal planning docs removed)
 - ✅ All frontier feature docs removed (RDF, semantic web, agents, wizards)
 - ✅ Tutorials consolidated from 12 to 6 files
@@ -334,9 +334,9 @@ All high-priority and medium-priority issues have been resolved:
 
 **Documentation Status**: Ready for v5.6.1 release
 
-**Final Documentation Structure** (33 files):
-- **Tutorial** (6 files): 02-domain-separation.md, 03-adding-commands.md, 04-testing-basics.md, 05-output-formats.md, 07-async-operations.md, 08-error-handling.md, README.md
+**Final Documentation Structure** (32 files):
+- **Tutorial** (6 files): 01-domain-separation.md, 02-adding-multiple.md, 03-testing-basics.md, 04-output-formats.md, 05-async-operations.md, 06-error-handling.md, README.md
 - **How-To** (9 files): common-mistakes.md, debugging.md, performance-optimization.md, setup-help-and-version.md, testing.md, validation.md, production/ (4 files), README.md
-- **Reference** (7 files): api-catalog.md, api.md, api/arg-attributes.md, api/errors.md, api/types.md, api/verb-macro.md, error-codes.md, performance-slos.md, README.md
+- **Reference** (7 files): api-catalog.md, api/arg-attributes.md, api/errors.md, api/types.md, api/verb-macro.md, error-codes.md, performance-slos.md, README.md
 - **Explanation** (3 files): architecture.md, design-patterns.md, README.md
-- **Root** (3 files): diataxis-index.md, INDEX.md, VERIFICATION_REPORT.md
+- **Root** (2 files): INDEX.md, VERIFICATION_REPORT.md

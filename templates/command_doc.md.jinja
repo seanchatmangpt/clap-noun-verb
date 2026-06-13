@@ -1,0 +1,92 @@
+# {{ noun_name }} {{ verb_name }}
+
+Auto-generated command documentation from `ontology/cargo-cicd.ttl`
+
+## Overview
+
+**Command:** `{{ full_command_name }}`
+
+{{ verb_description }}
+
+## Usage
+
+```bash
+cargo-cicd {{ noun_name }} {{ verb_name }} {% for arg in arguments %}{% if arg.is_required %}<{{ arg.name }}>{% else %}[{{ arg.name }}]{% endif %} {% endfor %}
+```
+
+## Description
+
+{{ verb_description }}
+
+{% if arguments -%}
+
+## Arguments
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+{% for arg in arguments -%}
+| `{{ arg.name }}` | `{{ arg.type }}` | {% if arg.is_required %}Yes{% else %}No{% endif %} | {{ arg.description }} |
+{% endfor %}
+
+{% endif -%}
+
+## Output
+
+**Format:** {{ output_format }}
+
+**Type:** `{{ return_type }}`
+
+### Example Output (JSON)
+
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "details": {}
+}
+```
+
+## Exit Codes
+
+- `0` — Success
+- `1` — General error
+- `2` — Validation error
+- `3` — IO error
+
+## Environment Variables
+
+{% if environment_variables -%}
+{% for env_var, description in environment_variables.items() %}
+- `{{ env_var }}` — {{ description }}
+{% endfor %}
+{% else -%}
+None (inherits from parent process)
+{% endif %}
+
+## Examples
+
+### Basic Usage
+
+```bash
+cargo-cicd {{ noun_name }} {{ verb_name }}
+```
+
+{% if arguments -%}
+
+### With Arguments
+
+```bash
+cargo-cicd {{ noun_name }} {{ verb_name }} <required_arg>
+```
+
+{% endif -%}
+
+## See Also
+
+- [`cargo-cicd {{ noun_name }}`](../{{ noun_name }}) — {{ noun_description }}
+- [Noun-Verb CLI Documentation](../README.md)
+
+---
+
+**Last Generated:** {{ generated_date }}
+**Ontology Version:** {{ ontology_version }}

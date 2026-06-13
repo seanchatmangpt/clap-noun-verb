@@ -1,0 +1,26 @@
+{
+  "name": "clap-noun-verb",
+  "version": "1.0.0",
+  "description": "**Machine-grade CLI framework for AI agents and autonomous systems**",
+  "main": "index.js",
+  "bin": {
+    "clap-noun-verb": "bin/generate.js"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "sync": "node bin/generate.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "n3": "^2.0.3",
+    "nunjucks": "^3.2.4"
+  }
+}

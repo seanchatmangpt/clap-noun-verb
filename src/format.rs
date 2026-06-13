@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Output formatting system
 //!
 //! This module provides pluggable output formatters for different output formats.
@@ -5,7 +8,7 @@
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust
 //! use clap_noun_verb::format::{OutputFormat, format_output};
 //! use serde::Serialize;
 //!
@@ -15,18 +18,74 @@
 //!     value: u32,
 //! }
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let output = Output { name: "example".to_string(), value: 42 };
 //!
 //! // Method style
-//! let formatted = OutputFormat::Table.format(&output)?;
+//! let _formatted = OutputFormat::Table.format(&output)?;
 //!
 //! // Function style
 //! let formatted = format_output(&output, OutputFormat::Yaml)?;
 //! println!("{}", formatted);
+//! # Ok(())
+//! # }
 //! ```
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::sync::{Arc, OnceLock, RwLock};
+
+/// Type alias for output validation hooks.
+pub type OutputValidationHook = Arc<
+    dyn Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync,
+>;
+
+static VALIDATION_HOOKS: OnceLock<RwLock<Vec<OutputValidationHook>>> = OnceLock::new();
+
+/// Register a global hook to validate formatted output before it is rendered or returned.
+///
+/// This allows enabling output schemas, checking serialization bounds (e.g., maximum length,
+/// depth, disallowed keys), or enforcing security policies.
+pub fn register_output_validation_hook<F>(hook: F)
+where
+    F: Fn(&serde_json::Value) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync
+        + 'static,
+{
+    let hooks = VALIDATION_HOOKS.get_or_init(|| RwLock::new(Vec::new()));
+    if let Ok(mut write_guard) = hooks.write() {
+        write_guard.push(Arc::new(hook));
+    }
+}
+
+/// Clear all registered output validation hooks.
+pub fn clear_output_validation_hooks() {
+    let hooks = VALIDATION_HOOKS.get_or_init(|| RwLock::new(Vec::new()));
+    if let Ok(mut write_guard) = hooks.write() {
+        write_guard.clear();
+    }
+}
+
+/// Run all registered validation hooks on a serialized JSON value.
+fn validate_output_value(
+    value: &serde_json::Value,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let hooks = VALIDATION_HOOKS.get_or_init(|| RwLock::new(Vec::new()));
+    if let Ok(read_guard) = hooks.read() {
+        for hook in read_guard.iter() {
+            hook(value).map_err(|e| {
+                Box::new(crate::error::NounVerbError::execution_error(format!(
+                    "Output validation failed: {}",
+                    e
+                ))) as Box<dyn std::error::Error>
+            })?;
+        }
+    }
+    Ok(())
+}
 
 /// Supported output formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -45,12 +104,15 @@ pub enum OutputFormat {
     Plain,
     /// Tab-separated values
     Tsv,
+    /// Quiet mode (silence output)
+    Quiet,
 }
 
 impl OutputFormat {
     /// Format a serializable value
     pub fn format<S: Serialize>(self, value: &S) -> Result<String, Box<dyn std::error::Error>> {
         let json = serde_json::to_value(value)?;
+        validate_output_value(&json)?;
         let output = match self {
             OutputFormat::Json => serde_json::to_string(&json)?,
             OutputFormat::JsonPretty => serde_json::to_string_pretty(&json)?,
@@ -58,13 +120,14 @@ impl OutputFormat {
             OutputFormat::Table => json_to_table(&json),
             OutputFormat::Plain => json_to_plain(&json),
             OutputFormat::Tsv => json_to_tsv(&json),
+            OutputFormat::Quiet => String::new(),
         };
         Ok(output)
     }
 
     /// Get all available format names
     pub fn available_formats() -> &'static [&'static str] {
-        &["json", "json-pretty", "yaml", "table", "plain", "tsv"]
+        &["json", "json-pretty", "yaml", "table", "plain", "tsv", "quiet"]
     }
 
     /// Get human-readable description
@@ -76,6 +139,7 @@ impl OutputFormat {
             Self::Table => "ASCII table format",
             Self::Plain => "Plain text (key: value)",
             Self::Tsv => "Tab-separated values",
+            Self::Quiet => "Silence output during automation/pipelines",
         }
     }
 }
@@ -89,6 +153,7 @@ impl fmt::Display for OutputFormat {
             Self::Table => write!(f, "table"),
             Self::Plain => write!(f, "plain"),
             Self::Tsv => write!(f, "tsv"),
+            Self::Quiet => write!(f, "quiet"),
         }
     }
 }
@@ -104,6 +169,7 @@ impl std::str::FromStr for OutputFormat {
             "table" | "ascii" => Ok(OutputFormat::Table),
             "plain" | "text" => Ok(OutputFormat::Plain),
             "tsv" | "tab" => Ok(OutputFormat::Tsv),
+            "quiet" | "silent" => Ok(OutputFormat::Quiet),
             _ => Err(format!(
                 "Unknown format '{}'. Available: {:?}",
                 s,
@@ -119,9 +185,13 @@ impl std::str::FromStr for OutputFormat {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use clap_noun_verb::format::{format_output, OutputFormat};
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let data = vec![("a", "b"), ("c", "d")];
 /// println!("{}", format_output(&data, OutputFormat::Table)?);
+/// # Ok(())
+/// # }
 /// ```
 pub fn format_output<T: Serialize>(
     data: &T,
@@ -328,12 +398,15 @@ mod tests {
     fn test_output_format_display() {
         assert_eq!(OutputFormat::Json.to_string(), "json");
         assert_eq!(OutputFormat::Yaml.to_string(), "yaml");
+        assert_eq!(OutputFormat::Quiet.to_string(), "quiet");
     }
 
     #[test]
     fn test_output_format_from_str() {
         assert_eq!("json".parse::<OutputFormat>().unwrap(), OutputFormat::Json);
         assert_eq!("yaml".parse::<OutputFormat>().unwrap(), OutputFormat::Yaml);
+        assert_eq!("quiet".parse::<OutputFormat>().unwrap(), OutputFormat::Quiet);
+        assert_eq!("silent".parse::<OutputFormat>().unwrap(), OutputFormat::Quiet);
         assert!("invalid".parse::<OutputFormat>().is_err());
     }
 
@@ -346,6 +419,46 @@ mod tests {
         assert!(formats.contains(&"table"));
         assert!(formats.contains(&"plain"));
         assert!(formats.contains(&"tsv"));
-        assert_eq!(formats.len(), 6);
+        assert!(formats.contains(&"quiet"));
+        assert_eq!(formats.len(), 7);
+    }
+
+    #[test]
+    fn test_quiet_format() {
+        let data = vec![("a", "b")];
+        let formatted = OutputFormat::Quiet.format(&data).unwrap();
+        assert_eq!(formatted, "");
+    }
+
+    #[test]
+    fn test_output_validation_hooks() {
+        clear_output_validation_hooks();
+
+        // Register a hook checking serialization bounds (e.g. key must not be 'blocked')
+        register_output_validation_hook(|val| {
+            if let Some(obj) = val.as_object() {
+                if obj.contains_key("blocked") {
+                    return Err("Found blocked key".into());
+                }
+            }
+            Ok(())
+        });
+
+        // Test valid data
+        let valid_data = serde_json::json!({ "allowed": "value" });
+        assert!(OutputFormat::Json.format(&valid_data).is_ok());
+
+        // Test invalid data
+        let invalid_data = serde_json::json!({ "blocked": "value" });
+        let result = OutputFormat::Json.format(&invalid_data);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Output validation failed: Found blocked key"));
+
+        // Clear hooks and test again
+        clear_output_validation_hooks();
+        assert!(OutputFormat::Json.format(&invalid_data).is_ok());
     }
 }

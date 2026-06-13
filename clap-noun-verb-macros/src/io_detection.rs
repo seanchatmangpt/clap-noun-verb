@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! I/O Type Detection for Macro Expansion
 //!
 //! Provides advanced type detection for Input and Output types,
@@ -175,6 +178,7 @@ impl IoArgConfig {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use syn::parse_quote;
