@@ -1,0 +1,8 @@
+# Pack manifest — exposes clap-noun-verb's queries and templates to consuming
+# ggen projects via `{ pack = "clap-noun-verb", output = "queries|templates", file = ... }`.
+[pack]
+name = "clap-noun-verb"
+
+[pack.outputs]
+queries = "queries"
+templates = "templates"

@@ -1,0 +1,15 @@
+# greet-demo — standalone example crate (excluded from the clap-noun-verb workspace).
+# Consumes the authoritative clap-noun-verb pack via path deps and the rendered
+# verb wrappers under src/verbs/. Build: `cargo build` (from this directory).
+[package]
+name = "greet-demo"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+clap-noun-verb = { path = "../.." }
+clap-noun-verb-macros = { path = "../../clap-noun-verb-macros" }
+# Required directly: the #[verb] macro expands to #[linkme::distributed_slice(..)].
+linkme = "0.3"
+serde = { version = "1.0", features = ["derive"] }
