@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runExample } from "@/lib/project";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// Node.js runtime (default). runtime segment config removed — incompatible
+// with cacheComponents: true. Node.js is the default and the correct runtime
+// here since runExample() uses child_process.execSync.
 
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name");

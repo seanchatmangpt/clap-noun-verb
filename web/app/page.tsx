@@ -11,10 +11,13 @@ import {
 import { ExampleRunner } from "./components/ExampleRunner";
 
 // ---------------------------------------------------------------------------
-// Server Components — fetch real project data at request time
+// Server Components — static sections annotated with 'use cache' for PPR.
+// Next.js 16 prerenders these into the static HTML shell at build time.
+// Dynamic sections (ExampleRunner forms) remain uncached and stream in.
 // ---------------------------------------------------------------------------
 
 async function ProjectHeader() {
+  "use cache";
   const meta = getProjectMeta();
   return (
     <header className="border-b border-zinc-800 pb-6 mb-8">
@@ -43,6 +46,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 async function FeatureFlags() {
+  "use cache";
   const meta = getProjectMeta();
   return (
     <section className="mb-8">
@@ -66,6 +70,7 @@ async function FeatureFlags() {
 }
 
 async function ApiSurface() {
+  "use cache";
   const errors = getErrorVariants();
   const formats = getOutputFormatVariants();
   return (
@@ -104,6 +109,7 @@ async function ApiSurface() {
 }
 
 async function CoverageMap() {
+  "use cache";
   const cov = getCoverageStatus();
   return (
     <section className="mb-8">
@@ -155,6 +161,7 @@ async function CoverageMap() {
 }
 
 async function ExampleRunners() {
+  "use cache";
   const meta = getProjectMeta();
   const coverageExamples = [
     "core_api",
@@ -205,6 +212,7 @@ async function AppContextSection() {
 // ---------------------------------------------------------------------------
 
 async function GraphSection() {
+  "use cache";
   const types = getGraphApiSurface();
   return (
     <section className="mb-8">
@@ -269,6 +277,7 @@ async function DiagnosticsSection() {
 // ---------------------------------------------------------------------------
 
 async function ReplSection() {
+  "use cache";
   const methods = getReplApiSurface();
   return (
     <section className="mb-8">
@@ -298,6 +307,7 @@ async function ReplSection() {
 // ---------------------------------------------------------------------------
 
 async function BenchmarkSection() {
+  "use cache";
   const results = getBenchResults();
   return (
     <section className="mb-8">
@@ -436,6 +446,20 @@ export default function Page() {
         </Suspense>
 
         <RepresentationGap />
+
+        <section className="mb-8 border border-zinc-800 rounded-lg p-4 bg-zinc-950 text-xs">
+          <SectionTitle>Next.js 16 Frontier Coverage</SectionTitle>
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-zinc-400">
+            <div>✓ <strong className="text-zinc-300">RSC</strong> — async Server Components throughout</div>
+            <div>✓ <strong className="text-zinc-300">Streaming Suspense</strong> — every section independent boundary</div>
+            <div>✓ <strong className="text-zinc-300">Server Actions</strong> — <code className="text-amber-300">runExampleAction</code> via <code>useActionState</code></div>
+            <div>✓ <strong className="text-zinc-300">Edge boundary</strong> — <code className="text-amber-300">proxy.ts</code> (v16 replacement for middleware; adds <code>X-Runtime: edge</code> header)</div>
+            <div>✓ <strong className="text-zinc-300">Node.js route</strong> — <code className="text-amber-300">/api/run-example</code> (child_process; <code>runtime</code> segment config incompatible with cacheComponents)</div>
+            <div>✓ <strong className="text-zinc-300">Partial Prerendering</strong> — <code>cacheComponents: true</code> + <code>&apos;use cache&apos;</code> on static sections</div>
+            <div>✓ <strong className="text-zinc-300">Route handlers</strong> — GET on both edge and node routes</div>
+            <div>✓ <strong className="text-zinc-300">Progressive enhancement</strong> — forms work without JS via <code>&lt;form action&gt;</code></div>
+          </div>
+        </section>
 
         <footer className="border-t border-zinc-800 pt-6 mt-8 text-xs text-zinc-600 flex gap-4">
           <span>clap-noun-verb faithful representation</span>
