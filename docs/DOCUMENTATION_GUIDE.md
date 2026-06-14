@@ -2,6 +2,8 @@
 
 **Master guide for maintaining high-quality, accurate documentation across the clap-noun-verb project.**
 
+> **New:** See [DOCUMENTATION_SKILLS.md](DOCUMENTATION_SKILLS.md) for task-oriented documentation workflows organized by skill (Rustdoc, comments, examples, ADRs, README).
+
 ---
 
 ## Overview

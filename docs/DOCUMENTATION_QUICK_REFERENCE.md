@@ -2,6 +2,8 @@
 
 **One-page cheat sheet for common documentation tasks.**
 
+> **New:** For detailed task-oriented workflows, see [DOCUMENTATION_SKILLS.md](DOCUMENTATION_SKILLS.md).
+
 ---
 
 ## Commands at a Glance
