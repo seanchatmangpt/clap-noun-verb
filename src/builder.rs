@@ -32,53 +32,62 @@ use clap::Command;
 ///     cli.run()
 /// }
 /// ```
+#[must_use = "this CliBuilder does nothing unless .run() or .build_command() is called"]
 pub struct CliBuilder {
     registry: CommandRegistry,
 }
 
 impl CliBuilder {
     /// Create a new CLI builder
+    #[must_use]
     pub fn new() -> Self {
         Self { registry: CommandRegistry::new() }
     }
 
     /// Set the application name
+    #[must_use]
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.registry = self.registry.name(name);
         self
     }
 
     /// Set the application description
+    #[must_use]
     pub fn about(mut self, about: impl Into<String>) -> Self {
         self.registry = self.registry.about(about);
         self
     }
 
     /// Set the application version
+    #[must_use]
     pub fn version(mut self, version: impl Into<String>) -> Self {
         self.registry = self.registry.version(version);
         self
     }
 
     /// Add global arguments available to all commands
+    #[must_use]
     pub fn global_args(mut self, args: Vec<clap::Arg>) -> Self {
         self.registry = self.registry.global_args(args);
         self
     }
 
     /// Enable automatic validation of command structure
+    #[must_use]
     pub fn auto_validate(mut self, enable: bool) -> Self {
         self.registry = self.registry.auto_validate(enable);
         self
     }
 
     /// Add a noun command to the CLI
+    #[must_use]
     pub fn noun(mut self, noun: impl NounCommand + 'static) -> Self {
         self.registry = self.registry.register_noun(noun);
         self
     }
 
     /// Add multiple noun commands
+    #[must_use]
     pub fn nouns<I>(mut self, nouns: I) -> Self
     where
         I: IntoIterator<Item = Box<dyn NounCommand>>,
@@ -88,6 +97,7 @@ impl CliBuilder {
     }
 
     /// Register a dynamic shell completions subcommand (`completions`)
+    #[must_use]
     pub fn with_completions_subcommand(mut self) -> Self {
         self.registry = self.registry.with_completions_subcommand();
         self
@@ -177,6 +187,7 @@ where
 /// assert_eq!(command.get_name(), "myapp");
 /// assert!(structure.contains_key("services"));
 /// ```
+#[must_use]
 pub fn build_cli<F>(builder: F) -> (Command, std::collections::HashMap<String, Vec<String>>)
 where
     F: FnOnce(CliBuilder) -> CliBuilder,

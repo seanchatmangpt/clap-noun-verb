@@ -21,6 +21,7 @@
 use std::fmt;
 
 /// Type of deprecated entity
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeprecationType {
     /// Deprecated noun (command group)

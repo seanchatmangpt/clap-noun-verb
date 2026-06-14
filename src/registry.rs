@@ -29,6 +29,7 @@ use std::path::PathBuf;
 /// - Compose command hierarchies dynamically
 /// - Query command structure for introspection
 /// - Build complete CLI applications from registered commands
+#[must_use = "this CommandRegistry does nothing unless used to build a CLI"]
 pub struct CommandRegistry {
     /// Map of noun name to noun command
     nouns: HashMap<String, Box<dyn NounCommand>>,
@@ -69,6 +70,7 @@ impl Default for RegistryConfig {
 
 impl CommandRegistry {
     /// Create a new command registry
+    #[must_use]
     pub fn new() -> Self {
         Self {
             nouns: HashMap::new(),
@@ -79,6 +81,7 @@ impl CommandRegistry {
     }
 
     /// Create a new registry with configuration
+    #[must_use]
     pub fn with_config(config: RegistryConfig) -> Self {
         Self {
             nouns: HashMap::new(),
@@ -89,54 +92,63 @@ impl CommandRegistry {
     }
 
     /// Enable fluent completions subcommand
+    #[must_use]
     pub fn with_completions_subcommand(mut self) -> Self {
         self.has_completions_subcommand = true;
         self
     }
 
     /// Add a typed extension to the global context
+    #[must_use]
     pub fn with_extension<T: Send + Sync + 'static>(mut self, val: T) -> Self {
         self.extensions.insert(val);
         self
     }
 
     /// Set the application name
+    #[must_use]
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.config.name = name.into();
         self
     }
 
     /// Set the application description
+    #[must_use]
     pub fn about(mut self, about: impl Into<String>) -> Self {
         self.config.about = about.into();
         self
     }
 
     /// Set the application version
+    #[must_use]
     pub fn version(mut self, version: impl Into<String>) -> Self {
         self.config.version = Some(version.into());
         self
     }
 
     /// Add global arguments available to all commands
+    #[must_use]
     pub fn global_args(mut self, args: Vec<clap::Arg>) -> Self {
         self.config.global_args = args;
         self
     }
 
     /// Enable automatic validation of command structure
+    #[must_use]
     pub fn auto_validate(mut self, enable: bool) -> Self {
         self.config.auto_validate = enable;
         self
     }
 
     /// Register a noun command
+    #[must_use]
     pub fn register_noun(mut self, noun: impl NounCommand + 'static) -> Self {
         self.nouns.insert(noun.name().to_string(), Box::new(noun));
         self
     }
 
     /// Register multiple noun commands
+    #[must_use]
     pub fn register_nouns<I>(mut self, nouns: I) -> Self
     where
         I: IntoIterator<Item = Box<dyn NounCommand>>,
@@ -148,21 +160,25 @@ impl CommandRegistry {
     }
 
     /// Get a noun command by name
+    #[must_use]
     pub fn get_noun(&self, name: &str) -> Option<&dyn NounCommand> {
         self.nouns.get(name).map(|n| n.as_ref())
     }
 
     /// Get all registered noun names
+    #[must_use]
     pub fn noun_names(&self) -> Vec<&str> {
         self.nouns.keys().map(|s| s.as_str()).collect()
     }
 
     /// Get all registered nouns
+    #[must_use]
     pub fn nouns(&self) -> Vec<&dyn NounCommand> {
         self.nouns.values().map(|n| n.as_ref()).collect()
     }
 
     /// Check if a noun is registered
+    #[must_use]
     pub fn has_noun(&self, name: &str) -> bool {
         self.nouns.contains_key(name)
     }
@@ -178,6 +194,7 @@ impl CommandRegistry {
     }
 
     /// Get the complete command structure for introspection
+    #[must_use]
     pub fn command_structure(&self) -> HashMap<String, Vec<String>> {
         let mut structure = HashMap::new();
 
@@ -258,6 +275,7 @@ impl CommandRegistry {
     }
 
     /// Build the complete clap command structure
+    #[must_use]
     pub fn build_command(&self) -> Command {
         // Auto-validate if enabled
         if self.config.auto_validate {
@@ -480,6 +498,7 @@ impl CommandRegistry {
     }
 
     /// Get the built command for testing or manual execution
+    #[must_use]
     pub fn command(self) -> Command {
         self.build_command()
     }
@@ -1117,6 +1136,7 @@ pub struct OntologyArgDef {
 }
 
 /// RDF export format
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy)]
 pub enum RdfFormat {
     /// N-Triples format (.nt)

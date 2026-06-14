@@ -122,16 +122,19 @@ impl VerbArgs {
     }
 
     /// Get context value
+    #[must_use]
     pub fn get_context(&self, key: &str) -> Option<&String> {
         self.context.get_data(key)
     }
 
     /// Get the verb name
+    #[must_use]
     pub fn verb(&self) -> &str {
         &self.context.verb
     }
 
     /// Get the noun name (if available)
+    #[must_use]
     pub fn noun(&self) -> Option<&str> {
         self.context.noun.as_deref()
     }
@@ -140,6 +143,7 @@ impl VerbArgs {
     ///
     /// Uses `get_raw()` internally to avoid type mismatch panics when
     /// `value_parser` stores values as numeric types (e.g., u16, i64).
+    #[must_use = "use the returned Result or handle the error"]
     pub fn get_one_str(&self, name: &str) -> Result<String> {
         self.get_one_str_opt(name).ok_or_else(|| {
             crate::error::NounVerbError::argument_error(format!(
@@ -154,6 +158,7 @@ impl VerbArgs {
     /// Uses `get_raw()` internally to get the original CLI string value,
     /// avoiding type mismatch panics when `value_parser` stores values
     /// as numeric types (e.g., u16, i64, f64).
+    #[must_use]
     pub fn get_one_str_opt(&self, name: &str) -> Option<String> {
         // Use get_raw() to get the original string value from CLI
         // This works regardless of what value_parser was used
@@ -167,6 +172,7 @@ impl VerbArgs {
     }
 
     /// Get a required typed argument (e.g., usize, PathBuf)
+    #[must_use = "use the returned Result or handle the error"]
     pub fn get_one<T>(&self, name: &str) -> Result<T>
     where
         T: Clone + Send + Sync + 'static,
@@ -180,6 +186,7 @@ impl VerbArgs {
     }
 
     /// Get an optional typed argument
+    #[must_use]
     pub fn get_one_opt<T>(&self, name: &str) -> Option<T>
     where
         T: Clone + Send + Sync + 'static,
@@ -450,6 +457,7 @@ impl VerbArgs {
     /// let trailing = args.trailing();
     /// assert_eq!(trailing, vec!["CICD-GIT-001".to_string()]);
     /// ```
+    #[must_use]
     pub fn trailing(&self) -> Vec<String> {
         self.matches
             .get_many::<String>("trailing")

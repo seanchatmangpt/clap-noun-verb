@@ -6,6 +6,7 @@
 use thiserror::Error;
 
 /// Errors that can occur in the noun-verb CLI framework
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum NounVerbError {
     /// Command not found
@@ -243,6 +244,7 @@ impl From<std::io::Error> for NounVerbError {
 pub type Result<T> = std::result::Result<T, NounVerbError>;
 
 /// MAPE-K Error Kinds
+#[non_exhaustive]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum ErrorKind {
     /// Input arguments or structure were invalid.
@@ -266,6 +268,7 @@ pub enum ErrorKind {
 }
 
 /// Severity level of the error
+#[non_exhaustive]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum Severity {
     /// Non-fatal condition; execution may continue.
@@ -277,6 +280,7 @@ pub enum Severity {
 }
 
 /// Recovery Action templates proposed by the MAPE-K recovery layer
+#[non_exhaustive]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ActionTemplate {

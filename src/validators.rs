@@ -35,6 +35,7 @@ use url::Url;
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_port(port: u16) -> Result<()> {
     if port == 0 {
         return Err(crate::error::NounVerbError::execution_error(
@@ -66,6 +67,7 @@ pub fn validate_port(port: u16) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_url(url_str: &str) -> Result<()> {
     Url::parse(url_str)
         .map_err(|e| crate::error::NounVerbError::execution_error(format!("Invalid URL: {}", e)))?;
@@ -94,6 +96,7 @@ pub fn validate_url(url_str: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_ipv4(ip: &str) -> Result<()> {
     let parts: Vec<&str> = ip.split('.').collect();
     if parts.len() != 4 {
@@ -135,6 +138,7 @@ pub fn validate_ipv4(ip: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_ipv6(ip: &str) -> Result<()> {
     ip.parse::<std::net::Ipv6Addr>()
         .map_err(|_| crate::error::NounVerbError::execution_error("Invalid IPv6 address"))?;
@@ -163,6 +167,7 @@ pub fn validate_ipv6(ip: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_path_exists(path_str: &str) -> Result<()> {
     if !Path::new(path_str).exists() {
         return Err(crate::error::NounVerbError::execution_error(format!(
@@ -194,6 +199,7 @@ pub fn validate_path_exists(path_str: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_path_creatable(path_str: &str) -> Result<()> {
     let path = Path::new(path_str);
     if let Some(parent) = path.parent() {
@@ -231,6 +237,7 @@ pub fn validate_path_creatable(path_str: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_email(email: &str) -> Result<()> {
     // Simple email validation regex (RFC 5322 simplified)
     let email_regex = Regex::new(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -263,6 +270,7 @@ pub fn validate_email(email: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_not_empty(value: &str) -> Result<()> {
     if value.trim().is_empty() {
         return Err(crate::error::NounVerbError::execution_error("Value cannot be empty"));
@@ -296,6 +304,7 @@ pub fn validate_not_empty(value: &str) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_length(value: &str, min: usize, max: usize) -> Result<()> {
     let len = value.len();
     if len < min {
@@ -341,6 +350,7 @@ pub fn validate_length(value: &str, min: usize, max: usize) -> Result<()> {
 /// # Ok(())
 /// # }
 /// ```
+#[must_use = "validation errors must be handled"]
 pub fn validate_regex(value: &str, pattern: &str) -> Result<()> {
     let regex = Regex::new(pattern).map_err(|e| {
         crate::error::NounVerbError::execution_error(format!("Invalid regex: {}", e))

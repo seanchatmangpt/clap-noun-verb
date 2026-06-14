@@ -88,6 +88,7 @@ fn validate_output_value(
 }
 
 /// Supported output formats
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {

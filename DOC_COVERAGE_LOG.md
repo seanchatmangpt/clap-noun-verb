@@ -137,3 +137,112 @@ None.
 **Documented-but-unexercised**: 14 → 11 (closed: `CliBuilder`, `VerbArgs`, `NounVerbError`/`StructuredError`)  
 **Exercised-but-undocumented**: 0 (all new examples are documented inline and reference their docs)  
 **Running examples that witness the framework**: 0 → 3
+
+---
+
+## Iteration 2 — 2026-06-14
+
+**Commit at start**: `afa6ae5`  
+**Tree state**: 3 new examples from iteration 1 applied; best-practices workflow (10 agents) applied  
+**Toolchain**: rustc 1.97.0-nightly, cargo 1.97.0-nightly
+
+### Coverage Map (start of iteration 2)
+
+**Remaining documented-but-unexercised** (11 from iteration 1):
+
+| Symbol | Gap remaining |
+|--------|--------------|
+| `#[verb]` proc-macro auto-registration | PRIMARY: advertised zero-boilerplate path, unwitnessed |
+| `OutputFormat` / `format_output` | Documented in tutorial 04; no running example |
+| `CommandTree` / `CommandTreeBuilder` | Public API, referenced in docs |
+| `AppContext` | Public API, no example |
+| `Graph` + `Triple` + `GraphLoadedOutput` | `src/graph/` exists, public |
+| `CapabilityRegistry` + `CapabilityPackage` | `src/capability/` exists, public |
+| `DoctorOutput` + `HealthIssue` | `src/diagnostics/` exists, public |
+| `Deprecation` / `DeprecationType` | Public API |
+| `Repl` (feature `repl`) | Feature-gated |
+| Cross-product: `VerbArgs` + `OutputFormat` + error | Composition example |
+
+### Triples Closed This Iteration (max 3 per iteration)
+
+#### Triple 1: `#[verb]` proc-macro — distributed slice auto-registration + `execute_single_step`
+
+**Example**: `examples/proc_macro_verb.rs`  
+**Run**: `cargo run --example proc_macro_verb`  
+**Exit code**: 0  
+**Captured output**:
+```
+services::status dispatched: running=true uptime=3600
+services::restart dispatched: running=true uptime=0
+config::set dispatched: key="debug" value="false" port=8080
+```
+**What it witnesses**: `#[clap_noun_verb_macros::verb("verb", "noun")]` on three functions, `CommandRegistry::get()` singleton (triggers distributed-slice iteration), `execute_single_step(Vec<String>)` with injected args, `HandlerOutput.data` field as `serde_json::Value`, typed arg inference (`String`, `u16` → `--key`, `--port` CLI flags auto-generated).  
+**Would fail if**: the `linkme` distributed-slice registration broke, `execute_single_step` dispatch changed, or the proc-macro stopped inferring typed args.
+
+#### Triple 2: `OutputFormat` — all 7 variants + `format_output` + `FromStr` + `Display`
+
+**Example**: `examples/output_formats.rs`  
+**Run**: `cargo run --example output_formats`  
+**Exit code**: 0  
+**Captured output**:
+```
+json:        {"name":"api","replicas":3,"healthy":true}
+json-pretty: {
+yaml:        name: "api"
+table:       4 (lines)
+plain:       name: api
+tsv:         2 lines, has tabs
+quiet:       (empty — 0 bytes)
+formats:     ["json", "json-pretty", "yaml", "table", "plain", "tsv", "quiet"]
+from_str:    "yaml" → Yaml, produces 41 bytes
+Display:     Json="json", JsonPretty="json-pretty", Yaml="yaml"
+```
+**What it witnesses**: All 7 `OutputFormat` variants (Json, JsonPretty, Yaml, Table, Plain, Tsv, Quiet), `format_output(&data, format)` convenience fn, `OutputFormat::available_formats()` (7 names), `FromStr` parse from CLI arg string, `Display` for format names.  
+**Fix required**: YAML serializer quotes string values — assertion changed from `yaml.contains("name: api")` to `yaml.contains("name:") && yaml.contains("api")`.  
+**Would fail if**: any `OutputFormat` variant was added/removed (7-count assert), the YAML serializer behavior changed, or compact JSON introduced newlines.
+
+#### Triple 3: `CommandTree` / `CommandTreeBuilder` / `TreeNode` full API
+
+**Example**: `examples/command_tree.rs`  
+**Run**: `cargo run --example command_tree`  
+**Exit code**: 0  
+**Captured output**:
+```
+roots: ["services", "config"]
+find services/status: found="services status"
+find services/missing: None
+command_paths from services: [["services", "status"], ["services", "restart"]]
+clap::Command name: cli subcommands: ["services", "config"]
+```
+**What it witnesses**: `CommandTreeBuilder::new()`, `add_root()`, `build()`, `TreeNode::new()`, `add_child()`, `with_handler()`, `CommandTree::from_builder()`, `roots()`, `root_names()`, `find_command()` (hit and miss), `command_paths()` (leaf path enumeration), `build_command()` → `clap::Command`.  
+**Fix required**: `build_command()` produces `clap::Command` with name `"cli"` (not the app name), assertion written accordingly.  
+**Would fail if**: `root_names()` order changed, `find_command()` path semantics changed, or `build_command()` name convention changed.
+
+### Key Insight Recorded
+
+`CommandRegistry::get()` is the seam between the compile-time distributed slice and runtime dispatch. It returns a `Mutex<CommandRegistry>` — acquiring the lock triggers the `OnceLock<>` initialization path which iterates `__VERB_REGISTRY` and registers all `#[verb]`-annotated functions. The `execute_single_step` method is the correct injected-args path for testing; `cli::run()` uses `std::env::args()` and cannot be tested without process-level arg injection.
+
+### Hard Stops
+
+None.
+
+---
+
+## Coverage Status After Iteration 2
+
+**Documented-but-unexercised**: 11 → 8 (closed: `#[verb]` proc-macro, `OutputFormat`/`format_output`, `CommandTree`/`CommandTreeBuilder`)  
+**Exercised-but-undocumented**: 0  
+**Running examples that witness the framework**: 3 → 6
+
+### Remaining Gaps (8)
+
+| Priority | Gap | Notes |
+|----------|-----|-------|
+| HIGH | `AppContext` | `src/context.rs`, public, no example |
+| MEDIUM | `Graph` + `Triple` + `GraphLoadedOutput` | `src/graph/` exists, public |
+| MEDIUM | `CapabilityRegistry` + `CapabilityPackage` | `src/capability/` exists, public |
+| MEDIUM | `DoctorOutput` + `HealthIssue` | `src/diagnostics/` exists, public |
+| LOW | `Deprecation` / `DeprecationType` | Public API |
+| LOW | `Repl` (feature `repl`) | Feature-gated, requires `--features repl` |
+| LOW | Cross-product: `VerbArgs` + `OutputFormat` + error | Composition example |
+| LOW | `ShellType` + completions | `src/shell.rs` + `docs/howto/completions.md` |

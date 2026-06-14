@@ -238,6 +238,34 @@ path = "examples/reference/context.rs"
 name = "ref_root_verb"
 path = "examples/reference/root_verb.rs"
 
+# =============================================================================
+# COVERAGE EXAMPLES - Bijective doc-coverage witnesses (DOC_COVERAGE_LOG.md)
+# =============================================================================
+
+[[example]]
+name = "core_api"
+path = "examples/core_api.rs"
+
+[[example]]
+name = "verb_args"
+path = "examples/verb_args.rs"
+
+[[example]]
+name = "error_handling"
+path = "examples/error_handling.rs"
+
+[[example]]
+name = "proc_macro_verb"
+path = "examples/proc_macro_verb.rs"
+
+[[example]]
+name = "output_formats"
+path = "examples/output_formats.rs"
+
+[[example]]
+name = "command_tree"
+path = "examples/command_tree.rs"
+
 [package.metadata.docs.rs]
 # docs.rs build configuration
 rustdoc-args = ["--cfg", "docsrs"]
@@ -251,7 +279,7 @@ unsafe_code = "allow"
 bare_trait_objects = "warn"
 # Allow kani cfg condition for formal verification (optional external tool)
 # Also allow docsrs for documentation build
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async", "wizard"))'] }
 # Allow dead code for v5.1 feature placeholders
 dead_code = "allow"
 # Allow async fn in traits (stable in Rust 1.75+)
