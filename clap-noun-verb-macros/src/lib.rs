@@ -956,7 +956,15 @@ fn generate_verb_registration(
                 _ => continue,
             };
 
+            // Raw identifiers (e.g. `r#type` for the Rust keyword `type`) carry an
+            // `r#` prefix in their token string. The CLI flag and the registry key
+            // must be the bare name (`type`), never `r#type` — otherwise clap derives
+            // `--r#type`. Strip the raw-identifier prefix when deriving the CLI-facing
+            // name. (Authoritative A.5 fix: solve the Rust-keyword/CLI-flag split once
+            // in the macro, for every noun-verb CLI.)
             let arg_name_str = arg_name.to_string();
+            let arg_name_str =
+                arg_name_str.strip_prefix("r#").map(str::to_string).unwrap_or(arg_name_str);
 
             // Determine if optional (Option<T>) or required
             let is_option = is_option_type(&pat_type.ty);
@@ -1013,12 +1021,13 @@ fn generate_verb_registration(
             } else if is_vec {
                 // Vec<T> types - extract from __handler_input.args as comma-separated string, then parse
                 // The registry extracts multiple values and joins them
+                let vec_ty = &pat_type.ty;
                 arg_extractions.push(quote! {
-                    let #arg_name: #pat_type.ty = if let Some(value_str) = __handler_input.args.get(#arg_name_str) {
+                    let #arg_name: #vec_ty = if let Some(value_str) = __handler_input.args.get(#arg_name_str) {
                         // Parse comma-separated values
                         value_str.split(',')
                             .map(|s| s.trim().parse::<#vec_inner_type>())
-                            .collect::<Result<Vec<_>, _>>()
+                            .collect::<::std::result::Result<Vec<_>, _>>()
                             .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
                                 format!("Invalid value for argument '{}'", #arg_name_str)
                             ))?
@@ -1057,6 +1066,9 @@ fn generate_verb_registration(
                 syn::Pat::Ident(ident) => ident.ident.to_string(),
                 _ => continue,
             };
+            // Strip raw-identifier prefix so the clap flag is `--type`, not `--r#type`
+            // (the param is `r#type` because `type` is a Rust keyword). See A.5.
+            let arg_name = arg_name.strip_prefix("r#").map(str::to_string).unwrap_or(arg_name);
 
             let is_option = is_option_type(&pat_type.ty);
             let is_flag = is_bool_type(&pat_type.ty);
