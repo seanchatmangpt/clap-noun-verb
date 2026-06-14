@@ -5,6 +5,30 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [26.6.13] - 2026-06-13
+
+### Changed
+- **Minimalist refactor** - default feature set reduced to none; the full core
+  (noun-verb dispatch, chaining, stdin extraction, completions, introspection,
+  structured errors, telemetry, validators, graph/capability/diagnostics) is available
+  with zero feature flags
+- **Telemetry is no longer feature-gated** - `telemetry` is always compiled and
+  re-exported from the crate root (the `telemetry` Cargo feature was removed)
+
+### Fixed
+- **Eliminated all stubs and cheats** across production, macros, and tests:
+ - `graph::execute_query` now performs real graph lookups instead of returning hardcoded triples
+ - `diagnostics::doctor` reports honest health counts and runs `CommandRegistry::validate()` instead of unconditional success
+ - `registry::load_ontology_verbs` returns `Err` when registration fails instead of a fake count
+ - `capability::pack::package_exists` does a real registry lookup instead of a string-prefix check
+ - `ontology_sync` RemoveFromOntology rewrites the `.nt` file instead of no-oping
+ - `noun!` macro E0434 fixed by evaluating verb expressions once via `Arc<dyn VerbCommand>`
+ - `#[auto_test]`, executable-specs, and economic-simulation macros now emit falsifiable code instead of `assert!(true)`
+
+### Docs
+- Refactored 18 ignored doctests into compile-checked `no_run`, `text`, or runnable
+  examples (0 ignored; 47 doctests pass)
+
 ## [26.6.1] - 2026-06-01
 
 ### Added
