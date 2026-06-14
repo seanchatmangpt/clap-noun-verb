@@ -1,0 +1,53 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//
+// Thin verb wrapper rendered from O* by ggen. The pack is authoritative for the
+// CLI *interface* only; the body delegates to a stable consumer-implemented
+// handler. There is NO logic slot here — business logic lives behind the seam in
+// `crate::handlers::*`, which is hand-written (a missing impl is a compile error).
+//
+// Consumed query columns (verb-signatures.rq): noun_name, verb_name, verb_about,
+// return_type, handler_name, args.
+
+//! `{{ noun_name }} {{ verb_name }}` verb (rendered).
+
+use clap_noun_verb::Result;
+use clap_noun_verb_macros::verb;
+
+{# Rust reserved set (strict + reserved-for-future) for raw-identifier escaping. #}
+{%- set reserved = ["as","break","const","continue","crate","dyn","else","enum","extern","false","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub","ref","return","self","Self","static","struct","super","trait","true","try","type","unsafe","use","where","while","async","await","abstract","become","box","do","final","macro","override","priv","typeof","unsized","virtual","yield"] -%}
+{%- if verb_about %}
+/// {{ verb_about }}
+{%- endif %}
+#[verb("{{ verb_name }}", "{{ noun_name }}")]
+pub fn {{ handler_name }}(
+{%- if args %}
+{%- for spec in args | split(pat="@@") %}
+{%- set parts = spec | split(pat="|") %}
+{%- set field = parts[0] %}
+{%- set rust_type = parts[1] %}
+{%- set required = parts[2] %}
+{%- set positional = parts[4] | default(value="") %}
+{%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
+{%- if positional %}
+    #[arg(index = {{ positional }})]
+{%- endif %}
+{%- if required == "true" %}
+    {{ ident }}: {{ rust_type }},
+{%- else %}
+    {{ ident }}: Option<{{ rust_type }}>,
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+) -> Result<{{ return_type }}> {
+    crate::handlers::{{ handler_name }}(
+{%- if args %}
+{%- for spec in args | split(pat="@@") %}
+{%- set parts = spec | split(pat="|") %}
+{%- set field = parts[0] %}
+{%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
+        {{ ident }},
+{%- endfor %}
+{%- endif %}
+    )
+}

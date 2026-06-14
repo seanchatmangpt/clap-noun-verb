@@ -149,6 +149,50 @@ cnv:hasArgumentName a rdf:Property ;
     rdfs:range xsd:string ;
     a owl:DatatypeProperty .
 
+# ----------------------------------------------------------------------------
+# CLI-FLAG vs RUST-FIELD-IDENTIFIER SPLIT (R2 — sanitizer spec, pinned)
+# ----------------------------------------------------------------------------
+# cnv:hasArgumentName  = the CLI flag the user types  (e.g. "dry-run", "type").
+# cnv:fieldName        = the Rust identifier the generated #[verb] uses for the
+#                        parameter. OPTIONAL. When ABSENT it DEFAULTS to the
+#                        SANITIZED flag name, per the spec below.
+#
+# SANITIZER SPEC (authoritative; every consumer of this pack inherits it).
+# The template/query that materialises the field name MUST implement exactly:
+#
+#   (a) Rust keyword  -> RAW-IDENTIFIER escaping, name preserved.
+#         "type"   -> r#type        "match" -> r#match     "move" -> r#move
+#       Never rename (no `type_`); never silently drop. The full reserved set
+#       (strict + reserved-for-future) is escaped: as,break,const,continue,
+#       crate,dyn,else,enum,extern,false,fn,for,if,impl,in,let,loop,match,mod,
+#       move,mut,pub,ref,return,self,Self,static,struct,super,trait,true,try,
+#       type,unsafe,use,where,while,async,await,abstract,become,box,do,final,
+#       macro,override,priv,typeof,unsized,virtual,yield.
+#       (`r#self`/`r#crate`/`r#super`/`r#Self` are NOT valid raw idents; none of
+#        them are legal CLI flag names that survive (b) either, so they cannot
+#        arise — but if authored explicitly via cnv:fieldName they are rejected.)
+#
+#   (b) kebab -> snake: every '-' in the flag becomes '_'  ("dry-run"->"dry_run"),
+#       WITH COLLISION DETECTION THAT ERRORS. If two distinct flags on the same
+#       verb sanitize to the same Rust field name (e.g. "dry-run" and "dry_run",
+#       or "dry-run" and "dry.run"), generation MUST FAIL — never silently merge.
+#       This is enforced by validation rule cnv-fieldname-collision (see the
+#       pack ggen.toml and ontology/queries/fieldname-collision.rq).
+#
+#   (c) leading-digit / empty -> REJECT. A field name that is empty or whose
+#       first char (after sanitisation) is an ASCII digit is not a legal Rust
+#       identifier and MUST be rejected, not coerced (no `_2fa` invention).
+#
+# An explicit cnv:fieldName OVERRIDES the default and is taken verbatim, but is
+# itself subject to (a)/(c) validity and (b) collision detection.
+
+cnv:fieldName a rdf:Property ;
+    rdfs:label "Rust field name"@en ;
+    rdfs:comment "The Rust parameter identifier the generated #[verb] uses for this argument, distinct from the CLI flag (cnv:hasArgumentName). Optional; when absent it defaults to the sanitized flag name. Sanitizer: (a) Rust keyword -> raw identifier r#kw (name preserved); (b) kebab->snake with ERRORING collision detection (never silent merge); (c) leading-digit/empty -> reject."@en ;
+    rdfs:domain cnv:Argument ;
+    rdfs:range xsd:string ;
+    a owl:DatatypeProperty .
+
 cnv:shortName a rdf:Property ;
     rdfs:label "short name"@en ;
     rdfs:comment "Single-character short form (e.g., -v for --verbose)"@en ;
