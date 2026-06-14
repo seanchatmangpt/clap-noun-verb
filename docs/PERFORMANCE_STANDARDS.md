@@ -23,6 +23,8 @@
 10. [Feature Performance Interactions](#feature-performance-interactions)
 11. [Monitoring & Regression Detection](#monitoring--regression-detection)
 12. [Decision Frameworks & Acceptable Trade-offs](#decision-frameworks--acceptable-trade-offs)
+13. [Measurement Tools & Scripts](#measurement-tools--scripts)
+14. [Performance Toolkit](#performance-toolkit)
 
 ---
 
@@ -1350,6 +1352,429 @@ cargo bench --all-features -- --baseline main
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-06-14 | Initial comprehensive standards document |
+
+---
+
+## Measurement Tools & Scripts
+
+### 1. Automated Performance Measurement
+
+#### Shell Script: `scripts/measure_performance.sh`
+
+Create at `/home/user/clap-noun-verb/scripts/measure_performance.sh`:
+
+```bash
+#!/bin/bash
+# Comprehensive performance measurement script
+# Usage: ./scripts/measure_performance.sh [--save-baseline] [--compare]
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Thresholds
+COMPILE_THRESHOLD_MS=2000
+BINARY_THRESHOLD_MB=10
+TEST_THRESHOLD_S=1
+DOC_THRESHOLD_S=15
+
+echo "════════════════════════════════════════════════════════════════"
+echo "  Performance Measurement Suite"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+
+# 1. INCREMENTAL COMPILATION
+echo "📊 Measuring incremental compilation time..."
+touch src/lib.rs
+START=$(date +%s%N)
+cargo build --quiet 2>/dev/null
+END=$(date +%s%N)
+COMPILE_MS=$(( (END - START) / 1000000 ))
+
+if [ $COMPILE_MS -lt $COMPILE_THRESHOLD_MS ]; then
+    echo -e "${GREEN}✅ Incremental compile: ${COMPILE_MS}ms (threshold: ${COMPILE_THRESHOLD_MS}ms)${NC}"
+else
+    echo -e "${RED}❌ Incremental compile SLOW: ${COMPILE_MS}ms (threshold: ${COMPILE_THRESHOLD_MS}ms)${NC}"
+fi
+echo ""
+
+# 2. BINARY SIZE
+echo "📊 Measuring binary size..."
+cargo build --release --quiet 2>/dev/null
+SIZE_BYTES=$(du -b target/release/clap_noun_verb 2>/dev/null | cut -f1)
+SIZE_MB=$(( SIZE_BYTES / 1024 / 1024 ))
+
+if [ $SIZE_MB -lt $BINARY_THRESHOLD_MB ]; then
+    echo -e "${GREEN}✅ Binary size: ${SIZE_MB}MB (threshold: ${BINARY_THRESHOLD_MB}MB)${NC}"
+else
+    echo -e "${RED}❌ Binary size TOO LARGE: ${SIZE_MB}MB (threshold: ${BINARY_THRESHOLD_MB}MB)${NC}"
+fi
+echo ""
+
+# 3. TEST EXECUTION
+echo "📊 Measuring test execution time..."
+START=$(date +%s)
+cargo test --quiet 2>/dev/null
+END=$(date +%s)
+TEST_S=$((END - START))
+
+if [ $TEST_S -lt $TEST_THRESHOLD_S ]; then
+    echo -e "${GREEN}✅ Test suite: ${TEST_S}s (threshold: ${TEST_THRESHOLD_S}s)${NC}"
+else
+    echo -e "${YELLOW}⚠️  Test suite slow: ${TEST_S}s (threshold: ${TEST_THRESHOLD_S}s)${NC}"
+fi
+echo ""
+
+# 4. DOCUMENTATION BUILD
+echo "📊 Measuring documentation build time..."
+START=$(date +%s)
+cargo doc --no-deps --quiet 2>/dev/null
+END=$(date +%s)
+DOC_S=$((END - START))
+
+if [ $DOC_S -lt $DOC_THRESHOLD_S ]; then
+    echo -e "${GREEN}✅ Doc build: ${DOC_S}s (threshold: ${DOC_THRESHOLD_S}s)${NC}"
+else
+    echo -e "${YELLOW}⚠️  Doc build slow: ${DOC_S}s (threshold: ${DOC_THRESHOLD_S}s)${NC}"
+fi
+echo ""
+
+# 5. BENCHMARKS
+echo "📊 Running benchmarks..."
+if [ "$1" = "--save-baseline" ]; then
+    cargo bench --quiet -- --save-baseline main 2>/dev/null
+    echo -e "${GREEN}✅ Benchmarks saved as 'main' baseline${NC}"
+elif [ "$1" = "--compare" ]; then
+    cargo bench --quiet -- --baseline main 2>/dev/null
+    echo -e "${GREEN}✅ Benchmark comparison complete${NC}"
+else
+    cargo bench --quiet 2>/dev/null
+    echo -e "${GREEN}✅ Benchmarks executed${NC}"
+fi
+echo ""
+
+# 6. DEPENDENCY ANALYSIS
+echo "📊 Analyzing dependencies..."
+DUP_COUNT=$(cargo tree --duplicates 2>/dev/null | wc -l)
+if [ $DUP_COUNT -gt 1 ]; then
+    echo -e "${YELLOW}⚠️  Found duplicate dependencies:${NC}"
+    cargo tree --duplicates | head -5
+else
+    echo -e "${GREEN}✅ No significant duplicate dependencies${NC}"
+fi
+echo ""
+
+# SUMMARY
+echo "════════════════════════════════════════════════════════════════"
+echo "  Performance Summary"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+echo "Compile Time: ${COMPILE_MS}ms (target: ≤${COMPILE_THRESHOLD_MS}ms)"
+echo "Binary Size:  ${SIZE_MB}MB (target: ≤${BINARY_THRESHOLD_MB}MB)"
+echo "Test Speed:   ${TEST_S}s (target: <${TEST_THRESHOLD_S}s)"
+echo "Doc Build:    ${DOC_S}s (target: ≤${DOC_THRESHOLD_S}s)"
+echo ""
+```
+
+#### Usage:
+
+```bash
+# Run full measurement
+./scripts/measure_performance.sh
+
+# Save baseline
+./scripts/measure_performance.sh --save-baseline
+
+# Compare against baseline
+./scripts/measure_performance.sh --compare
+```
+
+### 2. Cargo Make Integration
+
+All measurements are integrated into `Makefile.toml`:
+
+```bash
+# SLO validation
+cargo make slo-check              # Quick check
+cargo make release-validate       # Full audit
+
+# Benchmarking
+cargo make bench                  # Run benchmarks
+cargo make bench-baseline         # Save baseline
+cargo make bench-compare          # Compare to baseline
+```
+
+### 3. Profiling Tools
+
+**For compile-time analysis**:
+
+```bash
+# Identify slow crates
+cargo build -v 2>&1 | grep "Compiling" | sort -k4 -rn | head -10
+
+# Expansion analysis
+cargo install cargo-expand
+cargo expand --lib > /tmp/expanded.rs
+wc -l /tmp/expanded.rs
+
+# Time per phase
+RUSTFLAGS="-Z time-passes" cargo build 2>&1 | grep "time:"
+```
+
+**For runtime analysis**:
+
+```bash
+# CPU flamegraph (Linux/macOS)
+cargo install flamegraph
+cargo flamegraph --bench dispatch -- --profile-time 10
+
+# Memory profiling
+/usr/bin/time -v cargo build 2>&1 | grep "Maximum resident"
+
+# Perf (Linux)
+perf record cargo test --quiet
+perf report
+```
+
+### 4. CI Integration
+
+Add to `.github/workflows/performance.yml`:
+
+```yaml
+name: Performance Regression Detection
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+
+      - name: Measure compile time
+        run: |
+          touch src/lib.rs
+          time cargo build --quiet
+
+      - name: Check binary size
+        run: |
+          cargo build --release --quiet
+          SIZE=$(du -b target/release/clap_noun_verb | cut -f1)
+          LIMIT=$((10 * 1024 * 1024))
+          if [ $SIZE -gt $LIMIT ]; then
+            echo "Binary size regression: $((SIZE / 1024 / 1024))MB > 10MB"
+            exit 1
+          fi
+
+      - name: Test execution time
+        run: time cargo test --quiet
+
+      - name: Save benchmark baseline
+        if: github.ref == 'refs/heads/main'
+        run: cargo bench --quiet -- --save-baseline main
+
+      - name: Compare benchmarks
+        if: github.ref != 'refs/heads/main'
+        run: cargo bench --quiet -- --baseline main || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: target/criterion/
+```
+
+---
+
+## Performance Toolkit
+
+### 1. Essential Commands Reference
+
+```bash
+# SLOs & Validation
+cargo make slo-check                    # Quick SLO check
+cargo make release-validate             # Full performance audit
+
+# Compile Time
+time cargo build                        # Incremental (dev)
+time cargo build --release              # Incremental (release)
+cargo clean && time cargo build         # Clean build
+
+# Binary Size
+du -h target/release/clap_noun_verb     # Release binary
+du -h target/release/                   # All binaries
+cargo build --release --no-default-features  # Minimal
+
+# Testing
+cargo make test                         # Parallel (fast)
+cargo make test-lib-deterministic       # Single-threaded (safe)
+cargo make test-all                     # All features
+cargo make test-frontier-matrix         # All combinations (slow)
+
+# Benchmarking
+cargo make bench                        # Run all
+cargo make bench-baseline               # Save "main" baseline
+cargo make bench-compare                # Compare to "main"
+
+# Analysis
+cargo tree --duplicates                 # Find duplicate deps
+cargo tree --depth 1                    # Direct deps only
+cargo expand --lib | wc -l              # Macro expansion size
+RUSTFLAGS="-Z time-passes" cargo build  # Timing by phase
+
+# Feature Testing
+cargo test --features repl --quiet
+cargo test --features otel --quiet
+cargo test --all-features --quiet
+```
+
+### 2. Investigation Flowchart
+
+**Problem**: Slow incremental compilation (>2s)
+
+```
+1. Check dependencies
+   cargo tree --duplicates
+
+2. Identify slow crate
+   cargo build -v 2>&1 | grep "Compiling" | tail -10
+
+3. Check feature usage
+   cargo build --no-default-features
+   (Compare times)
+
+4. Profile with flamegraph
+   cargo install flamegraph
+   cargo flamegraph --bench dispatch
+
+5. Fix: Remove/gate dependency or optimize code
+```
+
+**Problem**: Large binary (>10MB)
+
+```
+1. Check features
+   cargo build --release --no-default-features
+   du -h target/release/
+
+2. Compare sizes
+   for feature in repl otel federated-network; do
+     cargo build --release --features $feature
+     du -h target/release/clap_noun_verb
+   done
+
+3. Strip symbols
+   strip target/release/clap_noun_verb
+   du -h target/release/clap_noun_verb
+
+4. Fix: Disable unnecessary features or use LTO
+```
+
+**Problem**: Tests slow (>1s)
+
+```
+1. Measure parallel
+   time cargo test --quiet
+
+2. Measure serial
+   RUST_TEST_THREADS=1 time cargo test --quiet
+
+3. Find slow test
+   cargo test --quiet -- --nocapture 2>&1 | grep -E "test.*ok"
+
+4. Check for I/O in test code
+   grep -r "fs::read\|fs::write" tests/
+   grep -r "sleep\|delay" tests/
+
+5. Fix: Mock I/O, remove sleeps, mark #[ignore]
+```
+
+### 3. Optimization Prioritization Matrix
+
+| Issue | Impact | Effort | Priority |
+|-------|--------|--------|----------|
+| Incremental >2s | High | High | 1 |
+| Binary >10MB | Medium | Medium | 2 |
+| Test >1s | Low | Low | 3 |
+| Macro expansion >1ms/verb | Low | High | 4 |
+| Doc build >15s | Low | Medium | 5 |
+
+### 4. Acceptable Trade-offs
+
+✅ **Accept**:
+- Binary size +100KB for major feature
+- Compile time +50ms for useful feature
+- Test time +50ms for comprehensive test
+- Memory usage +5MB during CI if infrastructure handles it
+
+⚠️ **Maybe** (requires justification):
+- Binary size +500KB for feature
+- Compile time +100ms for feature
+- Test time +200ms for test
+- Memory leak detected (must be fixed)
+
+❌ **Reject**:
+- Binary size >10MB total
+- Incremental compile >2.0s
+- Test suite >1.0s total
+- Compile time regression from any change
+- Memory leaks (zero tolerance)
+
+### 5. Quick Reference Card
+
+**For Contributors**: Before committing a change:
+
+```bash
+# 1. Quick check
+cargo make slo-check
+
+# 2. Run tests
+cargo make test-lib-deterministic
+
+# 3. Check compilation
+cargo make check-all
+
+# 4. Lint
+cargo make clippy
+
+# 5. Format
+cargo make format
+```
+
+**For Maintainers**: Before releasing:
+
+```bash
+# 1. Full validation
+cargo make release-validate
+
+# 2. Check all features
+cargo make test-frontier-matrix
+
+# 3. Verify benchmarks
+cargo make bench-compare
+
+# 4. Build release binary
+cargo make build-release
+
+# 5. Verify SLOs
+cargo make slo-check
+```
 
 ---
 

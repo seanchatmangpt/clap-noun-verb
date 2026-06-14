@@ -1519,4 +1519,441 @@ cargo make publish-all
 
 ---
 
+## Appendix A: Automation Scripts
+
+### A1. Complete Pre-Release Validation Script
+
+Create this as `scripts/release-validate-all.sh`:
+
+```bash
+#!/bin/bash
+set -e
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+    echo "Usage: ./scripts/release-validate-all.sh 26.6.15"
+    exit 1
+fi
+
+echo "========================================="
+echo "PRE-RELEASE VALIDATION: $VERSION"
+echo "========================================="
+
+# Run all 7 gates
+echo ""
+echo "[1/7] Testing..."
+cargo make test-all || exit 1
+
+echo ""
+echo "[2/7] Linting (format + clippy)..."
+cargo fmt --check || exit 1
+cargo clippy -- -D warnings || exit 1
+
+echo ""
+echo "[3/7] Security audit..."
+cargo audit || exit 1
+cargo deny check licenses || exit 1
+
+echo ""
+echo "[4/7] SLO checks..."
+cargo make build-release
+SIZE=$(du -b target/release/clap-noun-verb-gen | awk '{print $1}')
+if [ "$SIZE" -gt 10485760 ]; then
+    echo "✗ Binary size too large: $(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo $SIZE bytes)"
+    exit 1
+fi
+echo "✓ Binary size: $(numfmt --to=iec-i --suffix=B $SIZE 2>/dev/null || echo $SIZE bytes)"
+
+echo ""
+echo "[5/7] Documentation..."
+if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+    echo "✗ CHANGELOG.md missing [$VERSION] section"
+    exit 1
+fi
+echo "✓ CHANGELOG.md validated"
+
+echo ""
+echo "[6/7] Examples..."
+cargo make build-examples || exit 1
+
+echo ""
+echo "[7/7] Git status..."
+if [ -n "$(git status --porcelain)" ]; then
+    echo "✗ Working directory not clean"
+    exit 1
+fi
+echo "✓ Git status clean"
+
+echo ""
+echo "========================================="
+echo "✓ ALL GATES PASSED - READY FOR RELEASE"
+echo "========================================="
+```
+
+### A2. Hotfix Script
+
+Create this as `scripts/hotfix-release.sh`:
+
+```bash
+#!/bin/bash
+set -e
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+    echo "Usage: ./scripts/hotfix-release.sh 26.6.15"
+    exit 1
+fi
+
+echo "⚠️  HOTFIX RELEASE: $VERSION"
+echo "This should ONLY be used for critical bug fixes"
+echo ""
+read -p "Continue? (yes/no): " confirm
+if [ "$confirm" != "yes" ]; then
+    exit 0
+fi
+
+# 1. Validate
+./scripts/release-validate-all.sh "$VERSION"
+
+# 2. Publish
+echo ""
+echo "Publishing..."
+cargo make publish-dry-run-macros
+cargo make publish-macros
+sleep 5
+cargo make publish-dry-run
+cargo make publish
+
+# 3. Tag
+git tag -a "v$VERSION" -m "Hotfix: $VERSION"
+git push origin "v$VERSION"
+
+echo ""
+echo "✓ Hotfix v$VERSION released"
+echo "Next: Monitor GitHub Issues and crates.io downloads"
+```
+
+### A3. Checklist Generator
+
+Create this as `scripts/generate-release-checklist.sh`:
+
+```bash
+#!/bin/bash
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+    echo "Usage: ./scripts/generate-release-checklist.sh 26.6.15"
+    exit 1
+fi
+
+cat > "/tmp/release-checklist-$VERSION.md" <<EOF
+# Release v$VERSION Checklist
+
+**Start Date**: $(date +%Y-%m-%d)
+**Target Version**: $VERSION
+
+## Phase 1: Pre-Release Validation (Day Before)
+
+### Quality Gates
+- [ ] Gate 1: Run \`cargo make test-all\` - All tests pass
+- [ ] Gate 2: Run \`cargo fmt --check && cargo clippy -- -D warnings\` - Zero warnings
+- [ ] Gate 3: Run \`cargo audit && cargo deny check\` - No vulns or license issues
+- [ ] Gate 4: Check binary size <10MB: \`du -h target/release/clap-noun-verb-gen\`
+- [ ] Gate 5: CHANGELOG.md has [$VERSION] section with user-facing changes
+- [ ] Gate 6: Examples build: \`cargo make build-examples\`
+- [ ] Gate 7: Git status clean: \`git status\`
+
+### Documentation
+- [ ] README.md examples updated to $VERSION
+- [ ] All public APIs have doc comments
+- [ ] No \`#[doc(hidden)]\` on stable public APIs
+- [ ] Migration guide exists (if MAJOR release)
+
+## Phase 2: Version & Changelog (Release Day Morning)
+
+- [ ] Run: \`./scripts/bump-version.sh $VERSION\`
+- [ ] Verify all Cargo.toml files show version $VERSION
+- [ ] Update CHANGELOG.md (move [Unreleased] to [$VERSION])
+- [ ] Commit: \`git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md\`
+- [ ] Commit: \`git commit -m "chore(release): bump to $VERSION"\`
+- [ ] Create release notes: \`release-notes-$VERSION.md\`
+
+## Phase 3: Publishing (Release Day)
+
+### Macros Crate
+- [ ] Dry-run: \`cargo make publish-dry-run-macros\`
+- [ ] Publish: \`cargo make publish-macros\`
+- [ ] Wait for indexing: \`for i in {1..30}; do cargo search clap-noun-verb-macros --limit 1 && break; sleep 2; done\`
+
+### Main Crate
+- [ ] Dry-run: \`cargo make publish-dry-run\`
+- [ ] Publish: \`cargo make publish\`
+- [ ] Wait for indexing: \`for i in {1..30}; do cargo search clap-noun-verb --limit 1 | grep $VERSION && break; sleep 2; done\`
+
+### Verification
+- [ ] Verify both on crates.io: \`cargo search clap-noun-verb | head -5\`
+- [ ] Check docs.rs (5-10 min delay): https://docs.rs/clap-noun-verb/$VERSION/
+
+## Phase 4: Artifacts & Release
+
+- [ ] Create GitHub Release via: \`gh release create v$VERSION --notes-file release-notes-$VERSION.md\`
+- [ ] Or manually at: https://github.com/seanchatmangpt/clap-noun-verb/releases
+- [ ] Upload release notes to GitHub Release
+- [ ] Mark as "Latest" (if not pre-release)
+
+## Phase 5: Testing
+
+- [ ] Smoke test published version: \`./scripts/smoke-test-published.sh $VERSION\`
+- [ ] Integration test examples: \`./scripts/integration-test-examples.sh\`
+- [ ] Platform tests (GitHub Actions): https://github.com/seanchatmangpt/clap-noun-verb/actions
+
+## Phase 6: Post-Release (24 hours)
+
+- [ ] Monitor GitHub Issues for regressions
+- [ ] Monitor crates.io download stats
+- [ ] Check docs.rs documentation fully built
+- [ ] Update installation docs if needed
+- [ ] Announce release (Twitter/blog if applicable)
+
+## Phase 7: Sign-Off
+
+- [ ] All artifacts published and accessible
+- [ ] No critical issues reported
+- [ ] Maintainer approval: _____________________
+- [ ] Sign-off date: $(date +%Y-%m-%d)
+
+---
+
+**Status**: [ ] NOT STARTED [ ] IN PROGRESS [ ] COMPLETE
+
+**Notes**:
+EOF
+
+echo "✓ Checklist generated: /tmp/release-checklist-$VERSION.md"
+cat "/tmp/release-checklist-$VERSION.md"
+```
+
+---
+
+## Appendix B: Environment Setup
+
+### B1. Crates.io Token
+
+```bash
+# 1. Get token from https://crates.io/me → API Tokens
+# 2. Set environment variable (temporary, for this shell)
+export CARGO_REGISTRY_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+# OR (persistent, for all shells)
+echo '[registries.crates-io]' >> ~/.cargo/credentials.toml
+echo 'token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."' >> ~/.cargo/credentials.toml
+chmod 600 ~/.cargo/credentials.toml
+```
+
+### B2. Git Configuration
+
+```bash
+# Configure GPG signing (optional but recommended)
+git config user.signingkey <GPG_KEY_ID>
+
+# Enable signature verification
+git config commit.gpgsign true
+
+# Or for this session only
+git -c commit.gpgsign=false ...  # (not recommended)
+```
+
+### B3. GitHub CLI
+
+```bash
+# Install gh if needed
+brew install gh  # macOS
+# or download from https://cli.github.com
+
+# Authenticate
+gh auth login
+
+# Verify
+gh repo view seanchatmangpt/clap-noun-verb
+```
+
+---
+
+## Appendix C: Troubleshooting Matrix
+
+| Issue | Diagnosis | Solution |
+|-------|-----------|----------|
+| **Test failure** | `cargo make test-all` fails | Check logs for flaky tests; use `RUST_TEST_THREADS=1 cargo test` to isolate |
+| **Clippy warning** | `cargo clippy -- -D warnings` fails | Run `cargo clippy --fix` to auto-fix, then review changes |
+| **Binary size bloat** | >10MB release binary | Enable LTO: add `[profile.release] lto = true` to Cargo.toml |
+| **Slow compile** | >2s incremental compile | Profile with `cargo build -Z timings`, optimize macros or split crates |
+| **Doc link broken** | `cargo doc` shows unresolved links | Fix `[link]` references in doc comments (paths must be exact) |
+| **Macros not indexed** | `cargo search clap-noun-verb-macros` empty | Wait 30-60 seconds, check crates.io API status, or check token |
+| **Main crate won't publish** | "dependency X not found" | Wait for macros to index (60+ seconds) or check token permissions |
+| **Example won't build** | `cargo build --examples` fails | Check example dependencies in Cargo.toml `[[example]]` section |
+| **Git status not clean** | Uncommitted/untracked files | `git add .` then `git commit` or `.gitignore` untracked files |
+| **CHANGELOG missing** | "[$VERSION] not found" | Copy `[Unreleased]` section and replace header with `[VERSION] - DATE` |
+
+---
+
+## Appendix D: Release Decision Tree
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Ready to release clap-noun-verb?                        │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+        ┌─────────────────────────────┐
+        │ What changed since v26.6.13?│
+        └────────────┬────────────────┘
+                     │
+        ┌────────────┼────────────────┐
+        │            │                │
+        ▼            ▼                ▼
+    ┌──────┐   ┌────────┐        ┌──────────┐
+    │ BUG  │   │FEATURE │        │BREAKING  │
+    │ FIX  │   │  ADD   │        │  CHANGE  │
+    └──┬───┘   └───┬────┘        └────┬─────┘
+       │           │                  │
+       ▼           ▼                  ▼
+    PATCH      MINOR              MAJOR
+   (26.6.15)  (26.7.0)           (27.0.0)
+       │           │                  │
+       └───────────┼──────────────────┘
+               ┌───▼────────┐
+               │ Version OK?│
+               └───┬────────┘
+                   │
+      ┌────────────┴────────────┐
+      ▼                         ▼
+   YES: Continue          NO: Reconsider
+   Release              Change scope
+```
+
+---
+
+## Appendix E: Release Communication Templates
+
+### E1. PATCH Release (Bug Fix)
+
+```markdown
+**v26.6.15: Bug Fix Release**
+
+This patch release fixes a critical issue in CommandRegistry when handling empty args.
+
+### What's Fixed
+- Fixed panic when CommandRegistry receives empty string arguments (#156)
+- Fixed macro double-evaluation in #[verb] attribute (#157)
+
+### Installation
+```bash
+cargo add clap-noun-verb@26.6.15
+```
+
+### Changelog
+[Full changelog](CHANGELOG.md#26615---2026-06-15)
+
+No action required for existing users.
+```
+
+### E2. MINOR Release (New Feature)
+
+```markdown
+**v26.7.0: Graph Module & Diagnostics Release**
+
+This release adds graph querying, capability packing, and system diagnostics.
+
+### Major Features
+- **Graph Module**: Load and query RDF files (Turtle, N-Triples, RDF/XML)
+- **Capability Packing**: Registry-based metadata management
+- **Diagnostics**: Health checks and status reporting
+
+### Bug Fixes
+- Fixed panic in CommandRegistry with empty args (#156)
+- Improved error messages with color and suggestions
+
+### Installation
+```bash
+cargo add clap-noun-verb@26.7.0
+```
+
+### Migration
+This is a backward-compatible release. No migration needed.
+
+[Full changelog](CHANGELOG.md#2670---2026-07-01)
+```
+
+### E3. MAJOR Release (Breaking Change)
+
+```markdown
+**v27.0.0: API Redesign & Async Support**
+
+⚠️ This release contains breaking changes. See migration guide.
+
+### Breaking Changes
+- `CommandRegistry::run()` → `CommandRegistry::dispatch()`
+- `#[verb] fn() -> Result<T>` → `#[verb] async fn() -> Result<T>`
+- `HandlerInput::raw_args` → `HandlerInput::args()` (returns reference)
+
+### New Features
+- Full async/await support for verb handlers
+- Improved error messages with suggestions
+- New graph query API
+
+### Migration Guide
+👉 [See MIGRATION_V26_TO_V27.md](docs/MIGRATION_V26_TO_V27.md)
+
+### Installation
+```bash
+cargo add clap-noun-verb@27.0.0
+```
+
+[Full changelog](CHANGELOG.md#2700---2026-08-01)
+
+### Need Help?
+- Check [migration guide](docs/MIGRATION_V26_TO_V27.md)
+- Open [GitHub Discussion](https://github.com/seanchatmangpt/clap-noun-verb/discussions)
+```
+
+---
+
+## Appendix F: Post-Release Monitoring
+
+### 24-Hour Window
+
+**Critical checks (do these within 24 hours)**:
+
+```bash
+# 1. Check crates.io
+curl -s https://crates.io/api/v1/crates/clap-noun-verb/26.6.15 | jq '.crate.downloads'
+
+# 2. Check docs.rs
+open https://docs.rs/clap-noun-verb/26.6.15/
+
+# 3. Check GitHub Issues for "regression" label
+gh issue list --label regression --label "v26.6.15"
+
+# 4. Check GitHub Actions
+gh run list --workflow=tests.yml -L 1
+
+# 5. Monitor downloads trend
+for i in {1..5}; do
+    echo "Hour $i: $(curl -s 'https://crates.io/api/v1/crates/clap-noun-verb/26.6.15' | jq '.crate.downloads') downloads"
+    sleep 3600
+done
+```
+
+### Weekly Window
+
+**Ongoing checks (weekly for first month)**:
+
+- [ ] Monitor GitHub Discussions for questions
+- [ ] Check for any yanked dependency reports
+- [ ] Verify no security advisories filed
+- [ ] Track issue count (should stabilize)
+- [ ] Plan next release based on community feedback
+
+---
+
 **Last Updated**: 2026-06-14 | **Version**: 26.6.14 | **Status**: Production-Ready
