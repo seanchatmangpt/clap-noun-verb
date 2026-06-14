@@ -328,65 +328,6 @@ pub fn deployment_status(
 
 ---
 
-## Output Query Filtering: `--select` and `--jsonpath`
-
-When returning structured data, it is often useful to extract or project specific elements from the JSON output directly on the command line rather than parsing the output with separate utilities like `jq`.
-
-clap-noun-verb provides global support for output query filtering via the `--select` option (with `--jsonpath` conceptual mapping):
-
-- **Simplified JSONPath**: Select elements using syntax like `$.field`, `$.array[0].name`, or `$`.
-- **JMESPath**: Evaluate complex projections and filtering expressions (e.g., `services[*].name` or `metadata.deployed_by`).
-
-### Example
-
-Using the nested deployment status payload from above:
-
-```bash
-# Select only the deployment ID
-$ myapp deployment get-status dep-123 --select "deployment_id"
-"dep-123"
-
-# Select version of the first service
-$ myapp deployment get-status dep-123 --select "services[0].version"
-"v2.1.0"
-
-# Project an array of replica counts for all services
-$ myapp deployment get-status dep-123 --select "services[*].replicas"
-[3, 2]
-```
-
-### Under the Hood
-
-The query string is automatically parsed and processed using `jmespath` before the data is serialized into the final `--format`. This guarantees that formatting applies cleanly to the filtered data.
-
----
-
-## Quiet Mode: `--format quiet`
-
-In automated scripts, CI/CD pipelines, and health checks, you may want to completely suppress standard output.
-
-You can silence the output entirely by passing `--format quiet` or `OutputFormat::Quiet`:
-
-```bash
-$ myapp services status --name api --format quiet
-# (No output printed on stdout)
-```
-
-If an execution error occurs, the command will still print the structured error to `stderr` and exit with a non-zero status code:
-
-```bash
-$ myapp services status --name invalid-service --format quiet
-{
-  "error": {
-    "kind": "ValidationError",
-    "severity": "High",
-    "message": "Service invalid-service not found"
-  }
-}
-```
-
----
-
 ## Exercise: Multi-Format User Report
 
 **Goal:** Create a user report command with JSON, YAML, and text formats
@@ -542,7 +483,7 @@ $ myapp users export --format jsonl
 
 ## Next Steps
 
-- **[Tutorial 05: Async Operations](05-async-operations.md)** - Async CLI commands
+- **[Tutorial 06: Error Handling](06-error-handling.md)** - Structured errors and recovery
 
 **Estimated time to next tutorial:** 20 minutes
 

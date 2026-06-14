@@ -233,4 +233,4 @@ myapp graph query --sparql "SELECT ?class WHERE { ?class rdf:type rdfs:Class }"
 
 - [Capability Packing](capability-packing.md) - Managing graph-based capabilities
 - [System Diagnostics](diagnostics.md) - Health checks for graph module
-- [Reference: Graph API](../reference/api/graph.md) - Complete API documentation
+- [Reference: API Catalog](../reference/api-catalog.md) - Complete API reference

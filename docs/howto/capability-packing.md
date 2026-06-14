@@ -304,4 +304,4 @@ jq '.packs[] | select(.status == "active") | .name' /tmp/capabilities.json
 
 - [Graph Operations](graph-operations.md) - Working with RDF graphs as capabilities
 - [System Diagnostics](diagnostics.md) - Health checks for packs
-- [Reference: Capability API](../reference/api/capability.md) - Complete API documentation
+- [Reference: API Catalog](../reference/api-catalog.md) - Complete API reference

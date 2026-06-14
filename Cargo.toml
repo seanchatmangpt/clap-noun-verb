@@ -1,13 +1,13 @@
 [workspace]
-members = ["unibit-cli", "speckit-ralph", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments", "crates/c8-adversary", "crates/c8-receipts", "crates/cargo-cicd"]
+members = ["unibit-cli", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments", "crates/c8-adversary", "crates/c8-receipts", "crates/cargo-cicd"]
 # Exclude standalone playground CLI (uses published crates.io version) and vendors directory
 exclude = ["playground", "examples/playground", "examples/greet-demo", "vendors"]
 
 [workspace.dependencies]
 # CLI Framework
 clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
-clap-noun-verb = { path = ".", version = "26.6.3" }
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.13" }
+clap-noun-verb = { path = ".", version = "26.6.14" }
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.14" }
 
 # Auto-discovery
 linkme = "0.3"
@@ -31,7 +31,7 @@ tokio = { version = "1.40", features = ["full"] }
 
 [package]
 name = "clap-noun-verb"
-version = "26.6.13"
+version = "26.6.14"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -74,6 +74,15 @@ contrib = ["process-data"]
 
 # Interactive REPL
 repl = ["dep:rustyline"]
+
+# OpenTelemetry instrumentation of the CLI dispatch path (registry run/route)
+otel = [
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "dep:tracing-opentelemetry",
+    "dep:opentelemetry",
+    "dep:opentelemetry_sdk",
+]
 
 # Federated capability network (frontier feature)
 federated-network = []
@@ -121,6 +130,13 @@ url = "2.5"
 
 # RDF/Ontology generators
 chrono = "0.4"
+
+# OpenTelemetry instrumentation (otel-weaver style), optional behind `otel` feature
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+tracing-opentelemetry = { version = "0.28", optional = true }
+opentelemetry = { version = "0.27", optional = true }
+opentelemetry_sdk = { version = "0.27", optional = true }
 
 # =============================================================================
 # DEV DEPENDENCIES - For tests, examples, and benchmarks
@@ -288,6 +304,11 @@ filter_map_identity = "allow"
 doc_lazy_continuation = "allow"
 for_kv_map = "allow"
 unnecessary_map_or = "allow"
+
+[[bench]]
+name = "dispatch"
+path = "benches/dispatch.rs"
+harness = false
 
 [[test]]
 name = "cli_tests"

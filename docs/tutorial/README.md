@@ -11,7 +11,7 @@ By the end of this tutorial series, you'll be able to:
 - ✅ Separate domain logic from CLI layer (architecture principle)
 - ✅ Test CLIs with Chicago TDD methodology
 - ✅ Handle errors professionally with thiserror
-- ✅ Use async operations for real-world CLIs
+- ✅ Handle errors professionally with structured error types
 
 ---
 
@@ -58,13 +58,7 @@ By the end of this tutorial series, you'll be able to:
  - Custom format selection
  - **Time**: 15-20 minutes
 
-5. **[Async Operations](05-async-operations.md)**
- - Async command handlers
- - Tokio runtime integration
- - HTTP requests and database queries
- - **Time**: 30-45 minutes
-
-6. **[Error Handling](06-error-handling.md)**
+5. **[Error Handling](06-error-handling.md)**
  - Result<T,E> patterns
  - Custom error types
  - Structured error output
@@ -126,10 +120,9 @@ This tutorial series follows **learning-oriented** principles:
 | [02. Adding Commands](02-adding-multiple.md) | ✅ **Available** | 10-15 min |
 | [03. Testing Basics](03-testing-basics.md) | ✅ **Available** | 20-30 min |
 | [04. Output Formats](04-output-formats.md) | ✅ **Available** | 15-20 min |
-| [05. Async Operations](05-async-operations.md) | ✅ **Available** | 30-45 min |
-| [06. Error Handling](06-error-handling.md) | ✅ **Available** | 30-45 min |
+| [05. Error Handling](06-error-handling.md) | ✅ **Available** | 30-45 min |
 
-**Total Estimated Time**: 2-3 hours for complete series
+**Total Estimated Time**: 1.5-2 hours for complete series
 
 ---
 

@@ -267,46 +267,9 @@ async fn test_concurrent_status_calls_dont_interfere() {
 
 Test code generation itself:
 
-```rust
-#[test]
-fn test_generated_code_has_proper_structure() {
-  let turtle = r#"
-  @prefix cnv: <https://cnv.dev/ontology#> .
-  cnv:Services a cnv:Noun ; cnv:name "services" .
-  cnv:Status a cnv:Verb ; cnv:name "status" ; cnv:hasNoun cnv:Services .
-  "#;
-
-  let parser = TurtleParser::new();
-  let ontology = parser.parse(turtle).unwrap();
-  let generator = CliCodeGenerator::new().unwrap();
-  let generated = generator.generate_from_ontology(&ontology).unwrap();
-
-  let code = generated.rust_code();
-
-  // Verify code structure
-  // Generated code uses #[verb("name")] syntax without #[noun]
-  assert!(code.contains("#[verb("));
-  assert!(code.contains("pub async fn"));
-  assert!(code.contains("Result<"));
-}
-
-#[test]
-fn test_generated_code_compiles() {
-  // This would typically run cargo check on generated code
-  let turtle = "...".to_string();
-  let parser = TurtleParser::new();
-  let ontology = parser.parse(&turtle).unwrap();
-  let generator = CliCodeGenerator::new().unwrap();
-  let generated = generator.generate_from_ontology(&ontology).unwrap();
-
-  // Write to temp file
-  let tmp = std::env::temp_dir().join("generated_test.rs");
-  std::fs::write(&tmp, generated.rust_code()).unwrap();
-
-  // Verify it's valid Rust syntax
-  let code: syn::File = syn::parse_file(generated.rust_code()).unwrap();
-  assert!(!code.items.is_empty());
-}
+```bash
+# Verify ggen-rendered verbs compile
+cargo make build
 ```
 
 ## Step 8: CLI Integration Tests
@@ -376,5 +339,4 @@ cargo test --test '*'
 
 **Related**:
 - [Tutorial 02: Adding Commands](../tutorial/02-adding-multiple.md)
-- [How-to: Validation](validation.md)
-- [How-to: Debugging](debugging.md)
+- [Tutorial 03: Testing Basics](../tutorial/03-testing-basics.md)

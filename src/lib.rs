@@ -19,16 +19,13 @@
 //! - `once_cell`, `lazy_static`, `atty` - Utilities
 //!
 //! All advanced features are opt-in via cargo features:
-//! - `full` - Enable all features
-//! - `autonomic` - Agent introspection & telemetry spans
-//! - `async` - Async handlers (tokio, futures)
-//! - `io` - Advanced I/O (clio)
-//! - `crypto` - Cryptographic hashing (sha2, sha3, blake3)
-//! - `agent2028` - Trillion-agent ecosystems
-//! - `rdf` - RDF/Ontology with MCP
-//! - `kernel` - Deterministic execution
+//! - `process-data` - Data processing operators
+//! - `autonomic` - Agent introspection & telemetry spans (implies `process-data`)
+//! - `contrib` - Community-contributed verbs (implies `process-data`)
+//! - `repl` - Interactive REPL mode (rustyline)
+//! - `federated-network` - Federated node discovery
 //!
-//! ## Version 26.6.1 Architecture
+//! ## Version 26.6.13 Architecture
 //!
 //! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[verb]` for declarative command registration
 //! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
@@ -45,7 +42,7 @@
 //!
 //! ## API Stability
 //!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 26.6.1 provides:
+//! This crate follows [Semantic Versioning](https://semver.org/). Version 26.6.13 provides:
 //!
 //! - **Public APIs** are stable within the same major version
 //! - **Breaking changes** only in major version bumps
@@ -62,6 +59,8 @@ pub mod error;
 pub mod logic;
 pub mod macros;
 pub mod noun;
+#[cfg(feature = "otel")]
+pub mod otel;
 pub mod registry;
 pub mod telemetry;
 pub mod tree;

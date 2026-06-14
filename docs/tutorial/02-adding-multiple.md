@@ -4,7 +4,7 @@
 **Time:** 20 minutes
 **Prerequisites:** [Tutorial 01: Domain Separation](01-domain-separation.md)
 
-> **v5.6.0 Update**: `#[noun]` is deprecated. Nouns are auto-detected from filename.
+> **Note**: `#[noun]` is deprecated. Nouns are auto-detected from filename.
 > `#[arg]` on parameters still works, but documentation style (`# Arguments` with tags) is preferred.
 > See `playground/src/commands/` for reference examples.
 

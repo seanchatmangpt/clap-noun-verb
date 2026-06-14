@@ -397,5 +397,4 @@ myapp doctor check --component graph
 
 - [Graph Operations](graph-operations.md) - Troubleshooting graph module
 - [Capability Packing](capability-packing.md) - Managing capability health
-- [Reference: Diagnostics API](../reference/api/diagnostics.md) - Complete API documentation
-- [Debugging Guide](debugging.md) - General debugging techniques
+- [Reference: API Catalog](../reference/api-catalog.md) - Complete API reference

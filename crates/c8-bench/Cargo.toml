@@ -8,7 +8,7 @@ authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
 description = "CONSTRUCT8 Performance Benchmarks - branchless hot path validation"
 
 [dependencies]
-c8-core = { path = "../c8-core" }
+c8-core = { path = "../c8-core", version = "0.1.0" }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }

@@ -11,7 +11,7 @@ description = "Construct8 Receipts - lightweight proof infrastructure for state 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
-c8-core = { path = "../c8-core" }
-c8-graph = { path = "../c8-graph" }
+c8-core = { path = "../c8-core", version = "0.1.0" }
+c8-graph = { path = "../c8-graph", version = "0.1.0" }
 
 [dev-dependencies]

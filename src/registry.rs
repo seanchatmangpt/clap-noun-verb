@@ -308,6 +308,9 @@ impl CommandRegistry {
 
     /// Route a command based on clap matches
     pub fn route(&self, matches: &ArgMatches) -> Result<()> {
+        #[cfg(feature = "otel")]
+        let _span = tracing::info_span!("clap_noun_verb.dispatch.route").entered();
+
         // Get the top-level subcommand (noun)
         let (noun_name, noun_matches) = matches.subcommand().ok_or_else(|| {
             NounVerbError::InvalidStructure { message: "No subcommand found".to_string() }
@@ -341,6 +344,14 @@ impl CommandRegistry {
         if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // First check if it's a verb
             if let Some(verb) = noun.verbs().iter().find(|v| v.name() == sub_name) {
+                #[cfg(feature = "otel")]
+                let _span = tracing::info_span!(
+                    "clap_noun_verb.dispatch.verb",
+                    noun = noun_name,
+                    verb = sub_name
+                )
+                .entered();
+
                 // Execute the verb with root matches for global args access
                 let mut context = VerbContext::new(sub_name).with_noun(noun_name);
                 context.extensions = self.extensions.clone();
@@ -376,6 +387,9 @@ impl CommandRegistry {
 
     /// Run the CLI with custom arguments
     pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
+        #[cfg(feature = "otel")]
+        let _span = tracing::info_span!("clap_noun_verb.dispatch.run", argc = args.len()).entered();
+
         // Auto-validate if enabled
         if self.config.auto_validate {
             self.validate()?;

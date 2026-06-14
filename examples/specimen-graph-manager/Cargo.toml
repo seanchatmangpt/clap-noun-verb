@@ -11,9 +11,9 @@ name = "specimen-graph-manager"
 path = "src/main.rs"
 
 [dependencies]
-# Core CLI framework v26.6.1
-clap-noun-verb = { path = "../..", version = "26.6.1" }
-clap-noun-verb-macros = { path = "../../clap-noun-verb-macros", version = "26.6.1" }
+# Core CLI framework v26.6.14
+clap-noun-verb = { path = "../..", version = "26.6.14" }
+clap-noun-verb-macros = { path = "../../clap-noun-verb-macros", version = "26.6.14" }
 
 # Auto-discovery (required for #[verb] macro)
 linkme = "0.3"
