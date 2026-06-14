@@ -1,8 +1,8 @@
 # clap-noun-verb Documentation Index
 
-**Version**: 26.6.1
+**Version**: 26.6.13
 **Framework**: [Diataxis](https://diataxis.fr/)
-**Last Updated**: 2026-06-01
+**Last Updated**: 2026-06-13
 
 ---
 
@@ -45,7 +45,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 - [Testing](howto/testing.md) - Test strategies
 - [Validation](howto/validation.md) - Input validation techniques
 
-### Advanced Features (v26.6.1+)
+### Additional Modules (v26.6.13)
 - [Graph Operations](howto/graph-operations.md) - Loading, querying, and validating RDF graphs
 - [Capability Packing](howto/capability-packing.md) - Registry-based capability management
 - [System Diagnostics](howto/diagnostics.md) - Health checks and status reporting
@@ -96,7 +96,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 ### Quick References
 - [README.md](../README.md) - Project overview and quick start
 - [AUTONOMIC.md](../AUTONOMIC.md) - Autonomic layer overview
-- [**Future Specifications Index**](future/INDEX.md) - Complete v6.0 roadmap with 10 frontier feature specs, timeline, and dependency graph
+- [**Future Specifications Index**](future/INDEX.md) - Aspirational roadmap notes (frontier feature *concepts*; not part of the shipped 26.6.13 surface)
 - [Autonomic CLI Layer Spec](future/autonomic_cli.md) - Self-healing commands, diagnostic reporting, and MAPE-K integration patterns
 - [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - Documentation verification report
 

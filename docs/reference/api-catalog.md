@@ -517,22 +517,27 @@ All types are:
 
 ```toml
 [dependencies.clap-noun-verb]
-version = "5.0.0"
+version = "26.6.13"
 features = [
-    "autonomic",  # v5 machine-grade API (telemetry, observability)
-    "mcp",        # Model Context Protocol support
-    "rdf",        # RDF/SPARQL support for ontology control
-    "plugins",    # Plugin system
-    "middleware", # Middleware system
+    "repl",         # Interactive REPL (pulls in rustyline)
+    "autonomic",    # Autonomic CI/CD policies
+    "contrib",      # Contributor helpers
+    "process-data", # Process-data pipeline hooks
 ]
 ```
 
-**Default features:** None (minimal by default)
+**Default features:** None (minimal by default).
 
-**Feature dependencies:**
-- `autonomic` → requires `telemetry`, `tracing`
-- `mcp` → requires `serde`, `serde_json`
-- `rdf` → requires `sophia`, `sparql`
+The full core surface — noun-verb dispatch, chaining `++`, stdin extraction `@-`,
+completions, `--introspect`, `--structured-errors`, **telemetry**, validators, and the
+graph/capability/diagnostics modules — is available with **no features enabled**.
+Telemetry is always compiled (it is not behind any feature flag).
+
+**Feature flags (complete list — matches `Cargo.toml`):**
+- `repl` → pulls in `rustyline` for the interactive REPL
+- `autonomic` → autonomic CI/CD policies (implies `process-data`)
+- `contrib` → contributor helpers (implies `process-data`)
+- `process-data` → process-data pipeline hooks
 
 ---
 

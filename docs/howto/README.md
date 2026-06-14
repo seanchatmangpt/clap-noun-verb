@@ -93,4 +93,4 @@ Have a recipe you want to share?
 
 ---
 
-**Note**: How-to guides follow Diataxis principles with validated v5.6.1 code examples.
+**Note**: How-to guides follow Diataxis principles with validated 26.6.13 code examples.

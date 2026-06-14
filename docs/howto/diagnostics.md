@@ -288,7 +288,7 @@ myapp doctor check --format json
   "timestamp": "2026-06-01T10:30:00Z",
   "status": "healthy",
   "overall_health": 95,
-  "version": "26.6.1",
+  "version": "26.6.13",
   "components": { ... }
 }
 ```

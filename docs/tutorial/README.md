@@ -139,4 +139,4 @@ This tutorial series follows **learning-oriented** principles:
 
 ---
 
-**Note**: Tutorials follow Diataxis principles with validated v5.6.1 code examples.
+**Note**: Tutorials follow Diataxis principles with validated 26.6.13 code examples.

@@ -107,4 +107,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: Explanation documentation follows Diataxis principles with validated v5.6.1 design.
+**Note**: Explanation documentation follows Diataxis principles with validated 26.6.13 design.

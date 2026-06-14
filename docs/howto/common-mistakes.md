@@ -382,4 +382,4 @@ If you encounter an error not covered here:
 
 ---
 
-**Last Updated:** v5.6.0 (2026-04-02)
+**Last Updated:** 26.6.13 (2026-06-13)

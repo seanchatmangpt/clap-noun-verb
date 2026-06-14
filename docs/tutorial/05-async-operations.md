@@ -50,8 +50,8 @@ async fn fetch_data() -> Result<Data> {
 
 ```toml
 [dependencies]
-clap-noun-verb = "5.6"
-clap-noun-verb-macros = "5.6"
+clap-noun-verb = "26.6.13"
+clap-noun-verb-macros = "26.6.13"
 tokio = { version = "1.0", features = ["full"] }
 reqwest = { version = "0.11", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }

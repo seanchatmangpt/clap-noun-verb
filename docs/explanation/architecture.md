@@ -191,7 +191,7 @@ The following diagram shows the major components and their relationships:
           /     |     \
           /      |      \
       Graph Module  Capability   Diagnostics
-      (v26.6.1)    Module    Module
+      (v26.6.13)   Module    Module
         |       |       |
         |       |       |
      ┌─────┴─────┐  ┌───┴───┐  ┌───┴────┐

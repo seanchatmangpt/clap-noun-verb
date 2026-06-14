@@ -2,6 +2,10 @@
 
 **File**: `src/telemetry.rs`
 
+> **Always available (as of 26.6.13):** the telemetry module is compiled unconditionally
+> and re-exported from the crate root. There is **no `telemetry` feature flag** — these
+> APIs are usable with the default (zero-feature) build.
+
 The `clap-noun-verb` telemetry module provides distributed tracing, metrics aggregation, W3C traceparent propagation, and autonomic telemetry envelope formatting for machine-to-machine integration.
 
 ---

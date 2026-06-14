@@ -212,7 +212,7 @@ specimen CLI and available to your own commands:
 ## Learn More
 
 ### Tutorials
-- [Domain Separation Architecture](docs/tutorial/02-domain-separation.md) — Learn the separation of concerns pattern
+- [Domain Separation Architecture](docs/tutorial/01-domain-separation.md) — Learn the separation of concerns pattern
 - [Tutorial Series](docs/tutorial/README.md) — 6 progressive lessons (10 mins to 2 hours)
 
 ### How-Tos
