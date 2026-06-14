@@ -1,471 +1,458 @@
-# Macro Development Skill Guide for clap-noun-verb
+# Macro Development Skill Guide for clap-noun-verb-macros
 
-**A comprehensive guide for developers working on the clap-noun-verb-macros crate**
-
-**Version**: 26.6.1 | **Last Updated**: 2025-02-14 | **Target Audience**: Macro developers
-
----
+**Version**: 26.6.1  
+**Target Audience**: Developers extending the clap-noun-verb-macros procedural macro crate  
+**Last Updated**: 2026-06-14
 
 ## Table of Contents
 
-1. [Proc-Macro Architecture](#proc-macro-architecture)
-2. [Core Macro Patterns](#core-macro-patterns)
+1. [Macro Architecture Overview](#macro-architecture-overview)
+2. [Core Proc-Macro Patterns](#core-proc-macro-patterns)
 3. [Compile-Time Validation (Poka-Yoke)](#compile-time-validation-poka-yoke)
-4. [Debugging Techniques](#debugging-techniques)
-5. [Testing Strategies](#testing-strategies)
-6. [Performance Considerations](#performance-considerations)
-7. [Frontier Features](#frontier-features)
-8. [Best Practices & Anti-Patterns](#best-practices--anti-patterns)
+4. [Common Macro Debugging Techniques](#common-macro-debugging-techniques)
+5. [Validation Pattern Library](#validation-pattern-library)
+6. [Testing Strategies](#testing-strategies)
+7. [Performance Optimization](#performance-optimization)
+8. [Real-World Examples](#real-world-examples)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Proc-Macro Architecture
+## Macro Architecture Overview
 
-### Project Structure
+### High-Level Design
 
-The `clap-noun-verb-macros` crate is organized as follows:
+The clap-noun-verb-macros crate provides procedural attribute macros for declarative CLI command registration. The architecture follows these principles:
+
+- **Compile-Time Registration**: Verbs are registered at macro expansion time using `linkme` distributed slices
+- **Type-Safe Code Generation**: Generates wrapper functions that adapt `HandlerInput` to function signatures
+- **Layered Validation**: Multiple validation passes catch errors early (return types, syntax, complexity)
+- **Zero-Runtime Overhead**: All validation happens at compile time
+
+### Macro Entry Points
+
+Located in `clap-noun-verb-macros/src/lib.rs`:
+
+| Macro | Type | Purpose | Entry Point |
+|-------|------|---------|------------|
+| `#[verb]` | proc_macro_attribute | Register command handler | Line 330 |
+| `#[noun]` | proc_macro_attribute | (Deprecated) Register noun | Line 285 |
+| `#[arg]` | proc_macro_attribute | Parameter metadata | Line 71 |
+| `#[meta_aware]` | proc_macro_attribute | Self-introspection | Line 109 |
+| `declare_span!` | proc_macro | Telemetry declaration | Line 139 |
+| `span!` | proc_macro | Telemetry instrumentation | Line 217 |
+
+### Module Organization
 
 ```
 clap-noun-verb-macros/src/
-├── lib.rs                    # Main macro entry points
-├── validation.rs             # Poka-yoke compile-time checks
-├── io_detection.rs           # Type detection for clio::Input/Output
-├── meta_framework.rs         # Self-introspecting meta-aware macro
-├── telemetry_validation.rs   # Span declaration & usage tracking
-├── rdf_generation.rs         # RDF serialization helpers
-└── macros/                   # Frontier feature macros
-    ├── mod.rs
+├── lib.rs                 # Main macro definitions (2800+ lines)
+├── validation.rs          # Poka-Yoke validation checks (700+ lines)
+├── io_detection.rs        # I/O type detection (215 lines)
+├── telemetry_validation.rs # Span validation
+├── rdf_generation.rs      # RDF triple generation
+├── meta_framework.rs      # Meta-aware introspection
+└── macros/                # Frontier feature macros
     ├── fractal_patterns.rs
     ├── federated_network.rs
     ├── semantic_composition.rs
     ├── executable_specs.rs
     ├── learning_trajectories.rs
-    ├── reflexive_testing.rs
-    └── economic_simulation.rs
-```
-
-### Macro Types in the Project
-
-| Macro | Type | Purpose | Input | Output |
-|-------|------|---------|-------|--------|
-| `#[verb]` | Attribute | Command registration | Function | Wrapper + Registry code |
-| `#[noun]` | Attribute | Noun declaration (deprecated) | Function | Deprecation warning |
-| `#[arg]` | Attribute | Parameter metadata | Function parameter attrs | Compile error if misused |
-| `#[meta_aware]` | Attribute | Self-introspection | Struct | RDF + capability methods |
-| `declare_span!` | Declarative | Telemetry span creation | Ident, string | Const assertion |
-| `span!` | Procedural | Span instrumentation | Ident, block | Instrumented code |
-
-### The `#[verb]` Macro Flow
-
-```
-                    ┌─────────────────────┐
-                    │  Function Input     │
-                    │  #[verb("status")]  │
-                    │  fn show_status()   │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Parse Arguments    │
-                    │  & Attributes       │
-                    └──────────┬──────────┘
-                               │
-                    ┌──────────┴──────────┬──────────────┬──────────────┐
-                    │                     │              │              │
-                    ▼                     ▼              ▼              ▼
-          ┌──────────────────┐  ┌──────────────┐ ┌──────────────┐ ┌──────┐
-          │ Validate Return  │  │ Validate no  │ │ Check Verb   │ │Parse │
-          │ Type (Serialize) │  │ CLI Types    │ │ Complexity   │ │Docs  │
-          └──────────┬───────┘  └──────────┬───┘ └──────────┬───┘ └──┬───┘
-                     │                     │              │         │
-                     └─────────────┬───────┴──────────────┴─────────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────┐
-                    │ Signature Analysis:     │
-                    │ - Extract arguments     │
-                    │ - Determine types       │
-                    │ - Check Option<T>/Vec   │
-                    │ - Infer actions (count) │
-                    └──────────┬──────────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-                    ▼                     ▼
-          ┌──────────────────┐  ┌──────────────────┐
-          │ Generate Arg     │  │ Generate Wrapper │
-          │ Metadata         │  │ Function         │
-          │ (ArgMetadata)    │  │ Handler code     │
-          └──────────┬───────┘  └──────────┬───────┘
-                     │                     │
-                     └─────────────┬───────┘
-                                   │
-                                   ▼
-                    ┌─────────────────────────┐
-                    │ Emit Distributed Slice  │
-                    │ for Runtime Discovery   │
-                    │ (linkme integration)    │
-                    └──────────┬──────────────┘
-                               │
-                               ▼
-                    ┌─────────────────────────┐
-                    │ Generated Code:         │
-                    │ - Original function     │
-                    │ - Wrapper adapter       │
-                    │ - Registry entry        │
-                    │ - Duplicate check const │
-                    └─────────────────────────┘
+    └── reflexive_testing.rs
 ```
 
 ---
 
-## Core Macro Patterns
+## Core Proc-Macro Patterns
 
-### Pattern 1: The #[verb] Macro - Command Registration
+### Pattern 1: Token Stream Parsing with `syn`
 
-The `#[verb]` macro is the heart of the system. It transforms a simple function into a CLI-registered command.
-
-#### Example Usage
+The `syn` crate is essential for parsing Rust tokens into AST structures.
 
 ```rust
-//! A module for managing services
-//!
-//! This module contains verbs for starting, stopping, and checking service status.
+use syn::{parse_macro_input, ItemFn, Signature};
+use quote::quote;
+use proc_macro::TokenStream;
 
-use clap_noun_verb::prelude::*;
-
-/// Show the status of a service
-///
-/// Checks if the service is running and displays its current state.
-///
-/// # Arguments
-/// * `name` - Service name [requires: "config"]
-/// * `config` - Config file path [env: SERVICE_CONFIG] [default: service.toml]
-/// * `verbose` - Show detailed output [hide]
-#[verb("status")]
-fn show_status(
-    #[arg(help = "Service name to check")]
-    name: String,
-    #[arg(env = "SERVICE_CONFIG", default_value = "service.toml")]
-    config: String,
-    #[arg(short = 'v')]
-    verbose: bool,
-) -> Result<StatusOutput> {
-    // Implementation validates args, calls domain logic, returns serializable output
-    Ok(StatusOutput { name, running: true })
-}
-
-#[derive(Serialize)]
-struct StatusOutput {
-    name: String,
-    running: bool,
+#[proc_macro_attribute]
+pub fn my_macro(args: TokenStream, input: TokenStream) -> TokenStream {
+    // Parse attribute arguments
+    let args_tokens = proc_macro2::TokenStream::from(args);
+    
+    // Parse input as a function
+    let input_fn = parse_macro_input!(input as ItemFn);
+    
+    // Work with the AST
+    let fn_name = &input_fn.sig.ident;
+    
+    // Generate code with quote!
+    let expanded = quote! {
+        // Generated code here
+        #input_fn
+    };
+    
+    expanded.into()
 }
 ```
 
-#### Generated Code (Conceptual)
+**Key Points**:
+- Use `parse_macro_input!` for standard items (ItemFn, ItemStruct, etc.)
+- Use `proc_macro2::TokenStream::from()` to work with token streams in proc_macro2
+- Always convert back with `.into()` when returning from proc_macro context
+
+### Pattern 2: Attribute Argument Parsing
+
+From `lib.rs` lines 367-384:
 
 ```rust
-// 1. Original function unchanged
-fn show_status(name: String, config: String, verbose: bool) -> Result<StatusOutput> {
-    Ok(StatusOutput { name, running: true })
-}
+// Parse verb name from args using Punctuated parser
+let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+let args_vec: syn::punctuated::Punctuated<_, _> = 
+    match Parser::parse2(parser, args_tokens.clone()) {
+        Ok(args) => args,
+        Err(_) => {
+            // Fallback: extract verb name from function name
+            let verb_name = extract_verb_name_from_fn_name(&input_fn);
+            return generate_verb_registration(input_fn, verb_name, None, None, HashMap::new());
+        }
+    };
 
-// 2. Duplicate detection const
-#[doc(hidden)]
-const __VERB_DUPLICATE_CHECK_services_status_show_status: () = ();
-
-// 3. Wrapper function adapting HandlerInput to function signature
-fn __show_status_wrapper(
-    __handler_input: HandlerInput
-) -> Result<HandlerOutput> {
-    let name = __handler_input.args.get("name")
-        .ok_or_else(|| NounVerbError::missing_argument("name"))?
-        .parse::<String>()?;
-    
-    let config = __handler_input.args.get("config")
-        .map(|v| v.parse::<String>().ok())
-        .flatten()
-        .unwrap_or_else(|| "service.toml".to_string());
-    
-    let verbose = __handler_input.args.get("verbose")
-        .map(|v| v.parse::<bool>().unwrap_or(false))
-        .unwrap_or(false);
-
-    let result = show_status(name, config, verbose)?;
-    HandlerOutput::from_data(result)
-}
-
-// 4. Registry entry with linkme distributed slice
-#[linkme::distributed_slice(::clap_noun_verb::cli::registry::__VERB_REGISTRY)]
-static __init_show_status: fn() = {
-    fn __register_impl() {
-        let noun_name = "services";  // auto-inferred from filename
-        let args = vec![
-            ArgMetadata {
-                name: "name".to_string(),
-                required: true,
-                is_flag: false,
-                help: Some("Service name to check".to_string()),
-                // ... more metadata
-            },
-            // ... more arguments
-        ];
-        
-        CommandRegistry::register_verb_with_args::<_>(
-            noun_name,
-            "status",
-            "Show the status of a service",
-            args,
-            __show_status_wrapper,
-        );
-    }
-    __register_impl
+// Extract individual arguments
+let verb_name = match &args_vec[0] {
+    syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => s.value(),
+    _ => return error_token("First argument must be a string literal"),
 };
 ```
 
-### Pattern 2: Raw Identifier Handling (Critical Fix A.5)
+**Pattern for Safe Extraction**:
+1. Use `Punctuated::parse_terminated` for comma-separated values
+2. Check bounds before indexing: `if args_vec.len() > 2 { error })`
+3. Match on expression types to validate (Lit::Str, Lit::Int, etc.)
+4. Provide meaningful error messages with `syn::Error`
 
-The macro strips `r#` prefix from raw identifiers to prevent CLI flag pollution.
+### Pattern 3: Error Handling with `syn::Error`
 
-```rust
-// Parameter name with raw identifier (because `type` is a keyword)
-fn configure(#[arg(short = 't')] r#type: String) -> Result<()> {
-    // In macro expansion:
-    // arg_name_str = "r#type".strip_prefix("r#") → "type"
-    // So clap receives --type flag, not --r#type
-}
-```
-
-#### Implementation Details
+From `validation.rs` lines 28-50:
 
 ```rust
-let arg_name_str = arg_name.to_string();
-let arg_name_str = arg_name_str
-    .strip_prefix("r#")
-    .map(str::to_string)
-    .unwrap_or(arg_name_str);
-```
-
-### Pattern 3: Type Inference for Arguments
-
-The macro infers clap configurations from Rust types without explicit attributes.
-
-```rust
-#[verb("process")]
-fn process_data(
-    // String → required text argument
-    input: String,
-    
-    // Option<T> → optional argument
-    filter: Option<String>,
-    
-    // bool → SetTrue flag
-    force: bool,
-    
-    // usize → Count action (for -v, -vv, -vvv)
-    verbosity: usize,
-    
-    // Vec<T> → multiple values
-    tags: Vec<String>,
-) -> Result<()> {
+pub fn validate_return_type(return_type: &ReturnType, fn_name: &syn::Ident) -> syn::Result<()> {
+    match return_type {
+        ReturnType::Default => {
+            return Err(syn::Error::new(
+                fn_name.span(),
+                format!(
+                    "Function '{}' must return a value that implements serde::Serialize\n\
+                     \n\
+                     Expected return type patterns:\n\
+                     - Result<T> where T: Serialize\n\
+                     - Option<T> where T: Serialize\n\
+                     - T where T: Serialize",
+                    fn_name
+                ),
+            ));
+        }
+        ReturnType::Type(_, ty) => {
+            validate_type_is_serializable(ty, fn_name)?;
+        }
+    }
     Ok(())
 }
 ```
 
-**Type Mapping Table:**
+**Best Practices**:
+- Use `syn::Error::new(span, message)` to attach location info
+- Include multi-line error messages with expected vs. found patterns
+- Use `.span()` method to pinpoint errors in source code
+- Chain with `?` operator for composition: `validate_x()?.validate_y()?`
 
-| Rust Type | Inferred Action | Example CLI |
-|-----------|-----------------|------------|
-| `String` | Set (required) | `--name "value"` |
-| `Option<String>` | Set (optional) | `--name "value"` or omitted |
-| `bool` | SetTrue flag | `--force` |
-| `usize` | Count | `-vvv` becomes 3 |
-| `Vec<T>` | Append/multiple | `--tag a --tag b` |
+### Pattern 4: Type Inspection and Validation
 
-### Pattern 4: Documentation-Driven Configuration
-
-Doc comments provide clap configuration without attributes.
+From `lib.rs` lines 1730-1754:
 
 ```rust
-/// Sync changes with remote repository
-///
-/// Connects to the specified remote and synchronizes local changes.
-///
-/// # Arguments
-/// * `remote` - Remote repository URL [requires: "branch"]
-/// * `branch` - Branch to sync [default: main] [env: GIT_BRANCH]
-/// * `force` - Force sync without confirmation [conflicts: "dry_run"]
-/// * `dry_run` - Show what would be synced [group: mode]
-/// * `interactive` - Interactive mode [group: mode] [conflicts: "force"]
-#[verb]
-fn sync_repo(
-    remote: String,
-    #[arg(default_value = "main")]
-    branch: String,
-    force: bool,
-    dry_run: bool,
-    interactive: bool,
-) -> Result<SyncResult> {
-    Ok(SyncResult { synced: 0 })
+/// Check if type is Option<T>
+fn is_option_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            segment.ident == "Option"
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
+/// Extract inner type from Option<T>
+fn extract_inner_type(ty: &syn::Type) -> syn::Type {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
+                    return inner.clone();
+                }
+            }
+        }
+    }
+    ty.clone()
 }
 ```
 
-**Doc Comment Tags:**
+**Type Checking Strategy**:
+1. Match on `syn::Type::Path` for most types
+2. Access last segment: `.path.segments.last()`
+3. For generics, check `.arguments` as `AngleBracketed`
+4. Extract first generic arg from `.args.first()`
 
-| Tag | Format | Purpose |
-|-----|--------|---------|
-| `[group: name]` | `[group: format]` | Mutually exclusive arguments |
-| `[requires: arg]` | `[requires: "config"]` | Required dependency |
-| `[conflicts: arg]` | `[conflicts: "force"]` | Mutual exclusion |
-| `[env: VAR]` | `[env: PORT]` | Environment variable |
-| `[default: value]` | `[default: 8080]` | Default value |
-| `[hide]` | `[hide]` | Hide from help |
-| `[global]` | `[global]` | Propagate to subcommands |
-| `[exclusive]` | `[exclusive]` | Cannot use with other args |
-| `[value_hint: type]` | `[value_hint: file_path]` | Shell completion hint |
+### Pattern 5: Code Generation with `quote!`
+
+From `lib.rs` lines 1622-1725:
+
+```rust
+let expanded = quote! {
+    // Original function (annotated) stays
+    #output_fn
+    
+    // Duplicate detection for compile-time safety
+    #duplicate_check
+    
+    // Wrapper adapts HandlerInput to function signature
+    fn #wrapper_name(__handler_input: ::clap_noun_verb::logic::HandlerInput) 
+        -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> 
+    {
+        // Extract arguments from HandlerInput
+        #(#arg_extractions)*
+        
+        // Call original function
+        let result = #fn_name(#(#arg_calls),*)?;
+        
+        // Convert to HandlerOutput
+        ::clap_noun_verb::logic::HandlerOutput::from_data(result)
+    }
+    
+    // Auto-registration with linkme distributed slice
+    #[allow(non_upper_case_globals)]
+    #[linkme::distributed_slice(::clap_noun_verb::cli::registry::__VERB_REGISTRY)]
+    static #init_fn_name: fn() = {
+        fn __register_impl() {
+            // Registration logic
+            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
+                noun_name_static,
+                verb_name_final,
+                #about_str,
+                args,
+                #wrapper_name,
+            );
+        }
+        __register_impl
+    };
+};
+```
+
+**Code Generation Patterns**:
+- Use `#variable` to interpolate identifiers and expressions
+- Use `#(#vec_variable),*` for iterating vectors
+- Fully qualify types: `::crate::path::Type` (no relative paths in generated code)
+- Return function pointers, not closures, for `linkme` compatibility
 
 ---
 
 ## Compile-Time Validation (Poka-Yoke)
 
-The macro implements four critical "error-proofing" checks to prevent common mistakes.
+Poka-Yoke is a manufacturing principle: "mistake-proofing" by making errors impossible at the source.
 
-### Gap 1: Forgotten #[verb] Detection (Planned)
+### The Four Validation Gaps
 
-**Status**: Framework in place, activation pending.
+From `validation.rs`:
+
+#### Gap 1: Forgotten `#[verb]` Detection
+
+**Problem**: Developer forgets `#[verb]` on handler function
+
+**Solution**: Document expected patterns (currently manual, but could be automated)
 
 ```rust
-// Future: Developers will call check_verb_registration!() at module end
-// This will detect functions returning Result<T> without #[verb]
+// BAD: Missing #[verb]
+fn show_status() -> Result<Status> { ... }
 
-check_verb_registration!();  // Will error if any public functions missed
+// GOOD: Marked with #[verb]
+#[verb("status")]
+fn show_status() -> Result<Status> { ... }
 ```
 
-### Gap 2: Duplicate Verb Detection
+#### Gap 2: Duplicate Verb Registration
 
-**Implementation**: Compile-time constant name collision.
+From `validation.rs` lines 268-290:
 
-When two functions register the same noun+verb combination, the compiler generates conflicting const names:
+**Problem**: Same verb registered twice causes silent shadowing
 
-```rust
-// Function 1: services.rs
-#[verb("status")]
-fn show_status() -> Result<()> { }
-
-// Generates:
-const __VERB_DUPLICATE_CHECK_services_status_show_status: () = ();
-
-// Function 2: services.rs (DUPLICATE!)
-#[verb("status")]
-fn get_status() -> Result<()> { }
-
-// Generates:
-const __VERB_DUPLICATE_CHECK_services_status_get_status: () = ();
-
-// ❌ COMPILATION ERROR: duplicate items
-```
-
-**Testing Duplicate Detection:**
+**Solution**: Compile-time const collision detection
 
 ```rust
-#[test]
-fn test_duplicate_verb_detection() {
-    let tokens = generate_duplicate_detection("status", "services", &parse_quote! { test_fn });
-    let tokens_str = tokens.to_string();
-    assert!(tokens_str.contains("__VERB_DUPLICATE_CHECK_"));
+pub fn generate_duplicate_detection(
+    verb_name: &str,
+    noun_name: &str,
+    fn_name: &syn::Ident,
+) -> TokenStream {
+    let duplicate_check_ident = quote::format_ident!(
+        "__VERB_DUPLICATE_CHECK_{}_{}_{}",
+        sanitize_ident(noun_name),
+        sanitize_ident(verb_name),
+        fn_name
+    );
+
+    // This const will conflict if duplicate noun+verb registered
+    quote! {
+        #[doc(hidden)]
+        #[allow(non_upper_case_globals)]
+        const #duplicate_check_ident: () = ();
+    }
 }
 ```
 
-### Gap 3: Return Type Serialization Check
+**How It Works**:
+- Generates a const with name derived from (noun, verb, function)
+- Two functions with same noun+verb → const name collision → compilation error
+- Error message: "duplicate definitions with name..."
 
-**Implementation**: Type path analysis with helpful error messages.
+#### Gap 3: Return Type Validation
 
-The macro validates that return types implement `serde::Serialize`:
+From `validation.rs` lines 22-126:
+
+**Problem**: Return type doesn't implement Serialize
+
+**Solution**: Recursive type validation at compile time
 
 ```rust
-pub fn validate_return_type(
-    return_type: &ReturnType,
-    fn_name: &syn::Ident
-) -> syn::Result<()> {
+pub fn validate_return_type(return_type: &ReturnType, fn_name: &syn::Ident) 
+    -> syn::Result<()> 
+{
     match return_type {
         ReturnType::Default => {
-            // Error: no return type
-            Err(syn::Error::new(fn_name.span(),
-                "Function must return Result<T> where T: Serialize"
+            Err(syn::Error::new(
+                fn_name.span(),
+                "Function must return a value that implements serde::Serialize",
             ))
         }
         ReturnType::Type(_, ty) => {
-            validate_type_is_serializable(ty, fn_name)?
+            validate_type_is_serializable(ty, fn_name)?;
         }
     }
     Ok(())
 }
-```
 
-**Error Message Example:**
+// Recursive validation handles Result<T>, Option<T>, nested types
+fn validate_type_is_serializable(ty: &Type, fn_name: &syn::Ident) 
+    -> syn::Result<()> 
+{
+    match ty {
+        Type::Path(type_path) => {
+            let type_name = type_path.path.segments.last()
+                .map(|s| s.ident.to_string())
+                .unwrap_or_default();
 
-```
-error: Function 'show_status' must return a value that implements serde::Serialize
-
-   Expected return type patterns:
-   - Result<T> where T: Serialize
-   - Option<T> where T: Serialize
-   - T where T: Serialize
-
-   Hint: Add a return type like `Result<Status>` where Status derives Serialize
-```
-
-### Gap 4: Attribute Syntax Validation with Typo Suggestions
-
-**Implementation**: Levenshtein distance for helpful error suggestions.
-
-```rust
-pub fn validate_arg_attribute_syntax(
-    attrs: &[syn::Attribute]
-) -> syn::Result<()> {
-    // Parses #[arg(...)] and validates all keys
-    // If typo detected (Levenshtein distance ≤ 3), suggests correct name
+            match type_name.as_str() {
+                "Result" => {
+                    // Extract T from Result<T, E> and validate recursively
+                    if let Some(inner) = extract_inner_type(type_path) {
+                        return validate_type_is_serializable(&inner, fn_name);
+                    }
+                }
+                "Option" => {
+                    // Extract T from Option<T> and validate recursively
+                    if let Some(inner) = extract_inner_type(type_path) {
+                        return validate_type_is_serializable(&inner, fn_name);
+                    }
+                }
+                _ => Ok(())  // Let compiler check trait impl
+            }
+        }
+        _ => Ok(())
+    }
 }
 ```
 
-**Example Error with Suggestion:**
+#### Gap 4: Attribute Syntax Validation
 
-```
-error: Unknown argument parameter `shrt` in `#[arg]`. Did you mean `short`?
+From `validation.rs` lines 128-236:
 
-   Valid parameters are: short, default_value, env, multiple, value_name, ...
-```
+**Problem**: Typos in attribute arguments cause confusion
 
-### Gap 4B: Poka-Yoke FM-1.1 & FM-1.2 Guards
-
-**FM-1.1 - CLI Layer Contamination Guard:**
-
-Prevents business logic in verb functions by enforcing cyclomatic complexity ≤ 5.
+**Solution**: Validate argument count, types, and suggest corrections
 
 ```rust
-pub fn validate_verb_complexity(input_fn: &ItemFn) -> syn::Result<()> {
-    let complexity = calculate_cyclomatic_complexity(input_fn);
-    
-    if complexity > 5 {
+pub fn validate_verb_attribute_syntax(
+    args: &TokenStream, 
+    input_fn: &ItemFn
+) -> syn::Result<()> {
+    let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
+    let args_vec = parser.parse2(args.clone())?;
+
+    // Check argument count
+    if args_vec.len() > 2 {
         return Err(syn::Error::new(
-            input_fn.sig.ident.span(),
-            "Verb function too complex (FM-1.1)\n\
-             Problem: Verb functions should delegate to domain logic, \
-             not implement it."
+            args.span(),
+            format!("Too many arguments: expected 0-2, found {}", args_vec.len()),
         ));
     }
+
+    // Check all arguments are string literals
+    for (idx, arg) in args_vec.iter().enumerate() {
+        match arg {
+            syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(_), .. }) => {},
+            syn::Expr::Path(path) => {
+                // Common mistake: identifier instead of string
+                let ident = path.path.get_ident()
+                    .map(|i| i.to_string())
+                    .unwrap_or_else(|| "...".to_string());
+                return Err(syn::Error::new(
+                    arg.span(),
+                    format!("Argument {} must be a string literal \"{}\" not {}",
+                        idx + 1, ident, ident),
+                ));
+            }
+            _ => return Err(syn::Error::new(
+                arg.span(),
+                "Argument must be a string literal",
+            ))
+        }
+    }
+
     Ok(())
 }
 ```
 
-**FM-1.2 - Domain Dependency on CLI Types Guard:**
+### FM-1.1 & FM-1.2: Architecture Guards
 
-Prevents verb functions from accepting CLI types (ArgMatches, Command, HandlerInput, etc.):
+From `validation.rs` lines 545-595:
 
+These Poka-Yoke guards prevent architectural violations:
+
+**FM-1.1: CLI Layer Contamination**
+```rust
+pub fn validate_verb_complexity(input_fn: &ItemFn) -> syn::Result<()> {
+    let complexity = calculate_cyclomatic_complexity(input_fn);
+
+    // Threshold: 5 prevents business logic in CLI layer
+    if complexity > 5 {
+        return Err(syn::Error::new(
+            input_fn.sig.ident.span(),
+            "Verb function too complex (max cyclomatic complexity: 5)\n\
+             Problem: Verb functions should delegate to domain logic\n\
+             Solution: Extract business logic into separate function",
+        ));
+    }
+
+    Ok(())
+}
+```
+
+**FM-1.2: CLI Type Contamination**
 ```rust
 pub fn validate_no_cli_types_in_params(sig: &syn::Signature) -> syn::Result<()> {
     for input in &sig.inputs {
         if let syn::FnArg::Typed(pat_type) = input {
+            // Forbidden: ArgMatches, Command, HandlerInput, VerbArgs
             if let Some(error) = check_for_cli_types(&pat_type.ty) {
                 return Err(error);
             }
@@ -475,957 +462,529 @@ pub fn validate_no_cli_types_in_params(sig: &syn::Signature) -> syn::Result<()> 
 }
 ```
 
-**Error Example:**
+---
 
+## Common Macro Debugging Techniques
+
+### Technique 1: Expanded Code Inspection
+
+Use `cargo expand` to see generated code:
+
+```bash
+# Install cargo-expand if needed
+cargo install cargo-expand
+
+# View expanded macros for the main crate
+cd /home/user/clap-noun-verb
+cargo expand --test integration_test | head -100
+
+# View expanded macros for specific module
+cargo expand clap_noun_verb::examples | grep -A 20 "verb_registry"
 ```
-🛡️ Poka-Yoke Guard: CLI type contamination detected (FM-1.2)
 
-   Forbidden types: ArgMatches, Command, VerbContext, VerbArgs, HandlerInput
-   Found: VerbArgs
+### Technique 2: Compile-Time Diagnostics
 
-   Problem: Domain functions should not depend on CLI types.
-   
-   Solution: Use simple typed parameters instead:
-   ✅ GOOD:   fn calculate(x: i32, y: i32) -> Result<i32>
-   ❌ WRONG:  fn calculate(args: VerbArgs) -> Result<i32>
+Enable detailed error messages:
+
+```bash
+# Build with verbose error output
+RUST_LOG=debug cargo build 2>&1 | head -50
+
+# Check for compiler diagnostics
+cargo check 2>&1 | grep -A 5 "error\["
+
+# View macro expansion errors
+cargo build --message-format=short 2>&1 | grep "macro"
+```
+
+### Technique 3: Synthetic Span Debugging
+
+In `lib.rs`, spans tell you exactly where errors occur:
+
+```rust
+// Error at function name location
+let err = syn::Error::new(
+    input_fn.sig.ident.span(),  // Points to function name
+    "Error message",
+);
+
+// Error at return type location
+let err = syn::Error::new(
+    return_type_span,  // Points to exact return type
+    "Invalid return type",
+);
+
+// Error at attribute location
+let err = syn::Error::new(
+    attr.span(),  // Points to the attribute itself
+    "Invalid attribute syntax",
+);
+```
+
+### Technique 4: Token Stream Inspection
+
+Debug what's being parsed:
+
+```rust
+// Print tokens for debugging (disable in production)
+let tokens_str = args_tokens.to_string();
+eprintln!("Tokens: {}", tokens_str);
+
+// Inspect specific expression types
+if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) = arg {
+    eprintln!("String literal value: {}", s.value());
+}
+
+// Check type path segments
+if let syn::Type::Path(type_path) = ty {
+    let segments: Vec<_> = type_path.path.segments.iter()
+        .map(|s| s.ident.to_string())
+        .collect();
+    eprintln!("Type path: {:?}", segments);
+}
+```
+
+### Technique 5: Test-Driven Debugging
+
+From `validation.rs` lines 679-907 (tests):
+
+```rust
+#[test]
+fn test_validate_verb_syntax_invalid_identifier() {
+    let tokens = quote! { status };  // Missing quotes
+    let fn_item: ItemFn = parse_quote! {
+        fn test_fn() -> Result<()> { Ok(()) }
+    };
+    
+    let result = validate_verb_attribute_syntax(&tokens, &fn_item);
+    assert!(result.is_err());
+    
+    let err_msg = result.unwrap_err().to_string();
+    assert!(err_msg.contains("must be a string literal"));
+    assert!(err_msg.contains("Add double quotes"));
+}
 ```
 
 ---
 
-## Debugging Techniques
+## Validation Pattern Library
 
-### Technique 1: Macro Expansion Inspection
+### Reusable Validation Functions
 
-View generated code with `cargo expand`:
-
-```bash
-# Install cargo-expand (one-time)
-cargo install cargo-expand
-
-# Expand macro for specific function
-cargo expand --lib test_module::show_status
-
-# Expand entire file
-cargo expand --lib test_module
-```
-
-**Output Example:**
+#### Pattern: Safe Vector Extraction
 
 ```rust
-fn show_status(name: String) -> Result<StatusOutput> {
-    Ok(StatusOutput { name, running: true })
-}
+// For each parameter in function signature
+for input in &input_fn.sig.inputs {
+    if let syn::FnArg::Typed(pat_type) = input {
+        // Get parameter name
+        let arg_name = match &*pat_type.pat {
+            syn::Pat::Ident(ident) => &ident.ident,
+            _ => continue,  // Skip non-identifier patterns
+        };
 
-const __VERB_DUPLICATE_CHECK_services_status_show_status: () = ();
+        // Check for raw identifier prefix (e.g., r#type)
+        let arg_name_str = arg_name.to_string();
+        let arg_name_str = arg_name_str
+            .strip_prefix("r#")
+            .map(str::to_string)
+            .unwrap_or(arg_name_str);
 
-fn __show_status_wrapper(
-    __handler_input: ::clap_noun_verb::logic::HandlerInput
-) -> ::clap_noun_verb::error::Result<::clap_noun_verb::logic::HandlerOutput> {
-    let name = __handler_input.args.get("name")
-        .ok_or_else(|| ::clap_noun_verb::error::NounVerbError::missing_argument("name"))?
-        .parse::<String>()?;
-    let result = show_status(name)?;
-    ::clap_noun_verb::logic::HandlerOutput::from_data(result)
-}
+        // Type-specific handling
+        let is_option = is_option_type(&pat_type.ty);
+        let is_flag = is_bool_type(&pat_type.ty);
+        let is_vec = is_vec_type(&pat_type.ty);
 
-// ... linkme distributed slice registration
-```
-
-### Technique 2: Syn Debugging with quote!
-
-Use `quote!` to pretty-print TokenStreams for inspection:
-
-```rust
-// In macro code
-let my_tokens = quote! { /* ... */ };
-eprintln!("Generated tokens:\n{}", my_tokens);  // Pretty prints
-
-// In tests
-#[test]
-fn debug_token_generation() {
-    let tokens = quote! { 
-        const EXAMPLE: () = (); 
-    };
-    println!("Tokens:\n{}", tokens.pretty()); // Pretty print in test
+        // ... per-type extraction logic
+    }
 }
 ```
 
-### Technique 3: Compile Error Messages
+#### Pattern: Levenshtein Distance for Typo Suggestions
 
-The macro includes detailed, multi-paragraph error messages to guide fixes:
-
-```rust
-return Err(syn::Error::new(
-    fn_name.span(),
-    "Function 'show_status' must return a value that implements serde::Serialize\n\
-     \n\
-     Expected return type patterns:\n\
-     - Result<T> where T: Serialize\n\
-     - Option<T> where T: Serialize\n\
-     - T where T: Serialize\n\
-     \n\
-     Hint: Add a return type like `Result<Status>` where Status derives Serialize"
-));
-```
-
-**Best Practices:**
-- Include context (what went wrong)
-- List valid patterns
-- Provide actionable hints
-- Use formatting for clarity
-
-### Technique 4: Testing with Trybuild
-
-Use the `trybuild` crate to test macro error messages:
+From `validation.rs` lines 345-370:
 
 ```rust
-// tests/ui/expand_tests.rs
-#[test]
-fn ui_tests() {
-    let t = trybuild::TestCases::new();
-    t.compile_fail("tests/ui/fail/*.rs");
-    t.compile_succeed("tests/ui/pass/*.rs");
-}
-```
-
-**Test File Structure:**
-
-```
-tests/ui/
-├── pass/
-│   ├── simple_verb.rs
-│   ├── optional_args.rs
-│   └── complex_types.rs
-└── fail/
-    ├── no_return_type.rs
-    ├── duplicate_verb.rs
-    └── missing_serialize.rs
-```
-
-### Technique 5: Proc-Macro Debug Logging
-
-Add debug output in macro code with `proc_macro_error::abort!`:
-
-```rust
-use proc_macro_error::abort;
-
-pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
-    let input_fn = parse_macro_input!(input as ItemFn);
+fn levenshtein_distance(a: &str, b: &str) -> usize {
+    let a_len = a.chars().count();
+    let b_len = b.chars().count();
+    if a_len == 0 { return b_len; }
+    if b_len == 0 { return a_len; }
     
-    // Log function name
-    eprintln!("🔍 Processing verb: {}", input_fn.sig.ident);
+    let mut dp = vec![vec![0; b_len + 1]; a_len + 1];
     
-    // Log parsed arguments
-    eprintln!("📋 Args: {:?}", args.to_string());
+    for i in 0..=a_len {
+        dp[i][0] = i;
+    }
+    for j in 0..=b_len {
+        dp[0][j] = j;
+    }
     
-    // ... macro logic ...
+    for (i, ca) in a.chars().enumerate() {
+        for (j, cb) in b.chars().enumerate() {
+            let cost = if ca == cb { 0 } else { 1 };
+            dp[i + 1][j + 1] = std::cmp::min(
+                std::cmp::min(dp[i][j + 1] + 1, dp[i + 1][j] + 1),
+                dp[i][j] + cost,
+            );
+        }
+    }
+    
+    dp[a_len][b_len]
 }
-```
 
-**Run with output:**
+// Usage: Find best matching allowed key for typo'd input
+let mut best_suggestion = None;
+let mut min_distance = usize::MAX;
 
-```bash
-RUST_LOG=debug cargo build 2>&1 | grep "🔍"
+for &allowed_key in ALLOWED_KEYS {
+    let dist = levenshtein_distance(&typo, allowed_key);
+    if dist < min_distance {
+        min_distance = dist;
+        best_suggestion = Some(allowed_key);
+    }
+}
+
+if let Some(suggestion) = best_suggestion {
+    if min_distance <= 3 {
+        // Likely typo - suggest correction
+    }
+}
 ```
 
 ---
 
 ## Testing Strategies
 
-### Strategy 1: Unit Tests in validation.rs
+### Strategy 1: Unit Testing Validation Functions
 
-Test compile-time validation functions in isolation:
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use quote::quote;
-    use syn::parse_quote;
-
-    #[test]
-    fn test_validate_return_type_result() {
-        let fn_item: ItemFn = parse_quote! {
-            fn test_fn() -> Result<String> {
-                Ok("test".to_string())
-            }
-        };
-        assert!(validate_return_type(
-            &fn_item.sig.output,
-            &fn_item.sig.ident
-        ).is_ok());
-    }
-
-    #[test]
-    fn test_validate_return_type_missing() {
-        let fn_item: ItemFn = parse_quote! {
-            fn test_fn() {
-                println!("test");
-            }
-        };
-        let result = validate_return_type(
-            &fn_item.sig.output,
-            &fn_item.sig.ident
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string()
-            .contains("must return a value"));
-    }
-}
-```
-
-**Test Organization:**
-
-```rust
-// Tests for specific validation gaps
-#[test]
-fn test_gap_2_duplicate_detection() { }
-
-#[test]
-fn test_gap_3_return_type_validation() { }
-
-#[test]
-fn test_gap_4_attribute_syntax() { }
-
-#[test]
-fn test_gap_4b_fm_1_1_complexity() { }
-
-#[test]
-fn test_gap_4b_fm_1_2_cli_types() { }
-```
-
-### Strategy 2: Integration Tests with Actual Macro Usage
-
-Test macros in the context of real functions:
-
-```rust
-// tests/integration_tests.rs
-#[test]
-fn test_simple_verb_expansion() {
-    let input = quote! {
-        #[verb("status")]
-        fn show_status(name: String) -> Result<StatusOutput> {
-            Ok(StatusOutput { name, running: true })
-        }
-    };
-    
-    let result = verb(TokenStream::from(quote! { "status" }), 
-                     TokenStream::from(input));
-    
-    // Assert generated code contains expected elements
-    let result_str = result.to_string();
-    assert!(result_str.contains("__show_status_wrapper"));
-    assert!(result_str.contains("__VERB_DUPLICATE_CHECK_"));
-    assert!(result_str.contains("__VERB_REGISTRY"));
-}
-```
-
-### Strategy 3: Compile Fail Tests (UI Tests)
-
-Test that invalid code produces expected compile errors:
-
-```rust
-// tests/ui/fail/no_return_type.rs
-#[verb("status")]
-fn show_status(name: String) {  // ❌ Missing return type!
-    println!("{}", name);
-}
-```
-
-**Running UI Tests:**
-
-```bash
-cargo test --test ui_tests
-```
-
-**Expected Output:**
-
-```
-error: Function 'show_status' must return a value that implements serde::Serialize
-   |
-   | fn show_status(name: String) {
-   |    ^^^^^^^^^^^
-   |
-   = note: Expected return type patterns:
-           - Result<T> where T: Serialize
-           ...
-```
-
-### Strategy 4: Snapshot Testing
-
-Use `insta` crate for testing macro output:
+Location: `validation.rs` lines 679-907
 
 ```rust
 #[test]
-fn test_arg_metadata_snapshot() {
-    let input = quote! {
-        fn test(
-            #[arg(short = 'v', env = "PORT")]
-            port: u16
-        ) -> Result<()> { }
-    };
-    
-    let metadata = parse_arg_metadata(&input);
-    
-    // Automatically creates/updates snapshot
-    insta::assert_debug_snapshot!(metadata);
-}
-```
-
-### Strategy 5: AAA Pattern for Macro Tests
-
-Follow Arrange-Act-Assert:
-
-```rust
-#[test]
-fn test_verb_with_optional_args() {
-    // Arrange: Setup input and expected behavior
+fn test_validate_return_type_result() {
     let fn_item: ItemFn = parse_quote! {
-        #[verb("process")]
-        fn process_data(
-            input: String,
-            filter: Option<String>,
-        ) -> Result<Output> {
-            Ok(Output { success: true })
+        fn test_fn() -> Result<String> {
+            Ok("test".to_string())
         }
     };
-    
-    // Act: Execute macro
-    let result = verb_macro(&fn_item);
-    
-    // Assert: Verify output
-    let output_str = result.to_string();
-    assert!(output_str.contains("filter")); // Argument included
-    assert!(output_str.contains("Option"));  // Type preserved
-    assert!(!output_str.contains("unwrap")); // No panics
+    assert!(validate_return_type(&fn_item.sig.output, &fn_item.sig.ident).is_ok());
 }
 ```
 
-### Strategy 6: Performance Testing
+**AAA Pattern** (Arrange-Act-Assert):
+1. **Arrange**: Create test input using `parse_quote!`
+2. **Act**: Call validation function
+3. **Assert**: Check result matches expectations
 
-Verify macros don't exceed SLOs:
+### Strategy 2: Integration Testing Macro Expansion
+
+Location: `/home/user/clap-noun-verb/tests/macros/federated_network_test.rs`
+
+```rust
+use clap_noun_verb_macros::macros::federated_network::parse_capability_config;
+use quote::quote;
+
+#[test]
+fn test_advertise_capability_macro_compiles() {
+    // Arrange: Create macro arguments
+    let args = quote! {
+        capability_id = "test-capability",
+        description = "Test capability description",
+        inputs = ["input1:string", "input2:int"],
+        outputs = ["output1:json"]
+    };
+
+    // Act: Parse configuration
+    let result = parse_capability_config(args);
+
+    // Assert: Verify structure
+    assert!(result.is_ok());
+    let config = result.unwrap();
+    assert_eq!(config.capability_id, "test-capability");
+    assert_eq!(config.inputs.len(), 2);
+    assert_eq!(config.outputs.len(), 1);
+}
+```
+
+### Strategy 3: Error Message Validation
+
+Ensure error messages are helpful:
 
 ```rust
 #[test]
-#[ignore]  // Only run with --ignored
-fn test_macro_performance_slo() {
+fn test_validate_arg_attribute_syntax_typo_suggests_correction() {
+    let attrs: Vec<syn::Attribute> = parse_quote! {
+        #[arg(shrt = 'v')]  // Typo: should be "short"
+    };
+    
+    let result = validate_arg_attribute_syntax(&attrs);
+    assert!(result.is_err());
+    
+    let err_msg = result.unwrap_err().to_string();
+    assert!(err_msg.contains("Unknown argument parameter `shrt`"));
+    assert!(err_msg.contains("Did you mean `short`?"));
+    assert!(err_msg.contains("Valid parameters are:"));
+}
+```
+
+### Strategy 4: Performance Testing
+
+```rust
+#[test]
+fn bench_macro_parsing_performance() {
     use std::time::Instant;
-    
+
+    // Arrange
+    let args = quote! {
+        capability_id = "bench-capability",
+        description = "Benchmark test",
+        inputs = ["input1:string", "input2:int", "input3:bool"],
+        outputs = ["output1:json", "output2:xml"]
+    };
+
+    // Act
     let start = Instant::now();
-    
-    // Generate complex verb with many arguments
-    for _ in 0..100 {
-        let _result = verb(TokenStream::from(quote! { "test" }), 
-                          TokenStream::from(complex_fn()));
+    let iterations = 1000;
+    for _ in 0..iterations {
+        let _ = parse_capability_config(args.clone());
     }
-    
     let elapsed = start.elapsed();
-    
-    // SLO: <2s for 100 macro expansions
-    assert!(elapsed.as_millis() < 2000,
-           "Macro expansion too slow: {}ms", elapsed.as_millis());
+    let avg_per_parse = elapsed.as_micros() / iterations;
+
+    // Assert: Must complete in < 10ms per iteration
+    assert!(
+        avg_per_parse < 10_000,
+        "Average parsing time should be < 10ms, got {}μs",
+        avg_per_parse
+    );
 }
-```
-
-### Strategy 7: Fuzz Testing Macro Inputs
-
-Test edge cases with random inputs:
-
-```rust
-#[test]
-fn test_validate_verb_attribute_syntax_random() {
-    let test_cases = vec![
-        ("", false),              // Empty args
-        ("\"status\"", true),     // Valid
-        ("status", false),        // Missing quotes
-        ("\"status\", \"noun\"", true),  // Two args
-        ("\"a\", \"b\", \"c\"", false),  // Too many
-    ];
-    
-    for (input, should_pass) in test_cases {
-        let tokens = proc_macro2::TokenStream::from_str(input).unwrap();
-        let fn_item = parse_quote! { fn test() -> Result<()> { Ok(()) } };
-        
-        let result = validate_verb_attribute_syntax(&tokens, &fn_item);
-        assert_eq!(result.is_ok(), should_pass, 
-                   "Failed for input: {}", input);
-    }
-}
-```
-
-### Test Execution Commands
-
-```bash
-# Run all macro tests
-cargo test --lib -p clap-noun-verb-macros
-
-# Run specific test
-cargo test test_validate_return_type_result --lib
-
-# Run tests with output
-cargo test --lib -- --nocapture
-
-# Run deterministic (single-threaded)
-cargo test --lib --quiet -- --test-threads=1
-
-# Run with specific filter
-cargo test validation --lib
 ```
 
 ---
 
-## Performance Considerations
+## Performance Optimization
 
-### 1. Token Stream Processing Efficiency
+### SLO: Incremental Compilation <= 2s
 
-**Pattern: Minimize TokenStream conversions**
+From CLAUDE.md: Target is 0.66s for incremental builds
+
+### Optimization 1: Minimize Token Stream Cloning
+
+**Problem**: TokenStream cloning is expensive
+
+**Pattern**: Clone only when necessary
 
 ```rust
-// ❌ INEFFICIENT: Multiple to_string() calls
-fn bad_check(ty: &Type) -> bool {
-    let s1 = ty.to_token_stream().to_string();
-    let s2 = ty.to_token_stream().to_string();  // Duplicate!
-    s1.contains("Option") || s2.contains("Vec")
-}
+// BAD: Clone multiple times
+let tokens1 = args.clone();
+let tokens2 = args.clone();
+let tokens3 = args.clone();
 
-// ✅ EFFICIENT: Single conversion
-fn good_check(ty: &Type) -> bool {
-    let type_str = ty.to_token_stream().to_string();
-    type_str.contains("Option") || type_str.contains("Vec")
+// GOOD: Use borrowed references
+fn parse_args(args: &TokenStream) -> Result<...> {
+    // Work with borrowed reference
 }
 ```
 
-### 2. Symbol Lookup Optimization
+### Optimization 2: Early Exit in Validation
 
-**Pattern: Cache repeated lookups**
+**Pattern**: Return errors as soon as found
 
 ```rust
-// ❌ INEFFICIENT: Walking attribute list multiple times
-fn bad_validation(attrs: &[syn::Attribute]) -> Option<String> {
-    // First pass: find #[arg]
-    let arg_attr = attrs.iter().find(|a| a.path().is_ident("arg"));
-    
-    // Second pass: find #[doc]
-    let doc_attr = attrs.iter().find(|a| a.path().is_ident("doc"));
-    
-    // Third pass: find #[validate]
-    let val_attr = attrs.iter().find(|a| a.path().is_ident("validate"));
+// BAD: Collect all errors
+let mut all_errors = Vec::new();
+for input in &inputs {
+    if let Err(e) = validate(input) {
+        all_errors.push(e);
+    }
 }
 
-// ✅ EFFICIENT: Single pass
-fn good_validation(attrs: &[syn::Attribute]) -> (Option<&Attribute>, Option<&Attribute>) {
-    let mut arg_attr = None;
-    let mut doc_attr = None;
-    
-    for attr in attrs {
-        if arg_attr.is_none() && attr.path().is_ident("arg") {
-            arg_attr = Some(attr);
-        }
-        if doc_attr.is_none() && attr.path().is_ident("doc") {
-            doc_attr = Some(attr);
-        }
-        if arg_attr.is_some() && doc_attr.is_some() {
-            break;  // Early exit
+// GOOD: Return on first critical error
+for input in &inputs {
+    validate_critical(input)?;  // Return immediately on error
+}
+```
+
+### Optimization 3: Lazy Type Inspection
+
+**Pattern**: Inspect types only when needed
+
+```rust
+// BAD: Always check
+for param in params {
+    let is_cli_type = check_for_cli_types(&param.ty);
+    let is_option = is_option_type(&param.ty);
+}
+
+// GOOD: Check only when needed
+for param in params {
+    if is_custom_type(&param.ty) {
+        check_for_cli_types(&param.ty)?;
+    }
+}
+```
+
+---
+
+## Real-World Examples
+
+### Example 1: Adding a New Validation Check
+
+**Scenario**: Prevent functions from accepting `String` (should use `&str`)
+
+```rust
+/// Prefer &str over String for CLI arguments
+pub fn validate_string_types_in_params(sig: &syn::Signature) -> syn::Result<()> {
+    for input in &sig.inputs {
+        if let syn::FnArg::Typed(pat_type) = input {
+            if is_owned_string_type(&pat_type.ty) {
+                return Err(syn::Error::new(
+                    pat_type.ty.span(),
+                    "Prefer &str over String for CLI arguments",
+                ));
+            }
         }
     }
-    (arg_attr, doc_attr)
+    Ok(())
 }
-```
 
-### 3. SLO Targets
-
-From CLAUDE.md:
-
-- **Incremental compilation**: ≤2s (currently 0.66s)
-- **Binary size**: ≤10MB (currently 2.2MB)
-- **CLI generation**: ≤100ms
-
-**Monitoring Performance:**
-
-```bash
-# Measure incremental compile time
-time cargo check
-
-# Measure macro expansion time
-cargo build -p clap-noun-verb-macros --release -j1
-
-# Profile with flamegraph (requires cargo-flamegraph)
-cargo flamegraph --bin my_cli
-```
-
-### 4. Memory-Efficient Pattern Matching
-
-**Pattern: Use string matching for heuristic checks**
-
-```rust
-// ❌ OVER-ENGINEERED: Full parse for simple check
-fn bad_has_option(ty: &Type) -> bool {
-    if let Type::Path(path) = ty {
-        // Complex nested matching
-        if let Some(segment) = path.path.segments.last() {
-            if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
-                // ...
-            }
+fn is_owned_string_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            return segment.ident == "String";
         }
     }
     false
 }
-
-// ✅ EFFICIENT: String pattern for heuristic
-fn good_has_option(ty: &Type) -> bool {
-    let type_str = ty.to_token_stream().to_string();
-    type_str.starts_with("Option <")  // Fast string check
-}
 ```
 
-### 5. Avoid Unnecessary TokenStream Allocations
+### Example 2: Extending Argument Metadata
+
+**Scenario**: Add custom validation to argument attributes
 
 ```rust
-// ❌ Creates new TokenStream in loop
-fn bad_loop() {
-    for field in fields {
-        let ts = quote! { let #field = /* ... */; };  // New allocation each iteration
-        results.push(ts);
-    }
-}
-
-// ✅ Single concatenation
-fn good_loop() {
-    let mut all_tokens = TokenStream::new();
-    for field in fields {
-        let ts = quote! { let #field = /* ... */; };
-        all_tokens.extend(ts);  // Reuse buffer
-    }
-    all_tokens
+// Add to parse_arg_attributes (lib.rs line 1981)
+"value_parser" => {
+    let ts = quote::quote! { #nv.value };
+    let ts_string = ts.to_string();
+    config.value_parser = Some(proc_macro2::TokenStream::from_iter(
+        std::iter::once(proc_macro2::TokenTree::Literal(
+            proc_macro2::Literal::string(&ts_string),
+        )),
+    ));
 }
 ```
 
 ---
 
-## Frontier Features
+## Troubleshooting
 
-The macro crate includes opt-in frontier features for advanced use cases. These are feature-gated and may have limited support.
+### Problem: "Cannot find proc_macro in registry"
 
-### Feature: meta-framework → #[meta_aware]
+**Cause**: Macro crate not compiled yet
 
-**Purpose**: Self-introspecting code generation for agents and knowledge bases.
-
-**Location**: `clap-noun-verb-macros/src/meta_framework.rs`
-
-**Example:**
-
-```rust
-#[meta_aware]
-struct AgentCapabilities {
-    name: String,
-    max_concurrency: usize,
-    supports_async: bool,
-}
-
-let caps = AgentCapabilities::new("worker".to_string(), 10, true);
-
-// Auto-generated methods:
-let rdf = caps.introspect_capabilities();      // RDF triples
-let opts = caps.query_optimizations();         // Optimization hints
-let schema = AgentCapabilities::introspect_schema();  // Type schema
+**Solution**:
+```bash
+cd clap-noun-verb-macros && cargo build
+cd .. && cargo build
 ```
 
-**Generated Output:**
+### Problem: "Duplicate definitions with name `__VERB_DUPLICATE_CHECK_...`"
 
-```text
-:instance a :AgentCapabilities ;
-    cnv:hasField [ cnv:name "name" ; cnv:type xsd:string ; cnv:value "worker" ] ;
-    cnv:hasField [ cnv:name "max_concurrency" ; cnv:type xsd:integer ; cnv:value "10" ] ;
-    cnv:fieldCount "3" .
-```
+**Cause**: Two functions registered with same noun+verb
 
-### Feature: federated-network → #[federated]
-
-**Purpose**: Distributed compute topology specification.
-
-**Status**: Placeholder macros in `src/macros/federated_network.rs`
-
-### Feature: executable-specs → #[spec]
-
-**Purpose**: Executable specification generation.
-
-**Status**: Placeholder macros in `src/macros/executable_specs.rs`
-
-### Feature: fractal-patterns → #[semantic_composable]
-
-**Purpose**: Recursive, composable type patterns.
-
-**Status**: Placeholder macros in `src/macros/fractal_patterns.rs`
-
-### Feature: reflexive-testing → #[auto_test]
-
-**Purpose**: Automatic test generation from type structure.
-
-**Status**: Placeholder macros in `src/macros/reflexive_testing.rs`
-
-### Feature: learning-trajectories → #[competency]
-
-**Purpose**: Learning path and skill tree specification.
-
-**Status**: Placeholder macros in `src/macros/learning_trajectories.rs`
-
-**Example Skeleton:**
+**Solution**: Rename one function or use different verb name
 
 ```rust
-// Future use
-#[competency("cli_development")]
-#[requires("rust_basics")]
-#[requires("proc_macro_foundations")]
-fn expert_macro_developer() {
-    // Competency definition
+// BAD
+#[verb("status")]
+fn show_status() -> Result<Status> { ... }
+
+#[verb("status")]
+fn display_status() -> Result<Status> { ... }
+
+// GOOD
+#[verb("status")]
+fn show_status() -> Result<Status> { ... }
+
+#[verb("info")]
+fn display_status() -> Result<Status> { ... }
+```
+
+### Problem: "Function must return a value that implements serde::Serialize"
+
+**Cause**: Return type doesn't implement Serialize
+
+**Solution**: Derive Serialize on return type
+
+```rust
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct TestOutput {
+    value: String,
 }
+
+#[verb("test")]
+fn test_verb() -> Result<TestOutput> { ... }
+```
+
+### Problem: "Unknown argument parameter `shrt`"
+
+**Cause**: Typo in #[arg] attribute
+
+**Solution**: Use correct parameter name
+
+```rust
+// BAD
+#[arg(shrt = 'v')]
+
+// GOOD
+#[arg(short = 'v')]
 ```
 
 ---
 
-## Best Practices & Anti-Patterns
+## Summary Checklist
 
-### ✅ Best Practices
+When extending the macro crate:
 
-#### 1. Always Use Helper Errors with Context
-
-```rust
-// ✅ GOOD: Multi-line error with context
-return Err(syn::Error::new(
-    arg.span(),
-    "Argument 'shrt' in #[verb] must be a string literal for function 'show_status'\n\
-     \n\
-     Found: identifier 'shrt'\n\
-     Expected: string like \"status\"\n\
-     \n\
-     Did you mean: short?"
-));
-
-// ❌ BAD: Single-line error
-return Err(syn::Error::new(arg.span(), "Invalid arg"));
-```
-
-#### 2. Process Tokens Efficiently
-
-```rust
-// ✅ GOOD: Single pass with early exit
-for attr in attrs {
-    if attr.path().is_ident("arg") {
-        return parse_arg_attribute(attr);
-    }
-    if attr.path().is_ident("doc") {
-        // Handle docs
-    }
-}
-
-// ❌ BAD: Multiple iterations
-let arg_attr = attrs.iter().find(|a| a.path().is_ident("arg"));
-let doc_attr = attrs.iter().find(|a| a.path().is_ident("doc"));
-// ...more iterations...
-```
-
-#### 3. Preserve Source Span Information
-
-```rust
-// ✅ GOOD: Use span() to point to exact error location
-let error = syn::Error::new(
-    invalid_arg.span(),  // Points to user's code
-    "Invalid configuration"
-);
-
-// ❌ BAD: Generic span
-let error = syn::Error::new(
-    proc_macro2::Span::call_site(),  // Points to macro invocation
-    "Invalid configuration"
-);
-```
-
-#### 4. Test Edge Cases and Error Paths
-
-```rust
-// ✅ GOOD: Comprehensive test coverage
-#[test]
-fn test_parse_arg_attributes() {
-    // Test valid cases
-    assert!(parse_valid_arg_attr().is_ok());
-    
-    // Test error cases
-    assert!(parse_missing_quotes().is_err());
-    assert!(parse_invalid_key().is_err());
-    assert!(parse_empty_args().is_ok());
-    
-    // Test edge cases
-    assert!(parse_unicode_in_help().is_ok());
-    assert!(parse_very_long_names().is_ok());
-}
-```
-
-#### 5. Document Macro Behavior Thoroughly
-
-```rust
-/// Attribute macro for registering a verb command
-///
-/// # Usage
-///
-/// ```rust,ignore
-/// #[verb("status")]
-/// fn show_status(name: String) -> Result<StatusOutput> {
-///     Ok(StatusOutput { name, running: true })
-/// }
-/// ```
-///
-/// # Generated Code
-///
-/// The macro generates:
-/// 1. Duplicate detection const
-/// 2. Wrapper function adapting HandlerInput
-/// 3. linkme distributed slice entry
-///
-/// # Arguments
-///
-/// - First arg (optional): verb name - auto-inferred from function name if omitted
-/// - Second arg (optional): noun name - auto-detected from filename if omitted
-///
-/// # Validation
-///
-/// The macro performs compile-time checks:
-/// - Return type must implement Serialize
-/// - Verb function complexity ≤ 5 (FM-1.1)
-/// - No CLI types in parameters (FM-1.2)
-///
-/// # Errors
-///
-/// Compilation fails if:
-/// - Return type doesn't implement Serialize (Gap 3)
-/// - Verb attribute syntax is invalid (Gap 4)
-/// - Duplicate verb+noun combination detected (Gap 2)
-#[proc_macro_attribute]
-pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream { }
-```
-
-#### 6. Use Builder Patterns for Complex Code Generation
-
-```rust
-// ✅ GOOD: Structured code generation
-struct WrapperGenerator {
-    fn_name: syn::Ident,
-    args: Vec<ArgExtraction>,
-    arg_calls: Vec<TokenStream>,
-}
-
-impl WrapperGenerator {
-    fn generate(&self) -> TokenStream {
-        let fn_name = &self.fn_name;
-        let extractions = &self.args;
-        let calls = &self.arg_calls;
-        
-        quote! {
-            fn wrapper(__handler_input: HandlerInput) -> Result<HandlerOutput> {
-                #(#extractions)*
-                let result = #fn_name(#(#calls),*)?;
-                HandlerOutput::from_data(result)
-            }
-        }
-    }
-}
-```
-
-### ❌ Anti-Patterns to Avoid
-
-#### 1. Never Panic in Macro Code
-
-```rust
-// ❌ BAD: Will crash user's compiler
-if args_vec.len() > 2 {
-    panic!("Too many arguments!");  // NEVER!
-}
-
-// ✅ GOOD: Return Err for compile-time error
-if args_vec.len() > 2 {
-    return Err(syn::Error::new(
-        args.span(),
-        "Too many arguments in #[verb]"
-    )).to_compile_error().into();
-}
-```
-
-#### 2. Never Use unwrap() in Macro Code
-
-```rust
-// ❌ BAD: Will panic if attribute parsing fails
-let segment = type_path.path.segments.last().unwrap();  // CRASH!
-
-// ✅ GOOD: Handle None gracefully
-let segment = match type_path.path.segments.last() {
-    Some(s) => s,
-    None => {
-        return Err(syn::Error::new(
-            type_path.span(),
-            "Invalid type path"
-        ));
-    }
-};
-```
-
-#### 3. Don't Ignore Error Types
-
-```rust
-// ❌ BAD: Silently ignores parsing errors
-let _ = parser.parse2(tokens);  // Error lost!
-
-// ✅ GOOD: Handle errors explicitly
-match parser.parse2(tokens) {
-    Ok(args) => process_args(args),
-    Err(e) => {
-        return Err(syn::Error::new(
-            e.span(),
-            format!("Failed to parse arguments: {}", e)
-        ));
-    }
-}
-```
-
-#### 4. Don't Generate Code with Hardcoded Types
-
-```rust
-// ❌ BAD: Only works for String, hardcoded
-let arg_extraction = quote! {
-    let #arg_name = __handler_input.args.get(#arg_name_str)
-        .unwrap()
-        .parse::<String>()?;
-};
-
-// ✅ GOOD: Uses actual inferred type
-let inner_ty = extract_inner_type(&pat_type.ty);
-let arg_extraction = quote! {
-    let #arg_name = __handler_input.args.get(#arg_name_str)
-        .ok_or_else(|| NounVerbError::missing_argument(#arg_name_str))?
-        .parse::<#inner_ty>()?;
-};
-```
-
-#### 5. Don't Silently Truncate Data
-
-```rust
-// ❌ BAD: Silently skips invalid attributes
-for attr in attrs {
-    if let Ok(config) = parse_arg_config(attr) {
-        // Only valid ones processed - invalid ones ignored
-    }
-}
-
-// ✅ GOOD: Report issues
-for attr in attrs {
-    let config = parse_arg_config(attr)?;  // Propagate error
-    // Process config
-}
-```
-
----
-
-## Quick Reference
-
-### Macro File Organization
-
-| File | Purpose | Key Functions |
-|------|---------|---------------|
-| `lib.rs` | Entry points | `#[verb]`, `#[noun]`, `#[arg]`, `#[meta_aware]` |
-| `validation.rs` | Compile-time checks | `validate_return_type()`, `validate_verb_complexity()` |
-| `io_detection.rs` | Type inference | `detect_io_type()`, `is_option_type()` |
-| `meta_framework.rs` | Introspection | `generate_meta_aware()` |
-| `telemetry_validation.rs` | Span tracking | `generate_span_declaration()` |
-| `rdf_generation.rs` | RDF output | RDF serialization helpers |
-
-### Common Type Checks
-
-```rust
-is_option_type(&ty)           // Option<T>?
-is_bool_type(&ty)             // bool?
-is_vec_type(&ty)              // Vec<T>?
-extract_inner_type(&ty)       // Get T from Option<T>
-extract_option_inner(&ty)     // Get T from Option<T>
-detect_io_type(&ty)           // Input/Output/etc?
-```
-
-### Common Parsing Patterns
-
-```rust
-// Parse comma-separated expressions
-let parser = syn::punctuated::Punctuated::<syn::Expr, syn::Token![,]>::parse_terminated;
-let args = parser.parse2(tokens)?;
-
-// Parse #[attr(...)] syntax
-if let syn::Meta::List(list) = &attr.meta {
-    let meta_list = Punctuated::<syn::Meta, Token![,]>::parse_terminated
-        .parse2(list.tokens.clone())?;
-}
-
-// Extract ident from path
-if let Some(ident) = path.get_ident() {
-    let name = ident.to_string();
-}
-```
-
-### Code Generation Snippets
-
-```rust
-// Check if type is serializable
-if !is_serializable_type(ty) {
-    return Err(error);
-}
-
-// Generate type coercion
-let coercion = if is_option {
-    quote! { Some(#inner_ty) }
-} else {
-    quote! { #inner_ty }
-};
-
-// Generate error handling
-let error_handling = quote! {
-    .ok_or_else(|| NounVerbError::missing_argument(#name))?
-};
-
-// Generate argument extraction
-let extraction = quote! {
-    let #name = __handler_input.args.get(#name_str)
-        #error_handling
-        .parse::<#inner_ty>()?;
-};
-```
+- [ ] **Understanding**: Read `lib.rs` lines 1-450 (architecture)
+- [ ] **Validation**: Add validation check to `validation.rs` + tests
+- [ ] **Error Messages**: Include "Expected vs Found" patterns
+- [ ] **Type Checking**: Use proper `syn` patterns for type inspection
+- [ ] **Code Generation**: Use fully qualified paths in `quote!`
+- [ ] **Testing**: Add unit test + integration test + error case test
+- [ ] **Performance**: Benchmark if adding expensive operation
+- [ ] **Documentation**: Add examples in macro doc comments
+- [ ] **Compatibility**: Test with raw identifiers (`r#type`)
+- [ ] **Error Handling**: No unwrap/expect in macro code
 
 ---
 
 ## Additional Resources
 
-### Internal Documentation
-- **CLAUDE.md** - Project guidelines and build commands
-- **Cargo.toml** - Dependencies and feature gates
-- **syn crate docs** - https://docs.rs/syn/latest/syn/
-- **quote crate docs** - https://docs.rs/quote/latest/quote/
+**Key Files**:
+- `clap-noun-verb-macros/src/lib.rs` (Main macro)
+- `clap-noun-verb-macros/src/validation.rs` (Validation)
+- `tests/macros/federated_network_test.rs` (Integration tests)
+- `CLAUDE.md` (Project guidelines)
 
-### External Learning Resources
-- **Proc Macro Workshop** - https://github.com/dtolnay/proc-macro-workshop
-- **Little Book of Macros** - https://veykril.github.io/tlbom/
-- **Rust Macro Design** - https://rustyyato.github.io/type-level-programming/
+**External Resources**:
+- [syn crate documentation](https://docs.rs/syn/)
+- [quote crate documentation](https://docs.rs/quote/)
+- [proc_macro API](https://doc.rust-lang.org/proc_macro/)
 
-### Testing & Debugging Tools
-- `cargo expand` - View macro-generated code
-- `cargo-tree` - Visualize dependency tree
-- `trybuild` - UI testing for macros
-- `insta` - Snapshot testing
-- `cargo-flamegraph` - Performance profiling
+**Commands**:
+```bash
+# See expanded macros
+cargo expand --test integration_test | head -100
 
----
+# Run all macro tests
+cargo make test
 
-## Conclusion
+# Lint macro code
+cargo make clippy
+```
 
-The clap-noun-verb macro system combines compile-time validation, automated code generation, and architectural patterns to provide a safe, efficient CLI development experience. When extending or modifying these macros:
-
-1. **Respect the Poka-Yoke gaps** - These prevent common mistakes
-2. **Test thoroughly** - Unit, integration, and UI tests catch regressions
-3. **Document behavior** - Clear docs help future maintainers
-4. **Monitor performance** - Keep incremental compile times fast
-5. **Preserve span information** - Helpful errors guide users to fixes
-
-Questions? Refer to specific sections above or check the source code comments for additional context.
