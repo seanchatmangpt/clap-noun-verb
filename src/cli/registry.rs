@@ -757,19 +757,6 @@ impl CommandRegistry {
 
     /// Run CLI with auto-discovered commands
     pub fn run(&self, args: Vec<String>) -> Result<()> {
-        self.run_with_default_format(args, crate::format::OutputFormat::JsonPretty)
-    }
-
-    /// Like [`run`](Self::run), but uses `default_format` for output when no
-    /// `--format` flag is given. A consumer that prints its own human-readable
-    /// output (and returns `()`) passes `OutputFormat::Quiet` to suppress the
-    /// framework's serialization (which would otherwise print `null` for a unit
-    /// return). The existing `JsonPretty` default is unchanged for `run`.
-    pub fn run_with_default_format(
-        &self,
-        args: Vec<String>,
-        default_format: crate::format::OutputFormat,
-    ) -> Result<()> {
         if args.is_empty() {
             return Err(crate::error::NounVerbError::argument_error("No arguments provided"));
         }
@@ -812,7 +799,7 @@ impl CommandRegistry {
                 crate::cli::preprocessor::preprocess_args(&step, &stdin_val, &step_results)?;
             step_args.extend(processed_args);
 
-            let output = self.execute_single_step_with_default(step_args, default_format)?;
+            let output = self.execute_single_step(step_args)?;
             step_results.push(output.data);
         }
 
@@ -821,16 +808,6 @@ impl CommandRegistry {
 
     /// Execute a single CLI command step and return the handler output
     pub fn execute_single_step(&self, args: Vec<String>) -> Result<HandlerOutput> {
-        self.execute_single_step_with_default(args, crate::format::OutputFormat::JsonPretty)
-    }
-
-    /// Like [`execute_single_step`](Self::execute_single_step), but uses
-    /// `default_format` when no `--format` flag is present.
-    pub fn execute_single_step_with_default(
-        &self,
-        args: Vec<String>,
-        default_format: crate::format::OutputFormat,
-    ) -> Result<HandlerOutput> {
         let cmd = self.build_command();
 
         let requested = args.iter().any(|arg| arg == "--structured-errors" || arg == "--autonomic")
@@ -892,7 +869,7 @@ impl CommandRegistry {
         let output_format = format_str
             .as_deref()
             .and_then(|s| s.parse::<crate::format::OutputFormat>().ok())
-            .unwrap_or(default_format);
+            .unwrap_or(crate::format::OutputFormat::JsonPretty);
 
         let flag_requested = matches.get_flag("structured-errors") || matches.get_flag("autonomic");
 

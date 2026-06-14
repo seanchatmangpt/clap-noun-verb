@@ -410,28 +410,6 @@ mod tests {
         assert!("invalid".parse::<OutputFormat>().is_err());
     }
 
-    /// Format-layer witness for the `run_with_default_format(Quiet)` null-suppression
-    /// guarantee. A unit return serializes to JSON `null`; under `JsonPretty` (the
-    /// `run` default) that prints the literal "null", under `Quiet` it is empty.
-    /// `run_with_default_format` exists so a consumer that prints its own output can
-    /// select `Quiet` and suppress the framework's trailing "null". If this asymmetry
-    /// ever regresses, the suppression a consumer relies on is silently broken — so it
-    /// is pinned here, in the pack's own suite, not only in a downstream consumer's.
-    #[test]
-    fn quiet_suppresses_unit_return_jsonpretty_does_not() {
-        let unit = serde_json::Value::Null;
-        assert_eq!(
-            OutputFormat::Quiet.format(&unit).unwrap(),
-            "",
-            "Quiet must render a unit/null return as empty (the suppression)"
-        );
-        assert_eq!(
-            OutputFormat::JsonPretty.format(&unit).unwrap(),
-            "null",
-            "JsonPretty renders a unit return as literal null (the symptom Quiet suppresses)"
-        );
-    }
-
     #[test]
     fn test_available_formats() {
         let formats = OutputFormat::available_formats();

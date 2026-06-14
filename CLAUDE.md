@@ -58,7 +58,9 @@ Two crates in a workspace:
 - **`tree.rs`** — `CommandTree` for hierarchical command structure
 
 ### Feature-Gated Modules
-- `async` → `async_verb.rs`, `io` → `io/`, `crypto` → hashing, `autonomic` → `autonomic/`, `kernel` → `kernel/`, `rdf` → `rdf/`, `semantic/`, `ggen_integration/`, `agent2028` → `agent2028/`, `agents/`, `wizard/`, `full` → `plugin/`, `middleware/`, `integration/`, `plugins/`
+- `async` → `async_verb.rs` (the only optional module still present after the minimalist refactor)
+- `federated-network` → `federation/` (feature-gated; see `src/federation/`)
+- Note: earlier optional modules (`io/`, `kernel/`, `rdf/`, `semantic/`, `ggen_integration/`, `agent2028/`, `agents/`, `wizard/`, `plugin/`, `middleware/`, `integration/`, `plugins/`) were removed in the minimalist refactor and no longer exist in `src/`. The frontier feature *names* survive only as `check-cfg` allowances in `Cargo.toml`, not as buildable modules.
 
 ### Macro Crate (`clap-noun-verb-macros/src/`)
 - **`lib.rs`** — `#[noun]` (deprecated no-op), `#[verb]` (main macro), `#[arg]` (parameter attributes)

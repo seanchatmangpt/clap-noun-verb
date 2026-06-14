@@ -129,8 +129,8 @@ pub mod ontology_sync;
 // PUBLIC RE-EXPORTS - Core types always available
 // =============================================================================
 
-// Re-export CLI run functions for convenience
-pub use cli::{run, run_with_default_format};
+// Re-export CLI run function for convenience
+pub use cli::run;
 
 // Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};

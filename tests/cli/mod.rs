@@ -16,8 +16,4 @@
 //! - Integration over unit testing
 //! - Arrange-Act-Assert (AAA) pattern
 
-// pub mod io_cli_tests;
-// pub mod kernel_cli_tests;
-// pub mod middleware_cli_tests;
-// pub mod plugin_cli_tests;
 pub mod telemetry_cli_tests;
