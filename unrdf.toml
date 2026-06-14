@@ -18,3 +18,17 @@ output_file = "generated_verbs.rs"
 name = "traits"
 template = "templates/unrdf/domain_traits.njk"
 output_file = "domain_traits.rs"
+
+# ============================================================================
+# R2 — SANITIZER VALIDATION (authoritative; every pack consumer inherits this)
+# ============================================================================
+# Fails any ontology where two arguments on the same verb resolve to the same
+# Rust field name (the kebab->snake / explicit-cnv:fieldName collision case).
+# ASK semantics: TRUE => violation exists => Error => generation fails.
+# Sanitizer spec is pinned in ontology/clap-noun-verb-ontology.ttl (cnv:fieldName)
+# and reproduced in ontology/queries/fieldname-collision.rq.
+[[validation.rules]]
+name = "cnv-fieldname-collision"
+severity = "Error"
+description = "Two CLI arguments on the same verb sanitize to the same Rust field name (kebab->snake or explicit cnv:fieldName collision). Silently merging them would emit compiling-but-wrong Rust, so generation is rejected. Disambiguate via distinct cnv:fieldName values."
+query = "ontology/queries/fieldname-collision.rq"
