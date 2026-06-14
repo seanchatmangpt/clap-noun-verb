@@ -5,6 +5,7 @@
 //!
 
 use clap_noun_verb::cli::builder::CliBuilder as OpinionatedCliBuilder;
+use clap_noun_verb::clap_ext::completions::{CompletionGenerator, Shell};
 use clap_noun_verb::{CliBuilder as MainCliBuilder, Result};
 
 #[test]
@@ -71,13 +72,36 @@ fn test_main_cli_builder_completions_execution() -> Result<()> {
         .version("1.2.3")
         .with_completions_subcommand();
 
-    // Act & Assert - should run successfully
+    // Act - dispatch through the completions -> bash path must succeed
     let res = cli.run_with_args(vec![
         "testapp".to_string(),
         "completions".to_string(),
         "bash".to_string(),
     ]);
-    assert!(res.is_ok());
+    res?;
+
+    // Assert - witness the concrete bash script the handler prints to stdout.
+    // The handler builds a CompletionGenerator from the app name/version and
+    // calls `.generate(Shell::Bash)`; reproduce that exact contract here.
+    let script = CompletionGenerator::new("testapp")
+        .with_version("1.2.3")
+        .generate(Shell::Bash)?;
+    assert!(
+        script.starts_with("# testapp completion script for bash"),
+        "bash script must carry the app-name header, got: {script}"
+    );
+    assert!(
+        script.contains("# Generated for version 1.2.3"),
+        "bash script must embed the configured version"
+    );
+    assert!(
+        script.contains("_TESTAPP_completions()"),
+        "bash script must define the uppercased completion function"
+    );
+    assert!(
+        script.contains("complete -o bashdefault -o default -o nospace -F _TESTAPP_completions testapp"),
+        "bash script must register the completion function for the app"
+    );
 
     Ok(())
 }
@@ -90,13 +114,35 @@ fn test_opinionated_cli_builder_completions_execution() -> Result<()> {
         .version("1.2.3")
         .with_completions_subcommand();
 
-    // Act & Assert - should run successfully
+    // Act - dispatch through the completions -> bash path must succeed
     let res = cli.run_with_args(vec![
         "testapp".to_string(),
         "completions".to_string(),
         "bash".to_string(),
     ]);
-    assert!(res.is_ok());
+    res?;
+
+    // Assert - witness the concrete bash script the handler prints to stdout,
+    // reproducing the handler's CompletionGenerator(app, version).generate(Bash).
+    let script = CompletionGenerator::new("testapp")
+        .with_version("1.2.3")
+        .generate(Shell::Bash)?;
+    assert!(
+        script.starts_with("# testapp completion script for bash"),
+        "bash script must carry the app-name header, got: {script}"
+    );
+    assert!(
+        script.contains("# Generated for version 1.2.3"),
+        "bash script must embed the configured version"
+    );
+    assert!(
+        script.contains("_TESTAPP_completions()"),
+        "bash script must define the uppercased completion function"
+    );
+    assert!(
+        script.contains("complete -o bashdefault -o default -o nospace -F _TESTAPP_completions testapp"),
+        "bash script must register the completion function for the app"
+    );
 
     Ok(())
 }

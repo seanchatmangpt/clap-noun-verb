@@ -44,22 +44,40 @@ fn test_v26_6_1_public_api_surface() {
 // PART A: Command Introspection
 // ============================================================================
 
-/// Test that specimen CLI has exactly 6 discoverable commands
+/// Test that the specimen CLI exposes exactly the verbs ggen expects to discover.
+///
+/// The `tutorial_services` example registers three `#[verb]` functions on the
+/// `services` noun: `status`, `restart`, and `logs`. The `--introspect` flag is
+/// the ggen discovery surface and emits a JSON array of tool descriptors, one per
+/// verb. We assert on the actual descriptor count and names, not merely on build
+/// success — this is the contract ggen relies on for tool-calling.
 #[test]
 fn test_specimen_cli_command_count() {
     let output = Command::new("cargo")
-        .args(["build", "--example", "tutorial_services"])
+        .args(["run", "--quiet", "--example", "tutorial_services", "--", "--introspect"])
         .current_dir("/Users/sac/clap-noun-verb")
         .output()
-        .expect("Failed to build tutorial_services example");
+        .expect("Failed to run tutorial_services --introspect");
 
     assert!(
         output.status.success(),
-        "Failed to build tutorial_services: {}",
+        "tutorial_services --introspect failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
 
-    println!("✓ specimen CLI compiles successfully");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let tools: Vec<serde_json::Value> =
+        serde_json::from_str(&stdout).expect("--introspect must emit a JSON array of tool descriptors");
+
+    // Exactly the three registered verbs are discoverable.
+    assert_eq!(tools.len(), 3, "specimen CLI must expose exactly 3 discoverable verbs");
+
+    let names: Vec<&str> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
+    assert!(names.contains(&"services_status"), "missing services_status verb: {names:?}");
+    assert!(names.contains(&"services_restart"), "missing services_restart verb: {names:?}");
+    assert!(names.contains(&"services_logs"), "missing services_logs verb: {names:?}");
+
+    println!("✓ specimen CLI exposes exactly 3 discoverable verbs via --introspect");
 }
 
 /// Test that specimen CLI --help lists all commands
@@ -71,16 +89,31 @@ fn test_specimen_cli_help_output() {
         .output()
         .expect("Failed to run tutorial_services --help");
 
+    assert!(
+        output.status.success(),
+        "tutorial_services --help failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
     let help_text = String::from_utf8_lossy(&output.stdout);
     println!("Help output:\n{}", help_text);
 
-    // Check for presence of typical command help patterns
+    // The top-level help lists the registered `services` noun and the built-in
+    // `help` subcommand, under a "Commands:" section, with a usage line for the
+    // example binary. Assert on these concrete strings rather than a fuzzy
+    // case-insensitive "command" match.
+    assert!(help_text.contains("Commands:"), "Help output must contain a Commands: section");
+    assert!(help_text.contains("services"), "Help output must list the 'services' noun");
     assert!(
-        help_text.contains("COMMAND") || help_text.contains("command"),
-        "Help output should list commands"
+        help_text.contains("Manage application services"),
+        "Help output must include the 'services' noun about text"
+    );
+    assert!(
+        help_text.contains("Usage: tutorial_services"),
+        "Help output must include the usage line for the example binary"
     );
 
-    println!("✓ specimen CLI help output contains command listing");
+    println!("✓ specimen CLI help output lists the 'services' noun and usage");
 }
 
 // ============================================================================
@@ -243,13 +276,14 @@ fn test_specimen_output_types_serializable() {
 fn test_error_handling_compatibility() {
     let error = NounVerbError::command_not_found("test");
 
-    // ggen should be able to:
-    // 1. Pattern match on error types
-    // 2. Extract error messages
-    // 3. Determine exit codes
-
+    // The Display impl (thiserror) for CommandNotFound is
+    // "Command '{noun}' not found{suggestion}". With no candidates the suggestion
+    // is empty, so the rendered message is exactly "Command 'test' not found".
     let error_str = error.to_string();
-    assert!(!error_str.is_empty());
+    assert_eq!(error_str, "Command 'test' not found", "CommandNotFound Display contract");
+
+    // ggen extracts the offending noun from the message; verify it is embedded.
+    assert!(error_str.contains("test"), "error message must name the missing command");
 
     println!("✓ NounVerbError is ggen-compatible");
 }
@@ -292,23 +326,43 @@ fn test_result_type_usage() {
 /// Test that ggen can use #[verb] macro pattern
 #[test]
 fn test_verb_macro_pattern() {
-    // The specimen CLI uses #[verb("verb", "noun")] pattern
-    // This test verifies the macro is discoverable at compile time
-
-    // Build specimen CLI to verify macros work
+    // The specimen CLI registers verbs via the #[verb] macro. Beyond compiling,
+    // a macro-registered verb must actually route and produce its declared output.
+    // Invoke `services status` and verify the real, structured JSON payload —
+    // get_service_status() returns 4 services, each "Running", with known ports.
     let output = Command::new("cargo")
-        .args(["check", "--example", "tutorial_services"])
+        .args(["run", "--quiet", "--example", "tutorial_services", "--", "services", "status"])
         .current_dir("/Users/sac/clap-noun-verb")
         .output()
-        .expect("Failed to check specimen example");
+        .expect("Failed to run specimen 'services status'");
 
     assert!(
         output.status.success(),
-        "specimen example failed to compile: {}",
+        "specimen 'services status' failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
 
-    println!("✓ #[verb] macro pattern is stable and discoverable");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let value: serde_json::Value =
+        serde_json::from_str(&stdout).expect("verb output must be valid JSON");
+
+    let services = value["services"].as_array().expect("output must carry a 'services' array");
+    assert_eq!(services.len(), 4, "status must report all 4 registered services");
+
+    let names: Vec<&str> = services.iter().filter_map(|s| s["name"].as_str()).collect();
+    assert!(names.contains(&"web-server"), "status must include web-server: {names:?}");
+    assert!(names.contains(&"database"), "status must include database: {names:?}");
+
+    // Every service is "Running" per get_service_status().
+    assert!(
+        services.iter().all(|s| s["state"] == "Running"),
+        "all services must report state Running"
+    );
+    // web-server runs on port 8080.
+    let web = services.iter().find(|s| s["name"] == "web-server").expect("web-server present");
+    assert_eq!(web["port"], 8080, "web-server must report port 8080");
+
+    println!("✓ #[verb] macro pattern routes and produces real structured output");
 }
 
 /// Test that VerbCommand trait is accessible
