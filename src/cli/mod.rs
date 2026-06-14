@@ -41,3 +41,18 @@ pub fn run() -> crate::error::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     registry.run(args)
 }
+
+/// Like [`run`], but uses `default_format` for output when no `--format` flag is
+/// given. A consumer that prints its own human-readable output and returns `()`
+/// passes [`OutputFormat::Quiet`](crate::format::OutputFormat::Quiet) to suppress
+/// the framework's default serialization (which would otherwise print `null`).
+pub fn run_with_default_format(
+    default_format: crate::format::OutputFormat,
+) -> crate::error::Result<()> {
+    let registry = registry::CommandRegistry::get();
+    let registry = registry.lock().map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
+    })?;
+    let args: Vec<String> = std::env::args().collect();
+    registry.run_with_default_format(args, default_format)
+}
