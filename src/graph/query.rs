@@ -8,21 +8,31 @@ use serde::{Deserialize, Serialize};
 /// Result from graph query operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResultOutput {
+    /// Query type used ("subject", "predicate", "object", or "all").
     pub query_type: String,
+    /// Pattern matched against triple components.
     pub pattern: String,
+    /// Matching triples.
     pub results: Vec<QueryMatch>,
+    /// Number of matches found.
     pub match_count: usize,
 }
 
+/// A single triple matched by a graph query.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryMatch {
+    /// Index of the match within the result set.
     pub index: usize,
+    /// Subject of the matched triple.
     pub subject: String,
+    /// Predicate of the matched triple.
     pub predicate: String,
+    /// Object of the matched triple.
     pub object: String,
 }
 
 impl QueryResultOutput {
+    /// Create an empty result for the given query type and pattern.
     pub fn new(query_type: impl Into<String>, pattern: impl Into<String>) -> Self {
         Self {
             query_type: query_type.into(),
@@ -32,6 +42,7 @@ impl QueryResultOutput {
         }
     }
 
+    /// Attach matches, updating `match_count` to the result length.
     pub fn with_results(mut self, results: Vec<QueryMatch>) -> Self {
         self.match_count = results.len();
         self.results = results;

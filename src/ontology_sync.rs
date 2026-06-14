@@ -51,30 +51,45 @@ pub enum SyncOperation {
 /// Verb entry in synchronization result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VerbSyncEntry {
+    /// Name of the verb this entry describes
     pub verb_name: String,
+    /// Parent noun name, if the verb belongs to one
     pub noun: Option<String>,
+    /// Operation needed to reconcile code and RDF for this verb
     pub operation: SyncOperation,
+    /// Verb definition parsed from Rust code, if present
     pub code_version: Option<RdfVerbDefinition>,
+    /// Verb definition loaded from the RDF ontology, if present
     pub rdf_version: Option<RdfVerbDefinition>,
+    /// Human-readable field-level differences between the two versions
     pub differences: Vec<String>,
 }
 
 /// Complete synchronization result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncResult {
+    /// Timestamp string of when the sync was computed
     pub timestamp: String,
+    /// Total verb count (max of code and RDF counts)
     pub total_verbs: usize,
+    /// Per-verb sync entries describing each difference and operation
     pub changes: Vec<VerbSyncEntry>,
+    /// Aggregate counts and conformance verdict
     pub summary: SyncSummary,
 }
 
 /// Summary statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncSummary {
+    /// Number of verbs to add to the ontology
     pub added: usize,
+    /// Number of verbs whose definitions differ and need updating
     pub modified: usize,
+    /// Number of verbs present in RDF but missing from code
     pub removed: usize,
+    /// Number of verbs that match in both sources
     pub unchanged: usize,
+    /// True when no verbs are removed (code and RDF conform)
     pub conformant: bool,
 }
 
@@ -408,11 +423,16 @@ fn parse_ntriples(content: &str) -> Result<Vec<RdfTriple>, SyncError> {
 // ERROR TYPES
 // =============================================================================
 
+/// Errors produced during ontology synchronization
 #[derive(Debug)]
 pub enum SyncError {
+    /// Filesystem read/write failure
     IoError(String),
+    /// Failure parsing Rust source for verbs
     ParseError(String),
+    /// Failure converting RDF triples to verb definitions
     RdfError(String),
+    /// Code and RDF do not conform
     ConformanceError(String),
 }
 

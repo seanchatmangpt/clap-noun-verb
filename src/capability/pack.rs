@@ -8,13 +8,18 @@ use serde::{Deserialize, Serialize};
 /// Result from pack add operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackAddedOutput {
+    /// Generated package ID.
     pub id: String,
+    /// Package name.
     pub name: String,
+    /// Package version.
     pub version: String,
+    /// Operation status (set to "added").
     pub status: String,
 }
 
 impl PackAddedOutput {
+    /// Create an "added" result for the given package ID, name, and version.
     pub fn new(id: impl Into<String>, name: impl Into<String>, version: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -28,12 +33,16 @@ impl PackAddedOutput {
 /// Result from pack remove operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackRemovedOutput {
+    /// ID of the removed package.
     pub removed_id: String,
+    /// Operation status (set to "removed").
     pub status: String,
+    /// Human-readable confirmation message.
     pub message: String,
 }
 
 impl PackRemovedOutput {
+    /// Create a "removed" result for the given package ID.
     pub fn new(removed_id: impl Into<String>) -> Self {
         Self {
             removed_id: removed_id.into(),

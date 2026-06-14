@@ -144,14 +144,8 @@ mod executable_specs_tests {
         let error_idx = valid.iter().position(|&s| s == "error").unwrap();
         let warning_idx = valid.iter().position(|&s| s == "warning").unwrap();
         let info_idx = valid.iter().position(|&s| s == "info").unwrap();
-        assert!(
-            error_idx < warning_idx,
-            "error should come before warning in severity list"
-        );
-        assert!(
-            warning_idx < info_idx,
-            "warning should come before info in severity list"
-        );
+        assert!(error_idx < warning_idx, "error should come before warning in severity list");
+        assert!(warning_idx < info_idx, "warning should come before info in severity list");
     }
 
     /// Test spec versioning is semantic

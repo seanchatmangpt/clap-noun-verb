@@ -20,8 +20,11 @@ use serde::{Deserialize, Serialize};
 /// Represents an RDF triple: subject-predicate-object
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Triple {
+    /// Subject of the triple.
     pub subject: String,
+    /// Predicate of the triple.
     pub predicate: String,
+    /// Object of the triple.
     pub object: String,
 }
 
@@ -123,11 +126,14 @@ impl Default for Graph {
 /// SPARQL-style query result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryResult {
+    /// Name of the bound query variable.
     pub variable: String,
+    /// Values bound to the variable.
     pub values: Vec<String>,
 }
 
 impl QueryResult {
+    /// Create a query result for a variable with its bound values.
     pub fn new(variable: impl Into<String>, values: Vec<String>) -> Self {
         Self { variable: variable.into(), values }
     }
@@ -136,7 +142,9 @@ impl QueryResult {
 /// Validation error for RDF content
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationError {
+    /// Zero-based index of the invalid triple within the graph.
     pub triple_index: usize,
+    /// Human-readable description of the validation failure.
     pub message: String,
 }
 

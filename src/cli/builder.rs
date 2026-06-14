@@ -219,6 +219,16 @@ impl CliBuilder {
         self.run_with_args(args)
     }
 
+    /// Run the CLI with the supplied argument vector.
+    ///
+    /// Splits the args into pipeline steps on the `++` separator, builds the
+    /// clap command, reads stdin if any step references it, and routes each
+    /// step through a [`CommandRouter`]. With no steps, routes the bare command.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `args` is empty, if argument parsing fails, or if a
+    /// routed handler returns an error.
     pub fn run_with_args(self, args: Vec<String>) -> Result<()> {
         if args.is_empty() {
             return Err(NounVerbError::argument_error("No arguments provided"));

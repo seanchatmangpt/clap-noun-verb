@@ -519,10 +519,14 @@ fn escape_rdf_string(s: &str) -> String {
 // ERROR TYPES
 // =============================================================================
 
+/// Errors produced while parsing Rust source into verb definitions
 #[derive(Debug)]
 pub enum ParseError {
+    /// The function signature could not be parsed
     InvalidSignature,
+    /// A required parameter was missing
     MissingParameter,
+    /// The return type could not be parsed
     InvalidReturnType,
 }
 

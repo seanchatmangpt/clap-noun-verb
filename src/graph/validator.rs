@@ -9,23 +9,32 @@ use std::fs;
 /// Result from graph validation operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationResultOutput {
+    /// Whether all triples passed validation.
     pub valid: bool,
+    /// Validation errors found, if any.
     pub errors: Vec<ValidationErrorOutput>,
+    /// Total number of triples examined.
     pub total_triples: usize,
+    /// Number of triples that passed validation.
     pub valid_triples: usize,
 }
 
+/// A single validation error with its source line.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationErrorOutput {
+    /// Line number (or triple index) where the error occurred.
     pub triple_index: usize,
+    /// Description of the validation failure.
     pub message: String,
 }
 
 impl ValidationResultOutput {
+    /// Create a result assuming all `total_triples` are valid.
     pub fn new(total_triples: usize) -> Self {
         Self { valid: true, errors: Vec::new(), total_triples, valid_triples: total_triples }
     }
 
+    /// Record an error, marking the result invalid and decrementing valid count.
     pub fn add_error(&mut self, idx: usize, msg: impl Into<String>) {
         self.valid = false;
         self.valid_triples = self.valid_triples.saturating_sub(1);

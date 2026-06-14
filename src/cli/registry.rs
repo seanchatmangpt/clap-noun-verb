@@ -63,6 +63,10 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 thread_local! {
+    /// Per-thread cache of the most recently built clap [`Command`](clap::Command).
+    ///
+    /// Set by [`CommandRegistry::build_command`] so other code on the same
+    /// thread can inspect the active command tree (e.g. for introspection).
     pub static ACTIVE_COMMAND: std::cell::RefCell<Option<clap::Command>> = const { std::cell::RefCell::new(None) };
 }
 
@@ -191,13 +195,21 @@ struct NounMetadata {
 /// Argument metadata for a verb function parameter
 #[derive(Clone)]
 pub struct ArgMetadata {
+    /// Argument name (also the clap id and base for the long flag).
     pub name: String,
+    /// Whether the argument must be provided.
     pub required: bool,
+    /// Whether the argument is a boolean flag (no value).
     pub is_flag: bool,
+    /// Help text shown in usage output.
     pub help: Option<String>,
+    /// Minimum value for numeric range validation (parsed from string).
     pub min_value: Option<String>,
+    /// Maximum value for numeric range validation (parsed from string).
     pub max_value: Option<String>,
+    /// Minimum string length; a value > 0 enforces non-empty input.
     pub min_length: Option<usize>,
+    /// Maximum string length.
     pub max_length: Option<usize>,
     /// Short flag character (e.g., 'v' for -v)
     pub short: Option<char>,

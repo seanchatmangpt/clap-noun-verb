@@ -31,15 +31,22 @@ fn generate_hex_id(len: usize) -> String {
 /// Autonomic Telemetry Envelope Payload Format
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutonomicTelemetryEnvelope<T> {
+    /// Envelope schema version
     pub schema_version: String,
+    /// CLI application version
     pub cli_version: String,
+    /// Unix epoch seconds when the envelope was created
     pub timestamp: String,
+    /// Associated trace identifier
     pub trace_id: String,
+    /// Optional span identifier
     pub span_id: Option<String>,
+    /// Arbitrary serializable payload
     pub payload: T,
 }
 
 impl<T> AutonomicTelemetryEnvelope<T> {
+    /// Create an envelope, stamping the current Unix epoch seconds as the timestamp
     pub fn new(
         schema_version: &str,
         cli_version: &str,
@@ -82,26 +89,32 @@ impl TraceContext {
         })
     }
 
+    /// Return the 32-hex-character trace identifier
     pub fn trace_id(&self) -> &str {
         &self.trace_id
     }
 
+    /// Return the 16-hex-character span identifier
     pub fn span_id(&self) -> &str {
         &self.span_id
     }
 
+    /// Whether this trace is marked as sampled
     pub fn is_sampled(&self) -> bool {
         self.sampled
     }
 
+    /// Set the sampled flag for this trace
     pub fn set_sampled(&mut self, sampled: bool) {
         self.sampled = sampled;
     }
 
+    /// Set a baggage key/value pair carried with the trace
     pub fn set_baggage(&mut self, key: &str, value: &str) {
         self.baggage.insert(key.to_string(), value.to_string());
     }
 
+    /// Get a baggage value by key, if present
     pub fn get_baggage(&self, key: &str) -> Option<String> {
         self.baggage.get(key).cloned()
     }
@@ -207,6 +220,7 @@ pub struct Span {
 }
 
 impl Span {
+    /// Create a new root span with the given name, starting its timer immediately
     pub fn new(name: &str) -> Result<Self, NounVerbError> {
         Ok(Self {
             name: name.to_string(),
@@ -221,6 +235,7 @@ impl Span {
         })
     }
 
+    /// Create a child span whose `parent_id` is set to the given parent span's id
     pub fn new_with_parent(name: &str, parent: &Span) -> Result<Self, NounVerbError> {
         Ok(Self {
             name: name.to_string(),
@@ -235,22 +250,27 @@ impl Span {
         })
     }
 
+    /// Return the span's unique identifier
     pub fn id(&self) -> String {
         self.id.clone()
     }
 
+    /// Return the parent span's identifier, if this is a child span
     pub fn parent_id(&self) -> Option<String> {
         self.parent_id.clone()
     }
 
+    /// Return the span name
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Return the current status string (e.g. `"unset"`, `"error"`)
     pub fn status(&self) -> &str {
         &self.status
     }
 
+    /// Set the span status; setting it to `"error"` also marks the error flag
     pub fn set_status(&mut self, status: &str) {
         self.status = status.to_string();
         if status == "error" {
@@ -258,40 +278,49 @@ impl Span {
         }
     }
 
+    /// Mark the span as errored, setting status to `"error"` and recording an error event
     pub fn set_error(&mut self, error: &str) {
         self.status = "error".to_string();
         self.has_error = true;
         self.add_event("error", error);
     }
 
+    /// Whether the span has been marked as errored
     pub fn has_error(&self) -> bool {
         self.has_error
     }
 
+    /// Append a named event with details to the span
     pub fn add_event(&mut self, name: &str, details: &str) {
         self.events.push((name.to_string(), details.to_string()));
     }
 
+    /// Return a clone of all recorded `(name, details)` events
     pub fn events(&self) -> Vec<(String, String)> {
         self.events.clone()
     }
 
+    /// Return the instant at which the span was started
     pub fn start_time(&self) -> Instant {
         self.start_time
     }
 
+    /// Return the recorded duration (zero until the span is ended)
     pub fn duration(&self) -> Duration {
         self.duration
     }
 
+    /// Set a key/value attribute on the span
     pub fn set_attribute(&mut self, key: &str, value: &str) {
         self.attributes.insert(key.to_string(), value.to_string());
     }
 
+    /// Get an attribute value by key, if present
     pub fn get_attribute(&self, key: &str) -> Option<String> {
         self.attributes.get(key).cloned()
     }
 
+    /// Return all attributes set on the span
     pub fn attributes(&self) -> &HashMap<String, String> {
         &self.attributes
     }
@@ -306,6 +335,7 @@ pub struct Metrics {
 }
 
 impl Metrics {
+    /// Create a metrics collector for the named service
     pub fn new(service_name: &str) -> Result<Self, NounVerbError> {
         Ok(Self {
             service_name: service_name.to_string(),
@@ -315,35 +345,42 @@ impl Metrics {
         })
     }
 
+    /// Increment the named counter by one
     pub fn increment_counter(&self, name: &str) {
         self.add_to_counter(name, 1);
     }
 
+    /// Add an arbitrary value to the named counter
     pub fn add_to_counter(&self, name: &str, value: i64) {
         let mut counters = self.counters.write();
         *counters.entry(name.to_string()).or_insert(0) += value;
     }
 
+    /// Get the current value of the named counter (0 if unset)
     pub fn get_counter(&self, name: &str) -> i64 {
         let counters = self.counters.read();
         counters.get(name).copied().unwrap_or(0)
     }
 
+    /// Set the named gauge to a value
     pub fn set_gauge(&self, name: &str, value: f64) {
         let mut gauges = self.gauges.write();
         gauges.insert(name.to_string(), value);
     }
 
+    /// Get the current value of the named gauge (0.0 if unset)
     pub fn get_gauge(&self, name: &str) -> f64 {
         let gauges = self.gauges.read();
         gauges.get(name).copied().unwrap_or(0.0)
     }
 
+    /// Record a single observation into the named histogram
     pub fn record_histogram(&self, name: &str, value: f64) {
         let mut histograms = self.histograms.write();
         histograms.entry(name.to_string()).or_insert_with(Vec::new).push(value);
     }
 
+    /// Get the mean of the named histogram's observations (0.0 if empty/unset)
     pub fn get_histogram_avg(&self, name: &str) -> f64 {
         let histograms = self.histograms.read();
         if let Some(values) = histograms.get(name) {
@@ -358,6 +395,7 @@ impl Metrics {
         }
     }
 
+    /// Get the value at the given percentile (0-100) of the named histogram (0.0 if empty)
     pub fn get_percentile(&self, name: &str, percentile: f64) -> f64 {
         let histograms = self.histograms.read();
         if let Some(values) = histograms.get(name) {
@@ -373,12 +411,14 @@ impl Metrics {
         }
     }
 
+    /// Clear all counters, gauges, and histograms
     pub fn reset(&self) {
         self.counters.write().clear();
         self.gauges.write().clear();
         self.histograms.write().clear();
     }
 
+    /// Serialize all metrics (with histogram averages) to pretty JSON
     pub fn export(&self) -> Result<String, NounVerbError> {
         #[derive(Serialize)]
         struct ExportedMetrics {
@@ -418,18 +458,22 @@ pub struct TelemetryManager {
 }
 
 impl TelemetryManager {
+    /// Create a telemetry manager for the named application
     pub fn new(app_name: &str) -> Result<Self, NounVerbError> {
         Ok(Self { app_name: app_name.to_string() })
     }
 
+    /// Start a new root span with the given name
     pub fn start_span(&self, name: &str) -> Result<Span, NounVerbError> {
         Span::new(name)
     }
 
+    /// Start a child span under the given parent span
     pub fn start_child_span(&self, parent: &Span, name: &str) -> Result<Span, NounVerbError> {
         Span::new_with_parent(name, parent)
     }
 
+    /// End a span, recording its elapsed duration; emits an envelope log when `RUST_LOG` is set
     pub fn end_span(&self, mut span: Span) -> Result<Span, NounVerbError> {
         span.duration = span.start_time.elapsed();
         // Envelope logging simulation
@@ -448,10 +492,12 @@ impl TelemetryManager {
         Ok(span)
     }
 
+    /// Create a new randomized trace context
     pub fn create_trace_context(&self) -> Result<TraceContext, NounVerbError> {
         TraceContext::new()
     }
 
+    /// Serialize a trace context into transport headers (traceparent plus `otbaggage-*` entries)
     pub fn inject_context(
         &self,
         context: &TraceContext,
@@ -464,6 +510,7 @@ impl TelemetryManager {
         Ok(headers)
     }
 
+    /// Reconstruct a trace context from headers; errors if no `traceparent` header is present
     pub fn extract_context(
         &self,
         headers: &HashMap<String, String>,
@@ -481,6 +528,7 @@ impl TelemetryManager {
         }
     }
 
+    /// Record an event against a span; emits an envelope log when `RUST_LOG` is set
     pub fn record_event(
         &self,
         span: &Span,

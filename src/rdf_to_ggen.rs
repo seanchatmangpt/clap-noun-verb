@@ -35,9 +35,13 @@ use std::collections::HashMap;
 /// RDF triple representation (flattened from SPARQL/TTL)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RdfTriple {
+    /// Subject URI of the triple
     pub subject: String,
+    /// Predicate URI of the triple
     pub predicate: String,
+    /// Object value (literal text or URI string)
     pub object: String,
+    /// Whether the object is a literal or a URI reference
     #[serde(default)]
     pub object_type: ObjectType, // DatatypeProperty vs ObjectProperty
 }
@@ -168,8 +172,10 @@ impl Default for ArgumentType {
 /// SPARQL JSON result binding
 #[derive(Debug, Deserialize)]
 pub struct SparqlBinding {
+    /// Bound value (the literal text or URI string)
     #[serde(default)]
     pub value: String,
+    /// RDF term kind reported by SPARQL (e.g. "uri", "literal")
     #[serde(default)]
     pub r#type: String, // "uri", "literal"
 }
@@ -177,11 +183,14 @@ pub struct SparqlBinding {
 /// SPARQL JSON results
 #[derive(Debug, Deserialize)]
 pub struct SparqlResults {
+    /// The result list containing variable bindings
     pub results: SparqlResultList,
 }
 
+/// SPARQL result list wrapping the binding rows
 #[derive(Debug, Deserialize)]
 pub struct SparqlResultList {
+    /// One map of variable name to binding per result row
     pub bindings: Vec<HashMap<String, SparqlBinding>>,
 }
 

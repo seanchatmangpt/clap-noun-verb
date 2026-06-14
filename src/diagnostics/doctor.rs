@@ -8,20 +8,29 @@ use serde::{Deserialize, Serialize};
 /// Result from doctor health check operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DoctorOutput {
+    /// Overall status string ("healthy" or "unhealthy").
     pub status: String,
+    /// Whether the system is healthy (false if any error-level issue exists).
     pub healthy: bool,
+    /// Issues detected during the health check.
     pub issues: Vec<HealthIssue>,
+    /// Number of triples in the graph store.
     pub graph_triples: usize,
+    /// Number of packages in the capability registry.
     pub registry_packages: usize,
 }
 
+/// A single health check finding.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthIssue {
+    /// Severity level: "error", "warning", or "info".
     pub level: String, // "error", "warning", "info"
+    /// Description of the issue.
     pub message: String,
 }
 
 impl DoctorOutput {
+    /// Create a healthy result with the given graph and registry counts.
     pub fn new(graph_triples: usize, registry_packages: usize) -> Self {
         Self {
             status: "healthy".to_string(),
@@ -32,6 +41,7 @@ impl DoctorOutput {
         }
     }
 
+    /// Record an issue; an "error" level marks the result unhealthy.
     pub fn add_issue(&mut self, level: impl Into<String>, msg: impl Into<String>) {
         let level_str = level.into();
         if level_str == "error" {

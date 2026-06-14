@@ -9,12 +9,16 @@ use std::fs;
 /// Result from graph load operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphLoadedOutput {
+    /// Number of triples loaded from the source.
     pub triples_loaded: usize,
+    /// Source path the triples were loaded from.
     pub source: String,
+    /// Load status (set to "success").
     pub status: String,
 }
 
 impl GraphLoadedOutput {
+    /// Create a successful load result with the loaded triple count and source.
     pub fn new(triples_loaded: usize, source: impl Into<String>) -> Self {
         Self { triples_loaded, source: source.into(), status: "success".to_string() }
     }

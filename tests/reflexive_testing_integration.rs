@@ -286,11 +286,8 @@ fn generate_test_suite_from_rdf(ontology: &str) -> TestSuite {
 
     // Universe: all single-capability scenarios + all unique pair scenarios
     let single_scenarios = all_caps.len();
-    let pair_scenarios = if all_caps.len() >= 2 {
-        all_caps.len() * (all_caps.len() - 1) / 2
-    } else {
-        0
-    };
+    let pair_scenarios =
+        if all_caps.len() >= 2 { all_caps.len() * (all_caps.len() - 1) / 2 } else { 0 };
     let total_scenarios = single_scenarios + pair_scenarios;
 
     // Coverage is the fraction of scenarios actually exercised (singles only, not pairs)

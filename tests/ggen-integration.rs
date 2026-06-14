@@ -332,7 +332,7 @@ fn test_verb_command_trait_accessible() {
 /// Assert that v26.6.1 provides stable API for ggen
 #[test]
 fn test_v26_6_1_ggen_contract() {
-    use clap_noun_verb::{CliBuilder, CommandRegistry, OutputFormat, VerbCommand, format_output};
+    use clap_noun_verb::{format_output, CliBuilder, CommandRegistry, OutputFormat, VerbCommand};
 
     // CliBuilder and CommandRegistry are constructible (public and stable)
     let _builder = CliBuilder::default();
@@ -350,10 +350,16 @@ fn test_v26_6_1_ggen_contract() {
     let probe = ContractProbe { probe: "ggen-contract" };
 
     let json_out = format_output(&probe, fmt_json).expect("format_output(Json) must succeed");
-    assert!(json_out.contains("ggen-contract"), "JSON output must contain the serialized field value");
+    assert!(
+        json_out.contains("ggen-contract"),
+        "JSON output must contain the serialized field value"
+    );
 
     let yaml_out = format_output(&probe, fmt_yaml).expect("format_output(Yaml) must succeed");
-    assert!(yaml_out.contains("ggen-contract"), "YAML output must contain the serialized field value");
+    assert!(
+        yaml_out.contains("ggen-contract"),
+        "YAML output must contain the serialized field value"
+    );
 
     // NounVerbError is constructible and carries its message
     let err = NounVerbError::command_not_found("probe-verb");
@@ -372,11 +378,11 @@ fn test_v26_6_1_ggen_contract() {
 /// Final integration status summary — verifies the complete ggen contract end-to-end
 #[test]
 fn test_ggen_integration_summary() {
-    use clap_noun_verb::{OutputFormat, format_output};
+    use clap_noun_verb::{format_output, OutputFormat};
 
     // --- DISCOVERY: verify the MockCommandOutput round-trips through both formats ---
-    let cmd_out = MockCommandOutput::success("summary-probe")
-        .with_data(serde_json::json!({"triples": 6}));
+    let cmd_out =
+        MockCommandOutput::success("summary-probe").with_data(serde_json::json!({"triples": 6}));
 
     let json = serde_json::to_string(&cmd_out).expect("MockCommandOutput must serialize to JSON");
     let roundtrip: MockCommandOutput =

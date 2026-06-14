@@ -9,13 +9,18 @@ use std::collections::HashMap;
 /// Capability package metadata
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CapabilityPackage {
+    /// Unique package identifier.
     pub id: String,
+    /// Package name.
     pub name: String,
+    /// Package version.
     pub version: String,
+    /// Package description.
     pub description: String,
 }
 
 impl CapabilityPackage {
+    /// Create a capability package from its id, name, version, and description.
     pub fn new(
         id: impl Into<String>,
         name: impl Into<String>,
@@ -52,6 +57,7 @@ pub struct CapabilityRegistry {
 }
 
 impl CapabilityRegistry {
+    /// Create a new empty registry.
     pub fn new() -> Self {
         Self { packages: HashMap::new() }
     }

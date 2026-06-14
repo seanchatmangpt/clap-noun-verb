@@ -36,7 +36,7 @@ pub struct CommandRegistry {
     config: RegistryConfig,
     /// Typed context extensions shared across all commands
     extensions: TypeMap,
-    /// Add completions subcommand
+    /// Whether to add a dynamic `completions` subcommand when building the CLI
     pub has_completions_subcommand: bool,
 }
 
@@ -749,6 +749,7 @@ pub struct CompletionsNoun {
 }
 
 impl CompletionsNoun {
+    /// Construct a completions noun from the app name, version, command list, and option list
     pub fn new(
         app_name: String,
         app_version: Option<String>,
@@ -947,29 +948,39 @@ impl CommandRegistry {
 /// JSON Schema representation for LLM tool-calling capability
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ToolDefinition {
+    /// Tool name (command path joined with `_`)
     pub name: String,
+    /// Human-readable description (derived from the command's `about` text)
     pub description: String,
+    /// JSON Schema parameters object for the tool's arguments
     pub parameters: ToolParameters,
 }
 
 /// Parameters schema inside ToolDefinition
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ToolParameters {
+    /// JSON Schema type, always `"object"`
     #[serde(rename = "type")]
     pub param_type: String,
+    /// Map of argument name to its property schema
     pub properties: std::collections::BTreeMap<String, PropertySchema>,
+    /// Names of arguments that are required
     pub required: Vec<String>,
 }
 
 /// Standard JSON Schema property descriptor
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct PropertySchema {
+    /// JSON Schema type (`"string"`, `"boolean"`, or `"array"`)
     #[serde(rename = "type")]
     pub prop_type: String,
+    /// Optional description (derived from the argument's help text)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Optional default value
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<serde_json::Value>,
+    /// Item schema when `prop_type` is `"array"`
     #[serde(skip_serializing_if = "Option::is_none", rename = "items")]
     pub items: Option<Box<PropertySchema>>,
 }
@@ -1081,9 +1092,13 @@ pub struct OntologyVerbDef {
 /// Ontology argument definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OntologyArgDef {
+    /// Argument name
     pub name: String,
+    /// Argument type (Rust type name)
     pub arg_type: String,
+    /// Whether the argument is required
     pub required: bool,
+    /// Optional documentation
     pub doc: Option<String>,
 }
 

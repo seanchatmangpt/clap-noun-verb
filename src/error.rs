@@ -245,22 +245,34 @@ pub type Result<T> = std::result::Result<T, NounVerbError>;
 /// MAPE-K Error Kinds
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum ErrorKind {
+    /// Input arguments or structure were invalid.
     InvalidInput,
+    /// The operation was not permitted.
     PermissionDenied,
+    /// A required invariant was violated.
     InvariantBreach,
+    /// A deadline or timeout budget was exceeded.
     DeadlineExceeded,
+    /// A resource guard limit was exceeded.
     GuardExceeded,
+    /// The requested noun/command was not found.
     CommandNotFound,
+    /// The requested verb was not found for a noun.
     VerbNotFound,
+    /// Execution of the command failed.
     ExecutionError,
+    /// An internal framework error occurred.
     InternalError,
 }
 
 /// Severity level of the error
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum Severity {
+    /// Non-fatal condition; execution may continue.
     Warning,
+    /// A recoverable error occurred.
     Error,
+    /// A severe error requiring immediate attention.
     Critical,
 }
 
@@ -268,17 +280,34 @@ pub enum Severity {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ActionTemplate {
-    TimeoutAdjustment { suggested_timeout_ms: u64, reason: String },
-    CommandFix { suggested_command: String, reason: String },
+    /// Suggests increasing the timeout/deadline budget.
+    TimeoutAdjustment {
+        /// Recommended new timeout in milliseconds.
+        suggested_timeout_ms: u64,
+        /// Human-readable rationale for the adjustment.
+        reason: String,
+    },
+    /// Suggests a corrected command to run.
+    CommandFix {
+        /// The corrected command string to use.
+        suggested_command: String,
+        /// Human-readable rationale for the correction.
+        reason: String,
+    },
 }
 
 /// Machine-readable, uniform structured error format for autonomic MAPE-K loops
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct StructuredError {
+    /// Classification of the error.
     pub kind: ErrorKind,
+    /// Severity level of the error.
     pub severity: Severity,
+    /// Human-readable error message.
     pub message: String,
+    /// Additional structured details keyed by field name.
     pub details: std::collections::HashMap<String, serde_json::Value>,
+    /// Recovery actions proposed for this error.
     pub action_templates: Vec<ActionTemplate>,
 }
 
