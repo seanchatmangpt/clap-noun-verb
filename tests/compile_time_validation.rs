@@ -108,7 +108,53 @@ mod tests {
 
     #[test]
     fn test_correct_types_compile() {
-        // If this compiles, all the correct examples above are valid
+        // Verify that each verb function above is callable and returns the declared type.
+        // Compilation alone would not catch a function that silently panics or diverges.
+
+        let r1: Result<ValidStatus> = correct_result_type();
+        assert!(r1.is_ok(), "correct_result_type() must return Ok");
+        let s1 = r1.test_unwrap();
+        assert!(s1.running, "running must be true");
+        assert_eq!(s1.uptime, 3600, "uptime must be 3600");
+
+        let r2: Result<Option<ValidStatus>> = correct_option_type();
+        assert!(r2.is_ok(), "correct_option_type() must return Ok");
+        let s2 = r2.test_unwrap();
+        assert!(s2.is_some(), "Option must be Some");
+        assert_eq!(s2.test_unwrap().uptime, 3600, "inner uptime must be 3600");
+
+        let r3: Result<String> = correct_direct_type();
+        assert!(r3.is_ok(), "correct_direct_type() must return Ok");
+        assert_eq!(r3.test_unwrap(), "Running");
+
+        let r4: Result<String> = show_health();
+        assert!(r4.is_ok(), "show_health() must return Ok");
+        assert_eq!(r4.test_unwrap(), "Healthy");
+
+        let r5: Result<String> = get_service_status();
+        assert!(r5.is_ok(), "get_service_status() must return Ok");
+        assert_eq!(r5.test_unwrap(), "Active");
+
+        let r6: Result<Vec<String>> = list_all_services();
+        assert!(r6.is_ok(), "list_all_services() must return Ok");
+        let services = r6.test_unwrap();
+        assert_eq!(services.len(), 2, "must return exactly two services");
+        assert!(services.contains(&"api".to_string()));
+        assert!(services.contains(&"worker".to_string()));
+
+        let r7: Result<String> = set_config(8080, Some("127.0.0.1".to_string()));
+        assert!(r7.is_ok(), "set_config() must return Ok");
+        let cfg = r7.test_unwrap();
+        assert!(cfg.contains("8080"), "config string must contain the port: {cfg}");
+        assert!(cfg.contains("127.0.0.1"), "config string must contain the host: {cfg}");
+
+        let r8: Result<String> = first_unique_verb();
+        assert!(r8.is_ok(), "first_unique_verb() must return Ok");
+        assert_eq!(r8.test_unwrap(), "First");
+
+        let r9: Result<String> = second_unique_verb();
+        assert!(r9.is_ok(), "second_unique_verb() must return Ok");
+        assert_eq!(r9.test_unwrap(), "Second");
     }
 
     #[test]

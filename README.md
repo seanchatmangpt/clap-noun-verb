@@ -12,8 +12,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "26.6.1"
-clap-noun-verb-macros = "26.6.1" # For proc-macros
+clap-noun-verb = "26.6.13"
+clap-noun-verb-macros = "26.6.13" # For proc-macros
 ```
 
 Or with `cargo add`:

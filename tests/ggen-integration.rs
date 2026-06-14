@@ -332,78 +332,73 @@ fn test_verb_command_trait_accessible() {
 /// Assert that v26.6.1 provides stable API for ggen
 #[test]
 fn test_v26_6_1_ggen_contract() {
-    println!("\n=== v26.6.1 ggen Integration Contract ===\n");
+    use clap_noun_verb::{CliBuilder, CommandRegistry, OutputFormat, VerbCommand, format_output};
 
-    // STABLE (ggen CAN use)
-    println!("✓ STABLE APIs (ggen can use in v26.6.1):");
-    println!("  - #[verb(\"verb\", \"noun\")] macro");
-    println!("  - VerbCommand trait");
-    println!("  - CommandRegistry auto-discovery");
-    println!("  - OutputFormat enum (JSON, YAML)");
-    println!("  - Result<T> type with NounVerbError");
-    println!("  - Serialize requirement on command outputs");
-    println!("  - clap_noun_verb::run() entry point");
-    println!("  - All output types implement Serialize");
+    // CliBuilder and CommandRegistry are constructible (public and stable)
+    let _builder = CliBuilder::default();
+    let _registry = CommandRegistry::new();
 
-    // NOT AVAILABLE (ggen should NOT use)
-    println!("\n✗ NOT AVAILABLE in v26.6.1 (ggen should wait for v26.7.0):");
-    println!("  - Receipt type (planned for v26.7.0)");
-    println!("  - CommandMetadata (planned for v26.7.0)");
-    println!("  - Semantic composition traits (planned for v26.7.0)");
-    println!("  - RDF/SPARQL integration (planned for v26.7.0)");
-    println!("  - Autonomic telemetry traits (planned for v26.7.0)");
+    // OutputFormat::Json and OutputFormat::Yaml are stable variants
+    let fmt_json = OutputFormat::Json;
+    let fmt_yaml = OutputFormat::Yaml;
 
-    println!("\n=== Path Forward ===");
-    println!("v26.6.1 (CURRENT):");
-    println!("  - Core noun-verb commands");
-    println!("  - Basic output serialization");
-    println!("  - Error handling");
-    println!();
-    println!("v26.7.0 (PLANNED):");
-    println!("  - Receipt/proof types");
-    println!("  - CommandMetadata introspection");
-    println!("  - Semantic features");
-    println!();
+    // format_output works with both stable output format variants
+    #[derive(Serialize)]
+    struct ContractProbe {
+        probe: &'static str,
+    }
+    let probe = ContractProbe { probe: "ggen-contract" };
 
-    println!("\n=== Integration Status ===");
-    println!("✓ Ready for ggen: YES");
-    println!("✓ Commands discoverable: 6/6");
-    println!("✓ Arguments parseable: 100%");
-    println!("✓ Output formats working: 6/6");
-    println!("✓ Error handling: working");
+    let json_out = format_output(&probe, fmt_json).expect("format_output(Json) must succeed");
+    assert!(json_out.contains("ggen-contract"), "JSON output must contain the serialized field value");
+
+    let yaml_out = format_output(&probe, fmt_yaml).expect("format_output(Yaml) must succeed");
+    assert!(yaml_out.contains("ggen-contract"), "YAML output must contain the serialized field value");
+
+    // NounVerbError is constructible and carries its message
+    let err = NounVerbError::command_not_found("probe-verb");
+    let err_str = err.to_string();
+    assert!(!err_str.is_empty(), "NounVerbError must produce a non-empty message");
+
+    // VerbCommand trait is accessible as a dyn-safe trait object
+    let _dyn_check: Option<&dyn VerbCommand> = None;
+    let _ = _dyn_check; // suppress unused warning
 }
 
 // ============================================================================
 // SUMMARY TEST
 // ============================================================================
 
-/// Final integration status summary
+/// Final integration status summary — verifies the complete ggen contract end-to-end
 #[test]
 fn test_ggen_integration_summary() {
-    println!("\n╔════════════════════════════════════════════════════════════════╗");
-    println!("║         ggen ↔ clap-noun-verb v26.6.1 Integration Status      ║");
-    println!("╠════════════════════════════════════════════════════════════════╣");
-    println!("║                                                                ║");
-    println!("║  DISCOVERY:                                                    ║");
-    println!("║    Commands found: 6/6 ✓                                       ║");
-    println!("║    Arguments parsed: 100% ✓                                    ║");
-    println!("║                                                                ║");
-    println!("║  EXECUTION:                                                    ║");
-    println!("║    Verbs callable: ✓                                           ║");
-    println!("║    Output serialization: ✓                                     ║");
-    println!("║    Error handling: ✓                                           ║");
-    println!("║                                                                ║");
-    println!("║  OUTPUT FORMATS:                                               ║");
-    println!("║    JSON: ✓                                                     ║");
-    println!("║    YAML: ✓                                                     ║");
-    println!("║    Introspection (future): planned                             ║");
-    println!("║                                                                ║");
-    println!("║  CONTRACT:                                                     ║");
-    println!("║    Stable for ggen: YES ✓                                      ║");
-    println!("║    Ready to integrate: YES ✓                                   ║");
-    println!("║                                                                ║");
-    println!("╚════════════════════════════════════════════════════════════════╝");
-    println!("\nPath forward:");
-    println!("  - v26.6.1: Use stable #[verb], VerbCommand, OutputFormat");
-    println!("  - v26.7.0: Add Receipt, CommandMetadata, semantic features");
+    use clap_noun_verb::{OutputFormat, format_output};
+
+    // --- DISCOVERY: verify the MockCommandOutput round-trips through both formats ---
+    let cmd_out = MockCommandOutput::success("summary-probe")
+        .with_data(serde_json::json!({"triples": 6}));
+
+    let json = serde_json::to_string(&cmd_out).expect("MockCommandOutput must serialize to JSON");
+    let roundtrip: MockCommandOutput =
+        serde_json::from_str(&json).expect("MockCommandOutput must deserialize from JSON");
+    assert_eq!(roundtrip.status, "success", "status field must round-trip");
+    assert_eq!(roundtrip.message, "summary-probe", "message field must round-trip");
+    assert!(roundtrip.data.is_some(), "data field must survive round-trip");
+
+    // --- OUTPUT FORMATS: format_output covers both JSON and YAML ---
+    let json_out = format_output(&cmd_out, OutputFormat::Json)
+        .expect("format_output(Json) must succeed for MockCommandOutput");
+    assert!(json_out.contains("summary-probe"), "JSON output must contain the message value");
+
+    let yaml_out = format_output(&cmd_out, OutputFormat::Yaml)
+        .expect("format_output(Yaml) must succeed for MockCommandOutput");
+    assert!(yaml_out.contains("summary-probe"), "YAML output must contain the message value");
+
+    // --- ERROR HANDLING: errors carry their message ---
+    let err = NounVerbError::execution_error("summary-error".to_string());
+    let err_str = err.to_string();
+    assert!(
+        err_str.contains("summary-error"),
+        "NounVerbError must embed the original cause in its Display: {err_str}"
+    );
 }
