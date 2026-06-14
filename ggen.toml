@@ -1,176 +1,94 @@
-# ggen.toml
-# GGen (Code Generation) configuration for clap-noun-verb manufacturing pipeline
-# Defines source ontologies, queries, templates, and output destinations
-# Format: TOML 1.0.0
+# ggen.toml — clap-noun-verb authoritative pack manifest (engine format, ggen 26.6.x)
+#
+# This is the PACK-LEVEL manifest. It declares the pack's identity, its μ₁ inference
+# (DMAIC-2 requires >=1 CONSTRUCT), and the μ₃ generation rules that bind each
+# authoritative SELECT query to its paired thin Tera template. The R2 fieldname-
+# collision ASK is enforced by the engine (Error-severity validation rule).
+#
+# The self-rendering PROOF that the pack is authoritative lives in
+# examples/greet-demo/ (its own ontology.ttl + ggen.toml wiring these same queries
+# and templates, rendering a CLI that compiles end-to-end). This pack-root manifest
+# uses the pack's core framework ontology as the generation subject.
 
-[ggen]
-# Project metadata
+[project]
 name = "clap-noun-verb"
-version = "26.6.1"
-description = "Code generation source law and manufacturing templates for clap-noun-verb noun-verb CLI framework"
+version = "26.6.13"
+description = "Authoritative ggen pack for noun-verb CLIs: an RDF ontology of nouns, verbs, and arguments is the single source of truth (A = mu(O*)); ggen renders thin #[verb] wrappers that delegate to consumer-implemented handlers behind a stable seam."
 
-# Ontology sources (RDF/Turtle definitions of domain model)
-# Primary sources for code generation
-ontology_sources = [
-    # Core framework ontology
-    "ontology/clap-noun-verb-ontology.ttl",
-    "ontology/cli-pattern.ttl",
-    "ontology/verb-traits.ttl",
-    "ontology/ggen-command-vocab.nt",
-    # Domain-specific ontologies
-    "ontology/cargo-cicd.ttl",
-]
+[ontology]
+source = "ontology/clap-noun-verb-ontology.ttl"
+base_iri = "http://clap-noun-verb.io/ontology#"
 
-# SPARQL query registry (select commands/specs)
-# Queries must match the ontology sources above
-query_registry = [
-    "queries/generate-cli-spec.rq",
-    "queries/find-all-verbs.rq",
-    "queries/extract-arguments.rq",
-    "queries/validate-cli-structure.rq",
-    "queries/generate-trait-impls.rq",
-    # Domain-specific queries
-    "queries/cargo-cicd-commands.rq",
-]
+[ontology.prefixes]
+cnv = "http://clap-noun-verb.io/ontology#"
+rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+owl = "http://www.w3.org/2002/07/owl#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
 
-# Template directory (Jinja2/Tera templates for code generation)
-template_dir = "templates"
-
-# Output directory for generated artifacts
-output_dir = "src/generated"
-
-# Manufacturing stages (phases of code production)
-[ggen.stages]
-# Stage 1: Specification extraction from ontology
-spec_extraction = {
-    query = "queries/generate-cli-spec.rq",
-    output = "src/generated/cli_spec.json",
-    format = "json"
+# --- μ₁ inference (DMAIC-2 Measure requires >=1 CONSTRUCT) --------------------
+# Normalizes the noun<->verb edge so every verb carries an explicit
+# cnv:belongsToNoun back-link, which the verb-signatures SELECT relies on to
+# project ?noun_name. Idempotent. (CONSTRUCT belongs in mu1, never in a gen rule
+# — E0003 rejects CONSTRUCT in [[generation.rules]].)
+[inference]
+[[inference.rules]]
+name = "attach-noun-name-to-verb"
+construct = """
+PREFIX cnv: <http://clap-noun-verb.io/ontology#>
+CONSTRUCT {
+  ?verb cnv:belongsToNoun ?noun .
+} WHERE {
+  ?noun a cnv:Noun ; cnv:hasVerbs ?verb .
 }
+"""
 
-# Stage 2: Trait implementation generation
-trait_generation = {
-    query = "queries/generate-trait-impls.rq",
-    template = "templates/verb.rs.jinja",
-    output_pattern = "src/generated/verbs/{noun_name}/{verb_name}.rs",
-    format = "rust"
+# --- μ₃ generation ------------------------------------------------------------
+[generation]
+output_dir = "."
+
+# Thin #[verb] wrapper per verb. One SELECT row per verb -> one file (path
+# templating fans out). Projected columns of verb-signatures.rq == the {{ }} vars
+# consumed by verb.rs.tera (contract witnessed MATCHING).
+[[generation.rules]]
+name = "verb-wrappers"
+query = { file = "queries/verb-signatures.rq" }
+template = { file = "templates/verb.rs.tera" }
+output_file = "src/verbs/{{ verb_name }}.rs"
+mode = "Overwrite"
+skip_empty = true
+
+# Aggregate module list (single-row) for the rendered verb wrappers.
+[[generation.rules]]
+name = "verbs-mod"
+query = { file = "queries/verbs-mod.rq" }
+template = { file = "templates/verbs-mod.rs.tera" }
+output_file = "src/verbs/mod.rs"
+mode = "Overwrite"
+skip_empty = true
+
+# --- validation (R2 fieldname-collision) --------------------------------------
+# Engine enforces Error-severity custom ASKs (verified this session): ASK TRUE =>
+# a collision EXISTS => generation FAILS. Two distinct args on the SAME verb whose
+# resolved Rust field name is identical are NEVER silently merged. Requires
+# `description` (E0001) and `severity`; both supplied. Body kept byte-consistent
+# with ontology/queries/fieldname-collision.rq (the documented source-of-truth).
+[[validation.rules]]
+name = "cnv-fieldname-collision"
+description = "Two distinct arguments on the same verb must not resolve to the same Rust field name. Resolved field = COALESCE(explicit cnv:fieldName, kebab->snake of cnv:hasArgumentName). Raw-identifier escaping (Rust keyword -> r#kw) is a pure prefix and does not change collision equivalence, so equivalence is decided at the snake-cased layer. A collision yields compiling-but-wrong Rust (or a duplicate-parameter error) and MUST fail generation rather than silently merge."
+severity = "Error"
+ask = """
+ASK {
+  ?verb rdf:type cnv:Verb ;
+        cnv:hasArguments ?argA ;
+        cnv:hasArguments ?argB .
+  FILTER( STR(?argA) < STR(?argB) )
+  ?argA cnv:hasArgumentName ?flagA .
+  ?argB cnv:hasArgumentName ?flagB .
+  OPTIONAL { ?argA cnv:fieldName ?explicitA }
+  OPTIONAL { ?argB cnv:fieldName ?explicitB }
+  BIND( COALESCE( ?explicitA, REPLACE(STR(?flagA), "-", "_") ) AS ?fieldA )
+  BIND( COALESCE( ?explicitB, REPLACE(STR(?flagB), "-", "_") ) AS ?fieldB )
+  FILTER( ?fieldA = ?fieldB )
 }
-
-# Stage 3: CLI validation (conformance check)
-validation = {
-    query = "queries/validate-cli-structure.rq",
-    output = "src/generated/validation_report.json",
-    format = "json"
-}
-
-# Stage 4: Documentation generation
-documentation = {
-    template = "templates/command_doc.md.jinja",
-    output_pattern = "docs/generated/commands/{noun_name}/{verb_name}.md",
-    format = "markdown"
-}
-
-# Stage 5: Test generation
-test_generation = {
-    template = "templates/cli_test.rs.jinja",
-    output_pattern = "tests/generated/{noun_name}_{verb_name}_test.rs",
-    format = "rust"
-}
-
-# Template variable mappings (how to extract context from ontology)
-[ggen.mappings]
-noun_name = "cnv:hasNounName"
-noun_description = "cnv:nounAbout"
-verb_name = "cnv:hasVerbName"
-verb_description = "cnv:verbAbout"
-return_type = "cnv:returnType"
-arguments = "cnv:hasArguments"
-output_format = "cnv:outputFormat"
-
-# Proof gates (quality checks before artifact release)
-[ggen.proof_gates]
-# Proof gate 1: Ontology consistency (no orphaned terms)
-ontology_consistency = {
-    enabled = true,
-    severity = "error",
-    check = "All nouns and verbs must have descriptions"
-}
-
-# Proof gate 2: Generated code compiles
-generated_code_compilation = {
-    enabled = true,
-    severity = "error",
-    check = "Run 'cargo check' on generated code"
-}
-
-# Proof gate 3: Test coverage
-test_coverage = {
-    enabled = true,
-    severity = "warning",
-    minimum_coverage_percent = 50
-}
-
-# Proof gate 4: Documentation completeness
-documentation_completeness = {
-    enabled = true,
-    severity = "warning",
-    check = "All verbs must have doc comments"
-}
-
-# Receipt generation (proof of manufacturing)
-[ggen.receipts]
-# Generate receipt (hash chain proving artifact provenance)
-enabled = true
-receipt_format = "jsonld"
-receipt_dir = "receipts/ggen"
-
-# Hash algorithm for artifact integrity
-hash_algorithm = "sha256"
-
-# Include source inputs in receipt
-include_sources = true
-include_queries = true
-include_templates = true
-
-# Artifact classification
-[ggen.artifacts]
-verb_handlers = { type = "rust_module", directory = "src/generated/verbs" }
-noun_modules = { type = "rust_module", directory = "src/generated/nouns" }
-cli_specs = { type = "json_spec", directory = "src/generated" }
-documentation = { type = "markdown", directory = "docs/generated" }
-tests = { type = "rust_test", directory = "tests/generated" }
-
-# Manufacturing pipeline orchestration
-[ggen.pipeline]
-# Execution order: stages run sequentially unless parallelizable is true
-stages_order = [
-    "spec_extraction",
-    "validation",
-    "trait_generation",
-    "documentation",
-    "test_generation"
-]
-
-# Which stages can run in parallel (independent outputs)
-parallelizable = ["documentation", "test_generation"]
-
-# Dependency graph (stage X must complete before stage Y)
-[ggen.pipeline.dependencies]
-"trait_generation" = ["spec_extraction", "validation"]
-"documentation" = ["spec_extraction"]
-"test_generation" = ["spec_extraction", "trait_generation"]
-
-# Cache configuration
-[ggen.cache]
-# Cache generated artifacts to avoid re-generation on unchanged ontology
-enabled = true
-# Cache directory
-cache_dir = ".cache/ggen"
-# Hash ontology files to detect changes
-hash_sources = true
-
-# Logging and diagnostics
-[ggen.logging]
-level = "info"
-format = "json"
-output = "ggen.log"
+"""
