@@ -263,6 +263,18 @@ name = "output_formats"
 path = "examples/output_formats.rs"
 
 [[example]]
+name = "app_context"
+path = "examples/app_context.rs"
+
+[[example]]
+name = "capability_registry"
+path = "examples/capability_registry.rs"
+
+[[example]]
+name = "diagnostics"
+path = "examples/diagnostics.rs"
+
+[[example]]
 name = "command_tree"
 path = "examples/command_tree.rs"
 

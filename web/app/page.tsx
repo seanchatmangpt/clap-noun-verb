@@ -4,6 +4,9 @@ import {
   getCoverageStatus,
   getErrorVariants,
   getOutputFormatVariants,
+  getBenchResults,
+  getGraphApiSurface,
+  getReplApiSurface,
 } from "@/lib/project";
 import { ExampleRunner } from "./components/ExampleRunner";
 
@@ -179,26 +182,171 @@ async function ExampleRunners() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// AppContext — live example output + API method list
+// ---------------------------------------------------------------------------
+
+async function AppContextSection() {
+  return (
+    <section className="mb-8">
+      <SectionTitle>AppContext — Type-Erased Shared Store</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        <code className="text-zinc-400">src/context.rs</code> — thread-safe{" "}
+        <code className="text-zinc-400">Arc&lt;RwLock&lt;HashMap&lt;TypeId, Box&lt;dyn Any + Send + Sync&gt;&gt;&gt;&gt;</code>.
+        Methods: <span className="font-mono text-amber-300">new · insert · get · contains · with · len · is_empty · remove · clear</span>
+      </p>
+      <ExampleRunner name="app_context" />
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Graph API surface — parsed from src/graph/mod.rs
+// ---------------------------------------------------------------------------
+
+async function GraphSection() {
+  const types = getGraphApiSurface();
+  return (
+    <section className="mb-8">
+      <SectionTitle>Graph + Triple — RDF-style Triple Store</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        <code className="text-zinc-400">src/graph/mod.rs</code> — public types parsed from source:
+      </p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {types.map((t) => (
+          <span key={t} className="px-2 py-1 text-xs font-mono bg-zinc-800 text-green-300 rounded border border-zinc-700">
+            {t}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs text-zinc-600">
+        Key API: <code>Triple::new(subject, predicate, object)</code> ·{" "}
+        <code>Graph::add_triple()</code> · <code>query_by_subject(pattern)</code> ·{" "}
+        <code>validate_all()</code> → <code>Vec&lt;ValidationError&gt;</code>
+      </p>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CapabilityRegistry — live example output
+// ---------------------------------------------------------------------------
+
+async function CapabilitySection() {
+  return (
+    <section className="mb-8">
+      <SectionTitle>CapabilityRegistry — Named Versioned Package Registry</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        <code className="text-zinc-400">src/capability/registry.rs</code> —{" "}
+        <code className="text-zinc-400">CapabilityPackage</code> (id, name, version, description) +{" "}
+        <code className="text-zinc-400">CapabilityRegistry</code> (add, remove, contains, packages, len).
+      </p>
+      <ExampleRunner name="capability_registry" />
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DoctorOutput — live health_check() output
+// ---------------------------------------------------------------------------
+
+async function DiagnosticsSection() {
+  return (
+    <section className="mb-8">
+      <SectionTitle>DoctorOutput — Live Health Check</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        <code className="text-zinc-400">src/diagnostics/doctor.rs</code> —{" "}
+        <code className="text-zinc-400">health_check() → Result&lt;DoctorOutput&gt;</code> with{" "}
+        <code className="text-zinc-400">HealthIssue &#123; level, message &#125;</code>.
+      </p>
+      <ExampleRunner name="diagnostics" />
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Repl — feature-gated API surface from src/repl.rs
+// ---------------------------------------------------------------------------
+
+async function ReplSection() {
+  const methods = getReplApiSurface();
+  return (
+    <section className="mb-8">
+      <SectionTitle>Repl — Interactive REPL (feature: repl)</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        <code className="text-zinc-400">src/repl.rs</code> — enabled with{" "}
+        <code className="text-zinc-400">--features repl</code>. Not runnable without a TTY, but
+        the public API surface is real:
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {methods.map((m) => (
+          <span key={m} className="px-2 py-1 text-xs font-mono bg-zinc-800 text-purple-300 rounded border border-zinc-700">
+            {m}()
+          </span>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-zinc-600">
+        Core: <code>Repl::new(registry)</code> · <code>with_history_file(path)</code> ·{" "}
+        <code>run()</code> — reads lines, dispatches to <code>CommandRegistry</code>, prints results.
+      </p>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Benchmarks — real criterion numbers from benches/dispatch.rs
+// ---------------------------------------------------------------------------
+
+async function BenchmarkSection() {
+  const results = getBenchResults();
+  return (
+    <section className="mb-8">
+      <SectionTitle>Dispatch Benchmarks — criterion (100 samples)</SectionTitle>
+      <p className="text-xs text-zinc-500 mb-3">
+        From <code className="text-zinc-400">benches/dispatch.rs</code> via{" "}
+        <code className="text-zinc-400">cargo bench --bench dispatch</code>. Median of 100 samples.
+      </p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {results.map((r) => (
+          <div key={r.name} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+            <div className="font-mono text-2xl font-bold text-amber-400">
+              {r.medianNs}
+              <span className="text-sm text-zinc-500 ml-1">{r.unit}</span>
+            </div>
+            <div className="text-xs text-zinc-400 mt-1 font-mono">{r.name}</div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-zinc-600">
+        Same hot path instrumented by OpenTelemetry spans under the <code>otel</code> feature.
+      </p>
+    </section>
+  );
+}
+
 function RepresentationGap() {
   return (
     <section className="mb-8 border border-zinc-800 rounded-lg p-4 bg-zinc-950">
-      <SectionTitle>Representation Gap Map</SectionTitle>
+      <SectionTitle>Representation Gap Map — Iteration 2</SectionTitle>
       <div className="grid sm:grid-cols-2 gap-6 text-xs">
         <div>
           <h3 className="text-red-400 font-semibold mb-2">Rendered-but-fabricated</h3>
           <p className="text-green-400">
-            None. Every value on this page is derived from real project output.
+            None. Every value on this page is derived from real source or real binary output.
           </p>
         </div>
         <div>
-          <h3 className="text-yellow-400 font-semibold mb-2">Exposed-but-unrepresented</h3>
-          <ul className="space-y-1 text-zinc-400">
-            <li>▷ AppContext (src/context.rs) — no UI section yet</li>
-            <li>▷ Graph/Triple (src/graph/) — no UI section yet</li>
-            <li>▷ CapabilityRegistry (src/capability/) — no UI section yet</li>
-            <li>▷ DoctorOutput/HealthIssue (src/diagnostics/) — no UI section yet</li>
-            <li>▷ Repl (feature-gated, src/repl.rs) — no UI section yet</li>
-            <li>▷ Benchmark results (benches/dispatch.rs) — not run yet</li>
+          <h3 className="text-green-400 font-semibold mb-2">Exposed-but-unrepresented</h3>
+          <p className="text-green-400">
+            None. All 6 previously-unrepresented capabilities now have UI sections:
+          </p>
+          <ul className="mt-2 space-y-1 text-zinc-500">
+            <li>✓ AppContext — live example runner</li>
+            <li>✓ Graph/Triple — parsed type list from src/graph/mod.rs</li>
+            <li>✓ CapabilityRegistry — live example runner</li>
+            <li>✓ DoctorOutput/HealthIssue — live health_check() output</li>
+            <li>✓ Repl — public method list from src/repl.rs</li>
+            <li>✓ Benchmarks — real criterion median timings</li>
           </ul>
         </div>
       </div>
@@ -261,6 +409,30 @@ export default function Page() {
 
         <Suspense fallback={<LoadingSkeleton label="example runners" />}>
           <ExampleRunners />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="AppContext" />}>
+          <AppContextSection />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="Graph API" />}>
+          <GraphSection />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="CapabilityRegistry" />}>
+          <CapabilitySection />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="diagnostics" />}>
+          <DiagnosticsSection />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="Repl" />}>
+          <ReplSection />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton label="benchmarks" />}>
+          <BenchmarkSection />
         </Suspense>
 
         <RepresentationGap />
