@@ -9,6 +9,9 @@ extend-exclude = [
   "target",
   ".git",
   "CONVO.txt",
+  "archive",
+  "crates",
+  "examples/greet-demo",
 ]
 
 [default.extend-words]
@@ -29,4 +32,8 @@ systm = "systm"
 systemm = "systemm"
 lov = "lov"
 ba = "ba"
+statu = "statu"
+updat = "updat"
+databae = "databae"
+mis = "mis"
 

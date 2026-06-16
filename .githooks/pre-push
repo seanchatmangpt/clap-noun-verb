@@ -1,0 +1,125 @@
+#!/bin/bash
+# Pre-push hook: Comprehensive test validation before push
+# Purpose: Prevent pushing code that fails tests
+# Strategy: Run full test suite and feature combinations
+# Exit: Non-zero to block push, zero to allow
+#
+# This is the "heavy" validation that takes 30-60 seconds.
+# Fast checks (format, clippy) are in pre-commit hook.
+
+set -e
+
+HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$HOOKS_DIR")"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Track failures
+FAILED=0
+
+echo ""
+echo "${BLUE}════════════════════════════════════════════════════════════════${NC}"
+echo "${BLUE}  🧪 PRE-PUSH HOOK: Full Test Validation${NC}"
+echo "${BLUE}════════════════════════════════════════════════════════════════${NC}"
+echo ""
+echo "Running comprehensive tests before push..."
+echo "(This may take 30-60 seconds)"
+echo ""
+
+# Step 1: Quick sanity check - compilation
+echo "${BLUE}📦 Step 1/5: Ensure code compiles${NC}"
+if cargo check --quiet >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ Compilation successful${NC}"
+else
+    echo -e "${RED}❌ FAILED: Code does not compile${NC}"
+    echo "   Fix with: cargo make check"
+    FAILED=1
+fi
+
+# Step 2: Run library tests (deterministic, single-threaded)
+echo ""
+echo "${BLUE}🧪 Step 2/5: Run library tests (deterministic)${NC}"
+if cargo test --lib --quiet -- --test-threads=1 >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ Library tests passed${NC}"
+else
+    echo -e "${RED}❌ FAILED: Library tests failed${NC}"
+    echo "   Debug with: cargo test --lib"
+    FAILED=1
+fi
+
+# Step 3: Run integration tests (deterministic)
+echo ""
+echo "${BLUE}🧪 Step 3/5: Run integration tests (deterministic)${NC}"
+if cargo test --test '*' --quiet -- --test-threads=1 >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ Integration tests passed${NC}"
+else
+    echo -e "${RED}❌ FAILED: Integration tests failed${NC}"
+    echo "   Debug with: cargo test --test '*'"
+    FAILED=1
+fi
+
+# Step 4: Test with all features
+echo ""
+echo "${BLUE}🧪 Step 4/5: Test with all features${NC}"
+if cargo test --all-features --quiet >/dev/null 2>&1; then
+    echo -e "${GREEN}✅ Full feature tests passed${NC}"
+else
+    echo -e "${RED}❌ FAILED: Tests with all features failed${NC}"
+    echo "   Debug with: cargo test --all-features"
+    FAILED=1
+fi
+
+# Step 5: Test key feature combinations (subset of full matrix)
+echo ""
+echo "${BLUE}🧪 Step 5/5: Test critical feature combinations${NC}"
+
+FEATURE_TESTS=(
+    "federated-network"
+    "otel"
+)
+
+FEATURES_FAILED=0
+for feature in "${FEATURE_TESTS[@]}"; do
+    if cargo test --features "$feature" --quiet >/dev/null 2>&1; then
+        echo -e "${GREEN}  ✅ Feature '$feature' tests passed${NC}"
+    else
+        echo -e "${RED}  ❌ Feature '$feature' tests FAILED${NC}"
+        FEATURES_FAILED=1
+    fi
+done
+
+if [ $FEATURES_FAILED -ne 0 ]; then
+    FAILED=1
+fi
+
+# Summary
+echo ""
+echo "${BLUE}════════════════════════════════════════════════════════════════${NC}"
+
+if [ $FAILED -ne 0 ]; then
+    echo -e "${RED}❌ PRE-PUSH VALIDATION FAILED - Push blocked${NC}"
+    echo ""
+    echo "Options:"
+    echo "  1. Fix test failures and retry"
+    echo "  2. Push anyway (NOT RECOMMENDED):"
+    echo "     ${YELLOW}git push --no-verify${NC}"
+    echo ""
+    echo "Tips:"
+    echo "  - Run ${BLUE}cargo make test${NC} to debug locally"
+    echo "  - Run ${BLUE}cargo make test-all${NC} for all features"
+    echo "  - Check individual tests: ${BLUE}cargo test test_name${NC}"
+    echo ""
+    exit 1
+else
+    echo -e "${GREEN}✅ PRE-PUSH VALIDATION PASSED${NC}"
+    echo ""
+    echo "All tests passed! Ready to push."
+    echo ""
+    exit 0
+fi

@@ -59,7 +59,7 @@ fn test_capability_advertiser_get_instance_uninitialized_errors() {
     let result = CapabilityAdvertiser::get_instance();
 
     // Assert
-    let err = result.err().expect("get_instance must error when uninitialized");
+    let err = result.expect_err("get_instance must error when uninitialized");
     match &err {
         NounVerbError::ExecutionError { message } => {
             assert!(message.contains("not initialized"), "got: {message}");
@@ -74,7 +74,7 @@ fn test_capability_advertiser_advertise_startup_errors_not_implemented() {
     let adv = CapabilityAdvertiser::new("node", "https://d").expect("new ok");
 
     // Act
-    let err = adv.advertise_startup().err().expect("startup must error");
+    let err = adv.advertise_startup().expect_err("startup must error");
 
     // Assert
     assert_not_implemented(&err);
@@ -83,7 +83,7 @@ fn test_capability_advertiser_advertise_startup_errors_not_implemented() {
 #[test]
 fn test_capability_advertiser_advertise_shutdown_errors_not_implemented() {
     let adv = CapabilityAdvertiser::new("node", "https://d").expect("new ok");
-    let err = adv.advertise_shutdown().err().expect("shutdown must error");
+    let err = adv.advertise_shutdown().expect_err("shutdown must error");
     assert_not_implemented(&err);
 }
 
@@ -94,7 +94,7 @@ fn test_capability_advertiser_advertise_capability_errors_not_implemented() {
     let cap = sample_descriptor();
 
     // Act
-    let err = adv.advertise_capability(&cap).err().expect("must error");
+    let err = adv.advertise_capability(&cap).expect_err("must error");
 
     // Assert
     assert_not_implemented(&err);
@@ -129,7 +129,7 @@ fn test_federation_registry_register_self_errors_not_implemented() {
     let registry = FederationRegistry::new("node-id", validator).expect("registry ok");
 
     // Act
-    let err = registry.register_self().err().expect("register_self must error");
+    let err = registry.register_self().expect_err("register_self must error");
 
     // Assert
     assert_not_implemented(&err);
@@ -140,7 +140,7 @@ fn test_federation_registry_register_self_errors_not_implemented() {
 #[test]
 fn test_remote_resolver_new_errors_not_implemented() {
     // Act
-    let err = RemoteResolver::new().err().expect("new must error");
+    let err = RemoteResolver::new().expect_err("new must error");
 
     // Assert
     assert_not_implemented(&err);
@@ -165,7 +165,7 @@ fn test_invocation_proxy_invoke_errors_not_implemented() {
     };
 
     // Act
-    let err = proxy.invoke(&params).err().expect("invoke must error");
+    let err = proxy.invoke(&params).expect_err("invoke must error");
 
     // Assert
     assert_not_implemented(&err);
@@ -214,7 +214,7 @@ fn test_deserialize_result_with_invalid_json_errors() {
     let result: Result<i32> = deserialize_result(bad);
 
     // Assert
-    let err = result.err().expect("invalid json must error");
+    let err = result.expect_err("invalid json must error");
     match &err {
         NounVerbError::ExecutionError { message } => {
             assert!(message.contains("deserialization error"), "got: {message}");
@@ -273,7 +273,7 @@ fn test_federated_trait_lifecycle_methods_reflect_implementation() {
     assert!(ok_node.shutdown_federation().is_ok());
 
     // Failure path propagates the implementor's error
-    let err = bad_node.initialize_federation().err().expect("should error");
+    let err = bad_node.initialize_federation().expect_err("should error");
     match err {
         NounVerbError::ExecutionError { message } => assert_eq!(message, "boom"),
         other => panic!("expected ExecutionError, got: {other:?}"),

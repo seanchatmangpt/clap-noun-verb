@@ -59,8 +59,9 @@ pub mod error;
 pub mod logic;
 pub mod macros;
 pub mod noun;
-#[cfg(feature = "otel")]
-pub mod otel;
+// TODO: otel module not implemented yet (feature declared but module missing)
+// #[cfg(feature = "otel")]
+// pub mod otel;
 pub mod registry;
 pub mod telemetry;
 pub mod tree;

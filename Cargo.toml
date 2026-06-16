@@ -1,11 +1,11 @@
 [workspace]
-members = ["unibit-cli", "utils", "clap-noun-verb-macros", "crates/c8-core", "crates/c8-bench", "crates/c8-graph", "crates/c8-market", "crates/c8-time", "crates/c8-instruments", "crates/c8-adversary", "crates/c8-receipts", "crates/cargo-cicd"]
+members = [".", "clap-noun-verb-macros", "utils"]
 # Exclude standalone playground CLI (uses published crates.io version) and vendors directory
 exclude = ["playground", "examples/playground", "examples/greet-demo", "vendors"]
 
 [workspace.dependencies]
 # CLI Framework
-clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
+clap = { version = ">=4.5, <4.6", features = ["derive", "env", "suggestions"] }
 clap-noun-verb = { path = ".", version = "26.6.14" }
 clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.14" }
 
@@ -87,6 +87,7 @@ otel = [
 # Federated capability network (frontier feature)
 federated-network = []
 
+
 # =============================================================================
 # CORE DEPENDENCIES - Always required
 # =============================================================================
@@ -112,7 +113,7 @@ anyhow = { workspace = true }
 # Utilities
 once_cell = { workspace = true }
 lazy_static = "1.4"
-atty = "0.2"
+# atty removed (RUSTSEC-2021-0145); use std::io::IsTerminal instead (stable since Rust 1.70)
 tokio = { workspace = true }
 parking_lot = "0.12"
 
@@ -251,7 +252,7 @@ unsafe_code = "allow"
 bare_trait_objects = "warn"
 # Allow kani cfg condition for formal verification (optional external tool)
 # Also allow docsrs for documentation build
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async", "wizard"))'] }
 # Allow dead code for v5.1 feature placeholders
 dead_code = "allow"
 # Allow async fn in traits (stable in Rust 1.75+)

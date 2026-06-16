@@ -1,10 +1,10 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! RDF → ggen generator: converts RDF verb definitions to compilable Rust #[verb] code
+//! RDF → ggen generator: converts RDF verb definitions to compilable Rust `#[verb]` code
 //!
 //! This module reads RDF triples describing verbs (from ontologies or SPARQL results)
-//! and emits ready-to-compile Rust code using the #[verb] macro.
+//! and emits ready-to-compile Rust code using the `#[verb]` macro.
 //!
 //! Example RDF input:
 //! ```text
@@ -114,7 +114,7 @@ pub struct RdfArgumentDefinition {
     /// Description
     pub description: String,
 
-    /// Rust type (e.g., "String", "u16", "Vec<String>")
+    /// Rust type (e.g., "String", "u16", "`Vec<String>`")
     pub value_type: String,
 
     /// Is required (positional args are typically true)
@@ -206,7 +206,7 @@ pub struct SparqlResultList {
 /// - Pre-parsed RdfVerbDefinition struct
 ///
 /// # Output
-/// Ready-to-compile Rust #[verb] function signature + skeleton handler
+/// Ready-to-compile Rust `#[verb]` function signature + skeleton handler
 ///
 /// # Example
 /// ```rust,no_run

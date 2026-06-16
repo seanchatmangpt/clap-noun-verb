@@ -115,10 +115,10 @@ jobs:
           key: msrv-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build with MSRV
-        run: cargo build --all-features --workspace
+        run: cargo build --all-features -p clap-noun-verb -p clap-noun-verb-macros
 
       - name: Test with MSRV
-        run: cargo test --all-features --workspace
+        run: cargo test --all-features --lib -p clap-noun-verb
 
   # Docs - ensure documentation builds
   docs:

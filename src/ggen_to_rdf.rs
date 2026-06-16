@@ -1,9 +1,9 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! ggen → RDF generator: converts Rust #[verb] source code to RDF/N-Triples ontology
+//! ggen → RDF generator: converts Rust `#[verb]` source code to RDF/N-Triples ontology
 //!
-//! This module parses Rust source code containing #[verb] macro invocations
+//! This module parses Rust source code containing `#[verb]` macro invocations
 //! and emits W3C-compliant RDF triples describing the verbs.
 //!
 //! The generated RDF uses:
@@ -19,7 +19,7 @@ use std::collections::HashSet;
 // PARSING RUST SOURCE
 // =============================================================================
 
-/// Parse a Rust source file for #[verb] functions
+/// Parse a Rust source file for `#[verb]` functions
 ///
 /// Extracts:
 /// - Function name (converted to verb name)

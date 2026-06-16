@@ -25,6 +25,7 @@ pub trait Federated {
 }
 
 /// Advertises this node's capabilities to the federation discovery service.
+#[derive(Debug)]
 pub struct CapabilityAdvertiser {
     _identity: String,
     _discovery_url: String,
@@ -147,6 +148,7 @@ pub struct CapabilityDescriptor {
 pub static __CAPABILITY_REGISTRY: [fn()] = [..];
 
 /// Resolves capabilities advertised by remote federation nodes.
+#[derive(Debug)]
 pub struct RemoteResolver;
 
 impl RemoteResolver {

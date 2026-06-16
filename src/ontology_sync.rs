@@ -4,8 +4,8 @@
 //! Bidirectional sync between Rust ggen code and RDF ontology
 //!
 //! Ensures that:
-//! - Changes to #[verb] functions are reflected in the RDF ontology
-//! - Changes to the RDF ontology can generate new #[verb] code
+//! - Changes to `#[verb]` functions are reflected in the RDF ontology
+//! - Changes to the RDF ontology can generate new `#[verb]` code
 //! - The declared command structure (code) matches the ontology (RDF)
 //!
 //! ## Algorithm

@@ -1,0 +1,4 @@
+[advisories]
+# proc-macro-error is unmaintained (RUSTSEC-2024-0370) but still widely used
+# as a transitive dependency; no security vulnerability, only maintenance status.
+ignore = ["RUSTSEC-2024-0370"]

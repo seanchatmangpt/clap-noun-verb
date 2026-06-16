@@ -2,9 +2,7 @@ name: Frontier CI - 21-Point Feature Matrix
 
 on:
   push:
-    branches: [ main, develop, 'claude/**', 'frontier/**' ]
-  pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'frontier/**' ]
   schedule:
     # Run nightly at 2 AM UTC
     - cron: '0 2 * * *'
@@ -150,7 +148,7 @@ jobs:
           verbose: true
 
       - name: Archive coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
@@ -202,7 +200,7 @@ jobs:
           cargo bench --all-features -- --baseline main --load-baseline current
 
       - name: Archive benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: target/criterion/

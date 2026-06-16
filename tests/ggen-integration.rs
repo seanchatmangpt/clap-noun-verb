@@ -18,7 +18,7 @@
 //! - pack add
 //! - pack remove
 
-use clap_noun_verb::{NounVerbError, Result as ClapResult};
+use clap_noun_verb::NounVerbError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
@@ -55,7 +55,7 @@ fn test_v26_6_1_public_api_surface() {
 fn test_specimen_cli_command_count() {
     let output = Command::new("cargo")
         .args(["run", "--quiet", "--example", "tutorial_services", "--", "--introspect"])
-        .current_dir("/Users/sac/clap-noun-verb")
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
         .expect("Failed to run tutorial_services --introspect");
 
@@ -66,8 +66,8 @@ fn test_specimen_cli_command_count() {
     );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let tools: Vec<serde_json::Value> =
-        serde_json::from_str(&stdout).expect("--introspect must emit a JSON array of tool descriptors");
+    let tools: Vec<serde_json::Value> = serde_json::from_str(&stdout)
+        .expect("--introspect must emit a JSON array of tool descriptors");
 
     // Exactly the three registered verbs are discoverable.
     assert_eq!(tools.len(), 3, "specimen CLI must expose exactly 3 discoverable verbs");
@@ -85,7 +85,7 @@ fn test_specimen_cli_command_count() {
 fn test_specimen_cli_help_output() {
     let output = Command::new("cargo")
         .args(["run", "--example", "tutorial_services", "--", "--help"])
-        .current_dir("/Users/sac/clap-noun-verb")
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
         .expect("Failed to run tutorial_services --help");
 
@@ -311,9 +311,7 @@ fn test_result_type_usage() {
 
     // Act: NounVerbError constructors produce errors that carry the expected message
     let err = NounVerbError::execution_error("bad input".to_string());
-    let failure: ClapResult<String> = Err(err);
-    assert!(failure.is_err());
-    let msg = failure.unwrap_err().to_string();
+    let msg = err.to_string();
     assert!(msg.contains("bad input"), "Error message must include the original cause: {msg}");
 
     println!("✓ Result<T> type works correctly with real crate functions");
@@ -332,7 +330,7 @@ fn test_verb_macro_pattern() {
     // get_service_status() returns 4 services, each "Running", with known ports.
     let output = Command::new("cargo")
         .args(["run", "--quiet", "--example", "tutorial_services", "--", "services", "status"])
-        .current_dir("/Users/sac/clap-noun-verb")
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
         .expect("Failed to run specimen 'services status'");
 
