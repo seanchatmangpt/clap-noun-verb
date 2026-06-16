@@ -64,7 +64,7 @@ This document specifies 6 specialized subagent types optimized for the clap-noun
 
 ### Success Metrics
 
-- All macro expansions are type-safe and hygenic
+- All macro expansions are type-safe and hygienic
 - Poka-Yoke coverage remains at 100% (Gap 1-4)
 - Return type validation catches all invalid patterns
 - Feature-gated code compiles cleanly under all combinations

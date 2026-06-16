@@ -251,50 +251,51 @@ jobs:
           git checkout main
 
       - name: Build main binary
+        id: main-build
         run: cargo build --release
+        continue-on-error: true
 
       - name: Get main binary size
         id: main-size
         run: |
-          SIZE=$(stat -c%s target/release/clap-noun-verb-gen)
-          echo "bytes=$SIZE" >> $GITHUB_OUTPUT
-
-      - name: Calculate size change
-        id: size-change
-        run: |
-          PR_SIZE=${{ steps.pr-size.outputs.bytes }}
-          MAIN_SIZE=${{ steps.main-size.outputs.bytes }}
-          DIFF=$((PR_SIZE - MAIN_SIZE))
-          DIFF_PCT=$(echo "scale=2; ($DIFF / $MAIN_SIZE) * 100" | bc)
-
-          echo "diff=$DIFF" >> $GITHUB_OUTPUT
-          echo "diff_pct=$DIFF_PCT" >> $GITHUB_OUTPUT
+          if [ "${{ steps.main-build.outcome }}" = "success" ] && [ -f target/release/clap-noun-verb-gen ]; then
+            SIZE=$(stat -c%s target/release/clap-noun-verb-gen)
+            echo "bytes=$SIZE" >> $GITHUB_OUTPUT
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "bytes=0" >> $GITHUB_OUTPUT
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Comment size change on PR
         uses: actions/github-script@v6
         with:
           script: |
             const prSize = parseInt('${{ steps.pr-size.outputs.bytes }}');
+            const mainAvailable = '${{ steps.main-size.outputs.available }}' === 'true';
             const mainSize = parseInt('${{ steps.main-size.outputs.bytes }}');
-            const diff = parseInt('${{ steps.size-change.outputs.diff }}');
-            const diffPct = parseFloat('${{ steps.size-change.outputs.diff_pct }}');
 
             const prSizeMB = (prSize / 1024 / 1024).toFixed(2);
-            const mainSizeMB = (mainSize / 1024 / 1024).toFixed(2);
-            const diffKB = (diff / 1024).toFixed(2);
 
-            const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
-            const sign = diff > 0 ? '+' : '';
+            let changeRow = '';
+            if (mainAvailable && mainSize > 0) {
+              const mainSizeMB = (mainSize / 1024 / 1024).toFixed(2);
+              const diff = prSize - mainSize;
+              const diffPct = ((diff / mainSize) * 100).toFixed(2);
+              const diffKB = (diff / 1024).toFixed(2);
+              const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
+              const sign = diff > 0 ? '+' : '';
+              changeRow = `| Main branch | ${mainSizeMB} MB |\n| Change | ${emoji} ${sign}${diffKB} KB (${sign}${diffPct}%) |`;
+            } else {
+              changeRow = `| Main branch | ⚠️ build unavailable |`;
+            }
 
             const body = `## 📦 Binary Size Change
 
             | Metric | Value |
             |--------|-------|
-            | Main branch | ${mainSizeMB} MB |
             | This PR | ${prSizeMB} MB |
-            | Change | ${emoji} ${sign}${diffKB} KB (${sign}${diffPct}%) |
-
-            ${Math.abs(diffPct) > 5 ? '⚠️  **Significant size change detected** (>5%)' : ''}
+            ${changeRow}
             `;
 
             github.rest.issues.createComment({
