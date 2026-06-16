@@ -2,9 +2,7 @@ name: Frontier CI - 21-Point Feature Matrix
 
 on:
   push:
-    branches: [ main, develop, 'claude/**', 'frontier/**' ]
-  pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'frontier/**' ]
   schedule:
     # Run nightly at 2 AM UTC
     - cron: '0 2 * * *'
