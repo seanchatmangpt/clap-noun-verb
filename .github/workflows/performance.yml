@@ -38,8 +38,8 @@ jobs:
         run: |
           echo "=== Binary Size ==="
           cargo build --release --quiet
-          SIZE=$(du -h target/release/clap_noun_verb | cut -f1)
-          SIZE_BYTES=$(du -b target/release/clap_noun_verb | cut -f1)
+          SIZE=$(du -h target/release/clap-noun-verb-gen | cut -f1)
+          SIZE_BYTES=$(du -b target/release/clap-noun-verb-gen | cut -f1)
           LIMIT=$((10 * 1024 * 1024))
           echo "Binary size: $SIZE"
           if [ $SIZE_BYTES -gt $LIMIT ]; then

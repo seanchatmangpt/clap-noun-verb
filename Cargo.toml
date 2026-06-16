@@ -87,8 +87,6 @@ otel = [
 # Federated capability network (frontier feature)
 federated-network = []
 
-# AI integration with rust-genai for multi-provider LLM support
-wizard = []
 
 # =============================================================================
 # CORE DEPENDENCIES - Always required
@@ -254,7 +252,7 @@ unsafe_code = "allow"
 bare_trait_objects = "warn"
 # Allow kani cfg condition for formal verification (optional external tool)
 # Also allow docsrs for documentation build
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async", "wizard"))'] }
 # Allow dead code for v5.1 feature placeholders
 dead_code = "allow"
 # Allow async fn in traits (stable in Rust 1.75+)

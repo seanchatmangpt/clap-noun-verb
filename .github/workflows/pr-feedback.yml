@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  pull-requests: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -25,7 +28,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run benchmarks on PR
-        run: cargo bench --all-features -- --save-baseline pr
+        run: cargo bench --all-features --bench dispatch -- --save-baseline pr
 
       - name: Checkout main branch
         run: |
@@ -33,13 +36,13 @@ jobs:
           git checkout main
 
       - name: Run benchmarks on main
-        run: cargo bench --all-features -- --save-baseline main
+        run: cargo bench --all-features --bench dispatch -- --save-baseline main
 
       - name: Compare benchmarks
         id: bench-compare
         run: |
           git checkout -
-          cargo bench --all-features -- --baseline main --load-baseline pr > bench-comparison.txt || true
+          cargo bench --all-features --bench dispatch -- --baseline main --load-baseline pr > bench-comparison.txt || true
 
           # Check for regressions (>10% slower)
           if grep -q "Performance has regressed" bench-comparison.txt; then
@@ -239,7 +242,7 @@ jobs:
       - name: Get PR binary size
         id: pr-size
         run: |
-          SIZE=$(stat -c%s target/release/clap-noun-verb)
+          SIZE=$(stat -c%s target/release/clap-noun-verb-gen)
           echo "bytes=$SIZE" >> $GITHUB_OUTPUT
 
       - name: Checkout main
@@ -253,7 +256,7 @@ jobs:
       - name: Get main binary size
         id: main-size
         run: |
-          SIZE=$(stat -c%s target/release/clap-noun-verb)
+          SIZE=$(stat -c%s target/release/clap-noun-verb-gen)
           echo "bytes=$SIZE" >> $GITHUB_OUTPUT
 
       - name: Calculate size change
