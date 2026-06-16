@@ -119,17 +119,11 @@ fn bench_serialization(c: &mut Criterion) {
     };
 
     c.bench_function("serialize_json_result", |b| {
-        b.iter(|| {
-            let json = serde_json::to_string(&black_box(&result));
-            json
-        })
+        b.iter(|| serde_json::to_string(&black_box(&result)))
     });
 
     c.bench_function("serialize_json_result_pretty", |b| {
-        b.iter(|| {
-            let json = serde_json::to_string_pretty(&black_box(&result));
-            json
-        })
+        b.iter(|| serde_json::to_string_pretty(&black_box(&result)))
     });
 }
 
@@ -168,7 +162,7 @@ fn bench_string_operations(c: &mut Criterion) {
     });
 }
 
-/// Define benchmark groups for organization
+// Define benchmark groups for organization
 criterion_group!(
     name = benches;
     config = Criterion::default().sample_size(100);
