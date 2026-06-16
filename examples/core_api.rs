@@ -38,52 +38,46 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
             .name("myapp")
             .version("1.0.0")
             .about("Core API demonstration")
-            .noun(noun!("services", "Manage services", [
-                verb!("status", "Show service status", |_args: &VerbArgs| {
-                    println!("running=true uptime=3600");
-                    Ok(())
-                }),
-                verb!("restart", "Restart a service", |_args: &VerbArgs| {
-                    println!("running=true uptime=0");
-                    Ok(())
-                }),
-            ]))
-            .noun(noun!("config", "Manage configuration", [
-                verb!("get", "Get a config value", |_args: &VerbArgs| {
+            .noun(noun!(
+                "services",
+                "Manage services",
+                [
+                    verb!("status", "Show service status", |_args: &VerbArgs| {
+                        println!("running=true uptime=3600");
+                        Ok(())
+                    }),
+                    verb!("restart", "Restart a service", |_args: &VerbArgs| {
+                        println!("running=true uptime=0");
+                        Ok(())
+                    }),
+                ]
+            ))
+            .noun(noun!(
+                "config",
+                "Manage configuration",
+                [verb!("get", "Get a config value", |_args: &VerbArgs| {
                     println!("key=\"debug\" value=\"false\"");
                     Ok(())
-                }),
-            ]))
+                }),]
+            ))
     }
 }
 
 fn main() -> Result<()> {
     // --- Witness 1: successful verb dispatch ---
-    run_cli_with_args(
-        vec!["myapp".into(), "services".into(), "status".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["myapp".into(), "services".into(), "status".into()], build())?;
     println!("[services status] running=true uptime=3600");
 
     // --- Witness 2: second noun ---
-    run_cli_with_args(
-        vec!["myapp".into(), "config".into(), "get".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["myapp".into(), "config".into(), "get".into()], build())?;
     println!("[config get] key=\"debug\" value=\"false\"");
 
     // --- Witness 3: NounVerbError "did you mean?" suggestion ---
     let candidates = ["user", "session", "config"];
     let err = NounVerbError::command_not_found_with_candidates("usr", &candidates);
     let msg = err.to_string();
-    assert!(
-        msg.contains("usr"),
-        "Error message must name the unknown command: {msg}"
-    );
-    assert!(
-        msg.contains("user"),
-        "Error message must suggest 'user': {msg}"
-    );
+    assert!(msg.contains("usr"), "Error message must name the unknown command: {msg}");
+    assert!(msg.contains("user"), "Error message must suggest 'user': {msg}");
     println!("command_not_found: {msg}");
 
     // --- Witness 4: StructuredError deadline path ---
@@ -101,19 +95,10 @@ fn main() -> Result<()> {
 
     // --- Witness 5: build_cli introspects command structure without running ---
     let (_cmd, structure) = build_cli(build());
-    assert!(
-        structure.contains_key("services"),
-        "Command structure must include 'services' noun"
-    );
+    assert!(structure.contains_key("services"), "Command structure must include 'services' noun");
     let verbs = structure.get("services").expect("services must have verbs");
-    assert!(
-        verbs.contains(&"status".to_string()),
-        "services must expose 'status' verb"
-    );
-    assert!(
-        verbs.contains(&"restart".to_string()),
-        "services must expose 'restart' verb"
-    );
+    assert!(verbs.contains(&"status".to_string()), "services must expose 'status' verb");
+    assert!(verbs.contains(&"restart".to_string()), "services must expose 'restart' verb");
     println!("structure: services -> {:?}", verbs);
 
     Ok(())

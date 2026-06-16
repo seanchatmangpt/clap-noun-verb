@@ -12,7 +12,6 @@
 /// cargo bench --bench dispatch
 /// cargo bench --bench dispatch -- --baseline main  # Compare against baseline
 /// ```
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 /// Mock registry for benchmarking (simulates CommandRegistry behavior)
@@ -144,8 +143,7 @@ fn bench_error_handling(c: &mut Criterion) {
 
     c.bench_function("error_serialization", |b| {
         b.iter(|| {
-            let error_json =
-                serde_json::json!({ "error": "command_not_found", "code": 404 });
+            let error_json = serde_json::json!({ "error": "command_not_found", "code": 404 });
             let _str = black_box(error_json.to_string());
         })
     });
