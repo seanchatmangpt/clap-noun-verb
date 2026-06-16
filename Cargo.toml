@@ -87,6 +87,9 @@ otel = [
 # Federated capability network (frontier feature)
 federated-network = []
 
+# AI integration with rust-genai for multi-provider LLM support
+wizard = []
+
 # =============================================================================
 # CORE DEPENDENCIES - Always required
 # =============================================================================
