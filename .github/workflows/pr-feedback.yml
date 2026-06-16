@@ -36,20 +36,25 @@ jobs:
           git checkout main
 
       - name: Run benchmarks on main
+        id: main-bench
         run: cargo bench --all-features --bench dispatch -- --save-baseline main
+        continue-on-error: true
 
       - name: Compare benchmarks
         id: bench-compare
         run: |
           git checkout -
-          cargo bench --all-features --bench dispatch -- --baseline main --load-baseline pr > bench-comparison.txt || true
-
-          # Check for regressions (>10% slower)
-          if grep -q "Performance has regressed" bench-comparison.txt; then
-            echo "regression=true" >> $GITHUB_OUTPUT
-            echo "REGRESSION DETECTED"
+          if [ "${{ steps.main-bench.outcome }}" = "success" ]; then
+            cargo bench --all-features --bench dispatch -- --baseline main --load-baseline pr > bench-comparison.txt || true
+            if grep -q "Performance has regressed" bench-comparison.txt; then
+              echo "regression=true" >> $GITHUB_OUTPUT
+              echo "REGRESSION DETECTED"
+            else
+              echo "regression=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "regression=false" >> $GITHUB_OUTPUT
+            echo "Skipping comparison: main branch benchmark unavailable" > bench-comparison.txt
           fi
 
       - name: Comment on PR with benchmark results
