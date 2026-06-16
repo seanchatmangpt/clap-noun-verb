@@ -114,7 +114,7 @@ pub struct RdfArgumentDefinition {
     /// Description
     pub description: String,
 
-    /// Rust type (e.g., "String", "u16", "Vec<String>")
+    /// Rust type (e.g., "String", "u16", "`Vec<String>`")
     pub value_type: String,
 
     /// Is required (positional args are typically true)
