@@ -9,6 +9,7 @@ extend-exclude = [
   "target",
   ".git",
   "CONVO.txt",
+  "archive",
 ]
 
 [default.extend-words]

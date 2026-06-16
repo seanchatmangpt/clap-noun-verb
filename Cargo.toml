@@ -5,7 +5,7 @@ exclude = ["playground", "examples/playground", "examples/greet-demo", "vendors"
 
 [workspace.dependencies]
 # CLI Framework
-clap = { version = "4.5", features = ["derive", "env", "suggestions"] }
+clap = { version = ">=4.5, <4.6", features = ["derive", "env", "suggestions"] }
 clap-noun-verb = { path = ".", version = "26.6.14" }
 clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.14" }
 
@@ -115,7 +115,7 @@ anyhow = { workspace = true }
 # Utilities
 once_cell = { workspace = true }
 lazy_static = "1.4"
-atty = "0.2"
+# atty removed (RUSTSEC-2021-0145); use std::io::IsTerminal instead (stable since Rust 1.70)
 tokio = { workspace = true }
 parking_lot = "0.12"
 
