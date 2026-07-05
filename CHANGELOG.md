@@ -5,6 +5,24 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [26.7.4] - 2026-07-04
+
+### Added
+- `CommandRegistry::set_app_metadata(name, version)` — overrides the
+  application name/version shown in `--help`/`--version`. Without this
+  call, `build_command()` fell back to the literal name `"cli"` and *this
+  crate's own* compiled-in `CARGO_PKG_VERSION`, so a consuming binary's
+  `--help`/`--version` output never reflected its own name/version (found
+  while integrating a consumer binary, `ggen`, that runs entirely through
+  `CommandRegistry` and had no way to correct this). Call it once, early in
+  `main`, before the first dispatch:
+  ```ignore
+  clap_noun_verb::cli::CommandRegistry::set_app_metadata(
+      env!("CARGO_PKG_NAME"),
+      env!("CARGO_PKG_VERSION"),
+  );
+  ```
+
 ## [26.6.13] - 2026-06-13
 
 ### Changed

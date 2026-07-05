@@ -182,6 +182,14 @@ pub struct CommandRegistry {
     verbs: HashMap<String, HashMap<String, VerbMetadata>>,
     /// Root-level verbs (verb_name -> verb metadata) - verbs without a noun
     root_verbs: HashMap<String, VerbMetadata>,
+    /// Application name shown in `--help`/usage. Falls back to the literal
+    /// `"cli"` when unset — see [`CommandRegistry::set_app_metadata`].
+    app_name: Option<String>,
+    /// Application version shown in `--version`. Falls back to *this
+    /// crate's own* compiled-in `CARGO_PKG_VERSION` when unset, which is
+    /// almost never what a consuming binary wants — see
+    /// [`CommandRegistry::set_app_metadata`].
+    app_version: Option<String>,
 }
 
 /// Metadata for a registered noun
@@ -276,6 +284,8 @@ impl CommandRegistry {
                 nouns: HashMap::new(),
                 verbs: HashMap::new(),
                 root_verbs: HashMap::new(),
+                app_name: None,
+                app_version: None,
             })
         });
 
@@ -294,6 +304,26 @@ impl CommandRegistry {
         Self::init()
     }
 
+    /// Override the application name/version shown in `--help`/`--version`.
+    ///
+    /// Without this call, [`Self::build_command`] falls back to the literal
+    /// name `"cli"` and *this crate's own* compiled-in `CARGO_PKG_VERSION` —
+    /// neither of which reflects the consuming binary. Call this once, early
+    /// in `main`, before the first dispatch:
+    ///
+    /// ```ignore
+    /// clap_noun_verb::cli::CommandRegistry::set_app_metadata(
+    ///     env!("CARGO_PKG_NAME"),
+    ///     env!("CARGO_PKG_VERSION"),
+    /// );
+    /// ```
+    pub fn set_app_metadata(name: impl Into<String>, version: impl Into<String>) {
+        let registry = Self::init();
+        let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
+        reg.app_name = Some(name.into());
+        reg.app_version = Some(version.into());
+    }
+
     /// Register a noun (called by macro-generated code)
     pub fn register_noun(name: &'static str, about: &'static str) {
         let registry = REGISTRY.get_or_init(|| {
@@ -301,6 +331,8 @@ impl CommandRegistry {
                 nouns: HashMap::new(),
                 verbs: HashMap::new(),
                 root_verbs: HashMap::new(),
+                app_name: None,
+                app_version: None,
             })
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
@@ -338,6 +370,8 @@ impl CommandRegistry {
                 nouns: HashMap::new(),
                 verbs: HashMap::new(),
                 root_verbs: HashMap::new(),
+                app_name: None,
+                app_version: None,
             })
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
@@ -419,8 +453,20 @@ impl CommandRegistry {
 
     /// Build clap command structure from registry
     pub fn build_command(&self) -> clap::Command {
-        let mut cmd = clap::Command::new("cli")
-            .version(env!("CARGO_PKG_VERSION"))
+        // `clap::Command::new`/`.version()` require `&'static str`; leaking
+        // is this module's documented convention for dynamic strings (see
+        // the module doc comment on `Box::leak`) and is a one-time,
+        // initialization-only cost, not a hot-path allocation.
+        let name: &'static str = match &self.app_name {
+            Some(n) => Box::leak(n.clone().into_boxed_str()),
+            None => "cli",
+        };
+        let version: &'static str = match &self.app_version {
+            Some(v) => Box::leak(v.clone().into_boxed_str()),
+            None => env!("CARGO_PKG_VERSION"),
+        };
+        let mut cmd = clap::Command::new(name)
+            .version(version)
             .arg_required_else_help(true)
             .arg(clap::Arg::new("format")
                 .long("format")
