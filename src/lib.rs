@@ -154,6 +154,10 @@ pub mod agents;
 #[cfg(feature = "rdf")]
 pub mod semantic;
 
+// Federation support (requires "federated-network" feature)
+#[cfg(feature = "federated-network")]
+pub mod federation;
+
 // Frontier Packages - 10 Advanced Agent-Grade Packages (v5.4+)
 // Requires any frontier feature (meta-framework, rdf-composition, etc.)
 #[cfg(any(
