@@ -102,8 +102,37 @@ mod tests {
 
     #[test]
     fn test_correct_types_compile() {
-        // If this compiles, all the correct examples above are valid
-        assert!(true);
+        // Verify each verb function executes and returns the expected value
+        let result = correct_result_type();
+        assert!(result.is_ok());
+        let status = result.unwrap();
+        assert!(status.running);
+        assert_eq!(status.uptime, 3600);
+
+        let result = correct_option_type();
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_some());
+
+        let result = correct_direct_type();
+        assert_eq!(result.unwrap(), "Running");
+
+        let result = show_health();
+        assert_eq!(result.unwrap(), "Healthy");
+
+        let result = get_service_status();
+        assert_eq!(result.unwrap(), "Active");
+
+        let result = list_all_services();
+        let services = result.unwrap();
+        assert_eq!(services.len(), 2);
+        assert!(services.contains(&"api".to_string()));
+        assert!(services.contains(&"worker".to_string()));
+
+        let result = first_unique_verb();
+        assert_eq!(result.unwrap(), "First");
+
+        let result = second_unique_verb();
+        assert_eq!(result.unwrap(), "Second");
     }
 
     #[test]
