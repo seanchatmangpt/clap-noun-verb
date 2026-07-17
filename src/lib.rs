@@ -67,6 +67,8 @@ pub mod verb;
 #[cfg(feature = "agent2028")]
 pub mod macros_discovery_engine;
 
+pub mod capability;
+
 // =============================================================================
 // OPTIONAL MODULES - Feature-gated for minimal compile burden
 // =============================================================================
