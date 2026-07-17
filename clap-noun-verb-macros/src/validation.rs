@@ -243,16 +243,18 @@ pub fn generate_forgotten_verb_checker() -> TokenStream {
     quote! {
         /// Compile-time checker for forgotten #[verb] attributes
         ///
-        /// Add this at the end of your file to ensure all public functions
-        /// that return Result<T> have #[verb] attributes:
-        /// ```
-        /// check_verb_registration!();
-        /// ```
+        /// NOTE: This macro is not implemented. Detecting unregistered functions at
+        /// compile time requires proc-macro access to all functions in a module, which
+        /// is not possible from an attribute macro on individual functions. Use
+        /// `cargo check` and review warnings instead.
         #[macro_export]
         macro_rules! check_verb_registration {
             () => {
-                // This macro should be called at module level to verify all functions
-                // are properly registered. Implementation is generated per-file.
+                compile_error!(
+                    "check_verb_registration!() is not implemented. \
+                     Proc-macros cannot introspect sibling functions at compile time. \
+                     Remove this call or use `cargo check` to review verb registrations."
+                );
             };
         }
     }
@@ -300,19 +302,15 @@ fn sanitize_ident(s: &str) -> String {
 ///
 /// This generates a const assertion that will fail at compile time if the
 /// return type doesn't implement Serialize.
-pub fn generate_serialize_check(_return_type: &Type, fn_name: &syn::Ident) -> TokenStream {
+pub fn generate_serialize_check(return_type: &Type, fn_name: &syn::Ident) -> TokenStream {
     let check_ident = quote::format_ident!("__SERIALIZE_CHECK_{}", fn_name);
 
     quote! {
         // Compile-time check: Return type must implement Serialize
         #[doc(hidden)]
         const #check_ident: () = {
-            // This will fail to compile if #return_type doesn't implement Serialize
             const fn _assert_serialize<T: serde::Serialize>() {}
-
-            // Uncomment when checking concrete types (not Result<T>)
-            // _assert_serialize::<#return_type>();
-
+            _assert_serialize::<#return_type>();
             ()
         };
     }
