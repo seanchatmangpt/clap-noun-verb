@@ -296,6 +296,6 @@ fn test_config_validation_under_invalid_input() {
     // Assert: Temperature and top_p should be clamped
     assert_eq!(config.temperature, 2.0); // Clamped to max
     assert_eq!(config.top_p, 1.0); // Clamped to max
-                                   // Token limit validation may fail
-    assert!(result.is_err() || result.is_ok(), "Config handles extreme values");
+                                   // Token limit with usize::MAX is out of range — validation must reject it
+    assert!(result.is_err(), "Config with usize::MAX max_tokens should fail validation");
 }

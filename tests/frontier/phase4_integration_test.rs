@@ -403,10 +403,24 @@ mod executable_specs_tests {
         suite.add_spec(spec1);
         suite.add_spec(spec2);
         
-        // Assert
-        assert!(suite.get_spec("Spec 1").is_ok());
-        assert!(suite.get_spec("Spec 2").is_ok());
-        assert!(suite.get_spec("NonExistent").is_err());
+        // Assert — verify the specs are retrievable and their names match what was inserted
+        let retrieved1 = suite.get_spec("Spec 1");
+        assert!(retrieved1.is_ok(), "Spec 1 should be retrievable from the suite");
+        assert_eq!(
+            retrieved1.ok().unwrap().name(),
+            "Spec 1",
+            "Retrieved spec name should match the inserted name"
+        );
+
+        let retrieved2 = suite.get_spec("Spec 2");
+        assert!(retrieved2.is_ok(), "Spec 2 should be retrievable from the suite");
+        assert_eq!(
+            retrieved2.ok().unwrap().name(),
+            "Spec 2",
+            "Retrieved spec name should match the inserted name"
+        );
+
+        assert!(suite.get_spec("NonExistent").is_err(), "Unknown spec name should return Err");
     }
     
     #[test]
@@ -440,7 +454,22 @@ mod executable_specs_tests {
 mod cross_phase_integration {
     #[test]
     fn test_all_phase4_features_available() {
-        // This test just verifies all Phase 4 features compile together
-        assert!(true, "All Phase 4 features integrated successfully");
+        use clap_noun_verb::frontier::{FederatedNetwork, ExecutableSpec};
+        // Verify all Phase 4 types are constructible together in the same compilation unit
+        let spec = ExecutableSpec::new("integration-check", "Phase 4 cross-feature spec")
+            .given("all Phase 4 features are enabled")
+            .when("types from each feature are instantiated")
+            .then("the system compiles and constructs all types without error");
+        let gherkin = spec.to_gherkin();
+        assert!(
+            gherkin.contains("Feature: integration-check"),
+            "ExecutableSpec must be constructible when all Phase 4 features are active"
+        );
+        // FederatedNetwork from 4A must also be constructible
+        let network_result = FederatedNetwork::new("phase4-integration-node");
+        assert!(
+            network_result.is_ok(),
+            "FederatedNetwork must initialise when all Phase 4 features are active"
+        );
     }
 }
