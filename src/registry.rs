@@ -1117,6 +1117,7 @@ pub struct OntologyArgDef {
 }
 
 /// RDF export format
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy)]
 pub enum RdfFormat {
     /// N-Triples format (.nt)
