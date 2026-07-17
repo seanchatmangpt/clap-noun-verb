@@ -18,6 +18,7 @@ use crate::verb::VerbArgs;
 use clap::{ArgMatches, Command};
 
 /// Tree-based command structure for hierarchical CLI composition
+#[must_use]
 pub struct CommandTree {
     /// Root commands in the tree
     roots: Vec<TreeNode>,
@@ -43,28 +44,33 @@ pub struct CommandHandler {
 }
 
 /// Builder for creating command trees
+#[must_use]
 pub struct CommandTreeBuilder {
     roots: Vec<TreeNode>,
 }
 
 impl CommandTree {
     /// Create a new empty command tree
+    #[must_use]
     pub fn new() -> Self {
         Self { roots: Vec::new() }
     }
 
     /// Create a tree from a builder
+    #[must_use]
     pub fn from_builder(builder: CommandTreeBuilder) -> Self {
         builder.build()
     }
 
     /// Add a root command to the tree
+    #[must_use]
     pub fn add_root(mut self, node: TreeNode) -> Self {
         self.roots.push(node);
         self
     }
 
     /// Add multiple root commands
+    #[must_use]
     pub fn add_roots<I>(mut self, nodes: I) -> Self
     where
         I: IntoIterator<Item = TreeNode>,
@@ -74,16 +80,19 @@ impl CommandTree {
     }
 
     /// Get all root commands
+    #[must_use]
     pub fn roots(&self) -> &[TreeNode] {
         &self.roots
     }
 
     /// Get all root command names
+    #[must_use]
     pub fn root_names(&self) -> Vec<&str> {
         self.roots.iter().map(|n| n.name.as_str()).collect()
     }
 
     /// Find a command in the tree by path
+    #[must_use]
     pub fn find_command(&self, path: &[&str]) -> Option<&TreeNode> {
         if path.is_empty() {
             return None;
@@ -101,6 +110,7 @@ impl CommandTree {
     }
 
     /// Build the complete clap command structure
+    #[must_use]
     pub fn build_command(&self) -> Command {
         let mut cmd = Command::new("cli").about("Command tree application");
 
@@ -151,32 +161,38 @@ impl CommandTree {
 
 impl TreeNode {
     /// Create a new tree node
+    #[must_use]
     pub fn new(name: impl Into<String>, about: impl Into<String>) -> Self {
         Self { name: name.into(), about: about.into(), children: Vec::new(), handler: None }
     }
 
     /// Get the node name
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
     /// Get the node description
+    #[must_use]
     pub fn about(&self) -> &str {
         &self.about
     }
 
     /// Get the node's children
+    #[must_use]
     pub fn children(&self) -> &[TreeNode] {
         &self.children
     }
 
     /// Add a child command
+    #[must_use]
     pub fn add_child(mut self, child: TreeNode) -> Self {
         self.children.push(child);
         self
     }
 
     /// Add multiple child commands
+    #[must_use]
     pub fn add_children<I>(mut self, children: I) -> Self
     where
         I: IntoIterator<Item = TreeNode>,
@@ -186,6 +202,7 @@ impl TreeNode {
     }
 
     /// Set the command handler
+    #[must_use]
     pub fn with_handler<F>(mut self, handler: F) -> Self
     where
         F: Fn(&VerbArgs) -> Result<()> + Send + Sync + 'static,
@@ -195,6 +212,7 @@ impl TreeNode {
     }
 
     /// Build the clap command for this node
+    #[must_use]
     pub fn build_command(&self) -> Command {
         // Clone to owned strings and convert to static lifetime for clap
         // Note: This leaks memory but is acceptable for CLI construction (happens once per run)
@@ -210,6 +228,7 @@ impl TreeNode {
     }
 
     /// Get all command paths from this node
+    #[must_use]
     pub fn command_paths(&self) -> Vec<Vec<String>> {
         let mut paths = Vec::new();
 
@@ -232,17 +251,20 @@ impl TreeNode {
 
 impl CommandTreeBuilder {
     /// Create a new command tree builder
+    #[must_use]
     pub fn new() -> Self {
         Self { roots: Vec::new() }
     }
 
     /// Add a root command
+    #[must_use]
     pub fn add_root(mut self, node: TreeNode) -> Self {
         self.roots.push(node);
         self
     }
 
     /// Add a root command with handler
+    #[must_use]
     pub fn add_root_with_handler<F>(
         mut self,
         name: impl Into<String>,
@@ -258,6 +280,7 @@ impl CommandTreeBuilder {
     }
 
     /// Add a root command with children
+    #[must_use]
     pub fn add_root_with_children<I>(
         mut self,
         name: impl Into<String>,
@@ -273,6 +296,7 @@ impl CommandTreeBuilder {
     }
 
     /// Build the command tree
+    #[must_use]
     pub fn build(self) -> CommandTree {
         CommandTree { roots: self.roots }
     }
