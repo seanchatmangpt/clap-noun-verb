@@ -53,6 +53,7 @@
 pub mod agent_cli;
 pub mod builder;
 pub mod cli;
+pub mod diagnostics;
 pub mod error;
 pub mod logic;
 pub mod macros;
