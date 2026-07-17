@@ -204,10 +204,24 @@ pub fn generate_noun_impl(input: &DeriveInput, level: Level) -> TokenStream {
         impl ::clap_noun_verb_macros::fractal_patterns::Composable for #struct_name {
             fn can_compose_with<T: ::clap_noun_verb_macros::fractal_patterns::FractalNoun>(
                 &self,
-                _other: &T,
+                other: &T,
             ) -> bool {
-                // Type-level proof: if this compiles, composition is valid
-                true
+                // Composition is valid when levels match or follow the lawful lift/project rules:
+                // CLI can compose with CLI or lift to Agent
+                // Agent can compose with Agent, lift to Ecosystem, or project to CLI
+                // Ecosystem can compose with Ecosystem or project to Agent
+                let self_level = self.level();
+                let other_level = other.level();
+                match (self_level, other_level) {
+                    // Same-level composition is always valid
+                    (a, b) if a == b => true,
+                    // CLI <-> Agent transitions
+                    ("CliLevel", "AgentLevel") | ("AgentLevel", "CliLevel") => true,
+                    // Agent <-> Ecosystem transitions
+                    ("AgentLevel", "EcosystemLevel") | ("EcosystemLevel", "AgentLevel") => true,
+                    // Cross-level skip (CLI <-> Ecosystem) is not valid
+                    _ => false,
+                }
             }
         }
     }
@@ -250,9 +264,20 @@ pub fn generate_verb_impl(input: &ItemImpl, level: Level) -> TokenStream {
                 }
 
                 fn validate_composition(&self, noun: &Self::Noun) -> Result<(), String> {
-                    // Type-level proof: if this compiles, composition is valid
-                    let _ = noun;
-                    Ok(())
+                    // Validate that the verb's level matches the noun's level at runtime
+                    let verb_level = self.level();
+                    let noun_level = noun.level();
+                    if verb_level != noun_level {
+                        Err(format!(
+                            "Composition mismatch: verb '{}' is at level '{}' but noun '{}' is at level '{}'",
+                            self.name(),
+                            verb_level,
+                            noun.name(),
+                            noun_level,
+                        ))
+                    } else {
+                        Ok(())
+                    }
                 }
             }
         }
