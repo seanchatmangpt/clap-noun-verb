@@ -142,6 +142,8 @@ pub mod plugins;
 #[cfg(feature = "agent2028")]
 pub mod agent2028;
 
+pub mod graph;
+
 // RDF/Ontology Control Layer (requires "rdf" feature)
 #[cfg(feature = "rdf")]
 pub mod rdf;
