@@ -23,8 +23,10 @@ use crate::error::{NounVerbError, Result};
 use crate::logic::{HandlerInput, HandlerOutput};
 use crate::noun::NounCommand;
 use crate::runtime::Executor;
+use crate::verb::{VerbArgs, VerbCommand};
 use clap::Command;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Opinionated CLI builder with maximum automation
 ///
