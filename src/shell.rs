@@ -19,6 +19,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 /// Detected shell type
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShellType {
     /// Bash shell
@@ -37,6 +38,7 @@ pub enum ShellType {
 
 impl ShellType {
     /// Get shell name as string
+    #[must_use]
     pub fn as_str(&self) -> &str {
         match self {
             ShellType::Bash => "bash",
@@ -49,6 +51,7 @@ impl ShellType {
     }
 
     /// Get shell config file path for the current user
+    #[must_use]
     pub fn config_path(&self) -> Option<PathBuf> {
         let home = dirs_home()?;
         match self {
@@ -65,11 +68,13 @@ impl ShellType {
     }
 
     /// Whether this shell supports command substitution with $()
+    #[must_use]
     pub fn supports_command_substitution(&self) -> bool {
         matches!(self, ShellType::Bash | ShellType::Zsh | ShellType::Fish | ShellType::Elvish)
     }
 
     /// Whether this shell requires special escaping
+    #[must_use]
     pub fn requires_special_escaping(&self) -> bool {
         matches!(self, ShellType::PowerShell)
     }

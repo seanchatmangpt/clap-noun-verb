@@ -35,6 +35,18 @@ impl NounContext {
     }
 }
 
+impl From<String> for NounContext {
+    fn from(noun: String) -> Self {
+        Self::new(noun)
+    }
+}
+
+impl From<&str> for NounContext {
+    fn from(noun: &str) -> Self {
+        Self::new(noun)
+    }
+}
+
 /// Trait for defining noun commands (e.g., "services", "collector")
 ///
 /// # Examples
