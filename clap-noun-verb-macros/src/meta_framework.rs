@@ -282,22 +282,120 @@ fn generate_optimization_methods(
         /// # Returns
         /// Some(OptimizationHint) if optimization found, None otherwise
         fn analyze_field_optimization(field_name: &str, field_value: &str) -> Option<OptimizationHint> {
-            // Example: suggest increasing concurrency if max_concurrency is low
-            if field_name == "max_concurrency" {
-                if let Ok(value) = field_value.parse::<usize>() {
-                    if value < 4 {
-                        return Some(OptimizationHint {
+            match field_name {
+                "max_concurrency" => {
+                    if let Ok(value) = field_value.parse::<usize>() {
+                        if value < 4 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "8".to_string(),
+                                rationale: "Increase concurrency for better throughput"
+                                    .to_string(),
+                                confidence: 0.8,
+                            });
+                        }
+                    }
+                    None
+                }
+                "timeout_ms" => {
+                    if let Ok(value) = field_value.parse::<u64>() {
+                        if value > 30_000 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "5000".to_string(),
+                                rationale: "Reduce timeout to surface failures faster".to_string(),
+                                confidence: 0.6,
+                            });
+                        }
+                        if value < 100 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "1000".to_string(),
+                                rationale: "Increase timeout to avoid spurious failures"
+                                    .to_string(),
+                                confidence: 0.7,
+                            });
+                        }
+                    }
+                    None
+                }
+                "max_retries" => {
+                    if let Ok(value) = field_value.parse::<usize>() {
+                        if value == 0 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "3".to_string(),
+                                rationale: "Enable retries to handle transient failures"
+                                    .to_string(),
+                                confidence: 0.7,
+                            });
+                        }
+                        if value > 10 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "3".to_string(),
+                                rationale: "Reduce retries to avoid amplifying overload"
+                                    .to_string(),
+                                confidence: 0.75,
+                            });
+                        }
+                    }
+                    None
+                }
+                "buffer_size" => {
+                    if let Ok(value) = field_value.parse::<usize>() {
+                        if value < 64 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "4096".to_string(),
+                                rationale: "Increase buffer size to reduce syscall frequency"
+                                    .to_string(),
+                                confidence: 0.65,
+                            });
+                        }
+                    }
+                    None
+                }
+                "thread_count" => {
+                    if let Ok(value) = field_value.parse::<usize>() {
+                        if value < 2 {
+                            return Some(OptimizationHint {
+                                field: field_name.to_string(),
+                                current_value: field_value.to_string(),
+                                suggested_value: "4".to_string(),
+                                rationale: "Increase thread count to utilize available cores"
+                                    .to_string(),
+                                confidence: 0.7,
+                            });
+                        }
+                    }
+                    None
+                }
+                _ => {
+                    // For any other field that parses as a numeric value, emit a
+                    // low-confidence generic hint so callers know the field was inspected.
+                    if field_value.parse::<f64>().is_ok() {
+                        Some(OptimizationHint {
                             field: field_name.to_string(),
                             current_value: field_value.to_string(),
-                            suggested_value: "8".to_string(),
-                            rationale: "Increase concurrency for better throughput".to_string(),
-                            confidence: 0.8,
-                        });
+                            suggested_value: field_value.to_string(),
+                            rationale: format!(
+                                "Field '{}' is numeric; verify value is appropriate for workload",
+                                field_name
+                            ),
+                            confidence: 0.3,
+                        })
+                    } else {
+                        None
                     }
                 }
             }
-
-            None
         }
 
         /// Generate SPARQL query for optimization discovery
