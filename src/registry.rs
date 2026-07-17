@@ -16,6 +16,7 @@ use crate::noun::NounCommand;
 use crate::verb::{VerbArgs, VerbContext};
 use clap::{ArgMatches, Command};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 /// Central registry for managing all CLI commands
 ///
@@ -335,6 +336,19 @@ impl CommandRegistry {
     /// Get the built command for testing or manual execution
     pub fn command(self) -> Command {
         self.build_command()
+    }
+
+    /// Attempt to load verbs from an ontology directory.
+    ///
+    /// Runtime ontology loading (TTL → live VerbCommand registration) is not implemented.
+    /// Returning a fake success count would silently mislead callers.
+    /// This method always returns an error so callers know nothing was registered.
+    pub fn load_ontology_verbs(&mut self, _ontology_dir: Option<PathBuf>) -> Result<usize> {
+        Err(NounVerbError::Generic(
+            "Runtime ontology verb loading is not implemented; \
+             declare verbs at compile time using the #[verb] macro"
+                .to_string(),
+        ))
     }
 }
 
