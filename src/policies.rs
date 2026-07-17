@@ -18,6 +18,7 @@ use std::path::PathBuf;
 
 /// Verdict on a policy condition
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum PolicyVerdict {
     /// No issues detected
     #[serde(rename = "pass")]
@@ -32,6 +33,7 @@ pub enum PolicyVerdict {
 
 /// Mode in which the policy operates
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum PolicyMode {
     /// Observe and suggest only (no mutations)
     #[serde(rename = "suggest")]
