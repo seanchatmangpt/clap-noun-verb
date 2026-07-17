@@ -419,8 +419,27 @@ fn generate_capability_discovery_methods(
 ///
 /// Creates a wrapper type that prevents invalid self-modifications
 /// through compile-time type checking.
-fn generate_type_safe_wrapper(struct_name: &syn::Ident, _fields: &[(String, Type)]) -> TokenStream {
+fn generate_type_safe_wrapper(struct_name: &syn::Ident, fields: &[(String, Type)]) -> TokenStream {
     let wrapper_name = syn::Ident::new(&format!("{}Wrapper", struct_name), struct_name.span());
+
+    // Generate invariant checks for String fields (must be non-empty)
+    // and numeric fields (no additional constraints unless type encodes them).
+    // This produces real per-field validation instead of always returning true.
+    let invariant_checks: Vec<TokenStream> = fields
+        .iter()
+        .filter_map(|(field_name, ty)| {
+            let field_ident = syn::Ident::new(field_name, proc_macro2::Span::call_site());
+            let type_str = quote!(#ty).to_string().replace(' ', "");
+            match type_str.as_str() {
+                "String" => Some(quote! {
+                    if self.inner.#field_ident.is_empty() {
+                        return false;
+                    }
+                }),
+                _ => None,
+            }
+        })
+        .collect();
 
     quote! {
         /// Type-safe wrapper preventing invalid self-modifications
@@ -487,8 +506,8 @@ fn generate_type_safe_wrapper(struct_name: &syn::Ident, _fields: &[(String, Type
             /// # Returns
             /// true if all invariants are satisfied
             fn validate_invariants(&self) -> bool {
-                // Invariant validation would be generated based on field types
-                // For now, always valid (refinement in production)
+                // Generated checks: String fields must be non-empty
+                #(#invariant_checks)*
                 true
             }
 
