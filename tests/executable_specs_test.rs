@@ -60,27 +60,30 @@ mod executable_specs_tests {
     /// Test milestone criteria extraction
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Milestone metadata is correctly collected
+    /// Verifies: Milestone metadata is correctly parsed into structured fields
     #[test]
     fn test_milestone_criteria_extraction() {
-        // Arrange - Create milestone documentation
-        let milestone_doc = "@milestone Phase1\n@target 2024-12-31\n@criteria OAuth complete";
+        // Arrange - Create milestone documentation and parse it via the parser helper
+        let milestone_doc = "@milestone Phase1\n@target 2024-12-31\n@criteria OAuth complete\n@criteria MFA complete";
 
-        // Act - Extract milestone components
-        let components: Vec<&str> = milestone_doc.lines().collect();
+        // Act - Extract milestone components using parse_milestone_simple
+        let parsed = parse_milestone_simple(milestone_doc);
 
-        // Assert - Verify all components present
+        // Assert - Verify structured fields contain expected values
+        assert_eq!(parsed.name, "Phase1", "Milestone name should be extracted from @milestone marker");
+        assert_eq!(
+            parsed.target_date.as_deref(),
+            Some("2024-12-31"),
+            "Target date should be extracted from @target marker"
+        );
+        assert_eq!(parsed.criteria.len(), 2, "Both @criteria lines should be collected");
         assert!(
-            components.iter().any(|&line| line.contains("@milestone")),
-            "Should contain milestone marker"
+            parsed.criteria.contains(&"OAuth complete".to_string()),
+            "First criterion should be present"
         );
         assert!(
-            components.iter().any(|&line| line.contains("@target")),
-            "Should contain target date"
-        );
-        assert!(
-            components.iter().any(|&line| line.contains("@criteria")),
-            "Should contain criteria"
+            parsed.criteria.contains(&"MFA complete".to_string()),
+            "Second criterion should be present"
         );
     }
 
@@ -105,72 +108,148 @@ mod executable_specs_tests {
     /// Test metrics collection includes property count
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Metrics tracking includes all required fields
+    /// Verifies: Metrics tracking counts the actual number of parsed properties
     #[test]
     fn test_metrics_include_property_count() {
-        // Arrange - Create property list
-        let properties = vec!["prop_0", "prop_1", "prop_2"];
+        // Arrange - A doc string with three distinct @property annotations
+        let doc = "@property[correctness] result > 0\n@property[performance] latency < 100\n@property[security] token != \"\"";
 
-        // Act - Count properties
+        // Act - Parse all property lines to obtain their count
+        let properties: Vec<(String, String)> = doc
+            .lines()
+            .filter(|line| line.starts_with("@property["))
+            .map(|line| parse_property_simple(line))
+            .collect();
         let count = properties.len();
 
-        // Assert - Count is accurate
-        assert_eq!(count, 3, "Should count all properties");
+        // Assert - Count matches the number of @property annotations authored in the doc string
+        assert_eq!(count, 3, "Should count all three parsed properties");
+        // Also verify each parsed category is non-empty (real parsing happened)
+        for (category, _assertion) in &properties {
+            assert!(!category.is_empty(), "Parsed category should not be empty");
+        }
     }
 
     /// Test invariant severity levels
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Severity parsing handles all levels
+    /// Verifies: Only the three defined severity levels are recognized; others are not
     #[test]
     fn test_invariant_severity_levels() {
-        // Arrange - Create severity options
-        let severities = vec!["error", "warning", "info"];
+        // Arrange - Parse invariant lines carrying each known severity via @severity marker
+        let valid_lines = [
+            "@invariant[chk_a] x > 0\n@severity error",
+            "@invariant[chk_b] y >= 0\n@severity warning",
+            "@invariant[chk_c] z != 0\n@severity info",
+        ];
 
-        // Act - Verify all are valid
-        let all_valid = severities.iter().all(|&s| matches!(s, "error" | "warning" | "info"));
+        // Act - Extract the severity field from each parsed invariant
+        let parsed_severities: Vec<String> = valid_lines
+            .iter()
+            .map(|doc| parse_severity_simple(doc))
+            .collect();
 
-        // Assert - All severity levels are recognized
-        assert!(all_valid, "All severity levels should be valid");
+        // Assert - Each parsed severity is one of the three recognized levels
+        for sev in &parsed_severities {
+            assert!(
+                matches!(sev.as_str(), "error" | "warning" | "info"),
+                "Severity '{}' must be one of error/warning/info",
+                sev
+            );
+        }
+
+        // Also verify that an unknown severity value is NOT one of the valid set
+        let unknown = parse_severity_simple("@invariant[chk_x] w > 0\n@severity critical");
+        assert!(
+            !matches!(unknown.as_str(), "error" | "warning" | "info"),
+            "Unknown severity 'critical' should not pass validation"
+        );
     }
 
     /// Test spec versioning is semantic
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Version strings follow semantic versioning
+    /// Verifies: Version strings extracted via parsing follow semantic versioning;
+    ///           non-semver strings are rejected by the same validator
     #[test]
     fn test_spec_version_is_semantic() {
-        // Arrange - Create version strings
-        let versions = vec!["1.0.0", "2.1.3", "0.5.2"];
+        // Arrange - Parse version strings from @version doc markers
+        let doc_lines = [
+            "@version 1.0.0",
+            "@version 2.1.3",
+            "@version 0.5.2",
+        ];
 
-        // Act - Verify format
-        let all_semantic = versions.iter().all(|v| {
+        let is_semver = |v: &str| {
             let parts: Vec<&str> = v.split('.').collect();
             parts.len() == 3 && parts.iter().all(|p| p.parse::<u32>().is_ok())
-        });
+        };
 
-        // Assert - All versions are semantic
-        assert!(all_semantic, "All versions should follow semver");
+        // Act - Extract version string from each doc line (mirrors SpecParser logic)
+        let parsed_versions: Vec<String> = doc_lines
+            .iter()
+            .map(|line| {
+                line.strip_prefix("@version").unwrap_or("").trim().to_string()
+            })
+            .collect();
+
+        // Assert - All extracted versions satisfy semver format
+        for v in &parsed_versions {
+            assert!(
+                is_semver(v),
+                "Extracted version '{}' should follow semver (major.minor.patch)",
+                v
+            );
+        }
+
+        // Negative: a malformed version string should fail the same validator
+        let bad_version = "1.0";
+        assert!(
+            !is_semver(bad_version),
+            "Version '{}' with only two components must not pass semver validation",
+            bad_version
+        );
     }
 
     /// Test property categories are recognized
     ///
     /// AAA Pattern: Arrange-Act-Assert
-    /// Verifies: Property categorization works correctly
+    /// Verifies: Property categorization correctly parses each of the three recognized categories
     #[test]
     fn test_property_categories() {
-        // Arrange - Define valid categories
-        let valid_categories = vec!["correctness", "performance", "security"];
+        // Arrange - Property lines carrying each of the three recognized category values
+        let property_lines = [
+            "@property[correctness] output == expected",
+            "@property[performance] elapsed_ms < 50",
+            "@property[security] input.len() <= MAX_INPUT",
+        ];
+        let valid_categories = ["correctness", "performance", "security"];
 
-        // Act - Check category membership
-        let has_correctness = valid_categories.contains(&"correctness");
-        let has_performance = valid_categories.contains(&"performance");
-        let has_security = valid_categories.contains(&"security");
+        // Act - Parse each line and collect the extracted category
+        let parsed_categories: Vec<String> = property_lines
+            .iter()
+            .map(|line| {
+                let (cat, _) = parse_property_simple(line);
+                cat
+            })
+            .collect();
 
-        // Assert - All expected categories present
-        assert!(has_correctness, "Should have correctness category");
-        assert!(has_performance, "Should have performance category");
-        assert!(has_security, "Should have security category");
+        // Assert - Every parsed category is one of the recognized values
+        for cat in &parsed_categories {
+            assert!(
+                valid_categories.contains(&cat.as_str()),
+                "Category '{}' must be one of correctness/performance/security",
+                cat
+            );
+        }
+        // Verify each expected category was actually returned by the parser (not hardcoded)
+        for expected in &valid_categories {
+            assert!(
+                parsed_categories.iter().any(|c| c == expected),
+                "Category '{}' should appear in parsed output",
+                expected
+            );
+        }
     }
 
     /// Test audit trail timestamp presence
