@@ -27,7 +27,8 @@ The receipt is replayable evidence. It is not replaced by `cargo test passed`.
 | Surface | Authority | Edit policy |
 |---|---|---|
 | `ontology/**/*.ttl` | semantic authority | authored |
-| `queries/**/*.rq` | selection / validation law | authored |
+| `queries/**/*.rq` | selection / inference law | authored |
+| `gates/**/*.rq` | automatic sync admission/refusal law | authored |
 | `templates/**/*.tera` | terminal projection law | authored |
 | `ggen.toml` | admitted mapping and bounded writes | authored |
 | `package.toml` | pack transport | authored, no semantic duplication |
@@ -44,9 +45,10 @@ Current ggen gate law is exact:
 - ASK `false` means no violation was found.
 - SELECT with one or more rows means violations exist.
 
-The canonical field-name collision ASK therefore directly matches colliding
-pairs. It MUST NOT wrap the collision pattern in `FILTER NOT EXISTS`, which
-would invert the verdict.
+The canonical `gates/fieldname-collision.rq` ASK therefore directly matches
+colliding pairs. It MUST NOT wrap the collision pattern in `FILTER NOT EXISTS`, which
+would invert the verdict. Automatic sync MUST use `[validation].gates`; SHACL
+auto-sync and duplicated inline `[[validation.rules]]` are excluded.
 
 ## Verification
 
