@@ -2,12 +2,12 @@
 #
 # Semantic authority lives in RDF. SPARQL performs admitted inference/selection.
 # Tera is the terminal projection calculus. package.toml is transport only.
-# ggen emits and verifies the BLAKE3 receipt over the input closure and outputs.
-# The exact verifier actuator is pinned in .github/workflows/ggen-authority.yml.
+# ggen emits and verifies the receipt over the input closure and outputs.
+# The exact v26.7.62 actuator is pinned in .github/workflows/ggen-authority.yml.
 
 [project]
 name = "clap-noun-verb"
-version = "26.6.14"
+version = "26.7.62"
 description = "Authoritative ggen pack for noun-verb CLIs: admitted RDF manufactures thin #[verb] interfaces while consumer-owned handlers retain domain behavior (A = mu(O*))."
 
 [ontology]
@@ -21,7 +21,6 @@ rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 owl = "http://www.w3.org/2002/07/owl#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 
-# μ₁: normalize noun → verb edges into explicit verb → noun links.
 [inference]
 [[inference.rules]]
 name = "attach-noun-name-to-verb"
@@ -34,7 +33,6 @@ CONSTRUCT {
 }
 """
 
-# μ₃: bounded terminal projections. No output may escape src/verbs/.
 [generation]
 output_dir = "."
 
