@@ -8,6 +8,7 @@ on:
       - "ggen.toml"
       - "package.toml"
       - "ontology/**"
+      - "gates/**"
       - "queries/**"
       - "templates/**"
       - "examples/greet-demo/**"
