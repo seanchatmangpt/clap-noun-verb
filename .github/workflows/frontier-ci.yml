@@ -34,7 +34,7 @@ env:
 
 jobs:
   work-closure:
-    name: WIP refusal contract
+    name: Unfinished-work refusal contract
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -51,7 +51,7 @@ jobs:
       - name: Refuse unfinished admitted surfaces
         run: python3 scripts/verify_no_wip.py --report target/wip-verifier-report.json
 
-      - name: Upload WIP verifier report
+      - name: Upload unfinished-work verifier report
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: clap-noun-verb-wip-contract-${{ github.event.pull_request.head.sha || github.sha }}
@@ -178,10 +178,10 @@ jobs:
 
   verifier-report:
     name: OCEL receipt and machine report
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
     needs: [work-closure, feature-matrix, proof-ladder]
     if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - name: Refuse incomplete crown
         env:
@@ -294,7 +294,7 @@ jobs:
               capabilities: 15,
               proof_surfaces: 45,
               feature_cells: 21,
-              rungs: ["wip-refusal", "unit", "integration", "all-features", "executable-replay", "clippy", "docs", "benchmark-build", "ocel-verification"],
+              rungs: ["unfinished-work-refusal", "unit", "integration", "all-features", "executable-replay", "clippy", "docs", "benchmark-build", "ocel-verification"],
               ocel_receipt: "CAPABILITY_CROWN.ocel2.json",
               ocel_verifier: $verifier,
               execution_observed: true,
