@@ -51,25 +51,6 @@ output_file = "src/verbs/mod.rs"
 mode = "Overwrite"
 skip_empty = true
 
-# Current ggen gate polarity: ASK true means a violation exists. Full IRIs are
-# used because custom rule ASKs do not inherit manifest prefixes.
-[[validation.rules]]
-name = "cnv-fieldname-collision"
-description = "Refuse two distinct arguments on one verb whose resolved Rust field names collide. ASK true is a violation; ASK false admits generation."
-severity = "Error"
-ask = """
-ASK {
-  ?verb <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
-          <http://clap-noun-verb.io/ontology#Verb> ;
-        <http://clap-noun-verb.io/ontology#hasArguments> ?argA ;
-        <http://clap-noun-verb.io/ontology#hasArguments> ?argB .
-  FILTER( STR(?argA) < STR(?argB) )
-  ?argA <http://clap-noun-verb.io/ontology#hasArgumentName> ?flagA .
-  ?argB <http://clap-noun-verb.io/ontology#hasArgumentName> ?flagB .
-  OPTIONAL { ?argA <http://clap-noun-verb.io/ontology#fieldName> ?explicitA }
-  OPTIONAL { ?argB <http://clap-noun-verb.io/ontology#fieldName> ?explicitB }
-  BIND( COALESCE( ?explicitA, REPLACE(STR(?flagA), "-", "_") ) AS ?fieldA )
-  BIND( COALESCE( ?explicitB, REPLACE(STR(?flagB), "-", "_") ) AS ?fieldB )
-  FILTER( ?fieldA = ?fieldB )
-}
-"""
+# The example consumes the same canonical external gate as the pack root.
+[validation]
+gates = ["../../gates/fieldname-collision.rq"]
