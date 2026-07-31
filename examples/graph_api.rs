@@ -7,9 +7,15 @@ use clap_noun_verb::{Graph, GraphLoadedOutput, Triple};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut graph = Graph::new();
-    graph.add_triple(Triple::new("ex:alice", "rdf:type", "ex:Person"))?;
-    graph.add_triple(Triple::new("ex:alice", "foaf:knows", "ex:bob"))?;
-    graph.add_triple(Triple::new("ex:bob", "rdf:type", "ex:Person"))?;
+    graph
+        .add_triple(Triple::new("ex:alice", "rdf:type", "ex:Person"))
+        .map_err(std::io::Error::other)?;
+    graph
+        .add_triple(Triple::new("ex:alice", "foaf:knows", "ex:bob"))
+        .map_err(std::io::Error::other)?;
+    graph
+        .add_triple(Triple::new("ex:bob", "rdf:type", "ex:Person"))
+        .map_err(std::io::Error::other)?;
 
     assert_eq!(graph.len(), 3);
     assert_eq!(graph.query_by_subject("alice").len(), 2);
