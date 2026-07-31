@@ -1,0 +1,47 @@
+# ggen v26.7.62 capability crown for clap-noun-verb.
+# RDF is semantic authority; SPARQL selects admitted observations; Tera projects.
+
+[project]
+name = "clap-noun-verb-capability-crown"
+version = "26.7.62"
+description = "Manufactures the 15-capability / 45-proof-surface clap-noun-verb crown."
+
+[ontology]
+source = "ontology.ttl"
+base_iri = "https://chatmangpt.com/ns/clap-noun-verb#"
+
+[ontology.prefixes]
+cnv = "https://chatmangpt.com/ns/clap-noun-verb#"
+rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
+
+[generation]
+output_dir = "."
+
+[[generation.rules]]
+name = "capability-catalog-library"
+query = { file = "queries/capability-catalog.rq" }
+template = { file = "templates/lib.rs.tera" }
+output_file = "consumer/src/lib.rs"
+mode = "Overwrite"
+skip_empty = false
+
+[[generation.rules]]
+name = "capability-catalog-manifest"
+query = { file = "queries/capability-catalog.rq" }
+template = { file = "templates/Cargo.toml.tera" }
+output_file = "consumer/Cargo.toml"
+mode = "Overwrite"
+skip_empty = false
+
+[[generation.rules]]
+name = "structural-verifier-report"
+query = { file = "queries/capability-catalog.rq" }
+template = { file = "templates/VERIFIER_REPORT.json.tera" }
+output_file = "VERIFIER_REPORT.json"
+mode = "Overwrite"
+skip_empty = false
+
+[validation]
+gates = ["gates/capability-crown.rq"]
