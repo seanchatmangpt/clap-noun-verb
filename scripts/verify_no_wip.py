@@ -48,7 +48,13 @@ MARKER_RULES = (
     ("WIP_MARKER", re.compile(r"\bW" + r"IP\b")),
     ("TODO_MACRO", re.compile(r"\bto" + r"do!\s*\(")),
     ("UNIMPLEMENTED_MACRO", re.compile(r"\bun" + r"implemented!\s*\(")),
-    ("DISABLED_WORKFLOW", re.compile(r"^\s*if:\s*(?:\$\{\{\s*)?false(?:\s*\}\})?\s*$")),
+    (
+        "DISABLED_WORKFLOW",
+        re.compile(
+            r"^\s*if:\s*(?:\$\{\{\s*)?false(?:\s*\}\})?\s*$",
+            re.MULTILINE,
+        ),
+    ),
 )
 
 EMPTY_MAIN = re.compile(r"fn\s+main\s*\(\s*\)\s*\{\s*\}", re.DOTALL)
@@ -71,7 +77,9 @@ def iter_admitted_files(root: Path) -> Iterable[Path]:
             if not path.is_file() or path.suffix not in TEXT_SUFFIXES:
                 continue
             rel = path.relative_to(root)
-            if rel == SELF or any(part in {"target", "node_modules", "vendor", "vendors"} for part in rel.parts):
+            if rel == SELF or any(
+                part in {"target", "node_modules", "vendor", "vendors"} for part in rel.parts
+            ):
                 continue
             yield path
 
@@ -92,7 +100,12 @@ def scan_file(root: Path, path: Path) -> list[Violation]:
             if end < 0:
                 end = len(text)
             violations.append(
-                Violation(rule, relative, line_number(text, match.start()), text[start:end].strip()[:240])
+                Violation(
+                    rule,
+                    relative,
+                    line_number(text, match.start()),
+                    text[start:end].strip()[:240],
+                )
             )
 
     if relative.startswith("examples/"):
