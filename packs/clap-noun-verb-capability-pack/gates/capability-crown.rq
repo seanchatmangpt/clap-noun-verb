@@ -1,30 +1,32 @@
 PREFIX cnv: <https://chatmangpt.com/ns/clap-noun-verb#>
 
 # ASK true means violation.
-ASK {
+ASK WHERE {
   {
-    SELECT (COUNT(?capability) AS ?count)
-    WHERE { ?capability a cnv:Capability . }
+    {
+      SELECT (COUNT(?capability) AS ?count)
+      WHERE { ?capability a cnv:Capability . }
+    }
+    FILTER (?count != 15)
   }
-  FILTER (?count != 15)
-}
-UNION
-{
-  ?capability a cnv:Capability .
-  FILTER NOT EXISTS { ?capability cnv:featureName ?name . }
-}
-UNION
-{
-  ?capability a cnv:Capability .
-  FILTER NOT EXISTS { ?capability cnv:defaultVerb ?default_verb . }
-}
-UNION
-{
-  ?capability a cnv:Capability .
-  FILTER NOT EXISTS { ?capability cnv:implementation ?implementation . }
-}
-UNION
-{
-  ?capability a cnv:Capability ; cnv:proofSurfaceCount ?count .
-  FILTER (?count != 3)
+  UNION
+  {
+    ?capability a cnv:Capability .
+    FILTER NOT EXISTS { ?capability cnv:featureName ?name . }
+  }
+  UNION
+  {
+    ?capability a cnv:Capability .
+    FILTER NOT EXISTS { ?capability cnv:defaultVerb ?default_verb . }
+  }
+  UNION
+  {
+    ?capability a cnv:Capability .
+    FILTER NOT EXISTS { ?capability cnv:implementation ?implementation . }
+  }
+  UNION
+  {
+    ?capability a cnv:Capability ; cnv:proofSurfaceCount ?count .
+    FILTER (?count != 3)
+  }
 }
