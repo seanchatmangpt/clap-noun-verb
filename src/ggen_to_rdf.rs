@@ -92,8 +92,9 @@ fn parse_function_signature(
     attribute: &VerbAttribute,
 ) -> Result<RdfVerbDefinition, ParseError> {
     let normalized = signature.split_whitespace().collect::<Vec<_>>().join(" ");
-    let function_expression = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(")
-        .map_err(|_| ParseError::InvalidSignature)?;
+    let function_expression =
+        Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+            .map_err(|_| ParseError::InvalidSignature)?;
     let function_name = function_expression
         .captures(&normalized)
         .and_then(|captures| captures.get(1))
@@ -128,7 +129,9 @@ fn parse_function_signature(
 fn extract_return_type(signature: &str) -> Option<String> {
     let arrow = signature.find("->")?;
     let after_arrow = signature[arrow + 2..].trim();
-    let body = after_arrow.rfind('{').map_or(after_arrow, |index| &after_arrow[..index]);
+    let body = after_arrow
+        .rfind('{')
+        .map_or(after_arrow, |index| &after_arrow[..index]);
     let return_type = body.trim();
     (!return_type.is_empty()).then(|| return_type.to_string())
 }
@@ -182,11 +185,14 @@ fn extract_parameters(signature: &str) -> Result<Vec<RdfArgumentDefinition>, Par
     let mut arguments = Vec::new();
 
     for parameter in split_top_level(parameters) {
-        let parameter = parameter.trim_start_matches(|character: char| character == '&' || character.is_whitespace());
+        let parameter = parameter
+            .trim_start_matches(|character: char| character == '&' || character.is_whitespace());
         if parameter.is_empty() || parameter == "args: VerbArgs" || parameter == "self" {
             continue;
         }
-        let (name, value_type) = parameter.split_once(':').ok_or(ParseError::MissingParameter)?;
+        let (name, value_type) = parameter
+            .split_once(':')
+            .ok_or(ParseError::MissingParameter)?;
         let name = name.trim().trim_start_matches("mut ");
         let value_type = value_type.trim();
         let optional = value_type.starts_with("Option<") && value_type.ends_with('>');
@@ -239,6 +245,10 @@ fn canonical_arguments(verb: &RdfVerbDefinition) -> Vec<&RdfArgumentDefinition> 
     ordered
 }
 
+fn canonical_allowed_values(argument: &RdfArgumentDefinition) -> BTreeSet<&str> {
+    argument.allowed_values.iter().map(String::as_str).collect()
+}
+
 /// Emit canonical N-Triples for verb definitions.
 #[must_use]
 pub fn verb_definitions_to_ntriples(verbs: &[RdfVerbDefinition]) -> String {
@@ -264,13 +274,13 @@ fn language_literal(value: &str) -> String {
     format!("{}@en", literal(value))
 }
 
+fn boolean_literal(value: bool) -> String {
+    format!("\"{value}\"^^<{XSD_BOOLEAN}>")
+}
+
 fn verb_triples(verb: &RdfVerbDefinition) -> String {
     let mut output = String::new();
-    output.push_str(&triple(
-        &verb.verb_uri,
-        RDF_TYPE,
-        &format!("<{CNV}Verb>"),
-    ));
+    output.push_str(&triple(&verb.verb_uri, RDF_TYPE, &format!("<{CNV}Verb>")));
     output.push_str(&triple(
         &verb.verb_uri,
         &format!("{CNV}hasVerbName"),
@@ -306,48 +316,17 @@ fn verb_triples(verb: &RdfVerbDefinition) -> String {
         output.push_str(&triple(
             &verb.verb_uri,
             &format!("{CNV}isAsync"),
-            &format!("\"true\"^^<{XSD_BOOLEAN}>"),
+            &boolean_literal(true),
         ));
     }
 
     for argument in canonical_arguments(verb) {
         output.push_str(&triple(
-            &argument.arg_uri,
-            RDF_TYPE,
-            &format!("<{CNV}Argument>"),
-        ));
-        output.push_str(&triple(
-            &argument.arg_uri,
-            &format!("{CNV}hasArgumentName"),
-            &language_literal(&argument.name),
-        ));
-        if !argument.description.is_empty() {
-            output.push_str(&triple(
-                &argument.arg_uri,
-                &format!("{CNV}argumentAbout"),
-                &language_literal(&argument.description),
-            ));
-        }
-        output.push_str(&triple(
-            &argument.arg_uri,
-            &format!("{CNV}valueType"),
-            &language_literal(&argument.value_type),
-        ));
-        output.push_str(&triple(
-            &argument.arg_uri,
-            &format!("{CNV}required"),
-            &format!("\"{}\"^^<{XSD_BOOLEAN}>", argument.required),
-        ));
-        output.push_str(&triple(
-            &argument.arg_uri,
-            &format!("{CNV}argumentType"),
-            &format!("<{CNV}{:?}>", argument.argument_type),
-        ));
-        output.push_str(&triple(
             &verb.verb_uri,
             &format!("{CNV}hasArguments"),
             &format!("<{}>", argument.arg_uri),
         ));
+        output.push_str(&argument_triples(argument));
     }
 
     let bounds: BTreeSet<_> = verb.trait_bounds.iter().collect();
@@ -361,7 +340,72 @@ fn verb_triples(verb: &RdfVerbDefinition) -> String {
     output
 }
 
-/// Emit a canonical SPARQL `INSERT DATA` operation.
+fn argument_triples(argument: &RdfArgumentDefinition) -> String {
+    let mut output = String::new();
+    output.push_str(&triple(
+        &argument.arg_uri,
+        RDF_TYPE,
+        &format!("<{CNV}Argument>"),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}hasArgumentName"),
+        &language_literal(&argument.name),
+    ));
+    if !argument.description.is_empty() {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}argumentAbout"),
+            &language_literal(&argument.description),
+        ));
+    }
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}valueType"),
+        &language_literal(&argument.value_type),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}required"),
+        &boolean_literal(argument.required),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}argumentType"),
+        &format!("<{CNV}{:?}>", argument.argument_type),
+    ));
+    if let Some(default_value) = &argument.default_value {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}defaultValue"),
+            &language_literal(default_value),
+        ));
+    }
+    if let Some(short_name) = argument.short_name {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}shortName"),
+            &language_literal(&short_name.to_string()),
+        ));
+    }
+    if let Some(long_name) = &argument.long_name {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}longName"),
+            &language_literal(long_name),
+        ));
+    }
+    for allowed in canonical_allowed_values(argument) {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}allowedValue"),
+            &language_literal(allowed),
+        ));
+    }
+    output
+}
+
+/// Emit a canonical SPARQL `INSERT DATA` operation containing the same graph as N-Triples.
 #[must_use]
 pub fn verb_definitions_to_sparql_insert(verbs: &[RdfVerbDefinition]) -> String {
     let mut output = String::from(
@@ -371,43 +415,117 @@ pub fn verb_definitions_to_sparql_insert(verbs: &[RdfVerbDefinition]) -> String 
          INSERT DATA {\n",
     );
     for verb in canonical_verbs(verbs) {
-        output.push_str(&format!("  <{}> a cnv:Verb ;\n", verb.verb_uri));
-        output.push_str(&format!("    cnv:hasVerbName {}@en ;\n", literal(&verb.name)));
+        output.push_str(&format!("  <{}> a cnv:Verb .\n", verb.verb_uri));
+        output.push_str(&format!(
+            "  <{}> cnv:hasVerbName {}@en .\n",
+            verb.verb_uri,
+            literal(&verb.name)
+        ));
         if !verb.description.is_empty() {
             output.push_str(&format!(
-                "    cnv:verbAbout {}@en ;\n",
+                "  <{}> cnv:verbAbout {}@en .\n",
+                verb.verb_uri,
                 literal(&verb.description)
             ));
         }
+        if !verb.docstring.is_empty() && verb.docstring != verb.description {
+            output.push_str(&format!(
+                "  <{}> cnv:docstring {}@en .\n",
+                verb.verb_uri,
+                literal(&verb.docstring)
+            ));
+        }
         if let Some(noun_uri) = &verb.noun_uri {
-            output.push_str(&format!("    cnv:belongsToNoun <{noun_uri}> ;\n"));
+            output.push_str(&format!(
+                "  <{}> cnv:belongsToNoun <{}> .\n",
+                verb.verb_uri, noun_uri
+            ));
         }
-        output.push_str(&format!("    cnv:returnType {}@en", literal(&verb.return_type)));
+        output.push_str(&format!(
+            "  <{}> cnv:returnType {}@en .\n",
+            verb.verb_uri,
+            literal(&verb.return_type)
+        ));
         if verb.is_async {
-            output.push_str(" ;\n    cnv:isAsync \"true\"^^xsd:boolean");
+            output.push_str(&format!(
+                "  <{}> cnv:isAsync \"true\"^^xsd:boolean .\n",
+                verb.verb_uri
+            ));
+        }
+        for bound in verb.trait_bounds.iter().collect::<BTreeSet<_>>() {
+            output.push_str(&format!(
+                "  <{}> cnv:HasTraitBound <{}{}> .\n",
+                verb.verb_uri, CNV, bound
+            ));
         }
         for argument in canonical_arguments(verb) {
-            output.push_str(&format!(" ;\n    cnv:hasArguments <{}>", argument.arg_uri));
-        }
-        output.push_str(" .\n");
-
-        for argument in canonical_arguments(verb) {
-            output.push_str(&format!("  <{}> a cnv:Argument ;\n", argument.arg_uri));
             output.push_str(&format!(
-                "    cnv:hasArgumentName {}@en ;\n",
-                literal(&argument.name)
+                "  <{}> cnv:hasArguments <{}> .\n",
+                verb.verb_uri, argument.arg_uri
             ));
-            output.push_str(&format!(
-                "    cnv:valueType {}@en ;\n",
-                literal(&argument.value_type)
-            ));
-            output.push_str(&format!(
-                "    cnv:required \"{}\"^^xsd:boolean .\n",
-                argument.required
-            ));
+            output.push_str(&argument_sparql(argument));
         }
     }
     output.push_str("}\n");
+    output
+}
+
+fn argument_sparql(argument: &RdfArgumentDefinition) -> String {
+    let mut output = String::new();
+    output.push_str(&format!("  <{}> a cnv:Argument .\n", argument.arg_uri));
+    output.push_str(&format!(
+        "  <{}> cnv:hasArgumentName {}@en .\n",
+        argument.arg_uri,
+        literal(&argument.name)
+    ));
+    if !argument.description.is_empty() {
+        output.push_str(&format!(
+            "  <{}> cnv:argumentAbout {}@en .\n",
+            argument.arg_uri,
+            literal(&argument.description)
+        ));
+    }
+    output.push_str(&format!(
+        "  <{}> cnv:valueType {}@en .\n",
+        argument.arg_uri,
+        literal(&argument.value_type)
+    ));
+    output.push_str(&format!(
+        "  <{}> cnv:required \"{}\"^^xsd:boolean .\n",
+        argument.arg_uri, argument.required
+    ));
+    output.push_str(&format!(
+        "  <{}> cnv:argumentType cnv:{:?} .\n",
+        argument.arg_uri, argument.argument_type
+    ));
+    if let Some(default_value) = &argument.default_value {
+        output.push_str(&format!(
+            "  <{}> cnv:defaultValue {}@en .\n",
+            argument.arg_uri,
+            literal(default_value)
+        ));
+    }
+    if let Some(short_name) = argument.short_name {
+        output.push_str(&format!(
+            "  <{}> cnv:shortName {}@en .\n",
+            argument.arg_uri,
+            literal(&short_name.to_string())
+        ));
+    }
+    if let Some(long_name) = &argument.long_name {
+        output.push_str(&format!(
+            "  <{}> cnv:longName {}@en .\n",
+            argument.arg_uri,
+            literal(long_name)
+        ));
+    }
+    for allowed in canonical_allowed_values(argument) {
+        output.push_str(&format!(
+            "  <{}> cnv:allowedValue {}@en .\n",
+            argument.arg_uri,
+            literal(allowed)
+        ));
+    }
     output
 }
 
@@ -474,6 +592,33 @@ pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOut
 "#
     }
 
+    fn rich_verb() -> RdfVerbDefinition {
+        RdfVerbDefinition {
+            verb_uri: "http://example.org/LoadVerb".to_string(),
+            name: "load".to_string(),
+            description: "Load a graph".to_string(),
+            noun_uri: Some("http://example.org/GraphNoun".to_string()),
+            noun_name: Some("graph".to_string()),
+            arguments: vec![RdfArgumentDefinition {
+                arg_uri: "http://example.org/FormatArg".to_string(),
+                name: "format".to_string(),
+                description: "Input format".to_string(),
+                value_type: "String".to_string(),
+                required: false,
+                is_flag: false,
+                default_value: Some("ttl".to_string()),
+                short_name: Some('f'),
+                long_name: Some("format".to_string()),
+                allowed_values: vec!["ttl".to_string(), "jsonld".to_string()],
+                argument_type: ArgumentType::Optional,
+            }],
+            return_type: "Result<GraphLoadedOutput>".to_string(),
+            trait_bounds: vec!["Sync".to_string(), "Send".to_string()],
+            docstring: "Load an admitted graph".to_string(),
+            is_async: true,
+        }
+    }
+
     #[test]
     fn parses_two_argument_attribute_and_signature() {
         let verbs = parse_rust_source(source()).expect("valid adapter source");
@@ -492,19 +637,31 @@ pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOut
 
     #[test]
     fn ntriples_are_byte_identical_and_canonical() {
-        let verbs = parse_rust_source(source()).expect("valid adapter source");
-        let first = verb_definitions_to_ntriples(&verbs);
-        let second = verb_definitions_to_ntriples(&verbs);
+        let verb = rich_verb();
+        let first = verb_definitions_to_ntriples(std::slice::from_ref(&verb));
+        let second = verb_definitions_to_ntriples(std::slice::from_ref(&verb));
         assert_eq!(first, second);
         assert!(!first.contains("Timestamp"));
-        assert!(first.contains("<http://clap-noun-verb.io/ontology#Verb>"));
+        assert!(first.contains("defaultValue"));
+        assert!(first.contains("shortName"));
+        assert!(first.contains("longName"));
+        assert!(first.contains("allowedValue"));
+        assert!(first.find("jsonld").is_some_and(|left| {
+            first.find("ttl").is_some_and(|right| left < right)
+        }));
     }
 
     #[test]
-    fn sparql_includes_required_prefixes() {
-        let verbs = parse_rust_source(source()).expect("valid adapter source");
-        let sparql = verb_definitions_to_sparql_insert(&verbs);
+    fn sparql_preserves_complete_metadata() {
+        let sparql = verb_definitions_to_sparql_insert(&[rich_verb()]);
         assert!(sparql.contains("PREFIX xsd:"));
         assert!(sparql.contains("cnv:hasVerbName \"load\"@en"));
+        assert!(sparql.contains("cnv:docstring"));
+        assert!(sparql.contains("cnv:HasTraitBound"));
+        assert!(sparql.contains("cnv:argumentType cnv:Optional"));
+        assert!(sparql.contains("cnv:defaultValue \"ttl\"@en"));
+        assert!(sparql.contains("cnv:shortName \"f\"@en"));
+        assert!(sparql.contains("cnv:longName \"format\"@en"));
+        assert!(sparql.contains("cnv:allowedValue \"jsonld\"@en"));
     }
 }
