@@ -108,6 +108,7 @@ frontier-all = [
     "frontier-intelligence",
     "frontier-quality",
     "federated-network",
+    "async",
 ]
 
 # =============================================================================
