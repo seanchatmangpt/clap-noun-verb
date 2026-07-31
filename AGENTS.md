@@ -18,7 +18,8 @@ The hard invariant is **zero unreceipted actuation**.
 
 - RDF/Turtle is semantic authority for nouns, verbs, arguments, constraints, and
   lifecycle facts.
-- SPARQL is selection and inference law.
+- SPARQL is selection, inference, and gate law. Automatic sync gates live only
+  in `gates/*.rq` and are referenced through `[validation].gates`.
 - Tera is the terminal projection calculus.
 - `ggen.toml` binds admitted semantic inputs to bounded filesystem consequences.
 - `package.toml` is transport metadata only. It MUST NOT redefine semantic law.
