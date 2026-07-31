@@ -1,43 +1,68 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Semantic Agent Coordinator CLI Example
-//!
-//! FUTURE: This example will demonstrate the complete semantic agent coordinator system with:
-//! - Type-state machine for agent lifecycle
-//! - Semantic discovery via RDF/SPARQL
-//! - Swarm coordination with Byzantine fault tolerance
-//! - MAPE-K autonomic loops
-//!
-//! Currently a placeholder pending implementation of the agents module.
+//! Executable semantic coordinator built from admitted frontier primitives.
 
-use clap::{Parser, Subcommand};
+#[cfg(feature = "frontier-all")]
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use clap_noun_verb::frontier::{
+        AdmissionState, Invariant, MetaFramework, RdfFragment, SemanticTriple,
+    };
 
-#[derive(Parser)]
-#[command(name = "semantic-coordinator")]
-#[command(about = "Semantic Agent Coordinator CLI")]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
+    let mut framework = MetaFramework::new();
+    framework.register_layer("semantic").map_err(std::io::Error::other)?;
+    framework.register_layer("coordination").map_err(std::io::Error::other)?;
+    framework
+        .admit_invariant(Invariant {
+            id: "zero-unreceipted-actuation".to_string(),
+            description: "Every actuation must produce a replayable receipt".to_string(),
+            satisfied: true,
+        })
+        .map_err(std::io::Error::other)?;
+    framework
+        .admit_invariant(Invariant {
+            id: "semantic-authority".to_string(),
+            description: "RDF owns admitted semantic identity".to_string(),
+            satisfied: true,
+        })
+        .map_err(std::io::Error::other)?;
+
+    assert_eq!(framework.state(false), AdmissionState::Admitted);
+    assert_eq!(framework.state(true), AdmissionState::Alive);
+
+    let mut identity = RdfFragment::new();
+    identity
+        .insert(SemanticTriple {
+            subject: "agent:coordinator".to_string(),
+            predicate: "rdf:type".to_string(),
+            object: "cnv:SemanticCoordinator".to_string(),
+        })
+        .map_err(std::io::Error::other)?;
+
+    let mut capability = RdfFragment::new();
+    capability
+        .insert(SemanticTriple {
+            subject: "agent:coordinator".to_string(),
+            predicate: "cnv:hasCapability".to_string(),
+            object: "cnv:Coordinate".to_string(),
+        })
+        .map_err(std::io::Error::other)?;
+
+    let composed = identity.compose(&capability);
+    assert_eq!(composed.triples().len(), 2);
+    assert!(identity
+        .insert(SemanticTriple {
+            subject: String::new(),
+            predicate: "rdf:type".to_string(),
+            object: "cnv:Invalid".to_string(),
+        })
+        .is_err());
+
+    println!("Semantic coordinator admitted 2 invariants and 2 canonical triples");
+    Ok(())
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Agent commands placeholder
-    Agent {
-        #[command(subcommand)]
-        action: AgentAction,
-    },
-}
-
-#[derive(Subcommand)]
-enum AgentAction {
-    /// Register an agent (placeholder)
-    #[command(about = "Register a new agent")]
-    Register { id: String },
-}
-
+#[cfg(not(feature = "frontier-all"))]
 fn main() {
-    let _cli = Cli::parse();
-    println!("Semantic agent coordinator - placeholder for future implementation");
+    println!("Enable --features frontier-all to execute the semantic coordinator witness");
 }
