@@ -1,0 +1,165 @@
+name: ggen authority and replay
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "Cargo.toml"
+      - "ggen.toml"
+      - "package.toml"
+      - "ontology/**"
+      - "queries/**"
+      - "templates/**"
+      - "examples/greet-demo/**"
+      - "scripts/verify_ggen_contract.py"
+      - "scripts/test_verify_ggen_contract.py"
+      - ".github/workflows/ggen-authority.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ggen-authority-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GGEN_REPOSITORY: seanchatmangpt/ggen
+  GGEN_SHA: 68952593c40214ac1a681073d65f3902a9cdfce4
+
+jobs:
+  observe-manufacture-falsify-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned ggen actuator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ env.GGEN_REPOSITORY }}
+          ref: ${{ env.GGEN_SHA }}
+          path: .tooling/ggen
+          fetch-depth: 1
+
+      - name: Provision pinned ggen toolchain
+        uses: ./.tooling/ggen/.github/actions/setup-ggen-build
+
+      - name: Compile static contract verifier and falsifiers
+        run: |
+          python3 -m py_compile scripts/verify_ggen_contract.py scripts/test_verify_ggen_contract.py
+          python3 -m unittest scripts/test_verify_ggen_contract.py -v
+          python3 scripts/verify_ggen_contract.py --json | tee /tmp/ggen-contract.json
+
+      - name: Build exact ggen actuator
+        run: cargo build --manifest-path .tooling/ggen/Cargo.toml -p ggen-cli-lib --bin ggen
+
+      - name: Admit root pack and verify receipt
+        run: |
+          ./.tooling/ggen/target/debug/ggen sync run
+          ./.tooling/ggen/target/debug/ggen receipt verify
+
+      - name: Manufacture executable consumer proof
+        working-directory: examples/greet-demo
+        run: |
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+          cargo check
+          cargo test
+          cargo run --quiet -- tool greet --name Sean | tee /tmp/greet-output.json
+          grep -q 'Sean' /tmp/greet-output.json
+
+      - name: Snapshot declared consequences
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, tomllib
+          from pathlib import Path
+          root = Path('examples/greet-demo')
+          manifest = tomllib.loads((root / 'ggen.toml').read_text())
+          outputs = {}
+          for rule in manifest['generation']['rules']:
+              pattern = rule['output_file']
+              if '{{ verb_name }}' in pattern:
+                  paths = sorted((root / 'src/verbs').glob('*.rs'))
+              else:
+                  paths = [root / pattern]
+              for path in paths:
+                  outputs[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+          Path('/tmp/ggen-first.json').write_text(json.dumps(outputs, indent=2, sort_keys=True) + '\n')
+          PY
+
+      - name: Prove byte-identical replay
+        working-directory: examples/greet-demo
+        run: |
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+          python3 - <<'PY'
+          import hashlib, json, tomllib
+          from pathlib import Path
+          expected = json.loads(Path('/tmp/ggen-first.json').read_text())
+          manifest = tomllib.loads(Path('ggen.toml').read_text())
+          actual = {}
+          for rule in manifest['generation']['rules']:
+              pattern = rule['output_file']
+              if '{{ verb_name }}' in pattern:
+                  paths = sorted(Path('src/verbs').glob('*.rs'))
+              else:
+                  paths = [Path(pattern)]
+              for path in paths:
+                  actual[str(Path('examples/greet-demo') / path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+          assert actual == expected, {'expected': expected, 'actual': actual}
+          PY
+
+      - name: Refuse field-name collision
+        run: |
+          cp examples/greet-demo/ontology.ttl /tmp/greet-ontology.ttl
+          cat >> examples/greet-demo/ontology.ttl <<'TTL'
+
+          <http://clap-noun-verb.io/examples/greet-demo#collision-a>
+            a <http://clap-noun-verb.io/ontology#Argument> ;
+            <http://clap-noun-verb.io/ontology#hasArgumentName> "dry-run" .
+          <http://clap-noun-verb.io/examples/greet-demo#collision-b>
+            a <http://clap-noun-verb.io/ontology#Argument> ;
+            <http://clap-noun-verb.io/ontology#hasArgumentName> "dry_run" .
+          <http://clap-noun-verb.io/examples/greet-demo#greet>
+            <http://clap-noun-verb.io/ontology#hasArguments>
+              <http://clap-noun-verb.io/examples/greet-demo#collision-a>,
+              <http://clap-noun-verb.io/examples/greet-demo#collision-b> .
+          TTL
+          set +e
+          (cd examples/greet-demo && ../../.tooling/ggen/target/debug/ggen sync run) >/tmp/collision.out 2>/tmp/collision.err
+          code=$?
+          set -e
+          mv /tmp/greet-ontology.ttl examples/greet-demo/ontology.ttl
+          test "$code" -ne 0
+          grep -Ei 'collision|cnv-fieldname-collision' /tmp/collision.err
+
+      - name: Execute load-bearing library registry proof
+        run: cargo test --lib
+
+      - name: Refuse generated drift and unreceipted consequences
+        run: |
+          python3 scripts/verify_ggen_contract.py
+          git diff --exit-code -- examples/greet-demo/src/verbs
+          test -s .ggen-v2/receipt.json
+          test -s examples/greet-demo/.ggen-v2/receipt.json
+
+      - name: Materialize bounded evidence bundle
+        run: |
+          mkdir -p .ggen-ci
+          cp /tmp/ggen-contract.json .ggen-ci/contract.json
+          cp /tmp/ggen-first.json .ggen-ci/first-output-digests.json
+          cp /tmp/greet-output.json .ggen-ci/greet-output.json
+
+      - name: Upload verifier and ggen receipts
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: clap-noun-verb-ggen-${{ github.sha }}
+          path: |
+            .ggen-ci
+            .ggen-v2/receipt.json
+            examples/greet-demo/.ggen-v2/receipt.json
+          if-no-files-found: error
