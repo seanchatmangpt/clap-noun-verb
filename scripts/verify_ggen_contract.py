@@ -46,7 +46,7 @@ class VerificationReport:
     project: str
     version: str
     generation_rules: int
-    validation_rules: int
+    validation_gates: int
     pinned_ggen_sha: str
     checked_surfaces: tuple[str, ...]
 
@@ -172,19 +172,20 @@ def verify(root: Path) -> VerificationReport:
         if column not in template_text:
             raise ContractError("GGEN_QUERY_TEMPLATE_CLOSURE_REFUSED", column)
 
-    canonical_gate = require_file(
-        root, "ontology/queries/fieldname-collision.rq"
-    ).read_text(encoding="utf-8")
+    canonical_gate_path = require_file(root, "gates/fieldname-collision.rq")
+    canonical_gate = canonical_gate_path.read_text(encoding="utf-8")
+    if not re.search(r"(?m)^# MESSAGE: \S", canonical_gate):
+        raise ContractError("GGEN_GATE_MESSAGE_REQUIRED", "gates/fieldname-collision.rq")
     canonical_body = ask_body(canonical_gate)
     if "FILTER NOT EXISTS" in canonical_body.upper():
         raise ContractError("GGEN_GATE_POLARITY_REFUSED", "canonical collision ASK is inverted")
 
-    validation_rules = manifest.get("validation", {}).get("rules", [])
-    if len(validation_rules) != 1:
-        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", str(len(validation_rules)))
-    root_ask = str(validation_rules[0].get("ask", ""))
-    if ask_body(root_ask) != canonical_body:
-        raise ContractError("GGEN_COLLISION_GATE_DRIFT_REFUSED", "root manifest")
+    root_validation = manifest.get("validation", {})
+    if root_validation.get("rules"):
+        raise ContractError("GGEN_INLINE_GATE_AUTHORITY_REFUSED", "root manifest")
+    root_gates = root_validation.get("gates", [])
+    if root_gates != ["gates/fieldname-collision.rq"]:
+        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", str(root_gates))
 
     example_rules = example.get("generation", {}).get("rules", [])
     if len(example_rules) != len(rules):
@@ -192,11 +193,20 @@ def verify(root: Path) -> VerificationReport:
     for rule in example_rules:
         if rule.get("skip_empty") is not True:
             raise ContractError("GGEN_EMPTY_PROJECTION_REFUSED", f"example:{rule.get('name')}")
-    example_validation = example.get("validation", {}).get("rules", [])
-    if len(example_validation) != 1:
-        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", "example")
-    if ask_body(str(example_validation[0].get("ask", ""))) != canonical_body:
+    example_validation = example.get("validation", {})
+    if example_validation.get("rules"):
+        raise ContractError("GGEN_INLINE_GATE_AUTHORITY_REFUSED", "greet-demo")
+    example_gates = example_validation.get("gates", [])
+    if example_gates != ["../../gates/fieldname-collision.rq"]:
+        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", str(example_gates))
+    example_gate_path = (root / "examples/greet-demo" / example_gates[0]).resolve()
+    if example_gate_path != canonical_gate_path.resolve():
         raise ContractError("GGEN_COLLISION_GATE_DRIFT_REFUSED", "greet-demo")
+
+    compatibility_marker = require_file(root, "ontology/queries/fieldname-collision.rq")
+    marker_text = compatibility_marker.read_text(encoding="utf-8")
+    if re.search(r"\b(?:ASK|SELECT)\b", marker_text, flags=re.I):
+        raise ContractError("GGEN_DUPLICATE_GATE_AUTHORITY_REFUSED", str(compatibility_marker))
 
     generated = require_file(root, "examples/greet-demo/src/verbs/greet.rs")
     if "rendered from O* by ggen" not in generated.read_text(encoding="utf-8"):
@@ -219,7 +229,7 @@ def verify(root: Path) -> VerificationReport:
         project=CANONICAL_PROJECT,
         version=str(project["version"]),
         generation_rules=len(rules),
-        validation_rules=len(validation_rules),
+        validation_gates=len(root_gates),
         pinned_ggen_sha=PINNED_GGEN_SHA,
         checked_surfaces=(
             "identity",
@@ -249,7 +259,8 @@ def main() -> int:
     else:
         print(
             f"{report.state}: {report.project}@{report.version}; "
-            f"rules={report.generation_rules}; ggen={report.pinned_ggen_sha}"
+            f"rules={report.generation_rules}; gates={report.validation_gates}; "
+            f"ggen={report.pinned_ggen_sha}"
         )
     return 0
 
