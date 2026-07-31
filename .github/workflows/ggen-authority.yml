@@ -11,7 +11,12 @@ on:
       - "gates/**"
       - "queries/**"
       - "templates/**"
+      - "packs/**"
       - "examples/greet-demo/**"
+      - "src/capability/**"
+      - "src/frontier.rs"
+      - "src/federation/**"
+      - "src/otel.rs"
       - "scripts/verify_ggen_contract.py"
       - "scripts/test_verify_ggen_contract.py"
       - ".github/workflows/ggen-authority.yml"
@@ -21,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ggen-authority-${{ github.ref }}
+  group: ggen-authority-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: false
 
 env:
@@ -31,11 +36,12 @@ env:
 jobs:
   observe-manufacture-falsify-replay:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Checkout pinned ggen actuator
@@ -73,7 +79,7 @@ jobs:
           cargo run --quiet -- tool greet --name Sean | tee /tmp/greet-output.json
           grep -q 'Sean' /tmp/greet-output.json
 
-      - name: Snapshot declared consequences
+      - name: Snapshot root declared consequences
         run: |
           python3 - <<'PY'
           import hashlib, json, tomllib
@@ -92,7 +98,7 @@ jobs:
           Path('/tmp/ggen-first.json').write_text(json.dumps(outputs, indent=2, sort_keys=True) + '\n')
           PY
 
-      - name: Prove byte-identical replay
+      - name: Prove root byte-identical replay
         working-directory: examples/greet-demo
         run: |
           ../../.tooling/ggen/target/debug/ggen sync run
@@ -138,8 +144,53 @@ jobs:
           test "$code" -ne 0
           grep -Ei 'collision|cnv-fieldname-collision' /tmp/collision.err
 
+      - name: Manufacture 15-capability crown
+        working-directory: packs/clap-noun-verb-capability-pack
+        run: |
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+          jq -e '.admission == "ADMITTED" and .standing == "UNKNOWN" and .capabilities == 15 and .proof_surfaces == 45 and .actuation_performed == false' VERIFIER_REPORT.json
+          cargo test --manifest-path consumer/Cargo.toml
+          { find consumer -type f -print0; printf '%s\0' VERIFIER_REPORT.json; } \
+            | sort -z | xargs -0 sha256sum > /tmp/capability-first.sha256
+
+      - name: Prove capability crown byte-identical replay
+        working-directory: packs/clap-noun-verb-capability-pack
+        run: |
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+          { find consumer -type f -print0; printf '%s\0' VERIFIER_REPORT.json; } \
+            | sort -z | xargs -0 sha256sum > /tmp/capability-second.sha256
+          diff -u /tmp/capability-first.sha256 /tmp/capability-second.sha256
+          cargo test --manifest-path consumer/Cargo.toml
+          jq --arg head "${GITHUB_SHA}" \
+            '.standing = "ALIVE" | .execution_required = false | .execution_observed = true | .replay_verified = true | .head_sha = $head' \
+            VERIFIER_REPORT.json > /tmp/capability-verifier.json
+
+      - name: Refuse incomplete capability crown
+        run: |
+          pack=packs/clap-noun-verb-capability-pack
+          cp "$pack/ontology.ttl" /tmp/capability-ontology.ttl
+          cat >> "$pack/ontology.ttl" <<'TTL'
+
+          <https://chatmangpt.com/ns/clap-noun-verb#illegal-sixteenth>
+            a <https://chatmangpt.com/ns/clap-noun-verb#Capability> ;
+            <https://chatmangpt.com/ns/clap-noun-verb#featureName> "illegal-sixteenth" ;
+            <https://chatmangpt.com/ns/clap-noun-verb#family> "refusal" ;
+            <https://chatmangpt.com/ns/clap-noun-verb#defaultVerb> "refuse" ;
+            <https://chatmangpt.com/ns/clap-noun-verb#implementation> "none" ;
+            <https://chatmangpt.com/ns/clap-noun-verb#proofSurfaceCount> 3 .
+          TTL
+          set +e
+          (cd "$pack" && ../../.tooling/ggen/target/debug/ggen sync run) >/tmp/crown.out 2>/tmp/crown.err
+          code=$?
+          set -e
+          mv /tmp/capability-ontology.ttl "$pack/ontology.ttl"
+          test "$code" -ne 0
+          grep -Ei 'capability|gate|validation|violation' /tmp/crown.err
+
       - name: Execute load-bearing library registry proof
-        run: cargo test --lib
+        run: cargo test -p clap-noun-verb --lib
 
       - name: Refuse generated drift and unreceipted consequences
         run: |
@@ -147,6 +198,7 @@ jobs:
           git diff --exit-code -- examples/greet-demo/src/verbs
           test -s .ggen-v2/receipt.json
           test -s examples/greet-demo/.ggen-v2/receipt.json
+          test -s packs/clap-noun-verb-capability-pack/.ggen-v2/receipt.json
 
       - name: Materialize bounded evidence bundle
         run: |
@@ -154,13 +206,17 @@ jobs:
           cp /tmp/ggen-contract.json .ggen-ci/contract.json
           cp /tmp/ggen-first.json .ggen-ci/first-output-digests.json
           cp /tmp/greet-output.json .ggen-ci/greet-output.json
+          cp /tmp/capability-first.sha256 .ggen-ci/capability-first.sha256
+          cp /tmp/capability-second.sha256 .ggen-ci/capability-second.sha256
+          cp /tmp/capability-verifier.json .ggen-ci/CAPABILITY_VERIFIER_REPORT.json
 
       - name: Upload verifier and ggen receipts
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
-          name: clap-noun-verb-ggen-${{ github.sha }}
+          name: clap-noun-verb-ggen-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             .ggen-ci
             .ggen-v2/receipt.json
             examples/greet-demo/.ggen-v2/receipt.json
+            packs/clap-noun-verb-capability-pack/.ggen-v2/receipt.json
           if-no-files-found: error
