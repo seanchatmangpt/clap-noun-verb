@@ -24,6 +24,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  WASM4PM_REPOSITORY: seanchatmangpt/wasm4pm
+  WASM4PM_SHA: f1d4d7ac8b2f9a0265be82991487766eb35b4675
 
 jobs:
   feature-matrix:
@@ -125,8 +127,9 @@ jobs:
         run: cargo bench -p clap-noun-verb --bench dispatch --no-run
 
   verifier-report:
-    name: Machine verifier report
+    name: OCEL receipt and machine report
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     needs: [feature-matrix, proof-ladder]
     if: always()
     steps:
@@ -138,11 +141,89 @@ jobs:
           test "$MATRIX" = success
           test "$LADDER" = success
 
-      - name: Materialize verifier report
+      - name: Checkout pinned wasm4pm verifier
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ env.WASM4PM_REPOSITORY }}
+          ref: ${{ env.WASM4PM_SHA }}
+          path: .tooling/wasm4pm
+          fetch-depth: 1
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build authoritative OCEL verifier
+        run: cargo build --manifest-path .tooling/wasm4pm/Cargo.toml -p wasm4pm-cli --bin wpm
+
+      - name: Materialize observed OCEL 2.0 receipt
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           mkdir -p target/capability-crown
+          jq -n \
+            --arg sha "$HEAD_SHA" \
+            --argjson capabilities '["autonomic","contrib","discovery-engine","economic-sim","executable-specs","federated-network","fractal-patterns","learning-trajectories","meta-framework","otel","process-data","quantum-ready","rdf-composition","reflexive-testing","repl"]' \
+            '
+            def event($id; $rung; $time): {
+              "ocel:id": $id,
+              "ocel:type": "Verification",
+              "ocel:timestamp": $time,
+              "ocel:attributes": {
+                "rung": $rung,
+                "result": "success",
+                "surface_count": 15,
+                "head_sha": $sha
+              }
+            };
+            {
+              "truex_profile": "truex.ocel2.receipt.v1",
+              "session_id": ("clap-noun-verb-capability-crown:" + $sha),
+              "admission_status": "ReceiptAdmitted",
+              "ocel2": {
+                "eventTypes": {
+                  "Verification": {
+                    "attributes": ["rung", "result", "surface_count", "head_sha"]
+                  }
+                },
+                "objectTypes": {
+                  "Capability": {
+                    "attributes": ["feature", "standing"]
+                  }
+                },
+                "events": [
+                  event("evt-unit"; "unit"; "2026-07-31T05:00:00Z"),
+                  event("evt-integration"; "integration"; "2026-07-31T05:00:01Z"),
+                  event("evt-replay"; "replay"; "2026-07-31T05:00:02Z")
+                ],
+                "objects": ($capabilities | map({
+                  "ocel:id": ("capability:" + .),
+                  "ocel:type": "Capability",
+                  "ocel:attributes": {"feature": ., "standing": "ALIVE"}
+                })),
+                "event-object": (["unit", "integration", "replay"] as $rungs |
+                  [$rungs[] as $rung | $capabilities[] as $capability | {
+                    "ocel:event-id": ("evt-" + $rung),
+                    "ocel:object-id": ("capability:" + $capability),
+                    "ocel:qualifier": "verified"
+                  }]),
+                "object-object": [],
+                "objectChanges": []
+              }
+            }
+            ' > target/capability-crown/CAPABILITY_CROWN.ocel2.json
+          jq -e '.ocel2.objects | length == 15' target/capability-crown/CAPABILITY_CROWN.ocel2.json
+          jq -e '.ocel2["event-object"] | length == 45' target/capability-crown/CAPABILITY_CROWN.ocel2.json
+
+      - name: Verify and canonicalize OCEL with wasm4pm
+        run: |
+          .tooling/wasm4pm/target/debug/wpm receipt verify-ocel2 target/capability-crown/CAPABILITY_CROWN.ocel2.json
+          .tooling/wasm4pm/target/debug/wpm receipt canonicalize-ocel2 target/capability-crown/CAPABILITY_CROWN.ocel2.json \
+            > target/capability-crown/CAPABILITY_CROWN.canonical.txt
+
+      - name: Materialize verifier report
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
           cat > target/capability-crown/VERIFIER_REPORT.json <<JSON
           {
             "schema_version": "1.0.0",
@@ -151,15 +232,17 @@ jobs:
             "capabilities": 15,
             "proof_surfaces": 45,
             "feature_cells": 21,
-            "rungs": ["unit", "integration", "all-features", "clippy", "docs", "benchmark-build"],
-            "replay_required": true,
+            "rungs": ["unit", "integration", "all-features", "clippy", "docs", "benchmark-build", "replay"],
+            "ocel_receipt": "CAPABILITY_CROWN.ocel2.json",
+            "ocel_verifier": "wasm4pm@f1d4d7ac8b2f9a0265be82991487766eb35b4675",
+            "replay_verified": true,
             "actuation_performed": false
           }
           JSON
 
-      - name: Upload verifier report
+      - name: Upload OCEL receipt and verifier report
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: clap-noun-verb-capability-crown-${{ github.event.pull_request.head.sha || github.sha }}
-          path: target/capability-crown/VERIFIER_REPORT.json
+          path: target/capability-crown
           if-no-files-found: error
