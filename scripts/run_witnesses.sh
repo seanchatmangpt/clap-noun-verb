@@ -35,6 +35,11 @@ run_example format_error_pipeline
 run_example shell_completions
 run_example agent_cli_builder
 run_example ontology_to_cli
+run_example revops_revenue_dashboard
+run_example revops_sales_pipeline
+run_example revops_financial_forecast
+run_example revops_email_sequences
+run_example revops_cs_checkins
 
 run_feature_example repl_witness repl
 run_feature_example frontier_discovery_engine_demo discovery-engine
