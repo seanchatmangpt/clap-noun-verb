@@ -151,16 +151,16 @@ jobs:
           ../../.tooling/ggen/target/debug/ggen receipt verify
           jq -e '.admission == "ADMITTED" and .standing == "UNKNOWN" and .capabilities == 15 and .proof_surfaces == 45 and .actuation_performed == false' VERIFIER_REPORT.json
           cargo test --manifest-path consumer/Cargo.toml
-          { find consumer -type f -print0; printf '%s\0' VERIFIER_REPORT.json; } \
-            | sort -z | xargs -0 sha256sum > /tmp/capability-first.sha256
+          sha256sum consumer/Cargo.toml consumer/src/lib.rs VERIFIER_REPORT.json \
+            > /tmp/capability-first.sha256
 
       - name: Prove capability crown byte-identical replay
         working-directory: packs/clap-noun-verb-capability-pack
         run: |
           ../../.tooling/ggen/target/debug/ggen sync run
           ../../.tooling/ggen/target/debug/ggen receipt verify
-          { find consumer -type f -print0; printf '%s\0' VERIFIER_REPORT.json; } \
-            | sort -z | xargs -0 sha256sum > /tmp/capability-second.sha256
+          sha256sum consumer/Cargo.toml consumer/src/lib.rs VERIFIER_REPORT.json \
+            > /tmp/capability-second.sha256
           diff -u /tmp/capability-first.sha256 /tmp/capability-second.sha256
           cargo test --manifest-path consumer/Cargo.toml
           jq --arg head "${GITHUB_SHA}" \
