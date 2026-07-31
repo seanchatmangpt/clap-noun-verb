@@ -54,24 +54,7 @@ output_file = "src/verbs/mod.rs"
 mode = "Overwrite"
 skip_empty = true
 
-# ASK true means a violation exists. The body is byte-semantically aligned with
-# ontology/queries/fieldname-collision.rq and is enforced before write actuation.
-[[validation.rules]]
-name = "cnv-fieldname-collision"
-description = "Two distinct arguments on the same verb must not resolve to the same Rust field name. Resolved field = COALESCE(explicit cnv:fieldName, kebab-to-snake cnv:hasArgumentName). A matching pair is a violation and generation is refused."
-severity = "Error"
-ask = """
-ASK {
-  ?verb rdf:type cnv:Verb ;
-        cnv:hasArguments ?argA ;
-        cnv:hasArguments ?argB .
-  FILTER( STR(?argA) < STR(?argB) )
-  ?argA cnv:hasArgumentName ?flagA .
-  ?argB cnv:hasArgumentName ?flagB .
-  OPTIONAL { ?argA cnv:fieldName ?explicitA }
-  OPTIONAL { ?argB cnv:fieldName ?explicitB }
-  BIND( COALESCE( ?explicitA, REPLACE(STR(?flagA), "-", "_") ) AS ?fieldA )
-  BIND( COALESCE( ?explicitB, REPLACE(STR(?flagB), "-", "_") ) AS ?fieldB )
-  FILTER( ?fieldA = ?fieldB )
-}
-"""
+# External SPARQL gates are the only automatic sync validation law.
+# ASK true is a violation; SELECT rows are violations.
+[validation]
+gates = ["gates/fieldname-collision.rq"]
