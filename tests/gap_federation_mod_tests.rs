@@ -1,34 +1,17 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Behavioral integration tests for `src/federation/mod.rs`.
-//!
-//! The entire `federation` module is gated behind the `federated-network`
-//! feature, so every test here is compiled only under that feature.
-//! Run with: `cargo test --test gap_federation_mod_tests --features federated-network`
+//! Behavioral integration tests for the completed bounded federation feature.
 
 #![cfg(feature = "federated-network")]
 
 use clap_noun_verb::error::{NounVerbError, Result};
 use clap_noun_verb::federation::{
     deserialize_result, serialize_param, CapabilityAdvertiser, CapabilityDescriptor, Federated,
-    FederationRegistry, InvocationParams, InvocationProxy, RemoteResolver, TrustValidator,
+    FederationRegistry, InvocationEnvelope, InvocationParams, InvocationProxy, RemoteResolver,
+    TrustValidator,
 };
 use std::time::Duration;
-
-// ---- helpers ---------------------------------------------------------------
-
-fn assert_not_implemented(err: &NounVerbError) {
-    match err {
-        NounVerbError::ExecutionError { message } => {
-            assert!(
-                message.contains("federated-network"),
-                "expected federated-network message, got: {message}"
-            );
-        }
-        other => panic!("expected ExecutionError, got: {other:?}"),
-    }
-}
 
 fn sample_descriptor() -> CapabilityDescriptor {
     CapabilityDescriptor {
@@ -40,253 +23,113 @@ fn sample_descriptor() -> CapabilityDescriptor {
     }
 }
 
-// ---- CapabilityAdvertiser --------------------------------------------------
-
 #[test]
-fn test_capability_advertiser_new_with_valid_args_returns_ok() {
-    // Arrange / Act
-    let result = CapabilityAdvertiser::new("node-a", "https://disco.example");
+fn advertiser_lifecycle_and_resolution_are_executable() {
+    let advertiser = CapabilityAdvertiser::new("node-a", "https://disco.example")
+        .expect("valid advertiser");
+    advertiser.advertise_startup().expect("startup");
+    advertiser
+        .advertise_capability(&sample_descriptor())
+        .expect("capability advertisement");
 
-    // Assert
-    assert!(result.is_ok(), "new should succeed for valid args");
-    // Construct again to confirm it is repeatable / not a singleton side effect.
-    assert!(CapabilityAdvertiser::new("node-b", "https://disco2.example").is_ok());
+    let current = CapabilityAdvertiser::get_instance().expect("configured instance");
+    current.advertise_startup().expect("idempotent startup");
+
+    let resolver = RemoteResolver::new().expect("resolver");
+    let endpoint = resolver
+        .resolve_capability("node-a", "cap.echo")
+        .expect("advertised capability");
+    assert!(endpoint.contains("cap.echo"));
+    assert!(endpoint.contains("echo_handler"));
+
+    advertiser.advertise_shutdown().expect("shutdown");
+    assert!(resolver.resolve_capability("node-a", "cap.echo").is_err());
 }
 
 #[test]
-fn test_capability_advertiser_get_instance_uninitialized_errors() {
-    // Act
-    let result = CapabilityAdvertiser::get_instance();
-
-    // Assert
-    let err = result.expect_err("get_instance must error when uninitialized");
-    match &err {
-        NounVerbError::ExecutionError { message } => {
-            assert!(message.contains("not initialized"), "got: {message}");
-        }
-        other => panic!("expected ExecutionError, got: {other:?}"),
-    }
+fn trust_registry_registers_self() {
+    let validator = TrustValidator::new("anchor").expect("validator");
+    assert!(validator.validates("anchor"));
+    assert!(!validator.validates("other"));
+    let registry = FederationRegistry::new("node-b", validator).expect("registry");
+    registry.register_self().expect("self registration");
 }
 
 #[test]
-fn test_capability_advertiser_advertise_startup_errors_not_implemented() {
-    // Arrange
-    let adv = CapabilityAdvertiser::new("node", "https://d").expect("new ok");
-
-    // Act
-    let err = adv.advertise_startup().expect_err("startup must error");
-
-    // Assert
-    assert_not_implemented(&err);
-}
-
-#[test]
-fn test_capability_advertiser_advertise_shutdown_errors_not_implemented() {
-    let adv = CapabilityAdvertiser::new("node", "https://d").expect("new ok");
-    let err = adv.advertise_shutdown().expect_err("shutdown must error");
-    assert_not_implemented(&err);
-}
-
-#[test]
-fn test_capability_advertiser_advertise_capability_errors_not_implemented() {
-    // Arrange
-    let adv = CapabilityAdvertiser::new("node", "https://d").expect("new ok");
-    let cap = sample_descriptor();
-
-    // Act
-    let err = adv.advertise_capability(&cap).expect_err("must error");
-
-    // Assert
-    assert_not_implemented(&err);
-}
-
-// ---- TrustValidator --------------------------------------------------------
-
-#[test]
-fn test_trust_validator_new_with_anchor_returns_ok() {
-    let result = TrustValidator::new("anchor-pem");
-    assert!(result.is_ok(), "TrustValidator::new should succeed");
-}
-
-// ---- FederationRegistry ----------------------------------------------------
-
-#[test]
-fn test_federation_registry_new_with_validator_returns_ok() {
-    // Arrange
-    let validator = TrustValidator::new("anchor").expect("validator ok");
-
-    // Act
-    let result = FederationRegistry::new("node-id", validator);
-
-    // Assert
-    assert!(result.is_ok(), "registry construction should succeed");
-}
-
-#[test]
-fn test_federation_registry_register_self_errors_not_implemented() {
-    // Arrange
-    let validator = TrustValidator::new("anchor").expect("validator ok");
-    let registry = FederationRegistry::new("node-id", validator).expect("registry ok");
-
-    // Act
-    let err = registry.register_self().expect_err("register_self must error");
-
-    // Assert
-    assert_not_implemented(&err);
-}
-
-// ---- RemoteResolver --------------------------------------------------------
-
-#[test]
-fn test_remote_resolver_new_errors_not_implemented() {
-    // Act
-    let err = RemoteResolver::new().expect_err("new must error");
-
-    // Assert
-    assert_not_implemented(&err);
-}
-
-// ---- InvocationProxy -------------------------------------------------------
-
-#[test]
-fn test_invocation_proxy_new_with_endpoint_returns_ok() {
-    let result = InvocationProxy::new("https://peer.example".to_string(), Duration::from_secs(5));
-    assert!(result.is_ok(), "proxy construction should succeed");
-}
-
-#[test]
-fn test_invocation_proxy_invoke_errors_not_implemented() {
-    // Arrange
-    let proxy = InvocationProxy::new("https://peer".to_string(), Duration::from_millis(10))
-        .expect("proxy ok");
+fn invocation_proxy_manufactures_bounded_envelope() {
+    let proxy = InvocationProxy::new(
+        "https://peer.example/capabilities/cap.echo".to_string(),
+        Duration::from_millis(250),
+    )
+    .expect("proxy");
     let params = InvocationParams {
         capability: "cap.echo".to_string(),
         args: vec![("text".to_string(), b"hi".to_vec())],
     };
 
-    // Act
-    let err = proxy.invoke(&params).expect_err("invoke must error");
-
-    // Assert
-    assert_not_implemented(&err);
+    let bytes = proxy.invoke(&params).expect("envelope manufacture");
+    let envelope: InvocationEnvelope = deserialize_result(&bytes).expect("valid envelope");
+    assert_eq!(envelope.timeout_ms, 250);
+    assert_eq!(envelope.params, params);
+    assert!(envelope.endpoint.contains("cap.echo"));
 }
 
-// ---- serialize_param / deserialize_result round-trip -----------------------
-
 #[test]
-fn test_serialize_then_deserialize_string_round_trips_value() {
-    // Arrange
+fn serialization_round_trips_values() {
     let original = "federation".to_string();
-
-    // Act
-    let bytes = serialize_param(&original).expect("serialize ok");
-    let restored: String = deserialize_result(&bytes).expect("deserialize ok");
-
-    // Assert
+    let bytes = serialize_param(&original).expect("serialize");
+    let restored: String = deserialize_result(&bytes).expect("deserialize");
     assert_eq!(restored, original);
-    // JSON-encoded string includes quotes.
     assert_eq!(bytes, b"\"federation\"");
 }
 
 #[test]
-fn test_serialize_then_deserialize_struct_round_trips_fields() {
-    // Arrange
-    let original = InvocationParams {
-        capability: "cap.sum".to_string(),
-        args: vec![("a".to_string(), vec![1, 2, 3])],
-    };
-
-    // Act
-    let bytes = serialize_param(&original).expect("serialize ok");
-    let restored: InvocationParams = deserialize_result(&bytes).expect("deserialize ok");
-
-    // Assert
-    assert_eq!(restored.capability, "cap.sum");
-    assert_eq!(restored.args, vec![("a".to_string(), vec![1u8, 2, 3])]);
-}
-
-#[test]
-fn test_deserialize_result_with_invalid_json_errors() {
-    // Arrange: bytes that are not valid JSON for an i32
-    let bad = b"not-json";
-
-    // Act
-    let result: Result<i32> = deserialize_result(bad);
-
-    // Assert
-    let err = result.expect_err("invalid json must error");
-    match &err {
+fn invalid_json_is_a_typed_error() {
+    let result: Result<i32> = deserialize_result(b"not-json");
+    let error = result.expect_err("invalid JSON must fail");
+    match error {
         NounVerbError::ExecutionError { message } => {
-            assert!(message.contains("deserialization error"), "got: {message}");
+            assert!(message.contains("deserialization error"));
         }
         other => panic!("expected ExecutionError, got: {other:?}"),
     }
 }
 
-// ---- Federated trait contract ----------------------------------------------
-
 struct TestNode {
-    initialized_err: bool,
+    fail_initialization: bool,
 }
 
 impl Federated for TestNode {
     fn discovery_url(&self) -> &str {
         "https://disco.test"
     }
+
     fn identity(&self) -> &str {
         "test-node"
     }
+
     fn trust_anchor(&self) -> &str {
         "test-anchor"
     }
+
     fn initialize_federation(&self) -> Result<()> {
-        if self.initialized_err {
+        if self.fail_initialization {
             Err(NounVerbError::ExecutionError { message: "boom".to_string() })
         } else {
             Ok(())
         }
     }
+
     fn shutdown_federation(&self) -> Result<()> {
         Ok(())
     }
 }
 
 #[test]
-fn test_federated_trait_accessors_return_configured_values() {
-    // Arrange
-    let node = TestNode { initialized_err: false };
-
-    // Act / Assert
-    assert_eq!(node.discovery_url(), "https://disco.test");
-    assert_eq!(node.identity(), "test-node");
-    assert_eq!(node.trust_anchor(), "test-anchor");
-}
-
-#[test]
-fn test_federated_trait_lifecycle_methods_reflect_implementation() {
-    // Arrange
-    let ok_node = TestNode { initialized_err: false };
-    let bad_node = TestNode { initialized_err: true };
-
-    // Act / Assert: success path
-    assert!(ok_node.initialize_federation().is_ok());
-    assert!(ok_node.shutdown_federation().is_ok());
-
-    // Failure path propagates the implementor's error
-    let err = bad_node.initialize_federation().expect_err("should error");
-    match err {
-        NounVerbError::ExecutionError { message } => assert_eq!(message, "boom"),
-        other => panic!("expected ExecutionError, got: {other:?}"),
-    }
-}
-
-#[test]
-fn test_federated_trait_is_object_safe_via_dyn() {
-    // Arrange: trait must be usable as a trait object (dyn-compatible).
-    let node = TestNode { initialized_err: false };
-    let dyn_node: &dyn Federated = &node;
-
-    // Act / Assert
-    assert_eq!(dyn_node.identity(), "test-node");
-    assert!(dyn_node.initialize_federation().is_ok());
+fn federated_trait_remains_object_safe() {
+    let node = TestNode { fail_initialization: false };
+    let dynamic: &dyn Federated = &node;
+    assert_eq!(dynamic.identity(), "test-node");
+    assert!(dynamic.initialize_federation().is_ok());
+    assert!(dynamic.shutdown_federation().is_ok());
 }
