@@ -1,166 +1,29 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Frontier Feature Demo: Reflexive Testing
-//!
-//! Demonstrates self-testing systems using property-based testing.
-//! Build with: cargo build --example frontier_reflexive_testing_demo --features reflexive-testing
-//!
-//! Shows how frontier packages enable CLIs to test themselves and verify correctness.
+//! Executable witness for replay-aware reflexive verification.
 
-use clap::{Parser, Subcommand};
+#[cfg(feature = "reflexive-testing")]
+fn main() {
+    use clap_noun_verb::frontier::ReflexiveReport;
 
-#[derive(Parser)]
-#[command(name = "SelfTestingCLI")]
-#[command(about = "Reflexive testing demonstration")]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
+    let first = ReflexiveReport { passed: 128, failed: 0, replay_verified: false };
+    assert!(!first.is_alive(), "one successful run without replay has no ALIVE standing");
+
+    let replayed = ReflexiveReport { replay_verified: true, ..first.clone() };
+    assert!(replayed.is_alive());
+
+    let failed = ReflexiveReport { passed: 127, failed: 1, replay_verified: true };
+    assert!(!failed.is_alive(), "a failed check must refuse ALIVE standing");
+
+    let first_json = serde_json::to_string(&replayed).expect("report must serialize");
+    let replay_json = serde_json::to_string(&replayed).expect("report must replay");
+    assert_eq!(first_json, replay_json, "replay consequence must be byte-identical");
+
+    println!("Reflexive report admitted only after 128 passing checks and replay");
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Run self-tests
-    Selftest {
-        /// Number of property tests to run
-        #[arg(default_value = "100")]
-        iterations: u32,
-    },
-    /// Verify CLI properties
-    Verify {
-        /// Property to verify
-        property: String,
-    },
-    /// Generate test cases
-    Generate {
-        /// Number of test cases
-        #[arg(default_value = "10")]
-        count: u32,
-    },
-}
-
-struct TestProperty {
-    name: &'static str,
-    description: &'static str,
-}
-
-impl TestProperty {
-    fn command_parsing() -> Self {
-        TestProperty { name: "command-parsing", description: "All valid inputs parse correctly" }
-    }
-
-    fn error_handling() -> Self {
-        TestProperty { name: "error-handling", description: "All errors are handled gracefully" }
-    }
-
-    fn idempotence() -> Self {
-        TestProperty {
-            name: "idempotence",
-            description: "Running twice produces same result as once",
-        }
-    }
-
-    fn invariants() -> Self {
-        TestProperty {
-            name: "invariants",
-            description: "CLI invariants are maintained across operations",
-        }
-    }
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
-
-    match cli.command {
-        Some(Commands::Selftest { iterations }) => {
-            println!("🧪 Running reflexive self-tests ({} iterations)...", iterations);
-
-            let properties = vec![
-                TestProperty::command_parsing(),
-                TestProperty::error_handling(),
-                TestProperty::idempotence(),
-                TestProperty::invariants(),
-            ];
-
-            for prop in &properties {
-                println!("\n  Testing property: {}", prop.name);
-                println!("  Description: {}", prop.description);
-
-                // Simulate property testing
-                for i in 0..std::cmp::min(iterations, 10) {
-                    let pass = (i % 7) != 0; // Simulate some passes/failures for demo
-                    if pass {
-                        print!(".");
-                    } else {
-                        print!("F");
-                    }
-                }
-                println!();
-
-                let passed = iterations - (iterations / 7);
-                println!("  ✅ {}/{} iterations passed", passed, iterations);
-            }
-        }
-        Some(Commands::Verify { property }) => {
-            println!("🔍 Verifying property: {}", property);
-
-            let all_properties = vec![
-                TestProperty::command_parsing(),
-                TestProperty::error_handling(),
-                TestProperty::idempotence(),
-                TestProperty::invariants(),
-            ];
-
-            if let Some(prop) = all_properties.iter().find(|p| p.name == property) {
-                println!("   {}", prop.description);
-                println!("   Status: ✅ Property verified across 1000 test cases");
-            } else {
-                println!("   ❌ Property not found");
-            }
-        }
-        Some(Commands::Generate { count }) => {
-            println!("🛠️  Generating {} random test cases...", count);
-
-            for i in 1..=std::cmp::min(count, 5) {
-                println!("\n  Test case {}", i);
-                println!("    Input: randomly generated command line args");
-                println!("    Expected: valid parse or graceful error");
-                println!("    Generated by property-based shrinking");
-            }
-
-            if count > 5 {
-                println!("\n  ... and {} more generated test cases", count - 5);
-            }
-        }
-        None => {
-            println!("🚀 Reflexive Testing Ready");
-            println!("   Use 'selftest', 'verify', or 'generate' commands");
-        }
-    }
-
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_property_based_testing() {
-        let properties = vec![TestProperty::command_parsing(), TestProperty::error_handling()];
-        assert!(!properties.is_empty());
-        println!("✅ Property-based testing framework operational");
-    }
-
-    #[test]
-    fn test_cli_invariants() {
-        // Test that CLI maintains invariants
-        println!("✅ CLI invariants verified across test runs");
-    }
-
-    #[test]
-    fn test_error_recovery() {
-        // Test that errors are handled gracefully
-        println!("✅ Error handling verified");
-    }
+#[cfg(not(feature = "reflexive-testing"))]
+fn main() {
+    println!("Enable --features reflexive-testing to execute this bounded witness");
 }
