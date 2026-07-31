@@ -645,10 +645,13 @@ pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOut
         assert!(first.contains("defaultValue"));
         assert!(first.contains("shortName"));
         assert!(first.contains("longName"));
-        assert!(first.contains("allowedValue"));
-        assert!(first.find("jsonld").is_some_and(|left| {
-            first.find("ttl").is_some_and(|right| left < right)
-        }));
+        let allowed = first
+            .lines()
+            .filter(|line| line.contains("allowedValue"))
+            .collect::<Vec<_>>();
+        assert_eq!(allowed.len(), 2);
+        assert!(allowed[0].contains("jsonld"));
+        assert!(allowed[1].contains("ttl"));
     }
 
     #[test]
