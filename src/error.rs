@@ -3,6 +3,7 @@
 
 //! Typed framework errors and deterministic recovery actions.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
 
