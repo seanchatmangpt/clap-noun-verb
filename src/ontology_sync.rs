@@ -49,7 +49,7 @@ pub struct VerbSyncEntry {
 /// Complete bounded synchronization plan.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SyncResult {
-    /// Stable observation identifier. For compatibility this retains the legacy field name.
+    /// Stable observation identifier. The legacy field name is retained for compatibility.
     pub timestamp: String,
     /// Number of distinct verb identities observed across both surfaces.
     pub total_verbs: usize,
@@ -167,9 +167,11 @@ impl OntologySync {
 
         let desired = desired_files(result)?;
         let managed_existing = managed_files(&self.ontology_path).await?;
-        let replay_verified = consequences_match(&self.ontology_path, &desired, &managed_existing).await?;
+        let replay_verified =
+            consequences_match(&self.ontology_path, &desired, &managed_existing).await?;
+        let desired_names: BTreeSet<String> = desired.keys().cloned().collect();
         let stale: Vec<String> = managed_existing
-            .difference(&desired.keys().cloned().collect())
+            .difference(&desired_names)
             .cloned()
             .collect();
 
@@ -202,11 +204,7 @@ impl OntologySync {
             schema_version: "1.0.0".to_string(),
             observation: result.timestamp.clone(),
             admission: "ADMITTED".to_string(),
-            standing: if replay_verified {
-                "PARTIAL_ALIVE".to_string()
-            } else {
-                "UNKNOWN".to_string()
-            },
+            standing: "PARTIAL_ALIVE".to_string(),
             actuation_performed: !replay_verified,
             replay_verified,
             written: written_receipts,
@@ -218,7 +216,7 @@ impl OntologySync {
             .await
             .map_err(|error| SyncError::IoError(error.to_string()))?;
 
-        for (name, _) in &desired {
+        for name in desired.keys() {
             replace_file(&stage.join(name), &self.ontology_path.join(name)).await?;
         }
         for name in &stale {
@@ -307,7 +305,12 @@ fn compute_diff(
                 };
                 (operation, differences)
             }
-            (None, None) => unreachable!("key originated from one admitted map"),
+            (None, None) => {
+                return Err(SyncError::ConformanceError(format!(
+                    "verb identity disappeared during planning: {:?}",
+                    key
+                )));
+            }
         };
         changes.push(VerbSyncEntry {
             verb_name: key.0,
