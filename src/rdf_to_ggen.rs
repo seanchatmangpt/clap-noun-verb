@@ -9,6 +9,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+const CNV: &str = "http://clap-noun-verb.io/ontology#";
+
 /// RDF triple flattened from SPARQL or an RDF serialization.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RdfTriple {
@@ -153,7 +155,7 @@ fn rust_identifier(value: &str) -> String {
     const KEYWORDS: &[&str] = &[
         "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else",
         "enum", "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop",
-        "match", "mod", "move", "mut", "pub", "ref", "return", "self", "Self", "static",
+        "match", "mod", "move", "mut", "pub", "ref", "return", "self", "static",
         "struct", "super", "trait", "true", "type", "unsafe", "use", "where", "while",
     ];
 
@@ -204,6 +206,21 @@ fn rust_parameter_type(argument: &RdfArgumentDefinition) -> String {
     }
 }
 
+fn projected_return_type(return_type: &str) -> String {
+    let trimmed = return_type.trim();
+    if trimmed.is_empty() {
+        "Result<serde_json::Value>".to_string()
+    } else if trimmed.starts_with("Result<")
+        || trimmed.starts_with("clap_noun_verb::Result<")
+        || trimmed.starts_with("crate::Result<")
+        || trimmed.starts_with("std::result::Result<")
+    {
+        trimmed.to_string()
+    } else {
+        format!("Result<{trimmed}>")
+    }
+}
+
 /// Project one RDF verb into a compiling interface adapter.
 #[must_use]
 pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
@@ -241,12 +258,7 @@ pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
             .collect()
     };
 
-    let return_type = if verb.return_type.trim().is_empty() {
-        "serde_json::Value"
-    } else {
-        verb.return_type.as_str()
-    };
-    code.push_str(&format!(") -> Result<{return_type}> {{\n"));
+    code.push_str(&format!(") -> {} {{\n", projected_return_type(&verb.return_type)));
     let await_suffix = if verb.is_async { ".await" } else { "" };
     code.push_str(&format!(
         "    crate::handlers::{function_name}({}){await_suffix}\n",
@@ -566,6 +578,16 @@ mod tests {
         let code = rdf_spec_to_verb_code(&load_verb());
         assert!(code.contains("#[verb(\"load\", \"graph\")]"));
         assert!(code.contains("crate::handlers::graph_load(path)"));
+        assert!(code.contains("-> Result<GraphLoadedOutput>"));
+    }
+
+    #[test]
+    fn preserves_existing_result_carrier() {
+        let mut verb = load_verb();
+        verb.return_type = "Result<GraphLoadedOutput>".to_string();
+        let code = rdf_spec_to_verb_code(&verb);
+        assert!(code.contains("-> Result<GraphLoadedOutput>"));
+        assert!(!code.contains("Result<Result<"));
     }
 
     #[test]
