@@ -1,0 +1,86 @@
+@prefix cnv: <https://chatmangpt.com/ns/clap-noun-verb#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+cnv:Capability a rdfs:Class .
+cnv:featureName a rdf:Property .
+cnv:family a rdf:Property .
+cnv:defaultVerb a rdf:Property .
+cnv:implementation a rdf:Property .
+cnv:proofSurfaceCount a rdf:Property .
+
+cnv:process-data a cnv:Capability ;
+  cnv:featureName "process-data" ; cnv:family "core" ;
+  cnv:defaultVerb "transform" ; cnv:implementation "process_data" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:autonomic a cnv:Capability ;
+  cnv:featureName "autonomic" ; cnv:family "operations" ;
+  cnv:defaultVerb "assess" ; cnv:implementation "policies" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:contrib a cnv:Capability ;
+  cnv:featureName "contrib" ; cnv:family "extension" ;
+  cnv:defaultVerb "list" ; cnv:implementation "contrib" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:repl a cnv:Capability ;
+  cnv:featureName "repl" ; cnv:family "interface" ;
+  cnv:defaultVerb "run" ; cnv:implementation "repl" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:otel a cnv:Capability ;
+  cnv:featureName "otel" ; cnv:family "observability" ;
+  cnv:defaultVerb "trace" ; cnv:implementation "otel" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:federated-network a cnv:Capability ;
+  cnv:featureName "federated-network" ; cnv:family "integration" ;
+  cnv:defaultVerb "resolve" ; cnv:implementation "federation" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:meta-framework a cnv:Capability ;
+  cnv:featureName "meta-framework" ; cnv:family "semantic" ;
+  cnv:defaultVerb "validate" ; cnv:implementation "frontier::MetaFramework" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:rdf-composition a cnv:Capability ;
+  cnv:featureName "rdf-composition" ; cnv:family "semantic" ;
+  cnv:defaultVerb "compose" ; cnv:implementation "frontier::RdfFragment" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:fractal-patterns a cnv:Capability ;
+  cnv:featureName "fractal-patterns" ; cnv:family "semantic" ;
+  cnv:defaultVerb "compose" ; cnv:implementation "frontier::FractalNoun" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:discovery-engine a cnv:Capability ;
+  cnv:featureName "discovery-engine" ; cnv:family "intelligence" ;
+  cnv:defaultVerb "search" ; cnv:implementation "frontier::DiscoveryEngine" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:learning-trajectories a cnv:Capability ;
+  cnv:featureName "learning-trajectories" ; cnv:family "intelligence" ;
+  cnv:defaultVerb "observe" ; cnv:implementation "frontier::LearningTrajectory" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:reflexive-testing a cnv:Capability ;
+  cnv:featureName "reflexive-testing" ; cnv:family "quality" ;
+  cnv:defaultVerb "verify" ; cnv:implementation "frontier::ReflexiveReport" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:economic-sim a cnv:Capability ;
+  cnv:featureName "economic-sim" ; cnv:family "intelligence" ;
+  cnv:defaultVerb "step" ; cnv:implementation "frontier::EconomicSimulation" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:quantum-ready a cnv:Capability ;
+  cnv:featureName "quantum-ready" ; cnv:family "quality" ;
+  cnv:defaultVerb "assess" ; cnv:implementation "frontier::QuantumReadyPolicy" ;
+  cnv:proofSurfaceCount 3 .
+
+cnv:executable-specs a cnv:Capability ;
+  cnv:featureName "executable-specs" ; cnv:family "quality" ;
+  cnv:defaultVerb "validate" ; cnv:implementation "frontier::ExecutableSpec" ;
+  cnv:proofSurfaceCount 3 .
