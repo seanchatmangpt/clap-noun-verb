@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ SPEC = importlib.util.spec_from_file_location("verify_no_wip", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError("unable to load verifier module")
 MODULE = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
