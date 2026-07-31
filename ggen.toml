@@ -1,19 +1,14 @@
-# ggen.toml — clap-noun-verb authoritative pack manifest (engine format, ggen 26.6.x)
+# ggen.toml — clap-noun-verb authoritative pack manifest
 #
-# This is the PACK-LEVEL manifest. It declares the pack's identity, its μ₁ inference
-# (DMAIC-2 requires >=1 CONSTRUCT), and the μ₃ generation rules that bind each
-# authoritative SELECT query to its paired thin Tera template. The R2 fieldname-
-# collision ASK is enforced by the engine (Error-severity validation rule).
-#
-# The self-rendering PROOF that the pack is authoritative lives in
-# examples/greet-demo/ (its own ontology.ttl + ggen.toml wiring these same queries
-# and templates, rendering a CLI that compiles end-to-end). This pack-root manifest
-# uses the pack's core framework ontology as the generation subject.
+# Semantic authority lives in RDF. SPARQL performs admitted inference/selection.
+# Tera is the terminal projection calculus. package.toml is transport only.
+# ggen emits and verifies the BLAKE3 receipt over the input closure and outputs.
+# The exact verifier actuator is pinned in .github/workflows/ggen-authority.yml.
 
 [project]
 name = "clap-noun-verb"
-version = "26.6.13"
-description = "Authoritative ggen pack for noun-verb CLIs: an RDF ontology of nouns, verbs, and arguments is the single source of truth (A = mu(O*)); ggen renders thin #[verb] wrappers that delegate to consumer-implemented handlers behind a stable seam."
+version = "26.6.14"
+description = "Authoritative ggen pack for noun-verb CLIs: admitted RDF manufactures thin #[verb] interfaces while consumer-owned handlers retain domain behavior (A = mu(O*))."
 
 [ontology]
 source = "ontology/clap-noun-verb-ontology.ttl"
@@ -26,11 +21,7 @@ rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 owl = "http://www.w3.org/2002/07/owl#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 
-# --- μ₁ inference (DMAIC-2 Measure requires >=1 CONSTRUCT) --------------------
-# Normalizes the noun<->verb edge so every verb carries an explicit
-# cnv:belongsToNoun back-link, which the verb-signatures SELECT relies on to
-# project ?noun_name. Idempotent. (CONSTRUCT belongs in mu1, never in a gen rule
-# — E0003 rejects CONSTRUCT in [[generation.rules]].)
+# μ₁: normalize noun → verb edges into explicit verb → noun links.
 [inference]
 [[inference.rules]]
 name = "attach-noun-name-to-verb"
@@ -43,13 +34,10 @@ CONSTRUCT {
 }
 """
 
-# --- μ₃ generation ------------------------------------------------------------
+# μ₃: bounded terminal projections. No output may escape src/verbs/.
 [generation]
 output_dir = "."
 
-# Thin #[verb] wrapper per verb. One SELECT row per verb -> one file (path
-# templating fans out). Projected columns of verb-signatures.rq == the {{ }} vars
-# consumed by verb.rs.tera (contract witnessed MATCHING).
 [[generation.rules]]
 name = "verb-wrappers"
 query = { file = "queries/verb-signatures.rq" }
@@ -58,7 +46,6 @@ output_file = "src/verbs/{{ verb_name }}.rs"
 mode = "Overwrite"
 skip_empty = true
 
-# Aggregate module list (single-row) for the rendered verb wrappers.
 [[generation.rules]]
 name = "verbs-mod"
 query = { file = "queries/verbs-mod.rq" }
@@ -67,15 +54,11 @@ output_file = "src/verbs/mod.rs"
 mode = "Overwrite"
 skip_empty = true
 
-# --- validation (R2 fieldname-collision) --------------------------------------
-# Engine enforces Error-severity custom ASKs (verified this session): ASK TRUE =>
-# a collision EXISTS => generation FAILS. Two distinct args on the SAME verb whose
-# resolved Rust field name is identical are NEVER silently merged. Requires
-# `description` (E0001) and `severity`; both supplied. Body kept byte-consistent
-# with ontology/queries/fieldname-collision.rq (the documented source-of-truth).
+# ASK true means a violation exists. The body is byte-semantically aligned with
+# ontology/queries/fieldname-collision.rq and is enforced before write actuation.
 [[validation.rules]]
 name = "cnv-fieldname-collision"
-description = "Two distinct arguments on the same verb must not resolve to the same Rust field name. Resolved field = COALESCE(explicit cnv:fieldName, kebab->snake of cnv:hasArgumentName). Raw-identifier escaping (Rust keyword -> r#kw) is a pure prefix and does not change collision equivalence, so equivalence is decided at the snake-cased layer. A collision yields compiling-but-wrong Rust (or a duplicate-parameter error) and MUST fail generation rather than silently merge."
+description = "Two distinct arguments on the same verb must not resolve to the same Rust field name. Resolved field = COALESCE(explicit cnv:fieldName, kebab-to-snake cnv:hasArgumentName). A matching pair is a violation and generation is refused."
 severity = "Error"
 ask = """
 ASK {
