@@ -16,8 +16,8 @@ The hard invariant is **zero unreceipted actuation**.
 
 ## Authority map
 
-- RDF/Turtle is semantic authority for nouns, verbs, arguments, constraints, and
-  lifecycle facts.
+- RDF/Turtle is semantic authority for nouns, verbs, arguments, constraints,
+  capabilities, default verbs, and lifecycle facts.
 - SPARQL is selection, inference, and gate law. Automatic sync gates live only
   in `gates/*.rq` and are referenced through `[validation].gates`.
 - Tera is the terminal projection calculus.
@@ -27,23 +27,49 @@ The hard invariant is **zero unreceipted actuation**.
 - Generated files MUST carry a generated banner and MUST NOT be hand-edited.
 - `ggen.lock` and `.ggen-v2/receipt*.json*` are engine-produced evidence surfaces.
   They MUST NOT be fabricated or manually repaired.
+- Authoritative project execution receipts are OCEL 2.0 and MUST be verified by
+  the pinned wasm4pm boundary before standing is promoted.
+
+## Capability crown
+
+The admitted feature crown contains 15 capabilities and 45 proof surfaces:
+unit, integration, and replay for each capability. The ontology-first source is
+`packs/clap-noun-verb-capability-pack/ontology.ttl`; generated consumer files are
+consequences and are never manually authored.
+
+Every Cargo feature named in the crown MUST be a real compilation surface. A
+check-cfg placeholder, disabled PR workflow, unconditional `not implemented`
+error, or documentation-only route is `UNSUPPORTED` or `BUILD_BROKEN`, never
+`ALIVE`.
+
+Capability standing is evidence-derived:
+
+- `UNKNOWN`: no observed proof surface.
+- `PARTIAL_ALIVE`: at least one but not all required surfaces is observed and replayed.
+- `ALIVE`: every declared surface is observed and replayed with a non-empty receipt.
+- `BLOCKED`, `BUILD_BROKEN`, and `UNSUPPORTED`: typed boundary states; none collapse
+  into success.
 
 ## Required execution ladder
 
-For changes affecting the CLI compiler, macros, ontology, queries, templates, or
-pack transport, execute the narrowest applicable rung and then expand:
+For changes affecting the CLI compiler, macros, ontology, queries, templates,
+capabilities, or pack transport, execute the narrowest applicable rung and expand:
 
 1. static contract verifier
-2. ggen dry run / graph validation
+2. ggen graph validation and external SPARQL gates
 3. first `ggen sync run`
 4. `ggen receipt verify`
 5. generated consumer `cargo check`
 6. generated consumer `cargo test`
-7. CLI `--help` and successful route execution
-8. required-argument refusal
-9. collision / invalid-identifier falsifier
-10. second sync with byte-identical outputs and verified receipt
-11. workspace library tests, then wider integration tests
+7. baseline and individual Cargo feature compilation
+8. frontier/federation integration tests
+9. complete `--all-features` execution
+10. clippy, rustdoc, and benchmark-build proofs
+11. negative gate and identifier falsifiers
+12. second sync with byte-identical outputs and verified ggen receipt
+13. OCEL 2.0 receipt manufacture from observed results
+14. pinned wasm4pm OCEL verification and canonicalization
+15. machine-readable verifier report bound to the exact head SHA
 
 `cargo test --lib` is load-bearing because the `linkme` distributed registry is
 part of the command-discovery proof.
@@ -60,6 +86,8 @@ part of the command-discovery proof.
 - No direct edit of generated wrappers, generated proof tests, lockfiles, or
   receipt ledgers.
 - No status promotion from documentation or route logs.
+- No Python or shell-generated digest is receipt authority. Static scripts may
+  diagnose contracts; wasm4pm-verified OCEL carries execution receipt standing.
 
 ## ggen compatibility boundary
 
@@ -68,7 +96,7 @@ The canonical ggen verifier for this repository is pinned by
 change: update the pin, execute the full ladder, retain negative falsifiers, and
 record the exact head in the pull-request receipt.
 
-The public vocabulary remains `http://clap-noun-verb.io/ontology#` until a
-separate, explicit ontology migration proves equivalence and compatibility.
-Repository identity may be bound to `chatmangpt.com`; identity binding does not
-silently rewrite public RDF terms.
+The root public vocabulary remains `http://clap-noun-verb.io/ontology#` until a
+separate ontology migration proves equivalence and compatibility. The capability
+crown uses the admitted ChatmanGPT namespace. Repository identity binding does not
+silently rewrite legacy public RDF terms.
