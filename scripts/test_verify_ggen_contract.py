@@ -61,20 +61,18 @@ class GgenContractVerifierTest(unittest.TestCase):
         output_file = "src/verbs/mod.rs"
         mode = "Overwrite"
         skip_empty = true
-        [[validation.rules]]
-        name = "cnv-fieldname-collision"
-        description = "collision"
-        severity = "Error"
-        ask = '''{textwrap.dedent(gate)}'''
+        [validation]
+        gates = ["gates/fieldname-collision.rq"]
         """
         self.write("ggen.toml", manifest)
         self.write("Cargo.toml", '[package]\nname="clap-noun-verb"\nversion="26.6.14"\n')
         self.write(
             "package.toml",
-            '[pack]\nname="clap-noun-verb"\n[pack.outputs]\nqueries="queries"\ntemplates="templates"\n',
+            '[pack]\nname="clap-noun-verb"\n[pack.outputs]\nqueries="queries"\ntemplates="templates"\ngates="gates"\n',
         )
         self.write("ontology/clap-noun-verb-ontology.ttl", "<x:s> <x:p> <x:o> .\n")
-        self.write("ontology/queries/fieldname-collision.rq", gate)
+        self.write("gates/fieldname-collision.rq", "# MESSAGE: collision\n" + gate)
+        self.write("ontology/queries/fieldname-collision.rq", "# MOVED: ../../gates/fieldname-collision.rq\n")
         self.write(
             "queries/verb-signatures.rq",
             "SELECT ?noun_name ?verb_name ?verb_about ?return_type ?handler_name "
@@ -91,7 +89,8 @@ class GgenContractVerifierTest(unittest.TestCase):
             "examples/greet-demo/ggen.toml",
             manifest.replace('source = "ontology/clap-noun-verb-ontology.ttl"', 'source = "ontology.ttl"')
             .replace('query = { file = "queries/', 'query = { file = "../../queries/')
-            .replace('template = { file = "templates/', 'template = { file = "../../templates/'),
+            .replace('template = { file = "templates/', 'template = { file = "../../templates/')
+            .replace('gates = ["gates/', 'gates = ["../../gates/'),
         )
         self.write("examples/greet-demo/src/verbs/greet.rs", "// rendered from O* by ggen\n")
         self.write("AGENTS.md", "law\n")
@@ -119,8 +118,8 @@ class GgenContractVerifierTest(unittest.TestCase):
             MODULE.verify(self.root)
 
     def test_refuses_inverted_ask(self) -> None:
-        gate = self.root / "ontology/queries/fieldname-collision.rq"
-        gate.write_text("ASK { FILTER NOT EXISTS { ?s ?p ?o } }\n")
+        gate = self.root / "gates/fieldname-collision.rq"
+        gate.write_text("# MESSAGE: collision\nASK { FILTER NOT EXISTS { ?s ?p ?o } }\n")
         with self.assertRaisesRegex(MODULE.ContractError, "GGEN_GATE_POLARITY_REFUSED"):
             MODULE.verify(self.root)
 
