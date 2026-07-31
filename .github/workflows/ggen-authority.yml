@@ -156,6 +156,8 @@ jobs:
 
       - name: Prove capability crown byte-identical replay
         working-directory: packs/clap-noun-verb-capability-pack
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           ../../.tooling/ggen/target/debug/ggen sync run
           ../../.tooling/ggen/target/debug/ggen receipt verify
@@ -163,9 +165,18 @@ jobs:
             > /tmp/capability-second.sha256
           diff -u /tmp/capability-first.sha256 /tmp/capability-second.sha256
           cargo test --manifest-path consumer/Cargo.toml
-          jq --arg head "${GITHUB_SHA}" \
-            '.standing = "ALIVE" | .execution_required = false | .execution_observed = true | .replay_verified = true | .head_sha = $head' \
+          jq --arg head "$HEAD_SHA" \
+            '.scope = "ggen-semantic-manufacture" |
+             .standing = "PARTIAL_ALIVE" |
+             .execution_required = true |
+             .manufacture_observed = true |
+             .consumer_execution_observed = true |
+             .source_execution_observed = false |
+             .replay_verified = true |
+             .head_sha = $head' \
             VERIFIER_REPORT.json > /tmp/capability-verifier.json
+          jq -e '.scope == "ggen-semantic-manufacture" and .standing == "PARTIAL_ALIVE" and .manufacture_observed == true and .consumer_execution_observed == true and .source_execution_observed == false and .replay_verified == true' \
+            /tmp/capability-verifier.json
 
       - name: Refuse incomplete capability crown
         run: |
