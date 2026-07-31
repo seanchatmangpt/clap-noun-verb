@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "generator": "ggen@26.7.62",
+  "admission": "ADMITTED",
+  "standing": "UNKNOWN",
+  "capabilities": {{ capability_count }},
+  "proof_surfaces": {{ proof_surface_count }},
+  "required_rungs": ["unit", "integration", "replay"],
+  "execution_required": true,
+  "actuation_performed": false
+}
