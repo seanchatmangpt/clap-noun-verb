@@ -148,7 +148,9 @@ fn resource_local_name(value: &str) -> &str {
 }
 
 fn noun_local_name(value: &str) -> String {
-    resource_local_name(value).trim_end_matches("Noun").to_ascii_lowercase()
+    resource_local_name(value)
+        .trim_end_matches("Noun")
+        .to_ascii_lowercase()
 }
 
 fn rust_identifier(value: &str) -> String {
@@ -236,7 +238,10 @@ pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
 
     let verb_literal = rust_literal(&verb.name);
     if let Some(noun) = verb.noun_name.as_deref() {
-        code.push_str(&format!("#[verb({verb_literal}, {})]\n", rust_literal(noun)));
+        code.push_str(&format!(
+            "#[verb({verb_literal}, {})]\n",
+            rust_literal(noun)
+        ));
     } else {
         code.push_str(&format!("#[verb({verb_literal})]\n"));
     }
@@ -258,7 +263,10 @@ pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
             .collect()
     };
 
-    code.push_str(&format!(") -> {} {{\n", projected_return_type(&verb.return_type)));
+    code.push_str(&format!(
+        ") -> {} {{\n",
+        projected_return_type(&verb.return_type)
+    ));
     let await_suffix = if verb.is_async { ".await" } else { "" };
     code.push_str(&format!(
         "    crate::handlers::{function_name}({}){await_suffix}\n",
@@ -505,7 +513,11 @@ pub fn rdf_triples_to_verb_definitions(
                 arguments.entry(triple.subject).or_default().long_name = Some(triple.object);
             }
             "allowedValue" => {
-                arguments.entry(triple.subject).or_default().allowed_values.insert(triple.object);
+                arguments
+                    .entry(triple.subject)
+                    .or_default()
+                    .allowed_values
+                    .insert(triple.object);
             }
             _ => {}
         }
@@ -527,7 +539,16 @@ pub fn rdf_triples_to_verb_definitions(
             })?;
             verb.arguments.push(accumulator.finish(argument_uri)?);
         }
-        verb.arguments.sort_by(|left, right| left.arg_uri.cmp(&right.arg_uri));
+        verb.arguments
+            .sort_by(|left, right| left.arg_uri.cmp(&right.arg_uri));
+    }
+
+    if let Some(orphan) = arguments.keys().next() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("Argument is not linked to an admitted verb: {orphan}"),
+        )
+        .into());
     }
 
     for verb in verbs.values() {
@@ -610,7 +631,10 @@ mod tests {
         }"#;
         let verbs = sparql_results_to_verb_definitions(sparql_json).expect("valid SPARQL");
         assert_eq!(
-            verbs.iter().map(|verb| verb.name.as_str()).collect::<Vec<_>>(),
+            verbs
+                .iter()
+                .map(|verb| verb.name.as_str())
+                .collect::<Vec<_>>(),
             vec!["alpha", "zeta"]
         );
     }
@@ -640,6 +664,16 @@ mod tests {
             RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasVerbName"), object: "load".into(), object_type: ObjectType::Literal },
             RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasArguments"), object: argument.into(), object_type: ObjectType::Reference },
             RdfTriple { subject: argument.into(), predicate: format!("{CNV}hasArgumentName"), object: "path".into(), object_type: ObjectType::Literal },
+        ];
+        assert!(rdf_triples_to_verb_definitions(triples).is_err());
+    }
+
+    #[test]
+    fn orphan_argument_refuses_graph() {
+        let argument = "https://example.org/PathArg";
+        let triples = vec![
+            RdfTriple { subject: argument.into(), predicate: format!("{CNV}hasArgumentName"), object: "path".into(), object_type: ObjectType::Literal },
+            RdfTriple { subject: argument.into(), predicate: format!("{CNV}valueType"), object: "String".into(), object_type: ObjectType::Literal },
         ];
         assert!(rdf_triples_to_verb_definitions(triples).is_err());
     }
