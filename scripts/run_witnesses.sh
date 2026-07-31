@@ -5,11 +5,19 @@ output=${1:-target/witnesses.txt}
 mkdir -p "$(dirname "$output")"
 : > "$output"
 export LC_ALL=C
+export NO_COLOR=1
 
 run_example() {
   local example=$1
   printf '=== %s ===\n' "$example" >> "$output"
   cargo run --quiet --example "$example" >> "$output"
+}
+
+run_feature_example() {
+  local example=$1
+  local features=$2
+  printf '=== %s [%s] ===\n' "$example" "$features" >> "$output"
+  cargo run --quiet --example "$example" --features "$features" >> "$output"
 }
 
 run_example core_api
@@ -25,8 +33,12 @@ run_example diagnostics
 run_example deprecation
 run_example format_error_pipeline
 run_example shell_completions
+run_example agent_cli_builder
+run_example ontology_to_cli
 
-printf '=== repl_witness ===\n' >> "$output"
-cargo run --quiet --example repl_witness --features repl >> "$output"
+run_feature_example repl_witness repl
+run_feature_example frontier_discovery_engine_demo discovery-engine
+run_feature_example frontier_reflexive_testing_demo reflexive-testing
+run_feature_example semantic_coordinator frontier-all
 
 sha256sum "$output"
