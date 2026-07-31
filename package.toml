@@ -1,5 +1,5 @@
-# Pack transport manifest. Semantic authority remains in RDF, SPARQL, SHACL/ASK
-# gates, and Tera. Consumers receive declared public outputs only and must not
+# Pack transport manifest. Semantic authority remains in RDF, SPARQL gate
+# files, and Tera. Consumers receive declared public outputs only and must not
 # depend on repository-private implementation surfaces.
 [pack]
 name = "clap-noun-verb"
@@ -7,3 +7,4 @@ name = "clap-noun-verb"
 [pack.outputs]
 queries = "queries"
 templates = "templates"
+gates = "gates"
