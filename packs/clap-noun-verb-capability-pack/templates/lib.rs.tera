@@ -1,0 +1,40 @@
+// Copyright (c) 2024 Sean Chatman
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// Rendered by ggen from the admitted capability ontology.
+
+/// Canonically ordered clap-noun-verb feature capabilities.
+pub const CAPABILITIES: &[&str] = &[
+{%- for capability in capabilities | split(pat=",") %}
+    "{{ capability }}",
+{%- endfor %}
+];
+
+/// Three required proof surfaces per capability: unit, integration, replay.
+pub const PROOF_SURFACE_COUNT: usize = {{ proof_surface_count }};
+
+/// Verify the structural crown manufactured from RDF.
+pub fn verify_crown() -> Result<(), String> {
+    if CAPABILITIES.len() != {{ capability_count }} {
+        return Err(format!("capability count drift: {}", CAPABILITIES.len()));
+    }
+    if PROOF_SURFACE_COUNT != CAPABILITIES.len() * 3 {
+        return Err(format!("proof surface drift: {PROOF_SURFACE_COUNT}"));
+    }
+    if CAPABILITIES.windows(2).any(|pair| pair[0] >= pair[1]) {
+        return Err("capability catalog is not strictly ordered".to_string());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ontology_projects_complete_ordered_crown() {
+        verify_crown().expect("15 capabilities / 45 proof surfaces");
+        assert!(CAPABILITIES.contains(&"otel"));
+        assert!(CAPABILITIES.contains(&"federated-network"));
+        assert!(CAPABILITIES.contains(&"executable-specs"));
+    }
+}

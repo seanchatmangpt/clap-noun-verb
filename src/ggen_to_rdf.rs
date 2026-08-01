@@ -1,542 +1,578 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! ggen → RDF generator: converts Rust `#[verb]` source code to RDF/N-Triples ontology
+//! Rust noun-verb adapter → canonical RDF projection.
 //!
-//! This module parses Rust source code containing `#[verb]` macro invocations
-//! and emits W3C-compliant RDF triples describing the verbs.
-//!
-//! The generated RDF uses:
-//! - Namespace: `http://clap-noun-verb.io/ontology#` (cnv:)
-//! - Format: N-Triples (.nt) with full URI expansion
-//! - Includes: verb names, descriptions, parameters, return types, trait bounds
+//! Parsing is strict: malformed admitted attributes or signatures refuse the
+//! complete projection. RDF and SPARQL outputs are canonically ordered and carry
+//! no clock-derived fields, so identical source produces byte-identical output.
 
 use crate::rdf_to_ggen::{ArgumentType, RdfArgumentDefinition, RdfVerbDefinition};
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
-// =============================================================================
-// PARSING RUST SOURCE
-// =============================================================================
+const CNV: &str = "http://clap-noun-verb.io/ontology#";
+const RDF_TYPE: &str = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+const XSD_BOOLEAN: &str = "http://www.w3.org/2001/XMLSchema#boolean";
 
-/// Parse a Rust source file for `#[verb]` functions
-///
-/// Extracts:
-/// - Function name (converted to verb name)
-/// - Docstring (becomes rdfs:comment)
-/// - Parameter types (become cnv:hasArguments)
-/// - Return type (becomes cnv:returnType)
-/// - Trait bounds (if present)
-///
-/// # Example
-/// ```rust,no_run
-/// # use clap_noun_verb::ggen_to_rdf::parse_rust_source;
-/// let rust_code = r#"
-///     /// Load a graph from file
-///     #[verb("load")]
-///     pub fn graph_load(path: String, format: Option<String>) -> Result<String> {
-///         Ok("ok".to_string())
-///     }
-/// "#;
-/// let verbs = parse_rust_source(rust_code).unwrap();
-/// assert_eq!(verbs[0].name, "load");
-/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct VerbAttribute {
+    verb: String,
+    noun: Option<String>,
+}
+
+/// Parse Rust source containing `#[verb]` interface adapters.
 pub fn parse_rust_source(source: &str) -> Result<Vec<RdfVerbDefinition>, ParseError> {
-    let mut verbs = Vec::new();
     let lines: Vec<&str> = source.lines().collect();
-    let mut i = 0;
+    let mut verbs = Vec::new();
+    let mut index = 0;
 
-    while i < lines.len() {
-        let _line = lines[i].trim();
-
-        // Look for docstring (/// comments)
-        let mut doc_lines = Vec::new();
-        while i < lines.len() && lines[i].trim().starts_with("///") {
-            let doc = lines[i]
-                .trim_start_matches(|c: char| c.is_whitespace())
-                .trim_start_matches("///")
-                .trim();
-            doc_lines.push(doc.to_string());
-            i += 1;
+    while index < lines.len() {
+        let mut documentation = Vec::new();
+        while index < lines.len() && lines[index].trim().starts_with("///") {
+            documentation.push(
+                lines[index]
+                    .trim()
+                    .trim_start_matches("///")
+                    .trim()
+                    .to_string(),
+            );
+            index += 1;
         }
-        let docstring = doc_lines.join(" ");
 
-        // Look for #[verb(...)] attribute
-        if i < lines.len() && lines[i].contains("#[verb(") {
-            let attr_line = lines[i];
-            if let Some(verb_name) = extract_verb_name(attr_line) {
-                // Get function signature
-                let mut signature = String::new();
-                while i < lines.len() && !lines[i].contains('{') {
-                    signature.push_str(lines[i]);
-                    signature.push(' ');
-                    i += 1;
-                }
-                if i < lines.len() {
-                    signature.push_str(lines[i]);
-                    i += 1;
-                }
+        if index >= lines.len() || !lines[index].contains("#[verb(") {
+            index += 1;
+            continue;
+        }
 
-                // Parse the function
-                match parse_function_signature(&signature, &verb_name) {
-                    Ok(mut verb) => {
-                        verb.docstring = docstring.clone();
-                        verbs.push(verb);
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to parse signature for {}: {:?}", verb_name, e);
-                        eprintln!("Signature was: {}", signature);
-                    }
-                }
+        let attribute = extract_verb_attribute(lines[index])?;
+        index += 1;
+        let mut signature = String::new();
+        let mut found_body = false;
+        while index < lines.len() {
+            signature.push_str(lines[index].trim());
+            signature.push(' ');
+            if lines[index].contains('{') {
+                found_body = true;
+                index += 1;
+                break;
             }
+            index += 1;
+        }
+        if !found_body {
+            return Err(ParseError::InvalidSignature);
         }
 
-        i += 1;
+        let mut verb = parse_function_signature(&signature, &attribute)?;
+        verb.docstring = documentation.join(" ");
+        verb.description = verb.docstring.clone();
+        verbs.push(verb);
     }
 
+    verbs.sort_by(|left, right| left.verb_uri.cmp(&right.verb_uri));
     Ok(verbs)
 }
 
-/// Extract verb name from #[verb("name")] attribute
-fn extract_verb_name(attr_line: &str) -> Option<String> {
-    let re = Regex::new(r#"#\[verb\("([^"]*)"\)\]"#).ok()?;
-    re.captures(attr_line).and_then(|cap| cap.get(1)).map(|m| m.as_str().to_string())
+fn extract_verb_attribute(line: &str) -> Result<VerbAttribute, ParseError> {
+    let expression = Regex::new(
+        r#"#\[verb\(\s*\"([^\"]+)\"(?:\s*,\s*\"([^\"]+)\")?\s*\)\]"#,
+    )
+    .map_err(|_| ParseError::InvalidAttribute)?;
+    let captures = expression.captures(line).ok_or(ParseError::InvalidAttribute)?;
+    let verb = captures
+        .get(1)
+        .map(|value| value.as_str().to_string())
+        .ok_or(ParseError::InvalidAttribute)?;
+    let noun = captures.get(2).map(|value| value.as_str().to_string());
+    Ok(VerbAttribute { verb, noun })
 }
 
-/// Parse a Rust function signature
-///
-/// Extracts:
-/// - Function name
-/// - Parameters (name, type)
-/// - Return type
-/// - async/sync
 fn parse_function_signature(
     signature: &str,
-    verb_name: &str,
+    attribute: &VerbAttribute,
 ) -> Result<RdfVerbDefinition, ParseError> {
-    // Normalize whitespace - join lines into single signature
-    let normalized_sig = signature
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ");
+    let normalized = signature.split_whitespace().collect::<Vec<_>>().join(" ");
+    let function_expression =
+        Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+            .map_err(|_| ParseError::InvalidSignature)?;
+    let function_name = function_expression
+        .captures(&normalized)
+        .and_then(|captures| captures.get(1))
+        .map(|value| value.as_str())
+        .ok_or(ParseError::InvalidSignature)?;
 
-    // Extract function name (between "fn" and "(")
-    let fn_regex = Regex::new(r"(?:async\s+)?(?:pub\s+)?fn\s+(\w+)\s*\(")
-        .map_err(|_| ParseError::InvalidSignature)?;
-
-    let function_name = fn_regex
-        .captures(&normalized_sig)
-        .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str())
-        .unwrap_or("unknown");
-
-    // Determine if async
-    let is_async = normalized_sig.contains("async");
-
-    // Extract return type
-    let return_type =
-        extract_return_type(&normalized_sig).unwrap_or_else(|| "serde_json::Value".to_string());
-
-    // Extract parameters
-    let arguments = extract_parameters(&normalized_sig)?;
-
-    // Derive noun name from function name (e.g., "graph_load" → "graph")
-    let noun_name = if function_name.contains('_') {
-        let parts: Vec<&str> = function_name.split('_').collect();
-        if parts.len() > 1 {
-            Some(parts[0].to_string())
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+    let noun_name = attribute.noun.clone().or_else(|| {
+        function_name
+            .split_once('_')
+            .map(|(noun, _)| noun.to_string())
+            .filter(|noun| !noun.is_empty())
+    });
+    let return_type = extract_return_type(&normalized).ok_or(ParseError::InvalidReturnType)?;
+    let arguments = extract_parameters(&normalized)?;
 
     Ok(RdfVerbDefinition {
-        verb_uri: format!("ex:{}Verb", capitalize_first(verb_name)),
-        name: verb_name.to_string(),
+        verb_uri: format!("http://example.org/{}Verb", pascal_case(&attribute.verb)),
+        name: attribute.verb.clone(),
         description: String::new(),
-        noun_uri: noun_name.as_ref().map(|n| format!("ex:{}Noun", capitalize_first(n))),
+        noun_uri: noun_name
+            .as_ref()
+            .map(|noun| format!("http://example.org/{}Noun", pascal_case(noun))),
         noun_name,
         arguments,
         return_type,
-        trait_bounds: extract_trait_bounds(signature),
+        trait_bounds: extract_trait_bounds(&normalized),
         docstring: String::new(),
-        is_async,
+        is_async: normalized.contains("async fn"),
     })
 }
 
-/// Extract return type from function signature
-/// Handles: Result<Type>, async Result<Type>, -> Type, etc.
 fn extract_return_type(signature: &str) -> Option<String> {
-    let re = Regex::new(r"->(\s*(?:impl\s+)?[^{]+?)(?:\s*\{|$)").ok()?;
-    re.captures(signature).and_then(|cap| cap.get(1)).map(|m| m.as_str().trim().to_string())
+    let arrow = signature.find("->")?;
+    let after_arrow = signature[arrow + 2..].trim();
+    let body = after_arrow
+        .rfind('{')
+        .map_or(after_arrow, |index| &after_arrow[..index]);
+    let return_type = body.trim();
+    (!return_type.is_empty()).then(|| return_type.to_string())
 }
 
-/// Extract function parameters
-fn extract_parameters(signature: &str) -> Result<Vec<RdfArgumentDefinition>, ParseError> {
-    let mut parameters = Vec::new();
-
-    // Extract content between parentheses
-    let start = signature.find('(').ok_or(ParseError::InvalidSignature)?;
-
-    // Find closing paren - scan forward and match parens
-    let mut paren_depth = 0;
-    let mut end = start;
-    for (i, ch) in signature[start..].chars().enumerate() {
-        match ch {
-            '(' => paren_depth += 1,
+fn matching_parenthesis(signature: &str, opening: usize) -> Option<usize> {
+    let mut depth = 0_u32;
+    for (offset, character) in signature[opening..].char_indices() {
+        match character {
+            '(' => depth += 1,
             ')' => {
-                paren_depth -= 1;
-                if paren_depth == 0 {
-                    end = start + i;
-                    break;
+                depth = depth.checked_sub(1)?;
+                if depth == 0 {
+                    return Some(opening + offset);
                 }
             }
             _ => {}
         }
     }
+    None
+}
 
-    if end == start {
-        return Err(ParseError::InvalidSignature);
+fn split_top_level(value: &str) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let mut start = 0;
+    let mut angle = 0_i32;
+    let mut round = 0_i32;
+    let mut square = 0_i32;
+    for (index, character) in value.char_indices() {
+        match character {
+            '<' => angle += 1,
+            '>' => angle -= 1,
+            '(' => round += 1,
+            ')' => round -= 1,
+            '[' => square += 1,
+            ']' => square -= 1,
+            ',' if angle == 0 && round == 0 && square == 0 => {
+                parts.push(value[start..index].trim());
+                start = index + 1;
+            }
+            _ => {}
+        }
     }
+    parts.push(value[start..].trim());
+    parts.into_iter().filter(|part| !part.is_empty()).collect()
+}
 
-    let params_str = &signature[start + 1..end];
+fn extract_parameters(signature: &str) -> Result<Vec<RdfArgumentDefinition>, ParseError> {
+    let opening = signature.find('(').ok_or(ParseError::InvalidSignature)?;
+    let closing = matching_parenthesis(signature, opening).ok_or(ParseError::InvalidSignature)?;
+    let parameters = &signature[opening + 1..closing];
+    let mut arguments = Vec::new();
 
-    // Split by comma and process each parameter
-    for param in params_str.split(',') {
-        let param = param.trim();
-        if param.is_empty() || param == "args: VerbArgs" {
+    for parameter in split_top_level(parameters) {
+        let parameter = parameter
+            .trim_start_matches(|character: char| character == '&' || character.is_whitespace());
+        if parameter.is_empty() || parameter == "args: VerbArgs" || parameter == "self" {
             continue;
         }
-
-        // Match: name: Type
-        if let Some((name, type_str)) = param.split_once(':') {
-            let name = name.trim().to_string();
-            let type_str = type_str.trim();
-
-            let (is_optional, value_type) = if type_str.starts_with("Option<") {
-                let inner = &type_str[7..];
-                (true, inner.trim_end_matches('>').to_string())
+        let (name, value_type) = parameter
+            .split_once(':')
+            .ok_or(ParseError::MissingParameter)?;
+        let name = name.trim().trim_start_matches("mut ");
+        let value_type = value_type.trim();
+        let optional = value_type.starts_with("Option<") && value_type.ends_with('>');
+        let unwrapped = if optional {
+            value_type[7..value_type.len() - 1].trim().to_string()
+        } else {
+            value_type.to_string()
+        };
+        let flag = unwrapped == "bool";
+        arguments.push(RdfArgumentDefinition {
+            arg_uri: format!("http://example.org/{}Arg", pascal_case(name)),
+            name: name.to_string(),
+            description: String::new(),
+            value_type: unwrapped,
+            required: !optional && !flag,
+            is_flag: flag,
+            default_value: None,
+            short_name: None,
+            long_name: None,
+            allowed_values: Vec::new(),
+            argument_type: if flag {
+                ArgumentType::Flag
+            } else if optional {
+                ArgumentType::Optional
             } else {
-                (false, type_str.to_string())
-            };
-
-            let is_flag = type_str == "bool" || type_str == "Option<bool>";
-
-            parameters.push(RdfArgumentDefinition {
-                arg_uri: format!("ex:{}Arg", capitalize_first(&name)),
-                name: name.clone(),
-                description: String::new(),
-                value_type,
-                required: !is_optional && !is_flag,
-                is_flag,
-                default_value: None,
-                short_name: None,
-                long_name: None,
-                allowed_values: vec![],
-                argument_type: if is_flag {
-                    ArgumentType::Flag
-                } else if is_optional {
-                    ArgumentType::Optional
-                } else {
-                    ArgumentType::Positional
-                },
-            });
-        }
+                ArgumentType::Positional
+            },
+        });
     }
-
-    Ok(parameters)
+    Ok(arguments)
 }
 
-/// Extract trait bounds from function signature
-/// Looks for generic trait bounds: <T: Send + Sync>
 fn extract_trait_bounds(signature: &str) -> Vec<String> {
-    let mut bounds = HashSet::new();
-
-    // Look for common trait bounds in return types
-    if signature.contains("Send") {
-        bounds.insert("Send".to_string());
-    }
-    if signature.contains("Sync") {
-        bounds.insert("Sync".to_string());
-    }
-    if signature.contains("Serialize") {
-        bounds.insert("Serialize".to_string());
-    }
-    if signature.contains("Deserialize") {
-        bounds.insert("Deserialize".to_string());
-    }
-
-    bounds.into_iter().collect()
+    ["Deserialize", "Send", "Serialize", "Sync"]
+        .into_iter()
+        .filter(|bound| signature.contains(bound))
+        .map(str::to_string)
+        .collect()
 }
 
-// =============================================================================
-// RDF EMISSION - Convert verbs to N-Triples
-// =============================================================================
+fn canonical_verbs(verbs: &[RdfVerbDefinition]) -> Vec<&RdfVerbDefinition> {
+    let mut ordered: Vec<_> = verbs.iter().collect();
+    ordered.sort_by(|left, right| left.verb_uri.cmp(&right.verb_uri));
+    ordered
+}
 
-/// Generate N-Triples (RDF) from verb definitions
-///
-/// Output format: W3C N-Triples (.nt)
-/// - Full URI expansion (no prefixes)
-/// - One triple per line
-/// - Language tags for strings (e.g., "label"@en)
-/// - Typed literals for non-strings (e.g., "true"^^xsd:boolean)
-///
-/// # Output Example
-/// ```ntriples
-/// <http://example.org/LoadVerb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Verb> .
-/// <http://example.org/LoadVerb> <http://clap-noun-verb.io/ontology#hasVerbName> "load"@en .
-/// <http://example.org/LoadVerb> <http://clap-noun-verb.io/ontology#verbAbout> "Load a graph from file"@en .
-/// ```
+fn canonical_arguments(verb: &RdfVerbDefinition) -> Vec<&RdfArgumentDefinition> {
+    let mut ordered: Vec<_> = verb.arguments.iter().collect();
+    ordered.sort_by(|left, right| left.arg_uri.cmp(&right.arg_uri));
+    ordered
+}
+
+fn canonical_allowed_values(argument: &RdfArgumentDefinition) -> BTreeSet<&str> {
+    argument.allowed_values.iter().map(String::as_str).collect()
+}
+
+/// Emit canonical N-Triples for verb definitions.
+#[must_use]
 pub fn verb_definitions_to_ntriples(verbs: &[RdfVerbDefinition]) -> String {
-    let mut ntriples = String::new();
-
-    // Ontology header
-    ntriples.push_str("# Auto-generated from Rust source code\n");
-    ntriples.push_str("# Generated by ggen_to_rdf converter\n");
-    ntriples.push_str("# Format: N-Triples (RDF 1.1)\n");
-    ntriples.push_str("# Timestamp: ");
-    ntriples.push_str(
-        &std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs().to_string())
-            .unwrap_or_else(|_| "unknown".to_string()),
+    let mut output = String::from(
+        "# Generated by clap-noun-verb ggen_to_rdf\n# Format: N-Triples (RDF 1.1)\n\n",
     );
-    ntriples.push_str("\n\n");
-
-    // Generate triples for each verb
-    for verb in verbs {
-        ntriples.push_str(&generate_verb_triples(verb));
-        ntriples.push('\n');
+    for verb in canonical_verbs(verbs) {
+        output.push_str(&verb_triples(verb));
+        output.push('\n');
     }
-
-    ntriples
+    output
 }
 
-/// Generate N-Triples for a single verb definition
-fn generate_verb_triples(verb: &RdfVerbDefinition) -> String {
-    let mut triples = String::new();
-    let verb_uri = &verb.verb_uri;
+fn triple(subject: &str, predicate: &str, object: &str) -> String {
+    format!("<{subject}> <{predicate}> {object} .\n")
+}
 
-    // Type declaration
-    triples.push_str(&format!(
-        "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Verb> .\n",
-        verb_uri
+fn literal(value: &str) -> String {
+    format!("\"{}\"", escape_rdf_string(value))
+}
+
+fn language_literal(value: &str) -> String {
+    format!("{}@en", literal(value))
+}
+
+fn boolean_literal(value: bool) -> String {
+    format!("\"{value}\"^^<{XSD_BOOLEAN}>")
+}
+
+fn verb_triples(verb: &RdfVerbDefinition) -> String {
+    let mut output = String::new();
+    output.push_str(&triple(&verb.verb_uri, RDF_TYPE, &format!("<{CNV}Verb>")));
+    output.push_str(&triple(
+        &verb.verb_uri,
+        &format!("{CNV}hasVerbName"),
+        &language_literal(&verb.name),
     ));
-
-    // Verb name
-    triples.push_str(&format!(
-        "<{}> <http://clap-noun-verb.io/ontology#hasVerbName> \"{}\"@en .\n",
-        verb_uri, verb.name
-    ));
-
-    // Verb description
     if !verb.description.is_empty() {
-        let escaped = escape_rdf_string(&verb.description);
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#verbAbout> \"{}\"@en .\n",
-            verb_uri, escaped
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}verbAbout"),
+            &language_literal(&verb.description),
         ));
     }
-
-    // Docstring (if different from description)
     if !verb.docstring.is_empty() && verb.docstring != verb.description {
-        let escaped = escape_rdf_string(&verb.docstring);
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#docstring> \"{}\"@en .\n",
-            verb_uri, escaped
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}docstring"),
+            &language_literal(&verb.docstring),
         ));
     }
-
-    // Belongs to noun
     if let Some(noun_uri) = &verb.noun_uri {
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#belongsToNoun> <{}> .\n",
-            verb_uri, noun_uri
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}belongsToNoun"),
+            &format!("<{noun_uri}>"),
         ));
     }
-
-    // Return type
-    triples.push_str(&format!(
-        "<{}> <http://clap-noun-verb.io/ontology#returnType> \"{}\"@en .\n",
-        verb_uri, verb.return_type
+    output.push_str(&triple(
+        &verb.verb_uri,
+        &format!("{CNV}returnType"),
+        &language_literal(&verb.return_type),
     ));
-
-    // Async flag
     if verb.is_async {
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#isAsync> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n",
-            verb_uri
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}isAsync"),
+            &boolean_literal(true),
         ));
     }
 
-    // Arguments
-    for arg in verb.arguments.iter() {
-        let arg_uri = &arg.arg_uri;
-
-        // Type
-        triples.push_str(&format!(
-            "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Argument> .\n",
-            arg_uri
+    for argument in canonical_arguments(verb) {
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}hasArguments"),
+            &format!("<{}>", argument.arg_uri),
         ));
-
-        // Name
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#hasArgumentName> \"{}\"@en .\n",
-            arg_uri, arg.name
-        ));
-
-        // Description
-        if !arg.description.is_empty() {
-            let escaped = escape_rdf_string(&arg.description);
-            triples.push_str(&format!(
-                "<{}> <http://clap-noun-verb.io/ontology#argumentAbout> \"{}\"@en .\n",
-                arg_uri, escaped
-            ));
-        }
-
-        // Value type
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#valueType> \"{}\"@en .\n",
-            arg_uri, arg.value_type
-        ));
-
-        // Required flag
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#required> \"{}\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n",
-            arg_uri, arg.required
-        ));
-
-        // Argument type
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#argumentType> <http://clap-noun-verb.io/ontology#{:?}> .\n",
-            arg_uri, arg.argument_type
-        ));
-
-        // Link to verb
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#hasArguments> <{}> .\n",
-            verb_uri, arg_uri
-        ));
+        output.push_str(&argument_triples(argument));
     }
 
-    // Trait bounds
-    for trait_bound in &verb.trait_bounds {
-        triples.push_str(&format!(
-            "<{}> <http://clap-noun-verb.io/ontology#HasTraitBound> <http://clap-noun-verb.io/ontology#{}> .\n",
-            verb_uri, trait_bound
+    let bounds: BTreeSet<_> = verb.trait_bounds.iter().collect();
+    for bound in bounds {
+        output.push_str(&triple(
+            &verb.verb_uri,
+            &format!("{CNV}HasTraitBound"),
+            &format!("<{CNV}{bound}>"),
         ));
     }
-
-    triples
+    output
 }
 
-/// Generate SPARQL INSERT DATA statement (with prefixes)
-/// Useful for loading into RDF databases interactively
+fn argument_triples(argument: &RdfArgumentDefinition) -> String {
+    let mut output = String::new();
+    output.push_str(&triple(
+        &argument.arg_uri,
+        RDF_TYPE,
+        &format!("<{CNV}Argument>"),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}hasArgumentName"),
+        &language_literal(&argument.name),
+    ));
+    if !argument.description.is_empty() {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}argumentAbout"),
+            &language_literal(&argument.description),
+        ));
+    }
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}valueType"),
+        &language_literal(&argument.value_type),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}required"),
+        &boolean_literal(argument.required),
+    ));
+    output.push_str(&triple(
+        &argument.arg_uri,
+        &format!("{CNV}argumentType"),
+        &format!("<{CNV}{:?}>", argument.argument_type),
+    ));
+    if let Some(default_value) = &argument.default_value {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}defaultValue"),
+            &language_literal(default_value),
+        ));
+    }
+    if let Some(short_name) = argument.short_name {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}shortName"),
+            &language_literal(&short_name.to_string()),
+        ));
+    }
+    if let Some(long_name) = &argument.long_name {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}longName"),
+            &language_literal(long_name),
+        ));
+    }
+    for allowed in canonical_allowed_values(argument) {
+        output.push_str(&triple(
+            &argument.arg_uri,
+            &format!("{CNV}allowedValue"),
+            &language_literal(allowed),
+        ));
+    }
+    output
+}
+
+/// Emit a canonical SPARQL `INSERT DATA` operation containing the same graph as N-Triples.
+#[must_use]
 pub fn verb_definitions_to_sparql_insert(verbs: &[RdfVerbDefinition]) -> String {
-    let mut sparql = String::new();
-    sparql.push_str("PREFIX cnv: <http://clap-noun-verb.io/ontology#>\n");
-    sparql.push_str("PREFIX ex: <http://example.org/>\n");
-    sparql.push_str("PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n");
-    sparql.push_str("PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n");
-    sparql.push_str("INSERT DATA {\n");
-
-    for verb in verbs {
-        sparql.push_str(&format!(
-            "  ex:{} a cnv:Verb ;\n",
-            verb.verb_uri.split('/').next_back().unwrap_or("Verb")
+    let mut output = String::from(
+        "PREFIX cnv: <http://clap-noun-verb.io/ontology#>\n\
+         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n\
+         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n\
+         INSERT DATA {\n",
+    );
+    for verb in canonical_verbs(verbs) {
+        output.push_str(&format!("  <{}> a cnv:Verb .\n", verb.verb_uri));
+        output.push_str(&format!(
+            "  <{}> cnv:hasVerbName {}@en .\n",
+            verb.verb_uri,
+            literal(&verb.name)
         ));
-        sparql.push_str(&format!("    cnv:hasVerbName \"{}\" ;\n", verb.name));
-
         if !verb.description.is_empty() {
-            let escaped = escape_rdf_string(&verb.description);
-            sparql.push_str(&format!("    cnv:verbAbout \"{}\" ;\n", escaped));
+            output.push_str(&format!(
+                "  <{}> cnv:verbAbout {}@en .\n",
+                verb.verb_uri,
+                literal(&verb.description)
+            ));
         }
-
+        if !verb.docstring.is_empty() && verb.docstring != verb.description {
+            output.push_str(&format!(
+                "  <{}> cnv:docstring {}@en .\n",
+                verb.verb_uri,
+                literal(&verb.docstring)
+            ));
+        }
         if let Some(noun_uri) = &verb.noun_uri {
-            sparql.push_str(&format!(
-                "    cnv:belongsToNoun ex:{} ;\n",
-                noun_uri.split('/').next_back().unwrap_or("Noun")
+            output.push_str(&format!(
+                "  <{}> cnv:belongsToNoun <{}> .\n",
+                verb.verb_uri, noun_uri
             ));
         }
-
-        sparql.push_str(&format!("    cnv:returnType \"{}\" ;\n", verb.return_type));
-
+        output.push_str(&format!(
+            "  <{}> cnv:returnType {}@en .\n",
+            verb.verb_uri,
+            literal(&verb.return_type)
+        ));
         if verb.is_async {
-            sparql.push_str("    cnv:isAsync \"true\"^^xsd:boolean ;\n");
-        }
-
-        for arg in &verb.arguments {
-            sparql.push_str(&format!(
-                "    cnv:hasArguments ex:{} ;\n",
-                arg.arg_uri.split('/').next_back().unwrap_or("Arg")
+            output.push_str(&format!(
+                "  <{}> cnv:isAsync \"true\"^^xsd:boolean .\n",
+                verb.verb_uri
             ));
         }
-
-        sparql.push_str("  .\n");
-
-        // Arguments
-        for arg in &verb.arguments {
-            sparql.push_str(&format!(
-                "  ex:{} a cnv:Argument ;\n",
-                arg.arg_uri.split('/').next_back().unwrap_or("Arg")
+        for bound in verb.trait_bounds.iter().collect::<BTreeSet<_>>() {
+            output.push_str(&format!(
+                "  <{}> cnv:HasTraitBound <{}{}> .\n",
+                verb.verb_uri, CNV, bound
             ));
-            sparql.push_str(&format!("    cnv:hasArgumentName \"{}\" ;\n", arg.name));
-            sparql.push_str(&format!("    cnv:valueType \"{}\" ;\n", arg.value_type));
-            sparql.push_str(&format!("    cnv:required \"{}\"^^xsd:boolean ;\n", arg.required));
-            sparql.push_str("  .\n");
+        }
+        for argument in canonical_arguments(verb) {
+            output.push_str(&format!(
+                "  <{}> cnv:hasArguments <{}> .\n",
+                verb.verb_uri, argument.arg_uri
+            ));
+            output.push_str(&argument_sparql(argument));
         }
     }
-
-    sparql.push_str("}\n");
-    sparql
+    output.push_str("}\n");
+    output
 }
 
-// =============================================================================
-// UTILITY FUNCTIONS
-// =============================================================================
-
-fn capitalize_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+fn argument_sparql(argument: &RdfArgumentDefinition) -> String {
+    let mut output = String::new();
+    output.push_str(&format!("  <{}> a cnv:Argument .\n", argument.arg_uri));
+    output.push_str(&format!(
+        "  <{}> cnv:hasArgumentName {}@en .\n",
+        argument.arg_uri,
+        literal(&argument.name)
+    ));
+    if !argument.description.is_empty() {
+        output.push_str(&format!(
+            "  <{}> cnv:argumentAbout {}@en .\n",
+            argument.arg_uri,
+            literal(&argument.description)
+        ));
     }
+    output.push_str(&format!(
+        "  <{}> cnv:valueType {}@en .\n",
+        argument.arg_uri,
+        literal(&argument.value_type)
+    ));
+    output.push_str(&format!(
+        "  <{}> cnv:required \"{}\"^^xsd:boolean .\n",
+        argument.arg_uri, argument.required
+    ));
+    output.push_str(&format!(
+        "  <{}> cnv:argumentType cnv:{:?} .\n",
+        argument.arg_uri, argument.argument_type
+    ));
+    if let Some(default_value) = &argument.default_value {
+        output.push_str(&format!(
+            "  <{}> cnv:defaultValue {}@en .\n",
+            argument.arg_uri,
+            literal(default_value)
+        ));
+    }
+    if let Some(short_name) = argument.short_name {
+        output.push_str(&format!(
+            "  <{}> cnv:shortName {}@en .\n",
+            argument.arg_uri,
+            literal(&short_name.to_string())
+        ));
+    }
+    if let Some(long_name) = &argument.long_name {
+        output.push_str(&format!(
+            "  <{}> cnv:longName {}@en .\n",
+            argument.arg_uri,
+            literal(long_name)
+        ));
+    }
+    for allowed in canonical_allowed_values(argument) {
+        output.push_str(&format!(
+            "  <{}> cnv:allowedValue {}@en .\n",
+            argument.arg_uri,
+            literal(allowed)
+        ));
+    }
+    output
 }
 
-fn escape_rdf_string(s: &str) -> String {
-    s.replace('\\', "\\\\")
+fn pascal_case(value: &str) -> String {
+    value
+        .split(|character: char| !character.is_ascii_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut characters = part.chars();
+            characters.next().map_or_else(String::new, |first| {
+                first.to_uppercase().collect::<String>() + characters.as_str()
+            })
+        })
+        .collect()
+}
+
+fn escape_rdf_string(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
         .replace('"', "\\\"")
         .replace('\n', "\\n")
         .replace('\r', "\\r")
         .replace('\t', "\\t")
 }
 
-// =============================================================================
-// ERROR TYPES
-// =============================================================================
-
-/// Errors produced while parsing Rust source into verb definitions
-#[derive(Debug)]
+/// Errors produced while parsing Rust adapters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseError {
-    /// The function signature could not be parsed
+    /// The verb attribute is malformed.
+    InvalidAttribute,
+    /// The function signature could not be parsed.
     InvalidSignature,
-    /// A required parameter was missing
+    /// A required parameter declaration was malformed.
     MissingParameter,
-    /// The return type could not be parsed
+    /// The return type could not be parsed.
     InvalidReturnType,
 }
 
 impl std::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParseError::InvalidSignature => write!(f, "Invalid function signature"),
-            ParseError::MissingParameter => write!(f, "Missing parameter"),
-            ParseError::InvalidReturnType => write!(f, "Invalid return type"),
-        }
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = match self {
+            Self::InvalidAttribute => "Invalid verb attribute",
+            Self::InvalidSignature => "Invalid function signature",
+            Self::MissingParameter => "Missing parameter declaration",
+            Self::InvalidReturnType => "Invalid return type",
+        };
+        formatter.write_str(message)
     }
 }
 
@@ -546,48 +582,89 @@ impl std::error::Error for ParseError {}
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_parse_rust_source_simple() {
-        let source = r#"
+    fn source() -> &'static str {
+        r#"
 /// Load a graph from file
-#[verb("load")]
+#[verb("load", "graph")]
 pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOutput> {
-    unimplemented!()
+    crate::handlers::graph_load(path, format)
 }
-"#;
+"#
+    }
 
-        let verbs = parse_rust_source(source).unwrap();
+    fn rich_verb() -> RdfVerbDefinition {
+        RdfVerbDefinition {
+            verb_uri: "http://example.org/LoadVerb".to_string(),
+            name: "load".to_string(),
+            description: "Load a graph".to_string(),
+            noun_uri: Some("http://example.org/GraphNoun".to_string()),
+            noun_name: Some("graph".to_string()),
+            arguments: vec![RdfArgumentDefinition {
+                arg_uri: "http://example.org/FormatArg".to_string(),
+                name: "format".to_string(),
+                description: "Input format".to_string(),
+                value_type: "String".to_string(),
+                required: false,
+                is_flag: false,
+                default_value: Some("ttl".to_string()),
+                short_name: Some('f'),
+                long_name: Some("format".to_string()),
+                allowed_values: vec!["ttl".to_string(), "jsonld".to_string()],
+                argument_type: ArgumentType::Optional,
+            }],
+            return_type: "Result<GraphLoadedOutput>".to_string(),
+            trait_bounds: vec!["Sync".to_string(), "Send".to_string()],
+            docstring: "Load an admitted graph".to_string(),
+            is_async: true,
+        }
+    }
+
+    #[test]
+    fn parses_two_argument_attribute_and_signature() {
+        let verbs = parse_rust_source(source()).expect("valid adapter source");
         assert_eq!(verbs.len(), 1);
         assert_eq!(verbs[0].name, "load");
+        assert_eq!(verbs[0].noun_name.as_deref(), Some("graph"));
+        assert_eq!(verbs[0].arguments.len(), 2);
         assert_eq!(verbs[0].return_type, "Result<GraphLoadedOutput>");
     }
 
     #[test]
-    fn test_extract_verb_name() {
-        let attr = r#"#[verb("status")]"#;
-        assert_eq!(extract_verb_name(attr), Some("status".to_string()));
+    fn malformed_attribute_refuses_projection() {
+        let result = parse_rust_source("#[verb()]\npub fn bad() -> Result<()> { Ok(()) }");
+        assert_eq!(result, Err(ParseError::InvalidAttribute));
     }
 
     #[test]
-    fn test_verb_definitions_to_ntriples() {
-        let verb = RdfVerbDefinition {
-            verb_uri: "ex:LoadVerb".to_string(),
-            name: "load".to_string(),
-            description: "Load data".to_string(),
-            noun_uri: Some("ex:GraphNoun".to_string()),
-            noun_name: Some("graph".to_string()),
-            arguments: vec![],
-            return_type: "LoadResult".to_string(),
-            trait_bounds: vec!["Send".to_string(), "Sync".to_string()],
-            docstring: String::new(),
-            is_async: false,
-        };
+    fn ntriples_are_byte_identical_and_canonical() {
+        let verb = rich_verb();
+        let first = verb_definitions_to_ntriples(std::slice::from_ref(&verb));
+        let second = verb_definitions_to_ntriples(std::slice::from_ref(&verb));
+        assert_eq!(first, second);
+        assert!(!first.contains("Timestamp"));
+        assert!(first.contains("defaultValue"));
+        assert!(first.contains("shortName"));
+        assert!(first.contains("longName"));
+        let allowed = first
+            .lines()
+            .filter(|line| line.contains("allowedValue"))
+            .collect::<Vec<_>>();
+        assert_eq!(allowed.len(), 2);
+        assert!(allowed[0].contains("jsonld"));
+        assert!(allowed[1].contains("ttl"));
+    }
 
-        let ntriples = verb_definitions_to_ntriples(&[verb]);
-        // N-Triples format expands all URIs fully (no prefix abbreviations)
-        assert!(ntriples.contains("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"));
-        assert!(ntriples.contains("<http://clap-noun-verb.io/ontology#Verb>"));
-        assert!(ntriples.contains("\"load\"@en"));
-        assert!(ntriples.contains("HasTraitBound"));
+    #[test]
+    fn sparql_preserves_complete_metadata() {
+        let sparql = verb_definitions_to_sparql_insert(&[rich_verb()]);
+        assert!(sparql.contains("PREFIX xsd:"));
+        assert!(sparql.contains("cnv:hasVerbName \"load\"@en"));
+        assert!(sparql.contains("cnv:docstring"));
+        assert!(sparql.contains("cnv:HasTraitBound"));
+        assert!(sparql.contains("cnv:argumentType cnv:Optional"));
+        assert!(sparql.contains("cnv:defaultValue \"ttl\"@en"));
+        assert!(sparql.contains("cnv:shortName \"f\"@en"));
+        assert!(sparql.contains("cnv:longName \"format\"@en"));
+        assert!(sparql.contains("cnv:allowedValue \"jsonld\"@en"));
     }
 }

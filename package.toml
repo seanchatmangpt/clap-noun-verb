@@ -1,8 +1,10 @@
-# Pack manifest — exposes clap-noun-verb's queries and templates to consuming
-# ggen projects via `{ pack = "clap-noun-verb", output = "queries|templates", file = ... }`.
+# Pack transport manifest. Semantic authority remains in RDF, SPARQL gate
+# files, and Tera. Consumers receive declared public outputs only and must not
+# depend on repository-private implementation surfaces.
 [pack]
 name = "clap-noun-verb"
 
 [pack.outputs]
 queries = "queries"
 templates = "templates"
+gates = "gates"

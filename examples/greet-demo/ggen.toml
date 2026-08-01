@@ -1,15 +1,13 @@
-# greet-demo/ggen.toml
-# R1 self-rendering proof: this manifest wires the AUTHORITATIVE clap-noun-verb
-# pack queries + templates against the example's own ontology.ttl, and renders
-# compiling thin verb wrappers under src/verbs/. Engine format (ggen 26.6.x).
+# Executable consumer proof for the clap-noun-verb pack.
 #
-# The pack is authoritative for the verb INTERFACE only; rendered wrappers delegate
-# to example-scoped handlers in src/handlers.rs (marked example-only, NOT pack API).
+# The ontology owns the CLI interface. Generated wrappers delegate through the
+# stable consumer-owned handler seam. ggen receipt/replay and byte-identical
+# second manufacture are enforced by .github/workflows/ggen-authority.yml.
 
 [project]
 name = "greet-demo"
 version = "0.1.0"
-description = "Self-rendering proof that clap-noun-verb is an authoritative ggen pack: render thin #[verb] wrappers from an ontology and compile a working CLI end-to-end."
+description = "Executable proof that admitted RDF manufactures a working clap-noun-verb CLI with receipted, replayable generated interfaces."
 
 [ontology]
 source = "ontology.ttl"
@@ -22,9 +20,6 @@ rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 
-# --- μ₁ inference (DMAIC-2 Measure requires >=1 CONSTRUCT) --------------------
-# Normalizes the noun<->verb link so a verb can be reached from its noun and the
-# noun name is locally attached. Idempotent on the example ontology.
 [inference]
 [[inference.rules]]
 name = "attach-noun-name-to-verb"
@@ -37,45 +32,25 @@ CONSTRUCT {
 }
 """
 
-# --- μ₃ generation ------------------------------------------------------------
 [generation]
 output_dir = "."
 
-# One thin #[verb] wrapper per verb (path templating fans out one row -> one file).
 [[generation.rules]]
 name = "verb-wrappers"
 query = { file = "../../queries/verb-signatures.rq" }
 template = { file = "../../templates/verb.rs.tera" }
 output_file = "src/verbs/{{ verb_name }}.rs"
 mode = "Overwrite"
+skip_empty = true
 
-# Aggregate module list (single-row).
 [[generation.rules]]
 name = "verbs-mod"
 query = { file = "../../queries/verbs-mod.rq" }
 template = { file = "../../templates/verbs-mod.rs.tera" }
 output_file = "src/verbs/mod.rs"
 mode = "Overwrite"
+skip_empty = true
 
-# --- validation (R2 fieldname-collision; engine enforces Error-severity ASK) --
-[[validation.rules]]
-name = "cnv-fieldname-collision"
-description = "Two distinct arguments on the same verb must not resolve to the same Rust field name. Resolved field = COALESCE(explicit cnv:fieldName, kebab->snake of cnv:hasArgumentName). A collision yields compiling-but-wrong Rust and MUST fail generation rather than silently merge. Engine ASK semantics: TRUE = invariant satisfied (no collision); FALSE = generation aborts. Full IRIs are inlined because the engine dispatches on a leading ASK keyword (a PREFIX line would break dispatch) and custom-rule ASKs do not inherit [ontology.prefixes]."
-severity = "Error"
-ask = """
-ASK {
-  FILTER NOT EXISTS {
-    ?verb a <http://clap-noun-verb.io/ontology#Verb> ;
-          <http://clap-noun-verb.io/ontology#hasArguments> ?argA ;
-          <http://clap-noun-verb.io/ontology#hasArguments> ?argB .
-    FILTER( STR(?argA) < STR(?argB) )
-    ?argA <http://clap-noun-verb.io/ontology#hasArgumentName> ?flagA .
-    ?argB <http://clap-noun-verb.io/ontology#hasArgumentName> ?flagB .
-    OPTIONAL { ?argA <http://clap-noun-verb.io/ontology#fieldName> ?explicitA }
-    OPTIONAL { ?argB <http://clap-noun-verb.io/ontology#fieldName> ?explicitB }
-    BIND( COALESCE( ?explicitA, REPLACE(STR(?flagA), "-", "_") ) AS ?fieldA )
-    BIND( COALESCE( ?explicitB, REPLACE(STR(?flagB), "-", "_") ) AS ?fieldB )
-    FILTER( ?fieldA = ?fieldB )
-  }
-}
-"""
+# The example consumes the same canonical external gate as the pack root.
+[validation]
+gates = ["../../gates/fieldname-collision.rq"]

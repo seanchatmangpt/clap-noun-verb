@@ -1,178 +1,180 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Error types for clap-noun-verb
+//! Typed framework errors and deterministic recovery actions.
 
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use thiserror::Error;
 
-/// Errors that can occur in the noun-verb CLI framework
+/// Errors produced by noun-verb parsing, routing, validation, or execution.
 #[derive(Error, Debug)]
 pub enum NounVerbError {
-    /// Command not found
+    /// Command not found.
     #[error("Command '{noun}' not found{suggestion}")]
     CommandNotFound { noun: String, suggestion: String },
-
-    /// Verb not found for a given noun
+    /// Verb not found for a noun.
     #[error("Verb '{verb}' not found for noun '{noun}'{suggestion}")]
     VerbNotFound { noun: String, verb: String, suggestion: String },
-
-    /// Invalid command structure
+    /// Invalid command structure.
     #[error("Invalid command structure: {message}")]
     InvalidStructure { message: String },
-
-    /// Command execution error
+    /// Command execution failure.
     #[error("Command execution failed: {message}")]
     ExecutionError { message: String },
-
-    /// Argument parsing error
+    /// Argument parsing or validation failure.
     #[error("Argument parsing failed: {message}")]
     ArgumentError { message: String },
-
-    /// Plugin-related error
+    /// Plugin failure.
     #[error("Plugin error: {0}")]
     PluginError(String),
-
-    /// Validation failed
+    /// Invariant validation failure.
     #[error("Validation failed: {0}")]
     ValidationFailed(String),
-
-    /// Middleware error
+    /// Middleware failure.
     #[error("Middleware error: {0}")]
     MiddlewareError(String),
-
-    /// Telemetry error
+    /// Telemetry failure.
     #[error("Telemetry error: {0}")]
     TelemetryError(String),
-
-    /// Generic error wrapper
+    /// Generic framework failure.
     #[error("Error: {0}")]
     Generic(String),
 }
 
-/// Helper function to calculate Levenshtein distance
-fn levenshtein_distance(a: &str, b: &str) -> usize {
-    let a_chars: Vec<char> = a.chars().collect();
-    let b_chars: Vec<char> = b.chars().collect();
-    let a_len = a_chars.len();
-    let b_len = b_chars.len();
-
-    if a_len == 0 {
-        return b_len;
+fn levenshtein_distance(left: &str, right: &str) -> usize {
+    let left: Vec<char> = left.chars().collect();
+    let right: Vec<char> = right.chars().collect();
+    if left.is_empty() {
+        return right.len();
     }
-    if b_len == 0 {
-        return a_len;
+    if right.is_empty() {
+        return left.len();
     }
 
-    let mut cache: Vec<usize> = (1..=b_len).collect();
-    let mut dist = 0;
-
-    for (i, &ca) in a_chars.iter().enumerate() {
-        let mut result = i;
-        dist = i + 1;
-        for (j, &cb) in b_chars.iter().enumerate() {
-            let temp = result;
-            result = cache[j];
-            dist =
-                if ca == cb { temp } else { std::cmp::min(std::cmp::min(result, dist), temp) + 1 };
-            cache[j] = dist;
+    let mut previous: Vec<usize> = (0..=right.len()).collect();
+    let mut current = vec![0; right.len() + 1];
+    for (left_index, left_character) in left.iter().enumerate() {
+        current[0] = left_index + 1;
+        for (right_index, right_character) in right.iter().enumerate() {
+            let substitution = previous[right_index]
+                + usize::from(left_character != right_character);
+            let insertion = current[right_index] + 1;
+            let deletion = previous[right_index + 1] + 1;
+            current[right_index + 1] = substitution.min(insertion).min(deletion);
         }
+        std::mem::swap(&mut previous, &mut current);
     }
-
-    dist
+    previous[right.len()]
 }
 
-/// Find best suggestions from candidates based on Levenshtein distance
+/// Find recovery candidates ordered by distance, then lexicographically.
+#[must_use]
 pub fn find_best_matches<'a>(input: &str, candidates: &[&'a str]) -> Vec<&'a str> {
-    let mut with_distances: Vec<(&str, usize)> = candidates
+    let mut matches: Vec<_> = candidates
         .iter()
-        .map(|&c| (c, levenshtein_distance(input, c)))
-        .filter(|&(_, dist)| dist <= 3 && dist < input.len())
+        .copied()
+        .map(|candidate| (candidate, levenshtein_distance(input, candidate)))
+        .filter(|(_, distance)| *distance <= 3 && *distance < input.chars().count())
         .collect();
+    matches.sort_by(|left, right| left.1.cmp(&right.1).then_with(|| left.0.cmp(right.0)));
+    matches.into_iter().map(|(candidate, _)| candidate).collect()
+}
 
-    with_distances.sort_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.cmp(b.0)));
-    with_distances.into_iter().map(|(c, _)| c).collect()
+fn rendered_suggestion(input: &str, candidates: &[&str]) -> String {
+    let candidates = find_best_matches(input, candidates);
+    if candidates.is_empty() {
+        return String::new();
+    }
+    let rendered = candidates
+        .iter()
+        .map(|candidate| format!("\x1b[1m\x1b[33m{candidate}\x1b[0m"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(". Did you mean: {rendered}?")
 }
 
 impl NounVerbError {
-    /// Enhance error with recovery suggestions from RDF guard validation
-    ///
-    /// Attempts to provide helpful suggestions using the RDF ontology and SPARQL queries.
-    ///
-    /// FUTURE: v5.1 - Complete RDF recovery suggestions
+    /// Render the error together with deterministic recovery actions.
+    #[must_use]
     pub fn with_recovery_suggestions(self) -> String {
-        // RDF-control feature deferred to v5.1
-        self.to_string()
+        let structured = StructuredError::from_error(&self);
+        let mut rendered = self.to_string();
+        for action in structured.action_templates {
+            match action {
+                ActionTemplate::TimeoutAdjustment { suggested_timeout_ms, reason } => {
+                    rendered.push_str(&format!(
+                        "\nRecovery: retry with timeout {suggested_timeout_ms}ms ({reason})"
+                    ));
+                }
+                ActionTemplate::CommandFix { suggested_command, reason } => {
+                    rendered.push_str(&format!(
+                        "\nRecovery: run '{suggested_command}' ({reason})"
+                    ));
+                }
+            }
+        }
+        rendered
     }
 
-    /// Create a command not found error
+    /// Create a command-not-found error.
+    #[must_use]
     pub fn command_not_found(noun: impl Into<String>) -> Self {
         Self::CommandNotFound { noun: noun.into(), suggestion: String::new() }
     }
 
-    /// Create a command not found error with suggestion candidates
+    /// Create a command-not-found error with candidate corrections.
+    #[must_use]
     pub fn command_not_found_with_candidates(noun: impl Into<String>, candidates: &[&str]) -> Self {
-        let noun_str = noun.into();
-        let matches = find_best_matches(&noun_str, candidates);
-        let suggestion = if matches.is_empty() {
-            String::new()
-        } else {
-            let suggestions_str = matches
-                .iter()
-                .map(|s| format!("\x1b[1m\x1b[33m{}\x1b[0m", s))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!(". Did you mean: {}?", suggestions_str)
-        };
-        Self::CommandNotFound { noun: noun_str, suggestion }
+        let noun = noun.into();
+        let suggestion = rendered_suggestion(&noun, candidates);
+        Self::CommandNotFound { noun, suggestion }
     }
 
-    /// Create a verb not found error
+    /// Create a verb-not-found error.
+    #[must_use]
     pub fn verb_not_found(noun: impl Into<String>, verb: impl Into<String>) -> Self {
         Self::VerbNotFound { noun: noun.into(), verb: verb.into(), suggestion: String::new() }
     }
 
-    /// Create a verb not found error with suggestion candidates
+    /// Create a verb-not-found error with candidate corrections.
+    #[must_use]
     pub fn verb_not_found_with_candidates(
         noun: impl Into<String>,
         verb: impl Into<String>,
         candidates: &[&str],
     ) -> Self {
-        let verb_str = verb.into();
-        let matches = find_best_matches(&verb_str, candidates);
-        let suggestion = if matches.is_empty() {
-            String::new()
-        } else {
-            let suggestions_str = matches
-                .iter()
-                .map(|s| format!("\x1b[1m\x1b[33m{}\x1b[0m", s))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!(". Did you mean: {}?", suggestions_str)
-        };
-        Self::VerbNotFound { noun: noun.into(), verb: verb_str, suggestion }
+        let verb = verb.into();
+        let suggestion = rendered_suggestion(&verb, candidates);
+        Self::VerbNotFound { noun: noun.into(), verb, suggestion }
     }
 
-    /// Create an invalid structure error
+    /// Create an invalid-structure error.
+    #[must_use]
     pub fn invalid_structure(message: impl Into<String>) -> Self {
         Self::InvalidStructure { message: message.into() }
     }
 
-    /// Create an execution error
+    /// Create an execution error.
+    #[must_use]
     pub fn execution_error(message: impl Into<String>) -> Self {
         Self::ExecutionError { message: message.into() }
     }
 
-    /// Create an argument error
+    /// Create an argument error.
+    #[must_use]
     pub fn argument_error(message: impl Into<String>) -> Self {
         Self::ArgumentError { message: message.into() }
     }
 
-    /// Create a missing argument error (helper for common case)
+    /// Create a missing-argument error.
+    #[must_use]
     pub fn missing_argument(name: impl Into<String>) -> Self {
         Self::ArgumentError { message: format!("Required argument '{}' is missing", name.into()) }
     }
 
-    /// Create a validation error with constraints
+    /// Create a validation error with an optional constraint description.
+    #[must_use]
     pub fn validation_error(
         name: impl Into<String>,
         value: impl Into<String>,
@@ -180,230 +182,190 @@ impl NounVerbError {
     ) -> Self {
         let name = name.into();
         let value = value.into();
-        if let Some(constraints) = constraints {
-            Self::ArgumentError {
-                message: format!(
-                    "Invalid value '{}' for argument '{}'. {}",
-                    value, name, constraints
-                ),
-            }
-        } else {
-            Self::ArgumentError {
-                message: format!("Invalid value '{}' for argument '{}'", value, name),
-            }
-        }
+        let message = constraints.map_or_else(
+            || format!("Invalid value '{value}' for argument '{name}'"),
+            |constraint| format!("Invalid value '{value}' for argument '{name}'. {constraint}"),
+        );
+        Self::ArgumentError { message }
     }
 
-    /// Create a validation error with range constraints
+    /// Create a validation error with numeric range constraints.
+    #[must_use]
     pub fn validation_range_error(
         name: impl Into<String>,
         value: impl Into<String>,
         min: Option<&str>,
         max: Option<&str>,
     ) -> Self {
-        let name = name.into();
-        let value = value.into();
-        let constraint_msg = match (min, max) {
-            (Some(min), Some(max)) => format!("Must be between {} and {}", min, max),
-            (Some(min), None) => format!("Must be >= {}", min),
-            (None, Some(max)) => format!("Must be <= {}", max),
+        let constraint = match (min, max) {
+            (Some(minimum), Some(maximum)) => {
+                format!("Must be between {minimum} and {maximum}")
+            }
+            (Some(minimum), None) => format!("Must be >= {minimum}"),
+            (None, Some(maximum)) => format!("Must be <= {maximum}"),
             (None, None) => "Invalid value".to_string(),
         };
-        Self::validation_error(name, value, Some(&constraint_msg))
+        Self::validation_error(name, value, Some(&constraint))
     }
 
-    /// Create a validation error with length constraints
+    /// Create a validation error with length constraints.
+    #[must_use]
     pub fn validation_length_error(
         name: impl Into<String>,
         value: impl Into<String>,
         min: Option<usize>,
         max: Option<usize>,
     ) -> Self {
-        let name = name.into();
-        let value = value.into();
-        let constraint_msg = match (min, max) {
-            (Some(min), Some(max)) => {
-                format!("Length must be between {} and {} characters", min, max)
+        let constraint = match (min, max) {
+            (Some(minimum), Some(maximum)) => {
+                format!("Length must be between {minimum} and {maximum} characters")
             }
-            (Some(min), None) => format!("Length must be at least {} characters", min),
-            (None, Some(max)) => format!("Length must be at most {} characters", max),
+            (Some(minimum), None) => format!("Length must be at least {minimum} characters"),
+            (None, Some(maximum)) => format!("Length must be at most {maximum} characters"),
             (None, None) => "Invalid length".to_string(),
         };
-        Self::validation_error(name, value, Some(&constraint_msg))
+        Self::validation_error(name, value, Some(&constraint))
     }
 }
 
 impl From<std::io::Error> for NounVerbError {
-    fn from(err: std::io::Error) -> Self {
-        Self::ExecutionError { message: err.to_string() }
+    fn from(error: std::io::Error) -> Self {
+        Self::ExecutionError { message: error.to_string() }
     }
 }
 
-/// Result type alias for noun-verb operations
+/// Result type for framework operations.
 pub type Result<T> = std::result::Result<T, NounVerbError>;
 
-/// MAPE-K Error Kinds
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+/// Machine-readable error classification.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ErrorKind {
-    /// Input arguments or structure were invalid.
+    /// Invalid input or command structure.
     InvalidInput,
-    /// The operation was not permitted.
+    /// Operation was not permitted.
     PermissionDenied,
-    /// A required invariant was violated.
+    /// Invariant was violated.
     InvariantBreach,
-    /// A deadline or timeout budget was exceeded.
+    /// Deadline or timeout was exceeded.
     DeadlineExceeded,
-    /// A resource guard limit was exceeded.
+    /// Resource guard was exceeded.
     GuardExceeded,
-    /// The requested noun/command was not found.
+    /// Command was not found.
     CommandNotFound,
-    /// The requested verb was not found for a noun.
+    /// Verb was not found.
     VerbNotFound,
-    /// Execution of the command failed.
+    /// Command execution failed.
     ExecutionError,
-    /// An internal framework error occurred.
+    /// Internal framework failure.
     InternalError,
 }
 
-/// Severity level of the error
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+/// Error severity.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Severity {
-    /// Non-fatal condition; execution may continue.
+    /// Non-fatal condition.
     Warning,
-    /// A recoverable error occurred.
+    /// Recoverable failure.
     Error,
-    /// A severe error requiring immediate attention.
+    /// Severe failure requiring intervention.
     Critical,
 }
 
-/// Recovery Action templates proposed by the MAPE-K recovery layer
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+/// Recovery action proposed by the structured error layer.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ActionTemplate {
-    /// Suggests increasing the timeout/deadline budget.
+    /// Increase a timeout budget.
     TimeoutAdjustment {
-        /// Recommended new timeout in milliseconds.
+        /// Recommended timeout in milliseconds.
         suggested_timeout_ms: u64,
-        /// Human-readable rationale for the adjustment.
+        /// Rationale.
         reason: String,
     },
-    /// Suggests a corrected command to run.
+    /// Correct a command or route.
     CommandFix {
-        /// The corrected command string to use.
+        /// Suggested command.
         suggested_command: String,
-        /// Human-readable rationale for the correction.
+        /// Rationale.
         reason: String,
     },
 }
 
-/// Machine-readable, uniform structured error format for autonomic MAPE-K loops
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+/// Uniform structured error for autonomic consumers.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StructuredError {
-    /// Classification of the error.
+    /// Error classification.
     pub kind: ErrorKind,
-    /// Severity level of the error.
+    /// Error severity.
     pub severity: Severity,
-    /// Human-readable error message.
+    /// Human-readable message.
     pub message: String,
-    /// Additional structured details keyed by field name.
-    pub details: std::collections::HashMap<String, serde_json::Value>,
-    /// Recovery actions proposed for this error.
+    /// Structured details.
+    pub details: HashMap<String, serde_json::Value>,
+    /// Proposed recovery actions.
     pub action_templates: Vec<ActionTemplate>,
 }
 
+fn clean_suggestion(suggestion: &str) -> String {
+    suggestion
+        .replace("\x1b[1m\x1b[33m", "")
+        .replace("\x1b[0m", "")
+        .replace(". Did you mean: ", "")
+        .replace('?', "")
+}
+
 impl StructuredError {
-    /// Create a deadline exceeded error format with actual and target latency details
+    /// Create a deadline-exceeded receipt with observed timing.
+    #[must_use]
     pub fn deadline_exceeded(deadline_ms: u64, actual_ms: u64) -> Self {
-        let mut details = std::collections::HashMap::new();
+        let mut details = HashMap::new();
         details.insert("deadline_ms".to_string(), serde_json::json!(deadline_ms));
         details.insert("actual_ms".to_string(), serde_json::json!(actual_ms));
-
         Self {
             kind: ErrorKind::DeadlineExceeded,
             severity: Severity::Critical,
-            message: format!("Deadline {}ms exceeded, took {}ms", deadline_ms, actual_ms),
+            message: format!("Deadline {deadline_ms}ms exceeded, took {actual_ms}ms"),
             details,
             action_templates: vec![ActionTemplate::TimeoutAdjustment {
-                suggested_timeout_ms: actual_ms + 100,
+                suggested_timeout_ms: actual_ms.saturating_add(100),
                 reason: "Increase deadline budget to match observed latency".to_string(),
             }],
         }
     }
 
-    /// Map a standard NounVerbError to StructuredError format
-    pub fn from_error(err: &NounVerbError) -> Self {
-        let mut details = std::collections::HashMap::new();
-        let mut action_templates = Vec::new();
+    /// Convert a framework error into its machine-readable form.
+    #[must_use]
+    pub fn from_error(error: &NounVerbError) -> Self {
+        let mut details = HashMap::new();
+        let mut actions = Vec::new();
         let mut severity = Severity::Error;
 
-        let kind = match err {
+        let kind = match error {
             NounVerbError::CommandNotFound { noun, suggestion } => {
-                details.insert("noun".to_string(), serde_json::Value::String(noun.clone()));
-                if !suggestion.is_empty() {
-                    details.insert(
-                        "suggestion".to_string(),
-                        serde_json::Value::String(suggestion.clone()),
-                    );
-                    let clean = suggestion
-                        .replace("\x1b[1m\x1b[33m", "")
-                        .replace("\x1b[0m", "")
-                        .replace(". Did you mean: ", "")
-                        .replace("?", "");
-                    let candidates: Vec<&str> = clean.split(", ").collect();
-                    if let Some(first) = candidates.first() {
-                        if !first.is_empty() {
-                            action_templates.push(ActionTemplate::CommandFix {
-                                suggested_command: first.to_string(),
-                                reason: format!(
-                                    "Suggested correction for misspelled command '{}'",
-                                    noun
-                                ),
-                            });
-                        }
-                    }
-                }
+                details.insert("noun".to_string(), serde_json::json!(noun));
+                add_command_fix(&mut details, &mut actions, suggestion, noun, None);
                 ErrorKind::CommandNotFound
             }
             NounVerbError::VerbNotFound { noun, verb, suggestion } => {
-                details.insert("noun".to_string(), serde_json::Value::String(noun.clone()));
-                details.insert("verb".to_string(), serde_json::Value::String(verb.clone()));
-                if !suggestion.is_empty() {
-                    details.insert(
-                        "suggestion".to_string(),
-                        serde_json::Value::String(suggestion.clone()),
-                    );
-                    let clean = suggestion
-                        .replace("\x1b[1m\x1b[33m", "")
-                        .replace("\x1b[0m", "")
-                        .replace(". Did you mean: ", "")
-                        .replace("?", "");
-                    let candidates: Vec<&str> = clean.split(", ").collect();
-                    if let Some(first) = candidates.first() {
-                        if !first.is_empty() {
-                            action_templates.push(ActionTemplate::CommandFix {
-                                suggested_command: format!("{} {}", noun, first),
-                                reason: format!(
-                                    "Suggested correction for misspelled verb '{}'",
-                                    verb
-                                ),
-                            });
-                        }
-                    }
-                }
+                details.insert("noun".to_string(), serde_json::json!(noun));
+                details.insert("verb".to_string(), serde_json::json!(verb));
+                add_command_fix(&mut details, &mut actions, suggestion, verb, Some(noun));
                 ErrorKind::VerbNotFound
             }
-            NounVerbError::InvalidStructure { message } => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
+            NounVerbError::InvalidStructure { message }
+            | NounVerbError::ArgumentError { message } => {
+                details.insert("message".to_string(), serde_json::json!(message));
                 ErrorKind::InvalidInput
             }
             NounVerbError::ExecutionError { message } => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                if message.to_lowercase().contains("deadline")
-                    || message.to_lowercase().contains("timeout")
-                    || message.to_lowercase().contains("budget exceeded")
+                details.insert("message".to_string(), serde_json::json!(message));
+                let normalized = message.to_ascii_lowercase();
+                if normalized.contains("deadline")
+                    || normalized.contains("timeout")
+                    || normalized.contains("budget exceeded")
                 {
                     severity = Severity::Critical;
-                    action_templates.push(ActionTemplate::TimeoutAdjustment {
+                    actions.push(ActionTemplate::TimeoutAdjustment {
                         suggested_timeout_ms: 1000,
                         reason: "Increase deadline budget due to execution timeout".to_string(),
                     });
@@ -412,32 +374,87 @@ impl StructuredError {
                     ErrorKind::ExecutionError
                 }
             }
-            NounVerbError::ArgumentError { message } => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                ErrorKind::InvalidInput
-            }
-            NounVerbError::PluginError(message) => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                ErrorKind::InternalError
-            }
             NounVerbError::ValidationFailed(message) => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
+                details.insert("message".to_string(), serde_json::json!(message));
                 ErrorKind::InvariantBreach
             }
-            NounVerbError::MiddlewareError(message) => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                ErrorKind::InternalError
-            }
-            NounVerbError::TelemetryError(message) => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
-                ErrorKind::InternalError
-            }
-            NounVerbError::Generic(message) => {
-                details.insert("message".to_string(), serde_json::Value::String(message.clone()));
+            NounVerbError::PluginError(message)
+            | NounVerbError::MiddlewareError(message)
+            | NounVerbError::TelemetryError(message)
+            | NounVerbError::Generic(message) => {
+                details.insert("message".to_string(), serde_json::json!(message));
                 ErrorKind::InternalError
             }
         };
 
-        StructuredError { kind, severity, message: err.to_string(), details, action_templates }
+        Self {
+            kind,
+            severity,
+            message: error.to_string(),
+            details,
+            action_templates: actions,
+        }
+    }
+}
+
+fn add_command_fix(
+    details: &mut HashMap<String, serde_json::Value>,
+    actions: &mut Vec<ActionTemplate>,
+    suggestion: &str,
+    misspelled: &str,
+    noun: Option<&str>,
+) {
+    if suggestion.is_empty() {
+        return;
+    }
+    details.insert("suggestion".to_string(), serde_json::json!(suggestion));
+    if let Some(first) = clean_suggestion(suggestion).split(", ").next() {
+        if !first.is_empty() {
+            let command = noun.map_or_else(|| first.to_string(), |noun| format!("{noun} {first}"));
+            actions.push(ActionTemplate::CommandFix {
+                suggested_command: command,
+                reason: format!("Suggested correction for misspelled input '{misspelled}'"),
+            });
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recovery_uses_structured_command_fix() {
+        let rendered = NounVerbError::command_not_found_with_candidates("usr", &["user"])
+            .with_recovery_suggestions();
+        assert!(rendered.contains("Did you mean"));
+        assert!(rendered.contains("Recovery: run 'user'"));
+    }
+
+    #[test]
+    fn recovery_uses_structured_timeout_adjustment() {
+        let rendered =
+            NounVerbError::execution_error("deadline exceeded").with_recovery_suggestions();
+        assert!(rendered.contains("timeout 1000ms"));
+    }
+
+    #[test]
+    fn best_matches_are_distance_then_name_ordered() {
+        assert_eq!(
+            find_best_matches("lst", &["last", "list", "lost"]),
+            vec!["last", "list", "lost"]
+        );
+    }
+
+    #[test]
+    fn deadline_receipt_uses_observed_latency() {
+        let error = StructuredError::deadline_exceeded(500, 640);
+        assert_eq!(
+            error.action_templates,
+            vec![ActionTemplate::TimeoutAdjustment {
+                suggested_timeout_ms: 740,
+                reason: "Increase deadline budget to match observed latency".to_string(),
+            }]
+        );
     }
 }

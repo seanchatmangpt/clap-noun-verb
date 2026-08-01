@@ -6,8 +6,8 @@ exclude = ["playground", "examples/playground", "examples/greet-demo", "vendors"
 [workspace.dependencies]
 # CLI Framework
 clap = { version = ">=4.5, <4.6", features = ["derive", "env", "suggestions"] }
-clap-noun-verb = { path = ".", version = "26.6.14" }
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.6.14" }
+clap-noun-verb = { path = ".", version = "26.7.62" }
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.7.62" }
 
 # Auto-discovery
 linkme = "0.3"
@@ -31,7 +31,7 @@ tokio = { version = "1.40", features = ["full"] }
 
 [package]
 name = "clap-noun-verb"
-version = "26.6.14"
+version = "26.7.62"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -84,9 +84,32 @@ otel = [
     "dep:opentelemetry_sdk",
 ]
 
-# Federated capability network (frontier feature)
+# Federated capability network
 federated-network = []
 
+# Bounded frontier capabilities. These are real compile surfaces, not check-cfg placeholders.
+meta-framework = []
+rdf-composition = []
+fractal-patterns = []
+discovery-engine = []
+learning-trajectories = []
+reflexive-testing = []
+economic-sim = []
+quantum-ready = []
+executable-specs = []
+async = []
+
+# Coherent capability families.
+frontier-semantic = ["meta-framework", "rdf-composition", "fractal-patterns"]
+frontier-intelligence = ["discovery-engine", "learning-trajectories", "economic-sim"]
+frontier-quality = ["reflexive-testing", "quantum-ready", "executable-specs"]
+frontier-all = [
+    "frontier-semantic",
+    "frontier-intelligence",
+    "frontier-quality",
+    "federated-network",
+    "async",
+]
 
 # =============================================================================
 # CORE DEPENDENCIES - Always required
@@ -121,7 +144,6 @@ parking_lot = "0.12"
 serde_yaml = "0.9"
 toml = { workspace = true }
 
-
 # File watching
 notify = "6.1"
 
@@ -132,7 +154,7 @@ url = "2.5"
 # RDF/Ontology generators
 chrono = "0.4"
 
-# OpenTelemetry instrumentation (otel-weaver style), optional behind `otel` feature
+# OpenTelemetry instrumentation, optional behind `otel`
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 tracing-opentelemetry = { version = "0.28", optional = true }
@@ -169,7 +191,6 @@ verbose = false
 # =============================================================================
 # TUTORIAL EXAMPLES - Learning-oriented, step-by-step guides
 # =============================================================================
-
 
 [[example]]
 name = "tutorial_arguments"
@@ -242,6 +263,7 @@ path = "examples/reference/root_verb.rs"
 [package.metadata.docs.rs]
 # docs.rs build configuration
 rustdoc-args = ["--cfg", "docsrs"]
+all-features = true
 
 [lints]
 workspace = true
@@ -250,16 +272,13 @@ workspace = true
 # Core team best practices - allow unsafe for linkme
 unsafe_code = "allow"
 bare_trait_objects = "warn"
-# Allow kani cfg condition for formal verification (optional external tool)
-# Also allow docsrs for documentation build
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)', 'cfg(feature, values("meta-framework", "rdf-composition", "fractal-patterns", "discovery-engine", "federated-network", "learning-trajectories", "reflexive-testing", "economic-sim", "quantum-ready", "executable-specs", "frontier-semantic", "frontier-intelligence", "frontier-quality", "frontier-all", "async", "wizard"))'] }
-# Allow dead code for v5.1 feature placeholders
-dead_code = "allow"
-# Allow async fn in traits (stable in Rust 1.75+)
+# Allow kani and docsrs configuration used by external verifiers.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)', 'cfg(docsrs)'] }
+dead_code = "warn"
 async_fn_in_trait = "allow"
 
 [workspace.lints.clippy]
-# Error handling - never use unwrap or expect in production
+# Error handling - never leave unfinished implementation markers.
 unwrap_used = "allow"
 expect_used = "allow"
 panic = "allow"
@@ -318,5 +337,3 @@ path = "tests/cli/mod.rs"
 [[test]]
 name = "frontier_tests"
 path = "tests/frontier/mod.rs"
-
-

@@ -1,448 +1,623 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Bidirectional sync between Rust ggen code and RDF ontology
+//! Deterministic synchronization between Rust noun-verb adapters and RDF authority.
 //!
-//! Ensures that:
-//! - Changes to `#[verb]` functions are reflected in the RDF ontology
-//! - Changes to the RDF ontology can generate new `#[verb]` code
-//! - The declared command structure (code) matches the ontology (RDF)
-//!
-//! ## Algorithm
-//!
-//! 1. Load v26.6.1 command registry (runtime state)
-//! 2. Query RDF ontology for latest definitions
-//! 3. Compute diff: which verbs are new, modified, removed
-//! 4. For new verbs: generate RDF, commit to ontology
-//! 5. For modified: update both systems
-//! 6. For removed: purge from ontology
-//!
-//! ## Conformance Validation
-//!
-//! Following process mining Chicago TDD doctrine:
-//! - Event log is source of truth
-//! - If code says verb exists but RDF doesn't reflect it, then mismatch is a defect
-//! - Negative test: inject impossible verb definitions, verify rejection
+//! Observation and planning are side-effect free. `apply_sync` is the explicit
+//! filesystem actuator and persists a machine-readable receipt for every batch.
 
 use crate::ggen_to_rdf::{parse_rust_source, verb_definitions_to_ntriples};
-use crate::rdf_to_ggen::{rdf_triples_to_verb_definitions, RdfVerbDefinition};
+use crate::rdf_to_ggen::{
+    rdf_triples_to_verb_definitions, ObjectType, RdfTriple, RdfVerbDefinition,
+};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
-// =============================================================================
-// SYNC OPERATION TYPES
-// =============================================================================
-
-/// Synchronization operation (add, update, remove)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Synchronization operation required for one verb.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum SyncOperation {
-    /// Verb exists in code but not in RDF
+    /// Verb exists in code but not in RDF.
     AddToOntology,
-    /// Verb exists in both, but definitions differ
+    /// Verb exists in both but differs.
     UpdateOntology,
-    /// Verb exists in RDF but not in code
+    /// Verb exists in RDF but not in code.
     RemoveFromOntology,
-    /// Verb definitions match
+    /// Verb definitions match.
     NoChange,
 }
 
-/// Verb entry in synchronization result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// One deterministic synchronization decision.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct VerbSyncEntry {
-    /// Name of the verb this entry describes
+    /// Verb name.
     pub verb_name: String,
-    /// Parent noun name, if the verb belongs to one
+    /// Parent noun, when present.
     pub noun: Option<String>,
-    /// Operation needed to reconcile code and RDF for this verb
+    /// Required operation.
     pub operation: SyncOperation,
-    /// Verb definition parsed from Rust code, if present
+    /// Definition parsed from Rust.
     pub code_version: Option<RdfVerbDefinition>,
-    /// Verb definition loaded from the RDF ontology, if present
+    /// Definition parsed from RDF.
     pub rdf_version: Option<RdfVerbDefinition>,
-    /// Human-readable field-level differences between the two versions
+    /// Canonically ordered field differences.
     pub differences: Vec<String>,
 }
 
-/// Complete synchronization result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Complete bounded synchronization plan.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SyncResult {
-    /// Timestamp string of when the sync was computed
+    /// Stable observation identifier. The legacy field name is retained for compatibility.
     pub timestamp: String,
-    /// Total verb count (max of code and RDF counts)
+    /// Number of distinct verb identities observed across both surfaces.
     pub total_verbs: usize,
-    /// Per-verb sync entries describing each difference and operation
+    /// Canonically ordered decisions.
     pub changes: Vec<VerbSyncEntry>,
-    /// Aggregate counts and conformance verdict
+    /// Aggregate plan verdict.
     pub summary: SyncSummary,
 }
 
-/// Summary statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Aggregate synchronization verdict.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SyncSummary {
-    /// Number of verbs to add to the ontology
+    /// Verbs absent from RDF.
     pub added: usize,
-    /// Number of verbs whose definitions differ and need updating
+    /// Verbs whose definitions differ.
     pub modified: usize,
-    /// Number of verbs present in RDF but missing from code
+    /// Verbs absent from Rust.
     pub removed: usize,
-    /// Number of verbs that match in both sources
+    /// Verbs with equivalent definitions.
     pub unchanged: usize,
-    /// True when no verbs are removed (code and RDF conform)
+    /// True only when no mutation is required.
     pub conformant: bool,
 }
 
-// =============================================================================
-// SYNC ENGINE
-// =============================================================================
-
-/// Bidirectional synchronization engine
+/// Synchronization engine. Planning and actuation remain explicit operations.
+#[derive(Debug, Clone)]
 pub struct OntologySync {
-    /// Path to Rust source files
+    /// Rust source files admitted for observation.
     pub source_paths: Vec<PathBuf>,
-    /// Path to RDF ontology directory
+    /// Managed RDF ontology directory.
     pub ontology_path: PathBuf,
 }
 
 impl OntologySync {
-    /// Create a new sync engine
+    /// Create a synchronization engine.
+    #[must_use]
     pub fn new(source_paths: Vec<PathBuf>, ontology_path: PathBuf) -> Self {
         Self { source_paths, ontology_path }
     }
 
-    /// Perform bidirectional sync
-    ///
-    /// # Returns
-    /// SyncResult containing all differences and operations needed
+    /// Observe both surfaces and manufacture a deterministic plan.
     pub async fn sync_ggen_with_ontology(&self) -> Result<SyncResult, SyncError> {
-        // Step 1: Load verbs from Rust code
         let code_verbs = self.load_verbs_from_code().await?;
-
-        // Step 2: Load verbs from RDF ontology
         let rdf_verbs = self.load_verbs_from_ontology().await?;
-
-        // Step 3: Compute diff
-        let changes = self.compute_diff(&code_verbs, &rdf_verbs);
-
-        // Step 4: Generate sync result
-        let summary = self.summarize_changes(&changes);
-
-        let result = SyncResult {
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| format!("{:?}", d))
-                .unwrap_or_else(|_| "unknown".to_string()),
-            total_verbs: code_verbs.len().max(rdf_verbs.len()),
+        let changes = compute_diff(&code_verbs, &rdf_verbs)?;
+        let summary = summarize_changes(&changes);
+        Ok(SyncResult {
+            timestamp: observation_id(),
+            total_verbs: changes.len(),
             changes,
             summary,
-        };
-
-        Ok(result)
+        })
     }
 
-    /// Load verbs from Rust source files
     async fn load_verbs_from_code(&self) -> Result<Vec<RdfVerbDefinition>, SyncError> {
-        let mut all_verbs = Vec::new();
-
-        for path in &self.source_paths {
-            let content = tokio::fs::read_to_string(path)
+        let mut paths = self.source_paths.clone();
+        paths.sort();
+        let mut verbs = Vec::new();
+        for path in paths {
+            let content = tokio::fs::read_to_string(&path)
                 .await
-                .map_err(|e| SyncError::IoError(e.to_string()))?;
-
-            let verbs = parse_rust_source(&content)
-                .map_err(|e| SyncError::ParseError(format!("{:?}", e)))?;
-
-            all_verbs.extend(verbs);
+                .map_err(|error| SyncError::IoError(format!("{}: {error}", path.display())))?;
+            let mut parsed = parse_rust_source(&content)
+                .map_err(|error| SyncError::ParseError(format!("{}: {error}", path.display())))?;
+            verbs.append(&mut parsed);
         }
-
-        Ok(all_verbs)
+        canonicalize_unique(verbs, "Rust")
     }
 
-    /// Load verbs from RDF ontology
     async fn load_verbs_from_ontology(&self) -> Result<Vec<RdfVerbDefinition>, SyncError> {
-        // Try to load from .nt (N-Triples) files in ontology directory
-        let mut all_verbs = Vec::new();
-
-        let entries = std::fs::read_dir(&self.ontology_path)
-            .map_err(|e| SyncError::IoError(e.to_string()))?;
-
-        for entry in entries {
-            let entry = entry.map_err(|e| SyncError::IoError(e.to_string()))?;
+        let mut reader = tokio::fs::read_dir(&self.ontology_path)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+        let mut paths = Vec::new();
+        while let Some(entry) = reader
+            .next_entry()
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?
+        {
             let path = entry.path();
-
-            if path.extension().map(|ext| ext == "nt").unwrap_or(false) {
-                let content = tokio::fs::read_to_string(&path)
-                    .await
-                    .map_err(|e| SyncError::IoError(e.to_string()))?;
-
-                let triples = parse_ntriples(&content)?;
-                let verbs = rdf_triples_to_verb_definitions(triples)
-                    .map_err(|e| SyncError::RdfError(format!("{}", e)))?;
-
-                all_verbs.extend(verbs);
+            if path.extension().is_some_and(|extension| extension == "nt") {
+                paths.push(path);
             }
         }
+        paths.sort();
 
-        Ok(all_verbs)
-    }
-
-    /// Compute differences between code and RDF versions
-    fn compute_diff(
-        &self,
-        code_verbs: &[RdfVerbDefinition],
-        rdf_verbs: &[RdfVerbDefinition],
-    ) -> Vec<VerbSyncEntry> {
-        let mut changes = Vec::new();
-        let code_map: HashMap<_, _> =
-            code_verbs.iter().map(|v| ((&v.name, &v.noun_name), v.clone())).collect();
-        let rdf_map: HashMap<_, _> =
-            rdf_verbs.iter().map(|v| ((&v.name, &v.noun_name), v.clone())).collect();
-
-        // Check for new and modified verbs in code
-        for (key, code_verb) in &code_map {
-            match rdf_map.get(key) {
-                None => {
-                    // New verb
-                    changes.push(VerbSyncEntry {
-                        verb_name: code_verb.name.clone(),
-                        noun: code_verb.noun_name.clone(),
-                        operation: SyncOperation::AddToOntology,
-                        code_version: Some(code_verb.clone()),
-                        rdf_version: None,
-                        differences: vec!["Verb missing in RDF ontology".to_string()],
-                    });
-                }
-                Some(rdf_verb) => {
-                    // Check if modified
-                    let diffs = compute_verb_differences(code_verb, rdf_verb);
-                    if diffs.is_empty() {
-                        changes.push(VerbSyncEntry {
-                            verb_name: code_verb.name.clone(),
-                            noun: code_verb.noun_name.clone(),
-                            operation: SyncOperation::NoChange,
-                            code_version: Some(code_verb.clone()),
-                            rdf_version: Some(rdf_verb.clone()),
-                            differences: vec![],
-                        });
-                    } else {
-                        changes.push(VerbSyncEntry {
-                            verb_name: code_verb.name.clone(),
-                            noun: code_verb.noun_name.clone(),
-                            operation: SyncOperation::UpdateOntology,
-                            code_version: Some(code_verb.clone()),
-                            rdf_version: Some(rdf_verb.clone()),
-                            differences: diffs,
-                        });
-                    }
-                }
-            }
-        }
-
-        // Check for removed verbs (in RDF but not in code)
-        for (key, rdf_verb) in &rdf_map {
-            if !code_map.contains_key(key) {
-                changes.push(VerbSyncEntry {
-                    verb_name: rdf_verb.name.clone(),
-                    noun: rdf_verb.noun_name.clone(),
-                    operation: SyncOperation::RemoveFromOntology,
-                    code_version: None,
-                    rdf_version: Some(rdf_verb.clone()),
-                    differences: vec!["Verb exists in RDF but not in code".to_string()],
-                });
-            }
-        }
-
-        changes
-    }
-
-    /// Summarize sync changes
-    fn summarize_changes(&self, changes: &[VerbSyncEntry]) -> SyncSummary {
-        let mut summary =
-            SyncSummary { added: 0, modified: 0, removed: 0, unchanged: 0, conformant: true };
-
-        for change in changes {
-            match change.operation {
-                SyncOperation::AddToOntology => summary.added += 1,
-                SyncOperation::UpdateOntology => summary.modified += 1,
-                SyncOperation::RemoveFromOntology => {
-                    summary.removed += 1;
-                    summary.conformant = false;
-                }
-                SyncOperation::NoChange => summary.unchanged += 1,
-            }
-        }
-
-        summary.conformant = summary.removed == 0;
-        summary
-    }
-
-    /// Write sync results to RDF ontology files
-    pub async fn apply_sync(&self, result: &SyncResult) -> Result<(), SyncError> {
-        // Group verbs to add/update by noun
-        let mut verbs_to_write: HashMap<Option<String>, Vec<RdfVerbDefinition>> = HashMap::new();
-
-        for entry in &result.changes {
-            match &entry.operation {
-                SyncOperation::AddToOntology | SyncOperation::UpdateOntology => {
-                    if let Some(code_version) = &entry.code_version {
-                        verbs_to_write
-                            .entry(entry.noun.clone())
-                            .or_insert_with(Vec::new)
-                            .push(code_version.clone());
-                    }
-                }
-                SyncOperation::RemoveFromOntology => {
-                    if let Some(rdf_version) = &entry.rdf_version {
-                        let noun_name = entry.noun.as_deref().unwrap_or("root");
-                        let nt_path = self.ontology_path.join(format!("{}-verbs.nt", noun_name));
-                        if nt_path.exists() {
-                            let content = tokio::fs::read_to_string(&nt_path)
-                                .await
-                                .map_err(|e| SyncError::IoError(e.to_string()))?;
-                            let subject_iri =
-                                rdf_version.verb_uri.trim_start_matches('<').trim_end_matches('>');
-                            let filtered: String = content
-                                .lines()
-                                .filter(|line| {
-                                    let trimmed = line.trim();
-                                    if trimmed.is_empty() || trimmed.starts_with('#') {
-                                        return true;
-                                    }
-                                    !trimmed.contains(subject_iri)
-                                })
-                                .map(|line| format!("{}\n", line))
-                                .collect();
-                            tokio::fs::write(&nt_path, filtered.as_bytes())
-                                .await
-                                .map_err(|e| SyncError::IoError(e.to_string()))?;
-                        }
-                    }
-                }
-                SyncOperation::NoChange => {}
-            }
-        }
-
-        // Write N-Triples files
-        for (noun, verbs) in verbs_to_write {
-            let ntriples = verb_definitions_to_ntriples(&verbs);
-            let noun_name = noun.as_deref().unwrap_or("root");
-            let output_path = self.ontology_path.join(format!("{}-verbs.nt", noun_name));
-
-            tokio::fs::write(&output_path, &ntriples)
+        let mut verbs = Vec::new();
+        for path in paths {
+            let content = tokio::fs::read_to_string(&path)
                 .await
-                .map_err(|e| SyncError::IoError(e.to_string()))?;
+                .map_err(|error| SyncError::IoError(format!("{}: {error}", path.display())))?;
+            let triples = parse_ntriples(&content)?;
+            let mut parsed = rdf_triples_to_verb_definitions(triples)
+                .map_err(|error| SyncError::RdfError(format!("{}: {error}", path.display())))?;
+            verbs.append(&mut parsed);
+        }
+        canonicalize_unique(verbs, "RDF")
+    }
+
+    /// Apply a complete plan and persist `.ontology-sync-receipt.json`.
+    ///
+    /// Files are staged before mutation. A second identical application records
+    /// `replay_verified=true` because all declared consequences already match.
+    pub async fn apply_sync(&self, result: &SyncResult) -> Result<(), SyncError> {
+        let expected_summary = summarize_changes(&result.changes);
+        if expected_summary != result.summary || result.total_verbs != result.changes.len() {
+            return Err(SyncError::ConformanceError(
+                "sync result summary does not match its decisions".to_string(),
+            ));
         }
 
+        tokio::fs::create_dir_all(&self.ontology_path)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+
+        let desired = desired_files(result)?;
+        let managed_existing = managed_files(&self.ontology_path).await?;
+        let replay_verified =
+            consequences_match(&self.ontology_path, &desired, &managed_existing).await?;
+        let desired_names: BTreeSet<String> = desired.keys().cloned().collect();
+        let stale: Vec<String> = managed_existing
+            .difference(&desired_names)
+            .cloned()
+            .collect();
+
+        let stage = self.ontology_path.join(".ontology-sync-stage");
+        if tokio::fs::try_exists(&stage)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?
+        {
+            tokio::fs::remove_dir_all(&stage)
+                .await
+                .map_err(|error| SyncError::IoError(error.to_string()))?;
+        }
+        tokio::fs::create_dir_all(&stage)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+
+        let mut written_receipts = Vec::new();
+        for (name, content) in &desired {
+            tokio::fs::write(stage.join(name), content)
+                .await
+                .map_err(|error| SyncError::IoError(error.to_string()))?;
+            written_receipts.push(FileReceipt {
+                path: name.clone(),
+                bytes: content.len(),
+                digest: fnv1a64(content.as_bytes()),
+            });
+        }
+
+        let receipt = SyncReceipt {
+            schema_version: "1.0.0".to_string(),
+            observation: result.timestamp.clone(),
+            admission: "ADMITTED".to_string(),
+            standing: "PARTIAL_ALIVE".to_string(),
+            actuation_performed: !replay_verified,
+            replay_verified,
+            written: written_receipts,
+            removed: stale.clone(),
+        };
+        let receipt_bytes = serde_json::to_vec_pretty(&receipt)
+            .map_err(|error| SyncError::ReceiptError(error.to_string()))?;
+        tokio::fs::write(stage.join("receipt.json"), &receipt_bytes)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+
+        for name in desired.keys() {
+            replace_file(&stage.join(name), &self.ontology_path.join(name)).await?;
+        }
+        for name in &stale {
+            let path = self.ontology_path.join(name);
+            if tokio::fs::try_exists(&path)
+                .await
+                .map_err(|error| SyncError::IoError(error.to_string()))?
+            {
+                tokio::fs::remove_file(path)
+                    .await
+                    .map_err(|error| SyncError::IoError(error.to_string()))?;
+            }
+        }
+        replace_file(
+            &stage.join("receipt.json"),
+            &self.ontology_path.join(".ontology-sync-receipt.json"),
+        )
+        .await?;
+        tokio::fs::remove_dir_all(stage)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
         Ok(())
     }
 }
 
-// =============================================================================
-// DIFFERENCE DETECTION
-// =============================================================================
-
-/// Compute field-level differences between code and RDF verb definitions
-fn compute_verb_differences(code: &RdfVerbDefinition, rdf: &RdfVerbDefinition) -> Vec<String> {
-    let mut diffs = Vec::new();
-
-    if code.name != rdf.name {
-        diffs.push(format!("Name: code={}, rdf={}", code.name, rdf.name));
-    }
-
-    if code.description != rdf.description {
-        diffs.push(format!(
-            "Description: code != rdf (code has {} chars, rdf has {} chars)",
-            code.description.len(),
-            rdf.description.len()
-        ));
-    }
-
-    if code.return_type != rdf.return_type {
-        diffs.push(format!("Return type: code={}, rdf={}", code.return_type, rdf.return_type));
-    }
-
-    if code.arguments.len() != rdf.arguments.len() {
-        diffs.push(format!(
-            "Argument count: code={}, rdf={}",
-            code.arguments.len(),
-            rdf.arguments.len()
-        ));
-    }
-
-    if code.is_async != rdf.is_async {
-        diffs.push(format!("Async: code={}, rdf={}", code.is_async, rdf.is_async));
-    }
-
-    diffs
+fn observation_id() -> String {
+    std::env::var("SOURCE_DATE_EPOCH")
+        .map(|value| format!("source-date-epoch:{value}"))
+        .unwrap_or_else(|_| "UNSPECIFIED".to_string())
 }
 
-// =============================================================================
-// N-TRIPLES PARSING
-// =============================================================================
+fn identity(verb: &RdfVerbDefinition) -> (String, Option<String>) {
+    (verb.name.clone(), verb.noun_name.clone())
+}
 
-use crate::rdf_to_ggen::RdfTriple;
+fn canonicalize_unique(
+    verbs: Vec<RdfVerbDefinition>,
+    source: &str,
+) -> Result<Vec<RdfVerbDefinition>, SyncError> {
+    let mut canonical = BTreeMap::new();
+    for verb in verbs {
+        let key = identity(&verb);
+        if canonical.insert(key.clone(), verb).is_some() {
+            return Err(SyncError::ConformanceError(format!(
+                "duplicate {source} verb identity: {:?}",
+                key
+            )));
+        }
+    }
+    Ok(canonical.into_values().collect())
+}
 
-/// Parse N-Triples format to RDF triples
+fn compute_diff(
+    code_verbs: &[RdfVerbDefinition],
+    rdf_verbs: &[RdfVerbDefinition],
+) -> Result<Vec<VerbSyncEntry>, SyncError> {
+    let code = canonicalize_unique(code_verbs.to_vec(), "Rust")?
+        .into_iter()
+        .map(|verb| (identity(&verb), verb))
+        .collect::<BTreeMap<_, _>>();
+    let rdf = canonicalize_unique(rdf_verbs.to_vec(), "RDF")?
+        .into_iter()
+        .map(|verb| (identity(&verb), verb))
+        .collect::<BTreeMap<_, _>>();
+    let keys: BTreeSet<_> = code.keys().chain(rdf.keys()).cloned().collect();
+    let mut changes = Vec::new();
+
+    for key in keys {
+        let code_version = code.get(&key);
+        let rdf_version = rdf.get(&key);
+        let (operation, differences) = match (code_version, rdf_version) {
+            (Some(_), None) => (
+                SyncOperation::AddToOntology,
+                vec!["Verb missing in RDF ontology".to_string()],
+            ),
+            (None, Some(_)) => (
+                SyncOperation::RemoveFromOntology,
+                vec!["Verb exists in RDF but not in Rust".to_string()],
+            ),
+            (Some(code_verb), Some(rdf_verb)) => {
+                let differences = compute_verb_differences(code_verb, rdf_verb);
+                let operation = if differences.is_empty() {
+                    SyncOperation::NoChange
+                } else {
+                    SyncOperation::UpdateOntology
+                };
+                (operation, differences)
+            }
+            (None, None) => {
+                return Err(SyncError::ConformanceError(format!(
+                    "verb identity disappeared during planning: {:?}",
+                    key
+                )));
+            }
+        };
+        changes.push(VerbSyncEntry {
+            verb_name: key.0,
+            noun: key.1,
+            operation,
+            code_version: code_version.cloned(),
+            rdf_version: rdf_version.cloned(),
+            differences,
+        });
+    }
+    Ok(changes)
+}
+
+fn summarize_changes(changes: &[VerbSyncEntry]) -> SyncSummary {
+    let mut summary = SyncSummary {
+        added: 0,
+        modified: 0,
+        removed: 0,
+        unchanged: 0,
+        conformant: false,
+    };
+    for change in changes {
+        match change.operation {
+            SyncOperation::AddToOntology => summary.added += 1,
+            SyncOperation::UpdateOntology => summary.modified += 1,
+            SyncOperation::RemoveFromOntology => summary.removed += 1,
+            SyncOperation::NoChange => summary.unchanged += 1,
+        }
+    }
+    summary.conformant = summary.added == 0 && summary.modified == 0 && summary.removed == 0;
+    summary
+}
+
+fn compute_verb_differences(code: &RdfVerbDefinition, rdf: &RdfVerbDefinition) -> Vec<String> {
+    let mut differences = Vec::new();
+    if code.name != rdf.name {
+        differences.push(format!("name: Rust={:?}, RDF={:?}", code.name, rdf.name));
+    }
+    if code.description != rdf.description {
+        differences.push(format!(
+            "description: Rust={:?}, RDF={:?}",
+            code.description, rdf.description
+        ));
+    }
+    if code.noun_uri != rdf.noun_uri {
+        differences.push(format!("noun_uri: Rust={:?}, RDF={:?}", code.noun_uri, rdf.noun_uri));
+    }
+    if code.noun_name != rdf.noun_name {
+        differences.push(format!(
+            "noun_name: Rust={:?}, RDF={:?}",
+            code.noun_name, rdf.noun_name
+        ));
+    }
+    if code.arguments != rdf.arguments {
+        differences.push("arguments differ".to_string());
+    }
+    if code.return_type != rdf.return_type {
+        differences.push(format!(
+            "return_type: Rust={:?}, RDF={:?}",
+            code.return_type, rdf.return_type
+        ));
+    }
+    if code.trait_bounds != rdf.trait_bounds {
+        differences.push(format!(
+            "trait_bounds: Rust={:?}, RDF={:?}",
+            code.trait_bounds, rdf.trait_bounds
+        ));
+    }
+    if code.docstring != rdf.docstring {
+        differences.push(format!(
+            "docstring: Rust={:?}, RDF={:?}",
+            code.docstring, rdf.docstring
+        ));
+    }
+    if code.is_async != rdf.is_async {
+        differences.push(format!("is_async: Rust={}, RDF={}", code.is_async, rdf.is_async));
+    }
+    differences
+}
+
+fn managed_filename(noun: Option<&str>) -> String {
+    let raw = noun.unwrap_or("root");
+    let mut safe = String::new();
+    for character in raw.chars() {
+        if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') {
+            safe.push(character.to_ascii_lowercase());
+        } else {
+            safe.push('_');
+        }
+    }
+    if safe.is_empty() {
+        safe.push_str("root");
+    }
+    format!("{safe}-verbs.nt")
+}
+
+fn desired_files(result: &SyncResult) -> Result<BTreeMap<String, String>, SyncError> {
+    let mut groups: BTreeMap<Option<String>, Vec<RdfVerbDefinition>> = BTreeMap::new();
+    for entry in &result.changes {
+        if let Some(code) = &entry.code_version {
+            groups.entry(entry.noun.clone()).or_default().push(code.clone());
+        }
+    }
+
+    let mut files = BTreeMap::new();
+    for (noun, mut verbs) in groups {
+        verbs.sort_by(|left, right| left.verb_uri.cmp(&right.verb_uri));
+        let name = managed_filename(noun.as_deref());
+        if files
+            .insert(name.clone(), verb_definitions_to_ntriples(&verbs))
+            .is_some()
+        {
+            return Err(SyncError::ConformanceError(format!(
+                "managed filename collision: {name}"
+            )));
+        }
+    }
+    Ok(files)
+}
+
+async fn managed_files(directory: &Path) -> Result<BTreeSet<String>, SyncError> {
+    let mut files = BTreeSet::new();
+    let mut reader = tokio::fs::read_dir(directory)
+        .await
+        .map_err(|error| SyncError::IoError(error.to_string()))?;
+    while let Some(entry) = reader
+        .next_entry()
+        .await
+        .map_err(|error| SyncError::IoError(error.to_string()))?
+    {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.ends_with("-verbs.nt") {
+            files.insert(name);
+        }
+    }
+    Ok(files)
+}
+
+async fn consequences_match(
+    directory: &Path,
+    desired: &BTreeMap<String, String>,
+    existing: &BTreeSet<String>,
+) -> Result<bool, SyncError> {
+    let desired_names: BTreeSet<_> = desired.keys().cloned().collect();
+    if &desired_names != existing {
+        return Ok(false);
+    }
+    for (name, content) in desired {
+        let actual = tokio::fs::read(directory.join(name))
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+        if actual != content.as_bytes() {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+async fn replace_file(staged: &Path, destination: &Path) -> Result<(), SyncError> {
+    if tokio::fs::try_exists(destination)
+        .await
+        .map_err(|error| SyncError::IoError(error.to_string()))?
+    {
+        tokio::fs::remove_file(destination)
+            .await
+            .map_err(|error| SyncError::IoError(error.to_string()))?;
+    }
+    tokio::fs::rename(staged, destination)
+        .await
+        .map_err(|error| SyncError::IoError(error.to_string()))
+}
+
 fn parse_ntriples(content: &str) -> Result<Vec<RdfTriple>, SyncError> {
+    let statement = Regex::new(r"^<([^>]*)>\s+<([^>]*)>\s+(.+?)\s+\.\s*$")
+        .map_err(|error| SyncError::ParseError(error.to_string()))?;
     let mut triples = Vec::new();
-
-    for line in content.lines() {
-        let line = line.trim();
-
-        // Skip comments and empty lines
+    for (index, raw) in content.lines().enumerate() {
+        let line = raw.trim();
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-
-        // Remove trailing period and whitespace
-        let line = if line.ends_with('.') { &line[..line.len() - 1] } else { line };
-
-        // Split into subject predicate object
-        let parts: Vec<&str> = line.split('>').map(|p| p.trim()).collect();
-        if parts.len() < 3 {
-            continue;
-        }
-
-        let subject = parts[0].trim_start_matches('<').to_string();
-        let predicate = parts[1].trim_start_matches('<').to_string();
-        let object = parts[2].trim_matches(|c| c == '<' || c == '"').to_string();
-
-        triples.push(RdfTriple {
-            subject,
-            predicate,
-            object,
-            object_type: crate::rdf_to_ggen::ObjectType::Literal,
-        });
+        let captures = statement.captures(line).ok_or_else(|| {
+            SyncError::ParseError(format!("invalid N-Triples statement at line {}", index + 1))
+        })?;
+        let subject = captures[1].to_string();
+        let predicate = captures[2].to_string();
+        let token = captures[3].trim();
+        let (object, object_type) = if token.starts_with('<') && token.ends_with('>') {
+            (token[1..token.len() - 1].to_string(), ObjectType::Reference)
+        } else if token.starts_with('"') {
+            (parse_literal(token, index + 1)?, ObjectType::Literal)
+        } else {
+            return Err(SyncError::ParseError(format!(
+                "unsupported N-Triples object at line {}",
+                index + 1
+            )));
+        };
+        triples.push(RdfTriple { subject, predicate, object, object_type });
     }
-
     Ok(triples)
 }
 
-// =============================================================================
-// ERROR TYPES
-// =============================================================================
+fn parse_literal(token: &str, line: usize) -> Result<String, SyncError> {
+    let mut escaped = false;
+    let mut closing = None;
+    for (index, character) in token.char_indices().skip(1) {
+        if escaped {
+            escaped = false;
+        } else if character == '\\' {
+            escaped = true;
+        } else if character == '"' {
+            closing = Some(index);
+            break;
+        }
+    }
+    let closing = closing.ok_or_else(|| {
+        SyncError::ParseError(format!("unterminated literal at line {line}"))
+    })?;
+    let suffix = token[closing + 1..].trim();
+    if !(suffix.is_empty() || suffix.starts_with('@') || suffix.starts_with("^^<")) {
+        return Err(SyncError::ParseError(format!(
+            "invalid literal suffix at line {line}"
+        )));
+    }
+    unescape_literal(&token[1..closing], line)
+}
 
-/// Errors produced during ontology synchronization
-#[derive(Debug)]
+fn unescape_literal(value: &str, line: usize) -> Result<String, SyncError> {
+    let mut output = String::new();
+    let mut characters = value.chars();
+    while let Some(character) = characters.next() {
+        if character != '\\' {
+            output.push(character);
+            continue;
+        }
+        let escaped = characters.next().ok_or_else(|| {
+            SyncError::ParseError(format!("trailing escape at line {line}"))
+        })?;
+        match escaped {
+            '\\' => output.push('\\'),
+            '"' => output.push('"'),
+            'n' => output.push('\n'),
+            'r' => output.push('\r'),
+            't' => output.push('\t'),
+            other => {
+                return Err(SyncError::ParseError(format!(
+                    "unsupported escape \\{other} at line {line}"
+                )))
+            }
+        }
+    }
+    Ok(output)
+}
+
+fn fnv1a64(value: &[u8]) -> String {
+    let mut hash = 0xcbf29ce484222325_u64;
+    for byte in value {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("fnv1a64:{hash:016x}")
+}
+
+#[derive(Debug, Serialize)]
+struct FileReceipt {
+    path: String,
+    bytes: usize,
+    digest: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SyncReceipt {
+    schema_version: String,
+    observation: String,
+    admission: String,
+    standing: String,
+    actuation_performed: bool,
+    replay_verified: bool,
+    written: Vec<FileReceipt>,
+    removed: Vec<String>,
+}
+
+/// Errors produced by ontology planning or actuation.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SyncError {
-    /// Filesystem read/write failure
+    /// Filesystem failure.
     IoError(String),
-    /// Failure parsing Rust source for verbs
+    /// Rust or N-Triples parse failure.
     ParseError(String),
-    /// Failure converting RDF triples to verb definitions
+    /// RDF graph admission failure.
     RdfError(String),
-    /// Code and RDF do not conform
+    /// Code and RDF cannot be reconciled lawfully.
     ConformanceError(String),
+    /// Receipt manufacture failed.
+    ReceiptError(String),
 }
 
 impl std::fmt::Display for SyncError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SyncError::IoError(msg) => write!(f, "IO error: {}", msg),
-            SyncError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            SyncError::RdfError(msg) => write!(f, "RDF error: {}", msg),
-            SyncError::ConformanceError(msg) => write!(f, "Conformance error: {}", msg),
+            Self::IoError(message) => write!(formatter, "IO error: {message}"),
+            Self::ParseError(message) => write!(formatter, "Parse error: {message}"),
+            Self::RdfError(message) => write!(formatter, "RDF error: {message}"),
+            Self::ConformanceError(message) => {
+                write!(formatter, "Conformance error: {message}")
+            }
+            Self::ReceiptError(message) => write!(formatter, "Receipt error: {message}"),
         }
     }
 }
@@ -452,48 +627,74 @@ impl std::error::Error for SyncError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rdf_to_ggen::{ArgumentType, RdfArgumentDefinition};
 
-    #[test]
-    fn test_compute_verb_differences() {
-        let code = RdfVerbDefinition {
-            verb_uri: "ex:LoadVerb".to_string(),
-            name: "load".to_string(),
-            description: "Load data".to_string(),
-            noun_uri: None,
-            noun_name: None,
-            arguments: vec![],
-            return_type: "Result".to_string(),
-            trait_bounds: vec![],
-            docstring: String::new(),
+    fn verb(name: &str) -> RdfVerbDefinition {
+        RdfVerbDefinition {
+            verb_uri: format!("http://example.org/{name}Verb"),
+            name: name.to_string(),
+            description: format!("{name} data"),
+            noun_uri: Some("http://example.org/GraphNoun".to_string()),
+            noun_name: Some("graph".to_string()),
+            arguments: vec![RdfArgumentDefinition {
+                arg_uri: format!("http://example.org/{name}PathArg"),
+                name: "path".to_string(),
+                description: String::new(),
+                value_type: "String".to_string(),
+                required: true,
+                is_flag: false,
+                default_value: None,
+                short_name: None,
+                long_name: None,
+                allowed_values: Vec::new(),
+                argument_type: ArgumentType::Positional,
+            }],
+            return_type: "Result<serde_json::Value>".to_string(),
+            trait_bounds: Vec::new(),
+            docstring: format!("{name} data"),
             is_async: false,
-        };
-
-        let rdf = RdfVerbDefinition {
-            verb_uri: "ex:LoadVerb".to_string(),
-            name: "load".to_string(),
-            description: "Load data from file".to_string(),
-            noun_uri: None,
-            noun_name: None,
-            arguments: vec![],
-            return_type: "Result".to_string(),
-            trait_bounds: vec![],
-            docstring: String::new(),
-            is_async: false,
-        };
-
-        let diffs = compute_verb_differences(&code, &rdf);
-        assert!(!diffs.is_empty());
-        assert!(diffs[0].contains("Description"));
+        }
     }
 
     #[test]
-    fn test_parse_ntriples() {
-        let ntriples = r#"
-<http://example.org/LoadVerb> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://clap-noun-verb.io/ontology#Verb> .
-<http://example.org/LoadVerb> <http://clap-noun-verb.io/ontology#hasVerbName> "load" .
-        "#;
+    fn changes_are_canonical_and_any_drift_is_nonconformant() {
+        let code = vec![verb("zeta"), verb("alpha")];
+        let changes = compute_diff(&code, &[]).expect("valid unique definitions");
+        assert_eq!(
+            changes.iter().map(|change| change.verb_name.as_str()).collect::<Vec<_>>(),
+            vec!["alpha", "zeta"]
+        );
+        let summary = summarize_changes(&changes);
+        assert_eq!(summary.added, 2);
+        assert!(!summary.conformant);
+    }
 
-        let triples = parse_ntriples(ntriples).unwrap();
-        assert_eq!(triples.len(), 2);
+    #[test]
+    fn duplicate_identities_refuse_planning() {
+        let repeated = verb("load");
+        assert!(compute_diff(&[repeated.clone(), repeated], &[]).is_err());
+    }
+
+    #[test]
+    fn ntriples_round_trip_closes_arguments() {
+        let original = verb("load");
+        let serialized = verb_definitions_to_ntriples(std::slice::from_ref(&original));
+        let triples = parse_ntriples(&serialized).expect("canonical N-Triples");
+        let reconstructed = rdf_triples_to_verb_definitions(triples).expect("closed RDF graph");
+        assert_eq!(reconstructed.len(), 1);
+        assert_eq!(reconstructed[0].name, original.name);
+        assert_eq!(reconstructed[0].arguments, original.arguments);
+        assert_eq!(reconstructed[0].return_type, original.return_type);
+    }
+
+    #[test]
+    fn malformed_ntriples_refuse_observation() {
+        assert!(parse_ntriples("<subject> <predicate> missing-period").is_err());
+    }
+
+    #[test]
+    fn deterministic_digest_is_stable() {
+        assert_eq!(fnv1a64(b"receipt"), fnv1a64(b"receipt"));
+        assert_ne!(fnv1a64(b"receipt"), fnv1a64(b"different"));
     }
 }

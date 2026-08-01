@@ -1,0 +1,17 @@
+PREFIX cnv: <https://chatmangpt.com/ns/clap-noun-verb#>
+
+SELECT
+  (GROUP_CONCAT(?name ; separator=",") AS ?capabilities)
+  (COUNT(?name) AS ?capability_count)
+  (SUM(?surface_count) AS ?proof_surface_count)
+WHERE {
+  {
+    SELECT ?name ?surface_count
+    WHERE {
+      ?capability a cnv:Capability ;
+        cnv:featureName ?name ;
+        cnv:proofSurfaceCount ?surface_count .
+    }
+    ORDER BY ?name
+  }
+}

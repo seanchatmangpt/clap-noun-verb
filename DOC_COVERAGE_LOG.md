@@ -1,139 +1,70 @@
-# Doc Coverage Log — Combinatorial Maximalist Doc Loop
+# Executable Documentation Coverage Ledger
 
-**Project**: clap-noun-verb v26.6.14  
-**Example runner**: `cargo run --example <name>`  
-**Doc surface scope**: rustdoc (`///`/`//!` on pub items in `src/`), README, `docs/` Diataxis set  
+**Project:** clap-noun-verb 26.7.62  
+**Authority:** executable examples plus exact-head CI receipts  
+**Standing:** `PARTIAL_ALIVE` until the GitHub execution ladder completes
 
----
+## Law
 
-## Iteration 1 — 2026-06-14
+A documented API is covered only when a running example imports the public crate,
+asserts a meaningful consequence, and includes a negative or boundary case where
+one exists. Standalone demonstrations, empty executable bodies, mock primary paths,
+hard-coded benchmark claims, and prose-only declarations do not count as witnesses.
 
-**Commit at start**: `950a8ba` (docs: archive research artifacts)  
-**Tree state**: clean except 2 untracked files (`benches/dispatch.rs`, `src/otel.rs`)  
-**Toolchain**: rustc 1.97.0-nightly, cargo 1.97.0-nightly
+## Closed public surfaces
 
-### Coverage Map (start of iteration 1)
+| Surface | Executable witness | Consequence |
+|---|---|---|
+| `CliBuilder`, `noun!`, `verb!`, injected dispatch | `examples/core_api.rs` | Builds, routes, and introspects a two-noun CLI |
+| `VerbArgs`, `VerbContext` | `examples/verb_args.rs` | Typed arguments, trailing values, and context survive routing |
+| `NounVerbError`, `StructuredError` | `examples/error_handling.rs` | Typed failures become machine-readable recovery actions |
+| `#[verb]` distributed registration | `examples/proc_macro_verb.rs` | Three typed handlers are discovered and dispatched |
+| `OutputFormat`, `format_output` | `examples/output_formats.rs` | Every format renders; unknown formats refuse |
+| `CommandTree`, `CommandTreeBuilder`, `TreeNode` | `examples/command_tree.rs` | Tree construction, lookup, path enumeration, and Clap projection execute |
+| `AppContext` | `examples/app_context.rs` | Insert, get, closure access, removal, missing-type refusal, and clear execute |
+| `Graph`, `Triple`, `GraphLoadedOutput` | `examples/graph_api.rs` | Valid triples admit; invalid triples refuse without mutation |
+| `CapabilityRegistry`, `CapabilityPackage`, standing | `examples/capability_registry.rs` | Dependency closure is stable; duplicate IDs and unreplayed proof refuse |
+| `DoctorOutput`, `HealthIssue` | `examples/diagnostics.rs` | Warning and error transitions preserve typed health semantics |
+| `Deprecation`, `DeprecationType` | `examples/deprecation.rs` | SemVer prerelease and removal boundaries execute |
+| `Repl`, shell-word parser | `examples/repl_witness.rs` | REPL construction and quote/refusal parsing execute non-interactively |
+| `ShellType`, completion policy | `examples/shell_completions.rs` | Six shell policies and line-ending boundaries execute |
+| Args × format × structured failure | `examples/format_error_pipeline.rs` | Parsed format renders; missing argument becomes `InvalidInput` |
+| Agent-oriented read route | `examples/agent_cli_builder.rs` | A typed read-only capability route emits explicit non-actuation standing |
+| RDF → typed adapter | `examples/ontology_to_cli.rs` | SPARQL and RDF definitions manufacture canonical handler adapters |
+| Discovery engine | `examples/frontier_discovery_engine_demo.rs` | Records discover deterministically; duplicate and missing routes refuse |
+| Reflexive standing | `examples/frontier_reflexive_testing_demo.rs` | Passing checks without replay do not receive `ALIVE` standing |
+| Semantic coordination | `examples/semantic_coordinator.rs` | Invariants admit before RDF composition; invalid triples refuse |
+| RevOps revenue route | `examples/revops_revenue_dashboard.rs` | Bounded metrics dispatch without financial actuation |
+| RevOps pipeline route | `examples/revops_sales_pipeline.rs` | Weighted standing dispatches without ambient CSV reads or writes |
+| RevOps forecast route | `examples/revops_financial_forecast.rs` | Twelve deterministic periods derive from explicit integer assumptions |
+| RevOps sequence route | `examples/revops_email_sequences.rs` | Communication text renders locally with `delivery_performed=false` |
+| RevOps customer route | `examples/revops_cs_checkins.rs` | Health standing derives without outreach or customer-system mutation |
+| Rust ↔ RDF round trip | `src/ggen_to_rdf.rs`, `src/rdf_to_ggen.rs` tests | Attributes, arguments, references, escaping, and result carriers close canonically |
+| Ontology synchronization | `src/ontology_sync.rs` tests | Drift is nonconformant, malformed triples refuse, and actuation emits a receipt |
+| Registry build and route performance | `benches/dispatch.rs` | Criterion measures the real registry and dispatch path, not a mock |
 
-#### Exercised-but-not-witnessing (examples that don't import `clap_noun_verb`)
+## Verification commands
 
-| Example | clap_noun_verb imports | Verdict |
-|---------|----------------------|---------|
-| `revops_revenue_dashboard` | 0 | Standalone Rust — does NOT witness the framework |
-| `revops_sales_pipeline` | 0 | Standalone Rust — does NOT witness the framework |
-| `revops_financial_forecast` | 0 | Standalone Rust — does NOT witness the framework |
-| `revops_email_sequences` | 0 | Standalone Rust — does NOT witness the framework |
-| `revops_cs_checkins` | 0 | Standalone Rust — does NOT witness the framework |
-| `semantic_coordinator` | 0 | Standalone Rust — does NOT witness the framework |
-| `frontier_discovery_engine_demo` | 0 | Standalone Rust — does NOT witness the framework |
-| `frontier_reflexive_testing_demo` | 0 | Standalone Rust — does NOT witness the framework |
-| `agent_cli_builder` | 0 | Empty `fn main() {}` — witnesses nothing |
-| `ontology_to_cli` | 2 (import string only) | Builds own types; does NOT call framework public API |
-
-**Finding**: 10 of 10 pre-existing examples provide zero coverage of the documented public API surface.
-
-#### Documented-but-unexercised (public API with no running example)
-
-Every public re-export had no running example at iteration start:
-
-| Symbol | Source | Gap |
-|--------|--------|-----|
-| `CliBuilder` | `src/builder.rs` | No example constructed and ran it |
-| `run_cli_with_args` / `run_cli` | `src/builder.rs` | No example called it |
-| `build_cli` | `src/builder.rs` | No example called it |
-| `noun!` / `verb!` | `src/macros/mod.rs` | No example used them |
-| `NounVerbError` (all constructors) | `src/error.rs` | No example constructed any variant |
-| `StructuredError` | `src/error.rs` | No example serialized one |
-| `VerbArgs::get_one_str` / `get_one` / `get_one_str_opt` | `src/verb.rs` | No example exercised argument access |
-| `VerbArgs::trailing()` | `src/verb.rs` | No example used trailing positionals |
-| `VerbContext` | `src/verb.rs` | No example built or read context |
-| `CommandTree` / `CommandTreeBuilder` | `src/tree.rs` | No example |
-| `AppContext` | `src/context.rs` | No example |
-| `Deprecation` | `src/deprecation.rs` | No example |
-| `OutputFormat` / `format_output` | `src/format.rs` | No example |
-| `Graph` / `Triple` / `GraphLoadedOutput` | `src/graph/` | No example |
-| `CapabilityRegistry` / `CapabilityPackage` | `src/capability/` | No example |
-| `DoctorOutput` / `HealthIssue` | `src/diagnostics/` | No example |
-| `Repl` | `src/repl.rs` | No example |
-
-### Triples Closed This Iteration (max 3 per iteration)
-
-#### Triple 1: Core API — `CliBuilder` + `noun!`/`verb!` + `run_cli_with_args` + `build_cli`
-
-**Example**: `examples/core_api.rs`  
-**Run**: `cargo run --example core_api`  
-**Exit code**: 0  
-**Captured output**:
+```bash
+cargo check --all-targets
+cargo test --all-targets
+cargo test --all-targets --all-features
+bash scripts/run_witnesses.sh target/witnesses-first.txt
+bash scripts/run_witnesses.sh target/witnesses-second.txt
+cmp target/witnesses-first.txt target/witnesses-second.txt
+cargo bench --bench dispatch --no-run
+python scripts/verify_no_wip.py --report target/wip-verifier-report.json
 ```
-running=true uptime=3600
-[services status] running=true uptime=3600
-key="debug" value="false"
-[config get] key="debug" value="false"
-command_not_found: Command 'usr' not found. Did you mean: user?
-structured_deadline: kind=DeadlineExceeded severity=Critical
-structure: services -> ["status", "restart"]
-```
-**What it witnesses**: Two-noun CLI built with `CliBuilder` + `noun!`/`verb!`, dispatched via `run_cli_with_args` with args injected inline (no stdin). `build_cli` introspects structure. `NounVerbError::command_not_found_with_candidates` and `StructuredError::deadline_exceeded` asserted against real output.  
-**Would fail if**: dispatch broke, noun/verb registration failed, or suggestion algorithm returned wrong candidates.
 
-#### Triple 2: `VerbArgs` — argument access, typed gets, trailing positionals, context
+## Closure
 
-**Example**: `examples/verb_args.rs`  
-**Run**: `cargo run --example verb_args`  
-**Exit code**: 0  
-**Captured output**:
-```
-deploy --service api --verbose: service=api verbose=true
-explain ISSUE-001 ISSUE-002: trailing=["ISSUE-001", "ISSUE-002"]
-verb()=status noun()=Some("services")
-```
-**What it witnesses**: `get_one_str` (required string), `get_one::<bool>` (flag), `trailing()` (var-arg positionals), `VerbContext`/`with_context`/`verb()`/`noun()`. Assertions check the actual values, not just `is_ok()`.  
-**Would fail if**: argument parsing broke, `trailing()` returned wrong order, or context was not preserved through `with_context`.
+- Documented-but-unexercised public surfaces: **0**
+- Exercised-but-undocumented surfaces introduced by this closure: **0**
+- Standalone application simulations on the admitted example surface: **0**
+- Mock/stub benchmark surfaces on the primary dispatch path: **0**
+- Known admitted unfinished markers or empty examples: enforced as **0** by `scripts/verify_no_wip.py`
+- Whole-repository `ALIVE` promotion before exact-head execution and replay: **refused**
 
-#### Triple 3: `NounVerbError` constructors + `StructuredError` + error propagation
-
-**Example**: `examples/error_handling.rs`  
-**Run**: `cargo run --example error_handling`  
-**Exit code**: 0  
-**Captured output**:
-```
-CommandNotFound: Command 'usr' not found. Did you mean: user?
-VerbNotFound: Verb 'lst' not found for noun 'user'. Did you mean: list, get?
-ValidationError (port, abc): Argument parsing failed: Invalid value 'abc' for argument 'port'. Must be a number
-RangeError (port, 70000): Argument parsing failed: Invalid value '70000' for argument 'port'. Must be between 1 and 65535
-LengthError (name, ): Argument parsing failed: Invalid value '' for argument 'name'. Length must be between 1 and 64 characters
-deadline kind=DeadlineExceeded severity=Critical suggested_ms=740
-verb error propagated: Command execution failed: db unreachable
-```
-**What it witnesses**: All 5 `NounVerbError` constructor families, `StructuredError::deadline_exceeded` (kind+severity+20%-padded suggestion), `StructuredError::from_error` mapping, and `Err` propagation through `run_cli_with_args` to the caller.  
-**Would fail if**: any constructor changed its Display format, the Levenshtein distance threshold changed, or the StructuredError deadline padding formula changed.
-
-### Key Insight Recorded
-
-The `verb!` macro requires `Fn(&VerbArgs) -> Result<()>` — it is NOT the `Result<T: Serialize>` path used by the `#[verb]` proc-macro. Two distinct patterns exist: the builder/inline pattern (`verb!` macro + `CliBuilder`) and the distributed-slice auto-registration pattern (`#[verb]` proc-macro + `linkme`). The auto-registration path is the advertised zero-boilerplate path and has **no running example yet** — this is the highest-value remaining gap (OPEN-doc-substrate: described everywhere, witnessed nowhere by a running example).
-
-### Queued for Next Iterations
-
-| Priority | Gap | Notes |
-|----------|-----|-------|
-| HIGH | `#[verb]` proc-macro auto-registration (distributed slice) | The advertised primary path; `#[clap_noun_verb_macros::verb]` + `cli::run()` |
-| HIGH | `OutputFormat` / `format_output` | Documented in tutorial 04; no running example |
-| MEDIUM | `CommandTree` / `CommandTreeBuilder` | Public API, referenced in docs |
-| MEDIUM | `AppContext` | Public API, no example |
-| MEDIUM | `Graph` + `Triple` + `GraphLoadedOutput` | `src/graph/` exists, public |
-| MEDIUM | `CapabilityRegistry` + `CapabilityPackage` | `src/capability/` exists, public |
-| MEDIUM | `DoctorOutput` + `HealthIssue` | `src/diagnostics/` exists, public |
-| LOW | `Deprecation` / `DeprecationType` | Public API |
-| LOW | `Repl` (feature `repl`) | Feature-gated |
-| LOW | Cross-product: `VerbArgs` + `OutputFormat` + error | Composition example |
-
-### Hard Stops
-
-None.
-
----
-
-## Coverage Status After Iteration 1
-
-**Documented-but-unexercised**: 14 → 11 (closed: `CliBuilder`, `VerbArgs`, `NounVerbError`/`StructuredError`)  
-**Exercised-but-undocumented**: 0 (all new examples are documented inline and reference their docs)  
-**Running examples that witness the framework**: 0 → 3
+This ledger does not promote the repository to `ALIVE`; promotion requires observed
+exact-head execution, receipt manufacture, and replay through the repository's
+required verification ladder.

@@ -1,0 +1,17 @@
+# MESSAGE: Two distinct arguments on one verb resolve to the same Rust field name.
+PREFIX cnv: <http://clap-noun-verb.io/ontology#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+ASK {
+  ?verb rdf:type cnv:Verb ;
+        cnv:hasArguments ?argA ;
+        cnv:hasArguments ?argB .
+  FILTER( STR(?argA) < STR(?argB) )
+  ?argA cnv:hasArgumentName ?flagA .
+  ?argB cnv:hasArgumentName ?flagB .
+  OPTIONAL { ?argA cnv:fieldName ?explicitA }
+  OPTIONAL { ?argB cnv:fieldName ?explicitB }
+  BIND( COALESCE( ?explicitA, REPLACE(STR(?flagA), "-", "_") ) AS ?fieldA )
+  BIND( COALESCE( ?explicitB, REPLACE(STR(?flagB), "-", "_") ) AS ?fieldB )
+  FILTER( ?fieldA = ?fieldB )
+}

@@ -1,152 +1,50 @@
 // Copyright (c) 2024 Sean Chatman
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Frontier Feature Demo: Discovery Engine
-//!
-//! Demonstrates dynamic capability discovery for agent-based CLIs.
-//! Build with: cargo build --example frontier_discovery_engine_demo --features discovery-engine
-//!
-//! Shows how frontier packages enable CLIs to discover and expose agent capabilities dynamically.
+//! Executable witness for the bounded discovery engine.
 
-use clap::{Parser, Subcommand};
-
-#[derive(Parser)]
-#[command(name = "DiscoveryEngine")]
-#[command(about = "Dynamic capability discovery demonstration")]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Discover available capabilities
-    Discover {
-        /// Filter by capability type
-        #[arg(long)]
-        r#type: Option<String>,
-    },
-    /// Query capability details
-    Query {
-        /// Capability name
-        name: String,
-    },
-    /// Invoke discovered capability
-    Invoke {
-        /// Capability name
-        name: String,
-        /// Arguments to pass
-        #[arg(trailing_var_arg = true)]
-        args: Vec<String>,
-    },
-}
-
-struct Capability {
-    name: &'static str,
-    description: &'static str,
-    inputs: Vec<&'static str>,
-    outputs: Vec<&'static str>,
-}
-
-impl Capability {
-    fn semantic_analysis() -> Self {
-        Capability {
-            name: "semantic-analysis",
-            description: "Analyze semantic meaning of input",
-            inputs: vec!["text", "context"],
-            outputs: vec!["entities", "relationships", "intent"],
-        }
-    }
-
-    fn code_generation() -> Self {
-        Capability {
-            name: "code-generation",
-            description: "Generate code from specifications",
-            inputs: vec!["spec", "language"],
-            outputs: vec!["code", "tests"],
-        }
-    }
-
-    fn learning_optimization() -> Self {
-        Capability {
-            name: "learning-optimization",
-            description: "Optimize through reinforcement learning",
-            inputs: vec!["trajectory", "reward-signal"],
-            outputs: vec!["optimized-policy"],
-        }
-    }
-}
-
+#[cfg(feature = "discovery-engine")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
+    use clap_noun_verb::frontier::{DiscoveryEngine, DiscoveryRecord};
+    use std::collections::BTreeSet;
 
-    match cli.command {
-        Some(Commands::Discover { r#type: cap_type }) => {
-            println!("🔍 Discovering capabilities...");
-            let capabilities = vec![
-                Capability::semantic_analysis(),
-                Capability::code_generation(),
-                Capability::learning_optimization(),
-            ];
-
-            for cap in &capabilities {
-                if let Some(ref filter) = cap_type {
-                    if !cap.name.contains(filter) {
-                        continue;
-                    }
-                }
-                println!("\n  📦 {}", cap.name);
-                println!("     {}", cap.description);
-                println!("     Inputs: {}", cap.inputs.join(", "));
-                println!("     Outputs: {}", cap.outputs.join(", "));
-            }
-        }
-        Some(Commands::Query { name }) => {
-            println!("📚 Querying capability: {}", name);
-
-            let capabilities = vec![
-                Capability::semantic_analysis(),
-                Capability::code_generation(),
-                Capability::learning_optimization(),
-            ];
-
-            if let Some(cap) = capabilities.iter().find(|c| c.name == name) {
-                println!("   Description: {}", cap.description);
-                println!("   Inputs: {:?}", cap.inputs);
-                println!("   Outputs: {:?}", cap.outputs);
-                println!("   Status: Available for invocation");
-            } else {
-                println!("   ❌ Capability not found");
-            }
-        }
-        Some(Commands::Invoke { name, args }) => {
-            println!("⚡ Invoking capability: {}", name);
-            println!("   With arguments: {:?}", args);
-            println!("   Discovery engine dynamically routes to handler");
-        }
-        None => {
-            println!("🚀 Discovery Engine Ready");
-            println!("   Use 'discover', 'query', or 'invoke' commands");
+    fn record(name: &str, tags: &[&str], route: &str) -> DiscoveryRecord {
+        DiscoveryRecord {
+            name: name.to_string(),
+            tags: tags.iter().map(|tag| (*tag).to_string()).collect::<BTreeSet<_>>(),
+            route: route.to_string(),
         }
     }
 
+    let mut engine = DiscoveryEngine::default();
+    engine
+        .register(record("semantic-analysis", &["semantic", "analysis"], "semantic analyze"))
+        .map_err(std::io::Error::other)?;
+    engine
+        .register(record("code-generation", &["code", "generation"], "code generate"))
+        .map_err(std::io::Error::other)?;
+    engine
+        .register(record("learning-optimization", &["learning"], "learning optimize"))
+        .map_err(std::io::Error::other)?;
+
+    let semantic = engine.search("semantic");
+    assert_eq!(semantic.len(), 1);
+    assert_eq!(semantic[0].name, "semantic-analysis");
+    assert_eq!(engine.search("code-generation")[0].route, "code generate");
+
+    let duplicate = engine.register(record(
+        "semantic-analysis",
+        &["duplicate"],
+        "semantic duplicate",
+    ));
+    assert!(duplicate.is_err(), "duplicate capability names must refuse");
+    assert!(engine.search("missing").is_empty());
+
+    println!("Discovery engine admitted 3 records; duplicate and missing routes refused");
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_capability_discovery() {
-        let capabilities = vec![Capability::semantic_analysis(), Capability::code_generation()];
-        assert_eq!(capabilities.len(), 2);
-        println!("✅ Capabilities discovered dynamically");
-    }
-
-    #[test]
-    fn test_dynamic_routing() {
-        // Discovery engine enables dynamic capability routing
-        println!("✅ Dynamic routing based on discovered capabilities");
-    }
+#[cfg(not(feature = "discovery-engine"))]
+fn main() {
+    println!("Enable --features discovery-engine to execute this bounded witness");
 }

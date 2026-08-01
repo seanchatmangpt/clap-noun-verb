@@ -2,7 +2,7 @@
 //!
 //! Comprehensive Chicago TDD tests for all four Phase 4 sub-phases:
 //! - 4A: Federated Network
-//! - 4B: Economic Simulation  
+//! - 4B: Economic Simulation
 //! - 4C: Fractal Patterns
 //! - 4D: Executable Specifications
 
@@ -322,7 +322,6 @@ mod fractal_patterns_tests {
 #[cfg(feature = "executable-specs")]
 mod executable_specs_tests {
     use clap_noun_verb::frontier::{ExecutableSpec, SpecificationSuite};
-    use std::collections::HashMap;
 
     #[test]
     fn test_spec_builder_pattern() {

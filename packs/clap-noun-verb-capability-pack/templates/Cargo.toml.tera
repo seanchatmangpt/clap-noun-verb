@@ -1,0 +1,12 @@
+[package]
+name = "clap-noun-verb-capability-crown"
+version = "26.7.62"
+edition = "2021"
+publish = false
+description = "Generated {{ capability_count }}-capability crown consumer"
+
+[lib]
+path = "src/lib.rs"
+
+[lints.rust]
+unsafe_code = "forbid"

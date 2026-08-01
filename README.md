@@ -6,13 +6,22 @@
 
 **Declarative noun-verb CLI framework for type-safe, agent-ready command registration.**
 
-## What's New in 26.6.13
+## What's New in 26.7.62
 
-- **Minimalist refactor** — zero default features; you pay only for what you enable.
-- **Zero stubs, zero cheats** — every code path does real work, audited across
-  production, macros, and tests (no hardcoded returns, no `assert!(true)` tautologies).
-- **47 tests + 47 doctests, 0 ignored** — all examples are compile-checked.
-- See the [CHANGELOG](CHANGELOG.md#26613---2026-06-13) for full details.
+- **Ontology-first capability crown** — ggen manufactures a canonical catalog of
+  15 Cargo capabilities and 45 required proof surfaces from RDF authority.
+- **Completed frontier features** — semantic composition, discovery, learning,
+  reflexive verification, economic simulation, fractal composition, executable
+  specifications, PQC policy selection, and bounded federation are real compile
+  and execution surfaces rather than check-cfg placeholders.
+- **Evidence-backed standing** — capability packages remain `UNKNOWN`,
+  `PARTIAL_ALIVE`, `BLOCKED`, `BUILD_BROKEN`, or `UNSUPPORTED` until observed and
+  replayed proof surfaces justify `ALIVE`.
+- **Exact-head verification** — a 21-cell Cargo feature matrix, ggen receipt/replay,
+  negative SPARQL gates, and wasm4pm-verified OCEL 2.0 receipts bind evidence to
+  the exact candidate SHA.
+- **Optional OpenTelemetry** — the `otel` feature activates dispatch spans and a
+  tracer-provider lifecycle without increasing the zero-feature core.
 
 ## Installation
 
@@ -20,8 +29,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "26.6.13"
-clap-noun-verb-macros = "26.6.13" # For proc-macros
+clap-noun-verb = "26.7.62"
+clap-noun-verb-macros = "26.7.62" # For proc-macros
 ```
 
 Or with `cargo add`:
@@ -35,8 +44,8 @@ cargo add clap-noun-verb clap-noun-verb-macros
 A **noun-verb command** separates domain concepts from actions. Instead of flat command names like `login` or `logout`, organize commands hierarchically:
 
 ```
-myapp session login     # noun: session, verb: login
-myapp session verify     # noun: session, verb: verify
+myapp session login          # noun: session, verb: login
+myapp session verify         # noun: session, verb: verify
 myapp user create --name Bob # noun: user, verb: create (with flags)
 ```
 
@@ -45,11 +54,11 @@ This pattern naturally maps to your domain model:
 - **Noun** = a resource or entity (user, session, config)
 - **Verb** = an action on that noun (create, list, delete, verify)
 
-The `#[noun]` and `#[verb]` proc-macros auto-discover and register all commands at compile time. No manual routing.
+The `#[noun]` and `#[verb]` proc-macros auto-discover and register commands at compile time. No manual routing.
 
 ## Quick Start
 
-Here's a working example in 2 minutes. Create a new Rust project:
+Create a new Rust project:
 
 ```bash
 cargo new myapp && cd myapp
@@ -59,180 +68,182 @@ cargo add clap-noun-verb clap-noun-verb-macros serde
 Add to `src/main.rs`:
 
 ```rust
-use clap_noun_verb_macros::verb;
 use clap_noun_verb::Result;
+use clap_noun_verb_macros::verb;
 use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct CalcResult {
-  result: i32,
+    result: i32,
 }
 
-// Pure domain logic
 fn add(x: i32, y: i32) -> i32 {
-  x + y
+    x + y
 }
 
-// Thin CLI wrapper
 #[verb("add")]
 fn cmd_add(x: i32, y: i32) -> Result<CalcResult> {
-  Ok(CalcResult {
-    result: add(x, y),
-  })
+    Ok(CalcResult { result: add(x, y) })
 }
 
 #[verb("multiply")]
 fn cmd_multiply(
-  x: i32,
-  y: i32,
-  /// Profile to use [default: default]
-  #[arg(long)]
-  profile_id: Option<String>,
+    x: i32,
+    y: i32,
+    /// Profile to use [default: default]
+    #[arg(long)]
+    profile_id: Option<String>,
 ) -> Result<CalcResult> {
-  Ok(CalcResult {
-    result: x * y,
-  })
+    let _profile_id = profile_id;
+    Ok(CalcResult { result: x * y })
 }
 
 fn main() -> Result<()> {
-  clap_noun_verb::run()
+    clap_noun_verb::run()
 }
 ```
 
 Run it:
 
 ```bash
-$ cargo run -- calc add 2 3
-{"result": 5}
-
-$ cargo run -- calc multiply 4 5 --profile-id premium
-{"result": 20}
-
-$ cargo run -- --help
+cargo run -- calc add 2 3
+cargo run -- calc multiply 4 5 --profile-id premium
+cargo run -- --help
 ```
 
-**Key Points:**
-- Verbs are registered via `#[verb("name")]` macro.
-- Nouns are auto-detected from module structure.
-- Flags are kebab-case by convention (`--profile-id`, `--dry-run`).
-- Output is JSON by default (agent-ready).
+## Core Feature Matrix
 
-## Feature Matrix
-
-| Feature | Type | Example |
-|---------|------|---------|
-| Noun-verb auto-discovery | Required | `#[verb("add")]` registers `calc add` |
-| Doc comment tags (`#[arg]`) | Required | `[default: json]`, `[group: format]`, `[env: VAR]` |
-| Kebab-case flag normalization | Required | `--profile-id`, `--dry-run` (idiomatic CLI) |
-| JSON output formatting | Required | All results serialize to JSON by default |
-| In-process command chaining (`++`) | Optional | `myapp session login ++ session verify @{1.token}` |
-| Stdin extraction (`@-`, `@-::json.path`) | Optional | `echo '{"x": 5}' \| myapp cmd @-::x` |
-| Dynamic shell completions | Optional | `myapp completions zsh` |
-| LLM introspection (`--introspect`) | Optional | Output tool schema for OpenAI/Anthropic |
-| Structured errors (`--structured-errors`) | Optional | JSON error format with action templates |
-| Interactive REPL mode | Feature-gated (`repl`) | `clap_noun_verb::Repl::new(registry).run()` |
-| Tracing & telemetry | Built-in | OpenTelemetry-style spans with W3C traceparent (always compiled) |
+| Capability | Availability | Example |
+|---|---|---|
+| Noun-verb auto-discovery | Core | `#[verb("add")]` registers `calc add` |
+| Kebab-case normalization | Core | `--profile-id`, `--dry-run` |
+| JSON output | Core | Agent-ready serialized consequences |
+| Command chaining | Core | `session login ++ session verify @{1.token}` |
+| Stdin extraction | Core | `@-`, `@-::json.path` |
+| Dynamic completions | Core | `myapp completions zsh` |
+| LLM introspection | Core | `myapp --introspect` |
+| Structured errors | Core | Typed JSON errors and action templates |
+| Graph and capability registry | Core | RDF graph operations and evidence standing |
+| Interactive shell | `repl` | `Repl::new(registry).run()` |
+| OpenTelemetry dispatch spans | `otel` | `otel::init_tracer("service")` |
+| Bounded federation | `federated-network` | Advertise, resolve, and manufacture invocation envelopes |
 
 ## Cargo Features
 
-The core ships with **zero default features** — everything in the Feature Matrix above
-(noun-verb dispatch, chaining `++`, stdin extraction `@-`, completions, `--introspect`,
-`--structured-errors`, telemetry, validators, graph, capability, diagnostics) is
-available with just `clap-noun-verb = "26.6.13"` and no flags.
+The crate has **zero default features**. The core includes noun-verb dispatch,
+chaining, stdin extraction, completions, introspection, structured errors,
+validators, graph operations, capability standing, diagnostics, and RDF/ggen
+synchronization.
 
-| Feature | Default | Pulls in | Enables |
-|---------|---------|----------|---------|
-| _(none)_ | ✓ | — | Full core: dispatch, chaining, stdin, completions, introspection, structured errors, telemetry, validators, graph/capability/diagnostics modules |
-| `repl` | | `rustyline` | Interactive REPL (`Repl::new(registry).run()`) |
-| `autonomic` | | — | Autonomic CI/CD policies (`src/policies.rs`) |
-| `contrib` | | — | Contributor helpers |
-| `process-data` | | — | Process-data pipeline hooks |
+| Feature | Family | Enables |
+|---|---|---|
+| `process-data` | Core extension | Process-data pipeline hooks |
+| `autonomic` | Operations | Autonomic CI/CD policies; implies `process-data` |
+| `contrib` | Extension | Contributor helpers; implies `process-data` |
+| `repl` | Interface | Interactive rustyline REPL |
+| `otel` | Observability | OpenTelemetry-backed tracing spans |
+| `federated-network` | Integration | Bounded peer, capability, resolver, and envelope APIs |
+| `meta-framework` | Semantic | Layer and invariant admission with standing |
+| `rdf-composition` | Semantic | Deterministic duplicate-free semantic fragments |
+| `fractal-patterns` | Semantic | Typed adjacent-level composition |
+| `discovery-engine` | Intelligence | Deterministic capability indexing and search |
+| `learning-trajectories` | Intelligence | Bounded replayable score trajectories |
+| `economic-sim` | Intelligence | Vickrey auctions and deterministic allocation |
+| `reflexive-testing` | Quality | Machine-readable replay-aware verifier reports |
+| `quantum-ready` | Quality | Crypto-agility policy for ML-KEM, ML-DSA, and SLH-DSA |
+| `executable-specs` | Quality | Executable Given/When/Then specifications |
+| `frontier-semantic` | Aggregate | All semantic features |
+| `frontier-intelligence` | Aggregate | All intelligence features |
+| `frontier-quality` | Aggregate | All quality features |
+| `frontier-all` | Aggregate | Semantic, intelligence, quality, and federation features |
 
-## Playground How-To
-
-1. **Create a minimal noun:**
-
-```rust
-mod services; // Create src/services.rs
-
-// src/services.rs
-#[clap_noun_verb_macros::verb("status")]
-fn cmd_status() -> clap_noun_verb::Result<Status> {
-  Ok(Status { healthy: true })
-}
-```
-
-2. **Register the noun in main:**
-
-```rust
-// src/main.rs
-mod services;
-
-fn main() -> Result<()> {
-  clap_noun_verb::run()
-}
-```
-
-3. **Run:**
+Compile the entire crown:
 
 ```bash
-$ cargo run -- services status
-{"healthy": true}
+cargo check --all-targets --all-features
+cargo test --all-features
 ```
 
-4. **Add arguments to verbs:**
+## Capability Standing
+
+`CapabilityPackage` records an ontology-owned default verb, dependency closure,
+and executable `ProofSurface` values. Standing is derived rather than asserted:
 
 ```rust
-#[verb("deploy")]
-fn cmd_deploy(
-  /// Service name
-  service: String,
-  /// Skip health checks [default: false]
-  #[arg(long)]
-  dry_run: bool,
-) -> Result<DeployResult> {
-  // Your logic here
-}
+use clap_noun_verb::{CapabilityPackage, CapabilityStanding, ProofSurface};
+
+let mut capability = CapabilityPackage::new(
+    "receipt-verify",
+    "Receipt Verification",
+    "26.7.62",
+    "Verifies one admitted execution receipt",
+)
+.with_default_verb("verify");
+
+capability.record_proof(ProofSurface::new(
+    "unit-contract",
+    "unit",
+    "receipt:unit:001",
+    true,
+    true,
+))?;
+
+assert_eq!(capability.standing, CapabilityStanding::Alive);
+# Ok::<(), String>(())
 ```
+
+`ALIVE` is refused when any declared proof surface is unobserved, unreplayed, or
+missing its receipt identifier.
+
+## ggen Authority and Replay
+
+The root `ggen.toml` preserves the public noun-verb vocabulary. The dedicated
+`packs/clap-noun-verb-capability-pack` owns the 15-capability crown:
+
+```
+RDF/Turtle → SPARQL selection/gates → Tera projection → bounded files
+           → ggen receipt verify → byte-identical replay → OCEL receipt
+```
+
+The automatic law is external SPARQL under `gates/*.rq`. ASK `true` means a
+violation. Generated consumers and `.ggen-v2` receipts are consequences and must
+not be hand-edited.
 
 ## Additional Library Modules
 
-Beyond the noun-verb core, the crate exposes several building-block modules used by the
-specimen CLI and available to your own commands:
-
 - **Validators** (`validators`) — email, IPv4/6, URL, port, path, length, and regex checks.
 - **Graph** (`graph`) — load N-Triples, query by subject/predicate, and validate RDF.
-- **Capability packs** (`capability`) — register and look up capability packages.
-- **Diagnostics / doctor** (`diagnostics`) — registry-backed health checks.
-- **RDF ↔ ggen sync** (`ggen_to_rdf`, `rdf_to_ggen`, `ontology_sync`) — bidirectional
-  code/ontology generation.
+- **Capability** (`capability`) — deterministic registry, dependencies, standing, and proof surfaces.
+- **Diagnostics** (`diagnostics`) — registry-backed health checks.
+- **RDF ↔ ggen** (`ggen_to_rdf`, `rdf_to_ggen`, `ontology_sync`) — code/ontology synchronization.
 - **Async verbs** (`async_verb`) — async command handlers.
-- **Federation** (`federation`, feature `federated-network`) — federated command network.
+- **Frontier** (`frontier`) — bounded semantic, intelligence, quality, federation, and simulation primitives.
 
 ## Learn More
 
 ### Tutorials
-- [Domain Separation Architecture](docs/tutorial/01-domain-separation.md) — Learn the separation of concerns pattern
-- [Tutorial Series](docs/tutorial/README.md) — 6 progressive lessons (10 mins to 2 hours)
+- [Domain Separation Architecture](docs/tutorial/01-domain-separation.md)
+- [Tutorial Series](docs/tutorial/README.md)
 
 ### How-Tos
-- [How-To Guides](docs/howto/README.md) — Solve specific problems (testing, errors, custom formatting)
-- [Production Guides](docs/howto/production/deployment.md) — Deployment, monitoring, configuration, security
+- [How-To Guides](docs/howto/README.md)
+- [Production Guides](docs/howto/production/deployment.md)
 
 ### Reference
-- [#[verb] Macro API](docs/reference/api/verb-macro.md) — Detailed syntax and options
-- [API Reference](docs/reference/README.md) — Types, errors, CLI runner, telemetry
-- [Advanced Features](docs/reference/api/advanced-features.md) — Chaining, introspection, REPL, completions
-- [API Catalog](docs/reference/api-catalog.md) — Doc comment tags, argument configuration
+- [#[verb] Macro API](docs/reference/api/verb-macro.md)
+- [API Reference](docs/reference/README.md)
+- [Advanced Features](docs/reference/api/advanced-features.md)
+- [API Catalog](docs/reference/api-catalog.md)
 
-### Explanations
-- [Architecture Philosophy](docs/explanation/README.md) — Why noun-verb design, type-first thinking, agent-grade CLIs
-- [Changelog](CHANGELOG.md) — Version history and breaking changes
+### Architecture
+- [ggen Authority Contract](docs/GGEN_AUTHORITY.md)
+- [Verification Constitution](AGENTS.md)
+- [Changelog](CHANGELOG.md)
 
 ## Contributing
 
-Issues and PRs welcome: [github.com/seanchatmangpt/clap-noun-verb](https://github.com/seanchatmangpt/clap-noun-verb)
+Issues and pull requests are welcome at the repository.
 
 ## License
 
-Licensed under either of Apache License 2.0 or MIT license at your option.
+Licensed under either Apache License 2.0 or MIT license at your option.

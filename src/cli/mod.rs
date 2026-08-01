@@ -3,13 +3,8 @@
 
 //! CLI layer - argument validation and routing only
 //!
-//! This module contains the CLI interface layer that validates arguments
-//! and delegates to business logic. It contains NO business logic.
-//!
-//! ## Design Principle
-//!
-//! CLI code ONLY validates arguments and options, then delegates to
-//! business logic functions. No business logic is allowed in this layer.
+//! This module validates arguments and delegates to domain handlers. It does
+//! not own business computation.
 
 pub mod builder;
 pub mod preprocessor;
@@ -18,7 +13,6 @@ pub mod router;
 pub mod validator;
 pub(crate) mod value_parser;
 
-// Scaffolding and project initialization
 pub mod init;
 
 pub use builder::CliBuilder;
@@ -27,17 +21,22 @@ pub use registry::CommandRegistry;
 pub use router::CommandRouter;
 pub use validator::ArgValidator;
 
-/// Auto-run CLI with all registered commands
-///
-/// This function automatically discovers all functions marked with
-/// `#[verb]` attributes and runs the CLI.
-///
-/// These attribute macros are provided by the `clap-noun-verb-macros` crate.
+/// Auto-run the CLI with all registered commands.
 pub fn run() -> crate::error::Result<()> {
-    let registry = registry::CommandRegistry::get();
-    let registry = registry.lock().map_err(|e| {
-        crate::error::NounVerbError::execution_error(format!("Failed to lock registry: {}", e))
-    })?;
     let args: Vec<String> = std::env::args().collect();
+    #[cfg(feature = "otel")]
+    let _dispatch_span = tracing::info_span!(
+        "clap_noun_verb.dispatch",
+        argc = args.len(),
+        entrypoint = "cli::run"
+    )
+    .entered();
+
+    let registry = registry::CommandRegistry::get();
+    let registry = registry.lock().map_err(|error| {
+        crate::error::NounVerbError::execution_error(format!(
+            "Failed to lock registry: {error}"
+        ))
+    })?;
     registry.run(args)
 }

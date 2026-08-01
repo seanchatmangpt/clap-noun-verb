@@ -3,53 +3,14 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
-//! clap-noun-verb - A framework for building composable CLI patterns
+//! `clap-noun-verb` is a framework for composable noun-verb command-line interfaces.
 //!
-//! This crate provides a high-level, ergonomic API for building noun-verb CLI patterns
-//! on top of clap, similar to how Python's Typer provides a simpler interface over Click.
-//!
-//! ## Minimal Dependencies
-//!
-//! By default, clap-noun-verb compiles with **only 10 core dependencies** for basic CLI:
-//! - `clap` - CLI framework
-//! - `clap-noun-verb-macros` - Our proc macros
-//! - `linkme` - Auto-discovery
-//! - `serde`, `serde_json` - JSON output
-//! - `thiserror`, `anyhow` - Error handling
-//! - `once_cell`, `lazy_static`, `atty` - Utilities
-//!
-//! All advanced features are opt-in via cargo features:
-//! - `process-data` - Data processing operators
-//! - `autonomic` - Agent introspection & telemetry spans (implies `process-data`)
-//! - `contrib` - Community-contributed verbs (implies `process-data`)
-//! - `repl` - Interactive REPL mode (rustyline)
-//! - `federated-network` - Federated node discovery
-//!
-//! ## Version 26.6.13 Architecture
-//!
-//! - **Attribute Macros** (`clap-noun-verb-macros`) - `#[verb]` for declarative command registration
-//! - **Auto-Discovery** - Commands automatically discovered using `linkme` distributed slices
-//! - **Type Inference** - Arguments automatically inferred from function signatures
-//! - **JSON Output** - All output automatically serialized to JSON
-//!
-//! ### Key Principles
-//!
-//! 1. **Zero Boilerplate** - Just add `#[verb]` attributes to functions
-//! 2. **Auto-Discovery** - Commands automatically discovered at compile time
-//! 3. **Type Inference** - Arguments inferred from function signatures
-//! 4. **JSON by Default** - Perfect for agents, MCP, and modern tooling
-//! 5. **Minimal Dependencies** - Core CLI needs only 9 crates
-//!
-//! ## API Stability
-//!
-//! This crate follows [Semantic Versioning](https://semver.org/). Version 26.6.13 provides:
-//!
-//! - **Public APIs** are stable within the same major version
-//! - **Breaking changes** only in major version bumps
-//! - **Feature flags** are stable - won't be removed without deprecation
+//! Version 26.7.62 preserves the small core while activating the previously
+//! placeholder frontier feature matrix as bounded, deterministic capabilities.
+//! Domain computation remains in handlers; the CLI validates and routes.
 
 // =============================================================================
-// CORE MODULES - Always available (no feature flags)
+// CORE MODULES
 // =============================================================================
 
 pub mod async_verb;
@@ -59,9 +20,8 @@ pub mod error;
 pub mod logic;
 pub mod macros;
 pub mod noun;
-// TODO: otel module not implemented yet (feature declared but module missing)
-// #[cfg(feature = "otel")]
-// pub mod otel;
+#[cfg(feature = "otel")]
+pub mod otel;
 pub mod registry;
 pub mod telemetry;
 pub mod tree;
@@ -70,69 +30,48 @@ pub mod verb;
 // Autonomic CI/CD policies
 pub mod policies;
 
-// =============================================================================
-// SPECIMEN INTEGRATION - Production-ready modules from specimen CLI
-// =============================================================================
-
-// Graph operations: load, query, validate RDF data
+// Graph operations, capability management, and diagnostics
 pub mod graph;
-
-// Capability management: registry and packing
 pub mod capability;
-
-// Diagnostics: health checks and system monitoring
 pub mod diagnostics;
 
 // Federation support
 #[cfg(feature = "federated-network")]
 pub mod federation;
 
-// =============================================================================
-// OPTIONAL MODULES - Feature-gated for minimal compile burden
-// =============================================================================
+// The complete bounded frontier capability surface.
+#[cfg(any(
+    feature = "meta-framework",
+    feature = "rdf-composition",
+    feature = "fractal-patterns",
+    feature = "discovery-engine",
+    feature = "federated-network",
+    feature = "learning-trajectories",
+    feature = "reflexive-testing",
+    feature = "economic-sim",
+    feature = "quantum-ready",
+    feature = "executable-specs"
+))]
+pub mod frontier;
 
-// Execution context
+// Execution context, deprecation, formatting, shell, and REPL surfaces
 pub mod context;
-
-// Deprecation warnings
 pub mod deprecation;
-
-// Output formatting
 pub mod format;
-
-// Shell utilities
 pub mod shell;
-
-// Advanced clap Integration
 pub mod clap_ext;
-
-// Interactive REPL shell
 pub mod repl;
 
-// =============================================================================
-// RDF ↔ GGEN BIDIRECTIONAL GENERATORS - Ontology and code synchronization
-// =============================================================================
-
-// RDF to ggen: convert RDF ontology definitions to compilable Rust code
+// RDF ↔ ggen synchronization
 pub mod rdf_to_ggen;
-
-// ggen to RDF: convert Rust source code to RDF ontology triples
 pub mod ggen_to_rdf;
-
-// Bidirectional sync: keep Rust code and RDF ontology in sync
 pub mod ontology_sync;
 
-// Procedural macros are available as attributes: #[clap_noun_verb::noun] and #[clap_noun_verb::verb]
-// They don't need to be re-exported - they're used directly as attributes
-
 // =============================================================================
-// PUBLIC RE-EXPORTS - Core types always available
+// PUBLIC RE-EXPORTS
 // =============================================================================
 
-// Re-export CLI run function for convenience
 pub use cli::run;
-
-// Core framework types
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
 pub use error::{ActionTemplate, ErrorKind, NounVerbError, Result, Severity, StructuredError};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
@@ -140,13 +79,11 @@ pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
-// Autonomic policies
 pub use policies::{
     GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict, TargetPressurePolicy,
     ToolchainMismatchPolicy, TrybuildChangedPolicy,
 };
 
-// Context and formatting (always available)
 pub use context::AppContext;
 pub use deprecation::{Deprecation, DeprecationType};
 pub use format::{
@@ -159,33 +96,17 @@ pub use validators::{
     validate_path_creatable, validate_path_exists, validate_port, validate_regex, validate_url,
 };
 
-// Re-export clap types so users don't need clap as a direct dependency
-// This follows the facade pattern used by serde, tokio, and tracing
-// Note: These are from clap's builder module (the main clap crate re-exports these)
+// Facade re-exports so consumers do not need a direct clap dependency.
 pub use clap::{Arg, ArgAction, ArgMatches, Command};
 
-// =============================================================================
-// SPECIMEN INTEGRATION RE-EXPORTS
-// =============================================================================
-
-// Graph operations
 pub use graph::{Graph, GraphLoadedOutput, QueryResultOutput, Triple, ValidationResultOutput};
-
-// Capability management
-pub use capability::{CapabilityPackage, CapabilityRegistry, PackAddedOutput, PackRemovedOutput};
-
-// Diagnostics
+pub use capability::{
+    CapabilityPackage, CapabilityRegistry, CapabilityStanding, PackAddedOutput, PackRemovedOutput,
+    ProofSurface,
+};
 pub use diagnostics::{DoctorOutput, HealthIssue};
-
-// =============================================================================
-// FEATURE-GATED RE-EXPORTS
-// =============================================================================
-
-// Macros are exported at crate root via #[macro_export]
-
 pub use repl::Repl;
 
-// Framework-level re-exports for easy composition
 pub use builder::CliBuilder as Cli;
 pub use registry::CommandRegistry as Registry;
 pub use tree::CommandTree as Tree;

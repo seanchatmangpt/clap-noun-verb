@@ -1,0 +1,35 @@
+schema_version = "1.0.0"
+namespace_version = "26.7.29"
+
+[namespace]
+origin = "https://chatmangpt.com"
+vocabulary = "https://chatmangpt.com/ns#"
+identifier_base = "https://chatmangpt.com/id/"
+registry_id = "https://chatmangpt.com/id/namespace/26.7.29"
+registry_repository = "seanchatmangpt/chatmangpt"
+registry_pr = 44
+
+[repository]
+id = "https://chatmangpt.com/id/repository/seanchatmangpt/clap-noun-verb"
+full_name = "seanchatmangpt/clap-noun-verb"
+source_url = "https://github.com/seanchatmangpt/clap-noun-verb"
+kind = "system"
+family = "interface"
+admission_basis = "metadata_only"
+standing = "UNKNOWN"
+
+[public_object]
+id = "https://chatmangpt.com/id/system/clap-noun-verb"
+canonical_path = "/systems/clap-noun-verb"
+canonical_url = "https://chatmangpt.com/systems/clap-noun-verb"
+source_repository = "https://chatmangpt.com/id/repository/seanchatmangpt/clap-noun-verb"
+publish = true
+admission = "ADMITTED"
+standing = "UNKNOWN"
+description = "Canonical noun-verb CLI grammar and implementation."
+
+[law]
+repository_is_identity = false
+metadata_implies_standing = false
+unknown_may_claim_alive = false
+receipt_required_for_actuation_claim = true
