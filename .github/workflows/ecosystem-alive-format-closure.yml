@@ -3,7 +3,8 @@ name: Ecosystem ALIVE Format Closure
 on:
   pull_request:
     paths:
-      - "src/rdf_to_ggen.rs"
+      - "examples/**"
+      - "src/**"
       - "tests/frontier/capability_crown_test.rs"
       - "tests/gap_federation_mod_tests.rs"
       - ".github/workflows/ecosystem-alive-format-closure.yml"
@@ -39,9 +40,16 @@ jobs:
           python3 - <<'PY'
           import subprocess
           allowed = {
-              'src/rdf_to_ggen.rs',
-              'tests/frontier/capability_crown_test.rs',
-              'tests/gap_federation_mod_tests.rs',
+              'examples/agent_cli_builder.rs','examples/app_context.rs','examples/capability_registry.rs',
+              'examples/command_tree.rs','examples/diagnostics.rs','examples/format_error_pipeline.rs',
+              'examples/frontier_discovery_engine_demo.rs','examples/ontology_to_cli.rs','examples/output_formats.rs',
+              'examples/proc_macro_verb.rs','examples/repl_witness.rs','examples/revops_cs_checkins.rs',
+              'examples/revops_email_sequences.rs','examples/revops_financial_forecast.rs',
+              'examples/revops_revenue_dashboard.rs','examples/revops_sales_pipeline.rs',
+              'src/capability/mod.rs','src/capability/registry.rs','src/cli/mod.rs','src/error.rs',
+              'src/federation/mod.rs','src/frontier.rs','src/ggen_to_rdf.rs','src/lib.rs',
+              'src/ontology_sync.rs','src/rdf_to_ggen.rs',
+              'tests/frontier/capability_crown_test.rs','tests/gap_federation_mod_tests.rs',
           }
           changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
           unexpected = sorted(changed - allowed)
@@ -54,7 +62,7 @@ jobs:
         run: |
           git config user.name "clap-noun-verb-alive-controller"
           git config user.email "clap-noun-verb-alive-controller@users.noreply.github.com"
-          git add src/rdf_to_ggen.rs tests/frontier/capability_crown_test.rs tests/gap_federation_mod_tests.rs
+          git add examples src tests/frontier/capability_crown_test.rs tests/gap_federation_mod_tests.rs
           if ! git diff --cached --quiet; then
             git commit -m "style(cli): close rustfmt drift"
           fi
