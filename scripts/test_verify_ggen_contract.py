@@ -30,16 +30,16 @@ class GgenContractVerifierTest(unittest.TestCase):
         path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
 
     def write_fixture(self) -> None:
-        gate = """
-        ASK {
-          ?verb <x:hasArguments> ?a, ?b .
-          FILTER(?a = ?b)
-        }
-        """
+        gates = [
+            "gates/fieldname-collision.rq",
+            "gates/argument-semantics.rq",
+            "gates/projection-delimiter.rq",
+        ]
+        gate_list = ", ".join(f'"{gate}"' for gate in gates)
         manifest = f"""
         [project]
         name = "clap-noun-verb"
-        version = "26.6.14"
+        version = "26.7.62"
         [ontology]
         source = "ontology/clap-noun-verb-ontology.ttl"
         base_iri = "http://clap-noun-verb.io/ontology#"
@@ -62,52 +62,91 @@ class GgenContractVerifierTest(unittest.TestCase):
         mode = "Overwrite"
         skip_empty = true
         [validation]
-        gates = ["gates/fieldname-collision.rq"]
+        gates = [{gate_list}]
         """
         self.write("ggen.toml", manifest)
-        self.write("Cargo.toml", '[package]\nname="clap-noun-verb"\nversion="26.6.14"\n')
+        self.write("Cargo.toml", '[package]\nname="clap-noun-verb"\nversion="26.7.62"\n')
         self.write(
             "package.toml",
             '[pack]\nname="clap-noun-verb"\n[pack.outputs]\nqueries="queries"\ntemplates="templates"\ngates="gates"\n',
         )
-        self.write("ontology/clap-noun-verb-ontology.ttl", "<x:s> <x:p> <x:o> .\n")
-        self.write("gates/fieldname-collision.rq", "# MESSAGE: collision\n" + gate)
-        self.write("ontology/queries/fieldname-collision.rq", "# MOVED: ../../gates/fieldname-collision.rq\n")
+        ontology_predicates = "\n".join(
+            [f"cnv:{predicate} a rdf:Property ." for predicate in MODULE.REQUIRED_ARGUMENT_PREDICATES]
+            + [f"cnv:{argument_type} a cnv:ArgumentType ." for argument_type in MODULE.REQUIRED_ARGUMENT_TYPES]
+        )
+        self.write(
+            "ontology/clap-noun-verb-ontology.ttl",
+            """
+            @prefix cnv: <http://clap-noun-verb.io/ontology#> .
+            @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+            """
+            + ontology_predicates
+            + "\n",
+        )
+        self.write(
+            "gates/fieldname-collision.rq",
+            """
+            # MESSAGE: collision
+            ASK {
+              ?verb <x:hasArguments> ?a, ?b .
+              FILTER(?a = ?b)
+            }
+            """,
+        )
+        self.write(
+            "gates/argument-semantics.rq",
+            "# MESSAGE: semantics\nASK { FILTER(false) }\n",
+        )
+        self.write(
+            "gates/projection-delimiter.rq",
+            "# MESSAGE: delimiter\nASK { FILTER(false) }\n",
+        )
+        self.write(
+            "ontology/queries/fieldname-collision.rq",
+            "# MOVED: ../../gates/fieldname-collision.rq\n",
+        )
         self.write(
             "queries/verb-signatures.rq",
-            "SELECT ?noun_name ?verb_name ?verb_about ?return_type ?handler_name "
-            "(GROUP_CONCAT(?x) AS ?args) WHERE { ?s ?p ?x } GROUP BY "
-            "?noun_name ?verb_name ?verb_about ?return_type ?handler_name\n",
+            (Path(__file__).resolve().parents[1] / "queries/verb-signatures.rq").read_text(),
         )
         self.write("queries/verbs-mod.rq", "SELECT ?modules WHERE { BIND('x' AS ?modules) }\n")
         self.write(
             "templates/verb.rs.tera",
-            "// rendered from O* by ggen\n// noun_name verb_name verb_about return_type handler_name args\n",
+            (Path(__file__).resolve().parents[1] / "templates/verb.rs.tera").read_text(),
         )
         self.write("templates/verbs-mod.rs.tera", "// generated\n")
-        self.write(
-            "examples/greet-demo/ggen.toml",
-            manifest.replace('source = "ontology/clap-noun-verb-ontology.ttl"', 'source = "ontology.ttl"')
-            .replace('query = { file = "queries/', 'query = { file = "../../queries/')
-            .replace('template = { file = "templates/', 'template = { file = "../../templates/')
-            .replace('gates = ["gates/', 'gates = ["../../gates/'),
+        example_manifest = manifest.replace(
+            'source = "ontology/clap-noun-verb-ontology.ttl"', 'source = "ontology.ttl"'
         )
+        example_manifest = example_manifest.replace(
+            'query = { file = "queries/', 'query = { file = "../../queries/'
+        )
+        example_manifest = example_manifest.replace(
+            'template = { file = "templates/', 'template = { file = "../../templates/'
+        )
+        for gate in gates:
+            example_manifest = example_manifest.replace(f'"{gate}"', f'"../../{gate}"')
+        self.write("examples/greet-demo/ggen.toml", example_manifest)
         self.write("examples/greet-demo/src/verbs/greet.rs", "// rendered from O* by ggen\n")
         self.write("AGENTS.md", "law\n")
         self.write("docs/GGEN_AUTHORITY.md", "authority\n")
         self.write(
             ".github/workflows/ggen-authority.yml",
-            f"# {MODULE.PINNED_GGEN_SHA}\n# ggen sync run\n# ggen receipt verify\n",
+            f"# {MODULE.PINNED_GGEN_SHA}\n"
+            "# ggen sync run\n"
+            "# ggen receipt verify\n"
+            "# Prove full argument projection semantics\n",
         )
 
     def test_admits_closed_contract(self) -> None:
         report = MODULE.verify(self.root)
         self.assertEqual(report.state, "PARTIAL_ALIVE")
         self.assertEqual(report.generation_rules, 2)
+        self.assertEqual(report.validation_gates, 3)
 
     def test_refuses_version_drift(self) -> None:
         path = self.root / "ggen.toml"
-        path.write_text(path.read_text().replace('version = "26.6.14"', 'version = "0.0.0"', 1))
+        path.write_text(path.read_text().replace('version = "26.7.62"', 'version = "0.0.0"', 1))
         with self.assertRaisesRegex(MODULE.ContractError, "GGEN_VERSION_DRIFT_REFUSED"):
             MODULE.verify(self.root)
 
@@ -121,6 +160,36 @@ class GgenContractVerifierTest(unittest.TestCase):
         gate = self.root / "gates/fieldname-collision.rq"
         gate.write_text("# MESSAGE: collision\nASK { FILTER NOT EXISTS { ?s ?p ?o } }\n")
         with self.assertRaisesRegex(MODULE.ContractError, "GGEN_GATE_POLARITY_REFUSED"):
+            MODULE.verify(self.root)
+
+    def test_refuses_stale_position_predicate(self) -> None:
+        query = self.root / "queries/verb-signatures.rq"
+        query.write_text(query.read_text().replace("cnv:cliPosition", "cnv:positional"))
+        with self.assertRaisesRegex(
+            MODULE.ContractError, "GGEN_ONTOLOGY_QUERY_PREDICATE_DRIFT_REFUSED"
+        ):
+            MODULE.verify(self.root)
+
+    def test_refuses_omitted_argument_surface(self) -> None:
+        query = self.root / "queries/verb-signatures.rq"
+        query.write_text(query.read_text().replace("cnv:shortName", "cnv:legacyShortName"))
+        with self.assertRaisesRegex(MODULE.ContractError, "GGEN_ONTOLOGY_QUERY_CLOSURE_REFUSED"):
+            MODULE.verify(self.root)
+
+    def test_refuses_nondeterministic_argument_projection(self) -> None:
+        query = self.root / "queries/verb-signatures.rq"
+        query.write_text(query.read_text().replace("?sort_key", "?legacy_order"))
+        with self.assertRaisesRegex(
+            MODULE.ContractError, "GGEN_ARGUMENT_ORDER_NONDETERMINISTIC_REFUSED"
+        ):
+            MODULE.verify(self.root)
+
+    def test_refuses_missing_gate(self) -> None:
+        manifest = self.root / "ggen.toml"
+        manifest.write_text(
+            manifest.read_text().replace(', "gates/projection-delimiter.rq"', "")
+        )
+        with self.assertRaisesRegex(MODULE.ContractError, "GGEN_GATE_CLOSURE_REFUSED"):
             MODULE.verify(self.root)
 
 

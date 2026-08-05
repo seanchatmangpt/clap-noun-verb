@@ -29,6 +29,39 @@ REQUIRED_QUERY_COLUMNS = {
     "handler_name",
     "args",
 }
+CANONICAL_GATES = (
+    "gates/fieldname-collision.rq",
+    "gates/argument-semantics.rq",
+    "gates/projection-delimiter.rq",
+)
+REQUIRED_ARGUMENT_PREDICATES = (
+    "argumentType",
+    "hasArgumentName",
+    "fieldName",
+    "valueType",
+    "required",
+    "argumentAbout",
+    "cliPosition",
+    "shortName",
+    "defaultValue",
+)
+REQUIRED_ARGUMENT_TYPES = (
+    "ArgumentType_Required",
+    "ArgumentType_Optional",
+    "ArgumentType_Flag",
+    "ArgumentType_Repeating",
+)
+REQUIRED_TEMPLATE_TOKENS = (
+    "ordered_args",
+    "| sort",
+    "argument_type",
+    "cli_position",
+    "short_name",
+    "default_value",
+    "cli_name",
+    "json_encode",
+    'action = "set_true"',
+)
 
 
 class ContractError(RuntimeError):
@@ -102,6 +135,34 @@ def ask_body(text: str) -> str:
     return re.sub(r"\s+", " ", body).strip()
 
 
+def verify_argument_projection(
+    ontology_text: str, query_text: str, template_text: str
+) -> None:
+    if "cnv:positional" in query_text:
+        raise ContractError(
+            "GGEN_ONTOLOGY_QUERY_PREDICATE_DRIFT_REFUSED",
+            "cnv:positional is not canonical; use cnv:cliPosition",
+        )
+    for predicate in REQUIRED_ARGUMENT_PREDICATES:
+        token = f"cnv:{predicate}"
+        if token not in ontology_text:
+            raise ContractError("GGEN_ONTOLOGY_ARGUMENT_SURFACE_MISSING", token)
+        if token not in query_text:
+            raise ContractError("GGEN_ONTOLOGY_QUERY_CLOSURE_REFUSED", token)
+    for argument_type in REQUIRED_ARGUMENT_TYPES:
+        token = f"cnv:{argument_type}"
+        if token not in ontology_text:
+            raise ContractError("GGEN_ONTOLOGY_ARGUMENT_SURFACE_MISSING", token)
+        if token not in query_text:
+            raise ContractError("GGEN_ONTOLOGY_QUERY_CLOSURE_REFUSED", token)
+    for token in ("GROUP_CONCAT", "?sort_key"):
+        if token not in query_text:
+            raise ContractError("GGEN_ARGUMENT_ORDER_NONDETERMINISTIC_REFUSED", token)
+    for token in REQUIRED_TEMPLATE_TOKENS:
+        if token not in template_text:
+            raise ContractError("GGEN_ARGUMENT_TEMPLATE_CLOSURE_REFUSED", token)
+
+
 def verify(root: Path) -> VerificationReport:
     root = root.resolve()
     manifest = load_toml(root / "ggen.toml")
@@ -122,7 +183,7 @@ def verify(root: Path) -> VerificationReport:
         )
 
     ontology = manifest.get("ontology", {})
-    require_file(root, str(ontology.get("source", "")))
+    ontology_path = require_file(root, str(ontology.get("source", "")))
     prefixes = ontology.get("prefixes", {})
     if prefixes.get("cnv") != CANONICAL_VOCABULARY:
         raise ContractError("GGEN_VOCABULARY_DRIFT_REFUSED", str(prefixes.get("cnv")))
@@ -172,11 +233,19 @@ def verify(root: Path) -> VerificationReport:
         if column not in template_text:
             raise ContractError("GGEN_QUERY_TEMPLATE_CLOSURE_REFUSED", column)
 
-    canonical_gate_path = require_file(root, "gates/fieldname-collision.rq")
-    canonical_gate = canonical_gate_path.read_text(encoding="utf-8")
-    if not re.search(r"(?m)^# MESSAGE: \S", canonical_gate):
-        raise ContractError("GGEN_GATE_MESSAGE_REQUIRED", "gates/fieldname-collision.rq")
-    canonical_body = ask_body(canonical_gate)
+    verify_argument_projection(
+        ontology_path.read_text(encoding="utf-8"), query_text, template_text
+    )
+
+    for gate_path in CANONICAL_GATES:
+        gate_text = require_file(root, gate_path).read_text(encoding="utf-8")
+        if not re.search(r"(?m)^# MESSAGE: \S", gate_text):
+            raise ContractError("GGEN_GATE_MESSAGE_REQUIRED", gate_path)
+        if not re.search(r"\bASK\s*\{", gate_text, flags=re.I):
+            raise ContractError("GGEN_GATE_ASK_REQUIRED", gate_path)
+
+    canonical_gate_path = require_file(root, CANONICAL_GATES[0])
+    canonical_body = ask_body(canonical_gate_path.read_text(encoding="utf-8"))
     if "FILTER NOT EXISTS" in canonical_body.upper():
         raise ContractError("GGEN_GATE_POLARITY_REFUSED", "canonical collision ASK is inverted")
 
@@ -184,8 +253,8 @@ def verify(root: Path) -> VerificationReport:
     if root_validation.get("rules"):
         raise ContractError("GGEN_INLINE_GATE_AUTHORITY_REFUSED", "root manifest")
     root_gates = root_validation.get("gates", [])
-    if root_gates != ["gates/fieldname-collision.rq"]:
-        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", str(root_gates))
+    if root_gates != list(CANONICAL_GATES):
+        raise ContractError("GGEN_GATE_CLOSURE_REFUSED", str(root_gates))
 
     example_rules = example.get("generation", {}).get("rules", [])
     if len(example_rules) != len(rules):
@@ -196,12 +265,14 @@ def verify(root: Path) -> VerificationReport:
     example_validation = example.get("validation", {})
     if example_validation.get("rules"):
         raise ContractError("GGEN_INLINE_GATE_AUTHORITY_REFUSED", "greet-demo")
+    expected_example_gates = [f"../../{path}" for path in CANONICAL_GATES]
     example_gates = example_validation.get("gates", [])
-    if example_gates != ["../../gates/fieldname-collision.rq"]:
-        raise ContractError("GGEN_COLLISION_GATE_CARDINALITY_REFUSED", str(example_gates))
-    example_gate_path = (root / "examples/greet-demo" / example_gates[0]).resolve()
-    if example_gate_path != canonical_gate_path.resolve():
-        raise ContractError("GGEN_COLLISION_GATE_DRIFT_REFUSED", "greet-demo")
+    if example_gates != expected_example_gates:
+        raise ContractError("GGEN_GATE_CLOSURE_REFUSED", str(example_gates))
+    for relative, canonical in zip(example_gates, CANONICAL_GATES, strict=True):
+        example_gate_path = (root / "examples/greet-demo" / relative).resolve()
+        if example_gate_path != (root / canonical).resolve():
+            raise ContractError("GGEN_GATE_DRIFT_REFUSED", relative)
 
     compatibility_marker = require_file(root, "ontology/queries/fieldname-collision.rq")
     marker_text = compatibility_marker.read_text(encoding="utf-8")
@@ -217,7 +288,7 @@ def verify(root: Path) -> VerificationReport:
     )
     if PINNED_GGEN_SHA not in workflow:
         raise ContractError("GGEN_ACTUATOR_PIN_REFUSED", PINNED_GGEN_SHA)
-    for command in ("sync run", "receipt verify"):
+    for command in ("sync run", "receipt verify", "Prove full argument projection semantics"):
         if command not in workflow:
             raise ContractError("GGEN_RECEIPT_REPLAY_GATE_REQUIRED", command)
 
@@ -236,7 +307,11 @@ def verify(root: Path) -> VerificationReport:
             "ontology",
             "pack-transport",
             "query-template-closure",
+            "ontology-query-predicate-closure",
+            "argument-projection-semantics",
+            "deterministic-argument-order",
             "bounded-writes",
+            "gate-closure",
             "collision-polarity",
             "generated-ownership",
             "receipt-replay-ci",

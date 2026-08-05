@@ -55,4 +55,8 @@ skip_empty = true
 # External SPARQL gates are the only automatic sync validation law.
 # ASK true is a violation; SELECT rows are violations.
 [validation]
-gates = ["gates/fieldname-collision.rq"]
+gates = [
+  "gates/fieldname-collision.rq",
+  "gates/argument-semantics.rq",
+  "gates/projection-delimiter.rq",
+]

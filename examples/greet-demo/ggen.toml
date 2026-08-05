@@ -51,6 +51,10 @@ output_file = "src/verbs/mod.rs"
 mode = "Overwrite"
 skip_empty = true
 
-# The example consumes the same canonical external gate as the pack root.
+# The example consumes the same canonical external gates as the pack root.
 [validation]
-gates = ["../../gates/fieldname-collision.rq"]
+gates = [
+  "../../gates/fieldname-collision.rq",
+  "../../gates/argument-semantics.rq",
+  "../../gates/projection-delimiter.rq",
+]

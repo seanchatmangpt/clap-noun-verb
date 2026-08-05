@@ -1,0 +1,22 @@
+# MESSAGE: cnv-projection-delimiter: projected argument literals may not contain "|" or "@@"
+#
+# The SPARQL-to-Tera boundary is a bounded record protocol. Refuse ambiguous
+# literals rather than allowing a value to manufacture a different field graph.
+
+PREFIX cnv: <http://clap-noun-verb.io/ontology#>
+
+ASK {
+  ?arg ?property ?value .
+  VALUES ?property {
+    cnv:hasArgumentName
+    cnv:fieldName
+    cnv:valueType
+    cnv:argumentAbout
+    cnv:shortName
+    cnv:defaultValue
+  }
+  FILTER(
+    CONTAINS(STR(?value), "|") ||
+    CONTAINS(STR(?value), "@@")
+  )
+}

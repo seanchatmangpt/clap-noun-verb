@@ -79,6 +79,92 @@ jobs:
           cargo run --quiet -- tool greet --name Sean | tee /tmp/greet-output.json
           grep -q 'Sean' /tmp/greet-output.json
 
+      - name: Prove full argument projection semantics
+        working-directory: examples/greet-demo
+        run: |
+          cp ontology.ttl /tmp/greet-argument-ontology.ttl
+          cp src/handlers.rs /tmp/greet-argument-handlers.rs
+          cat >> ontology.ttl <<'TTL'
+
+          ex:greet_name
+            cnv:argumentType cnv:ArgumentType_Optional ;
+            cnv:cliPosition 1 ;
+            cnv:defaultValue "world" .
+
+          ex:convert_type
+            cnv:argumentType cnv:ArgumentType_Required ;
+            cnv:shortName "t" .
+
+          ex:convert_dryrun
+            cnv:argumentType cnv:ArgumentType_Flag ;
+            cnv:shortName "d" .
+          TTL
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("src/handlers.rs")
+          text = path.read_text()
+          text = text.replace(
+              "pub fn convert(dry_run: Option<bool>, r#type: String) -> Result<()> {",
+              "pub fn convert(dry_run: bool, r#type: String) -> Result<()> {",
+          )
+          text = text.replace(
+              "    let dry = dry_run.unwrap_or(false);",
+              "    let dry = dry_run;",
+          )
+          path.write_text(text)
+          PY
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+          grep -q 'index = 1' src/verbs/greet.rs
+          grep -q 'default_value = "world"' src/verbs/greet.rs
+          grep -q 'short = .t.' src/verbs/convert.rs
+          grep -q 'short = .d.' src/verbs/convert.rs
+          grep -q 'action = "set_true"' src/verbs/convert.rs
+          grep -q 'dry_run: bool' src/verbs/convert.rs
+          cargo check
+          cargo test
+          cargo run --quiet -- tool greet Sean | tee /tmp/greet-positional-output.json
+          cargo run --quiet -- tool convert -t json -d | tee /tmp/convert-flag-output.json
+          cargo run --quiet -- tool convert --help | tee /tmp/convert-help.txt
+          grep -q 'Sean' /tmp/greet-positional-output.json
+          grep -q 'dry_run=true' /tmp/convert-flag-output.json
+          grep -q -- '--dry-run' /tmp/convert-help.txt
+          grep -q 'Preview without writing' /tmp/convert-help.txt
+          mv /tmp/greet-argument-ontology.ttl ontology.ttl
+          mv /tmp/greet-argument-handlers.rs src/handlers.rs
+          ../../.tooling/ggen/target/debug/ggen sync run
+          ../../.tooling/ggen/target/debug/ggen receipt verify
+
+      - name: Refuse invalid argument semantics and projection delimiters
+        run: |
+          cp examples/greet-demo/ontology.ttl /tmp/greet-argument-refusal.ttl
+          cat >> examples/greet-demo/ontology.ttl <<'TTL'
+
+          <http://clap-noun-verb.io/examples/greet-demo#greet_name>
+            <http://clap-noun-verb.io/ontology#shortName> "too-long" .
+          TTL
+          set +e
+          (cd examples/greet-demo && ../../.tooling/ggen/target/debug/ggen sync run) >/tmp/argument-semantics.out 2>/tmp/argument-semantics.err
+          code=$?
+          set -e
+          mv /tmp/greet-argument-refusal.ttl examples/greet-demo/ontology.ttl
+          test "$code" -ne 0
+          grep -Ei 'argument|semantics|short' /tmp/argument-semantics.err
+
+          cp examples/greet-demo/ontology.ttl /tmp/greet-delimiter-refusal.ttl
+          cat >> examples/greet-demo/ontology.ttl <<'TTL'
+
+          <http://clap-noun-verb.io/examples/greet-demo#greet_name>
+            <http://clap-noun-verb.io/ontology#argumentAbout> "ambiguous|projection" .
+          TTL
+          set +e
+          (cd examples/greet-demo && ../../.tooling/ggen/target/debug/ggen sync run) >/tmp/projection-delimiter.out 2>/tmp/projection-delimiter.err
+          code=$?
+          set -e
+          mv /tmp/greet-delimiter-refusal.ttl examples/greet-demo/ontology.ttl
+          test "$code" -ne 0
+          grep -Ei 'delimiter|projection|argument' /tmp/projection-delimiter.err
+
       - name: Snapshot root declared consequences
         run: |
           python3 - <<'PY'
@@ -217,6 +303,9 @@ jobs:
           cp /tmp/ggen-contract.json .ggen-ci/contract.json
           cp /tmp/ggen-first.json .ggen-ci/first-output-digests.json
           cp /tmp/greet-output.json .ggen-ci/greet-output.json
+          cp /tmp/greet-positional-output.json .ggen-ci/greet-positional-output.json
+          cp /tmp/convert-flag-output.json .ggen-ci/convert-flag-output.json
+          cp /tmp/convert-help.txt .ggen-ci/convert-help.txt
           cp /tmp/capability-first.sha256 .ggen-ci/capability-first.sha256
           cp /tmp/capability-second.sha256 .ggen-ci/capability-second.sha256
           cp /tmp/capability-verifier.json .ggen-ci/CAPABILITY_VERIFIER_REPORT.json

@@ -16,23 +16,52 @@ use clap_noun_verb_macros::verb;
 
 {# Rust reserved set (strict + reserved-for-future) for raw-identifier escaping. #}
 {%- set reserved = ["as","break","const","continue","crate","dyn","else","enum","extern","false","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub","ref","return","self","Self","static","struct","super","trait","true","try","type","unsafe","use","where","while","async","await","abstract","become","box","do","final","macro","override","priv","typeof","unsized","virtual","yield"] -%}
+{%- if args %}{% set ordered_args = args | split(pat="@@") | sort %}{% endif -%}
 {%- if verb_about %}
 /// {{ verb_about }}
 {%- endif %}
 #[verb("{{ verb_name }}", "{{ noun_name }}")]
 pub fn {{ handler_name }}(
 {%- if args %}
-{%- for spec in args | split(pat="@@") %}
+{%- for spec in ordered_args %}
 {%- set parts = spec | split(pat="|") %}
-{%- set field = parts[0] %}
-{%- set rust_type = parts[1] %}
-{%- set required = parts[2] %}
-{%- set positional = parts[4] | default(value="") %}
+{%- set field = parts[1] %}
+{%- set rust_type = parts[2] %}
+{%- set required = parts[3] %}
+{%- set about = parts[4] %}
+{%- set cli_position = parts[5] %}
+{%- set argument_type = parts[6] %}
+{%- set short_name = parts[7] %}
+{%- set default_value = parts[8] %}
+{%- set cli_name = parts[9] %}
 {%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
-{%- if positional %}
-    #[arg(index = {{ positional }})]
+{%- if cli_position or argument_type or short_name or default_value %}
+    #[arg(
+{%- if cli_position %}
+        index = {{ cli_position }},
 {%- endif %}
-{%- if required == "true" %}
+{%- if not cli_position and argument_type %}
+        long = {{ cli_name | json_encode }},
+{%- endif %}
+{%- if short_name %}
+        short = '{{ short_name }}',
+{%- endif %}
+{%- if default_value and argument_type != "flag" %}
+        default_value = {{ default_value | json_encode }},
+{%- endif %}
+{%- if about %}
+        help = {{ about | json_encode }},
+{%- endif %}
+{%- if argument_type == "flag" %}
+        action = "set_true",
+{%- endif %}
+    )]
+{%- endif %}
+{%- if argument_type == "flag" %}
+    {{ ident }}: bool,
+{%- elif argument_type == "repeating" %}
+    {{ ident }}: Vec<{{ rust_type }}>,
+{%- elif required == "true" %}
     {{ ident }}: {{ rust_type }},
 {%- else %}
     {{ ident }}: Option<{{ rust_type }}>,
@@ -42,9 +71,9 @@ pub fn {{ handler_name }}(
 ) -> Result<{{ return_type }}> {
     crate::handlers::{{ handler_name }}(
 {%- if args %}
-{%- for spec in args | split(pat="@@") %}
+{%- for spec in ordered_args %}
 {%- set parts = spec | split(pat="|") %}
-{%- set field = parts[0] %}
+{%- set field = parts[1] %}
 {%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
         {{ ident }},
 {%- endfor %}

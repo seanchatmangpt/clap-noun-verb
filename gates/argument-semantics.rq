@@ -1,0 +1,56 @@
+# MESSAGE: cnv-argument-semantics: argument type, position, short name, or requiredness is invalid
+#
+# ASK true means sync must refuse before projection.
+
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX cnv: <http://clap-noun-verb.io/ontology#>
+
+ASK {
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Flag ;
+         cnv:cliPosition ?position .
+  }
+  UNION
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Flag ;
+         cnv:required true .
+  }
+  UNION
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Flag ;
+         cnv:valueType ?valueType .
+    FILTER(STR(?valueType) != "bool")
+  }
+  UNION
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Required ;
+         cnv:required false .
+  }
+  UNION
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Optional ;
+         cnv:required true .
+  }
+  UNION
+  {
+    ?arg cnv:argumentType cnv:ArgumentType_Required ;
+         cnv:defaultValue ?defaultValue .
+  }
+  UNION
+  {
+    ?arg cnv:shortName ?shortName .
+    FILTER(STRLEN(STR(?shortName)) != 1)
+  }
+  UNION
+  {
+    ?arg cnv:cliPosition ?position .
+    FILTER(xsd:integer(?position) < 1)
+  }
+  UNION
+  {
+    ?verb cnv:hasArguments ?left, ?right .
+    FILTER(?left != ?right)
+    ?left cnv:cliPosition ?position .
+    ?right cnv:cliPosition ?position .
+  }
+}
