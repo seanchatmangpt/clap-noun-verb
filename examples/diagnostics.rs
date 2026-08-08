@@ -14,11 +14,11 @@
 //!
 //! **Doc**: docs/reference/api-catalog.md (diagnostics section)
 
+use clap_noun_verb::diagnostics::doctor::health_check;
 use clap_noun_verb::{
     diagnostics::{DoctorOutput, HealthIssue},
     Result,
 };
-use clap_noun_verb::diagnostics::doctor::health_check;
 
 fn main() -> Result<()> {
     // --- Witness: DoctorOutput::new() + add_issue() ---

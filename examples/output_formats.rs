@@ -58,11 +58,7 @@ struct ServiceInfo {
 }
 
 fn main() -> Result<()> {
-    let service = ServiceInfo {
-        name: "api".into(),
-        replicas: 3,
-        healthy: true,
-    };
+    let service = ServiceInfo { name: "api".into(), replicas: 3, healthy: true };
 
     // --- Witness: Json (compact) ---
     let json = format_output(&service, OutputFormat::Json)
@@ -127,7 +123,10 @@ fn main() -> Result<()> {
     let parsed = OutputFormat::from_str("yaml").expect("'yaml' must parse to OutputFormat::Yaml");
     let roundtrip = format_output(&service, parsed)
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
-    assert!(roundtrip.contains("name:") && roundtrip.contains("api"), "from_str roundtrip must produce yaml output");
+    assert!(
+        roundtrip.contains("name:") && roundtrip.contains("api"),
+        "from_str roundtrip must produce yaml output"
+    );
     println!("from_str:    \"yaml\" → Yaml, produces {} bytes", roundtrip.len());
 
     // --- Witness: Display (for --format help strings) ---

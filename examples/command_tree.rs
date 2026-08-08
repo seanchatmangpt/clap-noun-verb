@@ -35,41 +35,30 @@
 //! **Doc**: docs/reference/api-catalog.md (CommandTree section)
 //! **Reference**: docs/reference/api/types.md
 
-use clap_noun_verb::{Result, CommandTree, CommandTreeBuilder};
 use clap_noun_verb::tree::TreeNode;
+use clap_noun_verb::{CommandTree, CommandTreeBuilder, Result};
 
 fn main() -> Result<()> {
     // --- Build a tree with two nouns and leaf verbs with handlers ---
     let services = TreeNode::new("services", "Manage services")
-        .add_child(
-            TreeNode::new("status", "Show service status")
-                .with_handler(|_matches| {
-                    println!("[handler] services status");
-                    Ok(())
-                }),
-        )
-        .add_child(
-            TreeNode::new("restart", "Restart a service")
-                .with_handler(|_matches| {
-                    println!("[handler] services restart");
-                    Ok(())
-                }),
-        );
+        .add_child(TreeNode::new("status", "Show service status").with_handler(|_matches| {
+            println!("[handler] services status");
+            Ok(())
+        }))
+        .add_child(TreeNode::new("restart", "Restart a service").with_handler(|_matches| {
+            println!("[handler] services restart");
+            Ok(())
+        }));
 
-    let config = TreeNode::new("config", "Manage configuration")
-        .add_child(
-            TreeNode::new("get", "Get a config value")
-                .with_handler(|_matches| {
-                    println!("[handler] config get");
-                    Ok(())
-                }),
-        );
-
-    let tree = CommandTree::from_builder(
-        CommandTreeBuilder::new()
-            .add_root(services)
-            .add_root(config),
+    let config = TreeNode::new("config", "Manage configuration").add_child(
+        TreeNode::new("get", "Get a config value").with_handler(|_matches| {
+            println!("[handler] config get");
+            Ok(())
+        }),
     );
+
+    let tree =
+        CommandTree::from_builder(CommandTreeBuilder::new().add_root(services).add_root(config));
 
     // --- Witness: roots() and root_names() ---
     let roots = tree.roots();

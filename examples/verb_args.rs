@@ -24,9 +24,7 @@
 //! **Reference**: docs/reference/api-catalog.md
 
 use clap::{Arg, ArgAction, Command};
-use clap_noun_verb::{
-    noun, run_cli_with_args, verb, Result, VerbArgs, VerbContext,
-};
+use clap_noun_verb::{noun, run_cli_with_args, verb, Result, VerbArgs, VerbContext};
 
 fn main() -> Result<()> {
     // --- Witness 1: get_one_str (required) and get_one::<bool> (flag) ---
@@ -76,28 +74,27 @@ fn main() -> Result<()> {
             "ISSUE-002".into(),
         ],
         |builder| {
-            builder
-                .name("myapp")
-                .about("VerbArgs trailing demo")
-                .noun(noun!("explain", "Explain commands", [
-                    verb!(
-                        "issue",
-                        "Explain one or more issues",
-                        |args: &VerbArgs| {
-                            let trailing = args.trailing();
-                            assert_eq!(
-                                trailing,
-                                vec!["ISSUE-001".to_string(), "ISSUE-002".to_string()],
-                                "trailing() must return positionals in order"
-                            );
-                            println!("explain ISSUE-001 ISSUE-002: trailing={trailing:?}");
-                            Ok(())
-                        },
-                        args: [
-                            Arg::new("trailing").num_args(0..).trailing_var_arg(true),
-                        ]
-                    ),
-                ]))
+            builder.name("myapp").about("VerbArgs trailing demo").noun(noun!(
+                "explain",
+                "Explain commands",
+                [verb!(
+                    "issue",
+                    "Explain one or more issues",
+                    |args: &VerbArgs| {
+                        let trailing = args.trailing();
+                        assert_eq!(
+                            trailing,
+                            vec!["ISSUE-001".to_string(), "ISSUE-002".to_string()],
+                            "trailing() must return positionals in order"
+                        );
+                        println!("explain ISSUE-001 ISSUE-002: trailing={trailing:?}");
+                        Ok(())
+                    },
+                    args: [
+                        Arg::new("trailing").num_args(0..).trailing_var_arg(true),
+                    ]
+                ),]
+            ))
         },
     )?;
 
@@ -107,11 +104,7 @@ fn main() -> Result<()> {
         let matches = Command::new("test").get_matches_from(["test"]);
         let args = VerbArgs::new(matches).with_context(context);
         assert_eq!(args.verb(), "status", "verb() must return context verb name");
-        assert_eq!(
-            args.noun(),
-            Some("services"),
-            "noun() must return context noun name"
-        );
+        assert_eq!(args.noun(), Some("services"), "noun() must return context noun name");
         println!("verb()=status noun()=Some(\"services\")");
     }
 

@@ -34,20 +34,19 @@ fn main() -> Result<()> {
     assert!(ctx.is_empty().unwrap_or(false), "new context must be empty");
     println!("empty: {}", ctx.is_empty().unwrap_or(false));
 
-    ctx.insert(DatabaseConfig {
-        url: "postgres://localhost/mydb".into(),
-        pool_size: 10,
-    })
-    .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
+    ctx.insert(DatabaseConfig { url: "postgres://localhost/mydb".into(), pool_size: 10 })
+        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
 
     ctx.insert(FeatureFlags { dark_mode: true, beta_features: false })
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
 
-    let len = ctx.len().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
+    let len =
+        ctx.len().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     assert_eq!(len, 2, "context must hold 2 entries after two inserts");
     println!("len after 2 inserts: {len}");
 
-    let has_db = ctx.contains::<DatabaseConfig>()
+    let has_db = ctx
+        .contains::<DatabaseConfig>()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     assert!(has_db, "context must contain DatabaseConfig");
     println!("contains DatabaseConfig: {has_db}");
@@ -58,15 +57,16 @@ fn main() -> Result<()> {
     assert_eq!(pool, 10, "pool_size must be 10");
     println!("DatabaseConfig.pool_size via with(): {pool}");
 
-    let flags: FeatureFlags = ctx.get()
-        .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
+    let flags: FeatureFlags =
+        ctx.get().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     assert!(flags.dark_mode, "dark_mode must be true");
     assert!(!flags.beta_features, "beta_features must be false");
     println!("FeatureFlags: dark_mode={} beta_features={}", flags.dark_mode, flags.beta_features);
 
     ctx.remove::<FeatureFlags>()
         .map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
-    let len_after = ctx.len().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
+    let len_after =
+        ctx.len().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e.to_string()))?;
     assert_eq!(len_after, 1, "context must hold 1 entry after remove");
     println!("len after remove: {len_after}");
 

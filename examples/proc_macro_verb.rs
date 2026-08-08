@@ -93,11 +93,8 @@ fn main() -> Result<()> {
     })?;
 
     // --- Witness 1: services status ---
-    let output = registry.execute_single_step(vec![
-        "myapp".into(),
-        "services".into(),
-        "status".into(),
-    ])?;
+    let output =
+        registry.execute_single_step(vec!["myapp".into(), "services".into(), "status".into()])?;
     let running = output.data["running"].as_bool().expect("running must be bool");
     let uptime = output.data["uptime"].as_u64().expect("uptime must be u64");
     assert!(running, "services::status must report running=true");
@@ -105,11 +102,8 @@ fn main() -> Result<()> {
     println!("services::status dispatched: running={running} uptime={uptime}");
 
     // --- Witness 2: services restart ---
-    let output = registry.execute_single_step(vec![
-        "myapp".into(),
-        "services".into(),
-        "restart".into(),
-    ])?;
+    let output =
+        registry.execute_single_step(vec!["myapp".into(), "services".into(), "restart".into()])?;
     let uptime = output.data["uptime"].as_u64().expect("uptime must be u64");
     assert_eq!(uptime, 0, "services::restart must reset uptime to 0");
     println!("services::restart dispatched: running=true uptime={uptime}");

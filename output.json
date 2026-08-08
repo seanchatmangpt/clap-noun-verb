@@ -1,0 +1,850 @@
+[
+  {
+    "name": "roles_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "roles_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "roles_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "roles_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "roles_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "networks_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "networks_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "networks_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "networks_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "networks_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "users_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "users_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "users_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "users_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "users_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "combinatorial_aggregate",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "stdin_input": {
+          "type": "string"
+        },
+        "step_input": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_input"
+      ]
+    }
+  },
+  {
+    "name": "services_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "services_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "services_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "services_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "services_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "nodes_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "nodes_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "nodes_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "nodes_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "nodes_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "clusters_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "clusters_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "clusters_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "clusters_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "clusters_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "policies_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "policies_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "policies_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "policies_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "policies_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "firewalls_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "firewalls_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "firewalls_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "firewalls_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "firewalls_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "volumes_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "volumes_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "volumes_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "volumes_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "volumes_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "deployments_create",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "force": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  },
+  {
+    "name": "deployments_read",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  },
+  {
+    "name": "deployments_list",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string"
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "deployments_update",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "payload"
+      ]
+    }
+  },
+  {
+    "name": "deployments_delete",
+    "description": "",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    }
+  }
+]

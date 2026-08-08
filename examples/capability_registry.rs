@@ -28,7 +28,8 @@ fn main() -> Result<()> {
     let pkg_a = CapabilityPackage::new("auth", "Authentication", "1.0.0", "login, logout, refresh");
     pkg_a.validate().map_err(|e| clap_noun_verb::NounVerbError::execution_error(e))?;
 
-    let pkg_b = CapabilityPackage::new("billing", "Billing operations", "2.1.0", "invoice, subscription");
+    let pkg_b =
+        CapabilityPackage::new("billing", "Billing operations", "2.1.0", "invoice, subscription");
 
     registry.add_package(pkg_a).map_err(|e| clap_noun_verb::NounVerbError::execution_error(e))?;
     registry.add_package(pkg_b).map_err(|e| clap_noun_verb::NounVerbError::execution_error(e))?;
@@ -38,7 +39,11 @@ fn main() -> Result<()> {
 
     assert!(registry.contains("auth"), "registry must contain 'auth'");
     assert!(registry.contains("billing"), "registry must contain 'billing'");
-    println!("contains auth: {} billing: {}", registry.contains("auth"), registry.contains("billing"));
+    println!(
+        "contains auth: {} billing: {}",
+        registry.contains("auth"),
+        registry.contains("billing")
+    );
 
     let pkgs = registry.packages();
     let mut ids: Vec<&str> = pkgs.iter().map(|p| p.id.as_str()).collect();

@@ -278,6 +278,10 @@ path = "examples/diagnostics.rs"
 name = "command_tree"
 path = "examples/command_tree.rs"
 
+[[example]]
+name = "combinatorial_maximum"
+path = "examples/combinatorial_maximum.rs"
+
 [package.metadata.docs.rs]
 # docs.rs build configuration
 rustdoc-args = ["--cfg", "docsrs"]

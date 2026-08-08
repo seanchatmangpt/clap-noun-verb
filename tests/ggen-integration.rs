@@ -66,8 +66,8 @@ fn test_specimen_cli_command_count() {
     );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let tools: Vec<serde_json::Value> =
-        serde_json::from_str(&stdout).expect("--introspect must emit a JSON array of tool descriptors");
+    let tools: Vec<serde_json::Value> = serde_json::from_str(&stdout)
+        .expect("--introspect must emit a JSON array of tool descriptors");
 
     // Exactly the three registered verbs are discoverable.
     assert_eq!(tools.len(), 3, "specimen CLI must expose exactly 3 discoverable verbs");

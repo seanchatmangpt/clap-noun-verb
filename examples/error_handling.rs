@@ -31,14 +31,16 @@ use clap_noun_verb::{
 
 fn main() -> Result<()> {
     // --- Witness 1: CommandNotFound with suggestion ---
-    let err = NounVerbError::command_not_found_with_candidates("usr", &["user", "session", "config"]);
+    let err =
+        NounVerbError::command_not_found_with_candidates("usr", &["user", "session", "config"]);
     let msg = err.to_string();
     assert!(msg.contains("usr"), "must name the bad input");
     assert!(msg.contains("user"), "Levenshtein match ≤3 must suggest 'user'");
     println!("CommandNotFound: {msg}");
 
     // --- Witness 2: VerbNotFound with suggestion ---
-    let err = NounVerbError::verb_not_found_with_candidates("user", "lst", &["list", "get", "delete"]);
+    let err =
+        NounVerbError::verb_not_found_with_candidates("user", "lst", &["list", "get", "delete"]);
     let msg = err.to_string();
     assert!(msg.contains("lst"), "must name the bad verb");
     assert!(msg.contains("list"), "Levenshtein match must suggest 'list'");
@@ -74,19 +76,22 @@ fn main() -> Result<()> {
     let nve = NounVerbError::execution_error("db unreachable");
     let se = StructuredError::from_error(&nve);
     let json = serde_json::to_string(&se).expect("StructuredError must serialize");
-    assert!(json.contains("ExecutionError"), "ExecutionError variant must map to ExecutionError kind");
+    assert!(
+        json.contains("ExecutionError"),
+        "ExecutionError variant must map to ExecutionError kind"
+    );
 
     // --- Witness 6: verb returning Err propagates through the runner ---
-    let result = run_cli_with_args(
-        vec!["myapp".into(), "db".into(), "connect".into()],
-        |builder| {
-            builder.name("myapp").noun(noun!("db", "Database commands", [
-                verb!("connect", "Connect to database", |_args: &VerbArgs| {
+    let result =
+        run_cli_with_args(vec!["myapp".into(), "db".into(), "connect".into()], |builder| {
+            builder.name("myapp").noun(noun!(
+                "db",
+                "Database commands",
+                [verb!("connect", "Connect to database", |_args: &VerbArgs| {
                     Err(NounVerbError::execution_error("db unreachable"))
-                }),
-            ]))
-        },
-    );
+                }),]
+            ))
+        });
     match result {
         Err(NounVerbError::ExecutionError { message }) => {
             assert_eq!(message, "db unreachable", "error message must round-trip through runner");

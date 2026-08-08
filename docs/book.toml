@@ -1,0 +1,8 @@
+[book]
+authors = ["Sean Chatman"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Clap Noun-Verb Pattern Language"
+
+[preprocessor.links]
