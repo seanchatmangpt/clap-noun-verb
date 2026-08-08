@@ -341,13 +341,13 @@ impl StructuredError {
         let kind = match error {
             NounVerbError::CommandNotFound { noun, suggestion } => {
                 details.insert("noun".to_string(), serde_json::json!(noun));
-                add_command_fix(&mut details, &mut actions, suggestion, noun, None);
+                add_command_fix(&mut details, &mut actions, suggestion, "command", noun, None);
                 ErrorKind::CommandNotFound
             }
             NounVerbError::VerbNotFound { noun, verb, suggestion } => {
                 details.insert("noun".to_string(), serde_json::json!(noun));
                 details.insert("verb".to_string(), serde_json::json!(verb));
-                add_command_fix(&mut details, &mut actions, suggestion, verb, Some(noun));
+                add_command_fix(&mut details, &mut actions, suggestion, "verb", verb, Some(noun));
                 ErrorKind::VerbNotFound
             }
             NounVerbError::InvalidStructure { message }
@@ -393,6 +393,7 @@ fn add_command_fix(
     details: &mut HashMap<String, serde_json::Value>,
     actions: &mut Vec<ActionTemplate>,
     suggestion: &str,
+    kind_label: &str,
     misspelled: &str,
     noun: Option<&str>,
 ) {
@@ -405,7 +406,7 @@ fn add_command_fix(
             let command = noun.map_or_else(|| first.to_string(), |noun| format!("{noun} {first}"));
             actions.push(ActionTemplate::CommandFix {
                 suggested_command: command,
-                reason: format!("Suggested correction for misspelled input '{misspelled}'"),
+                reason: format!("Suggested correction for misspelled {kind_label} '{misspelled}'"),
             });
         }
     }
