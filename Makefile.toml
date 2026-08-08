@@ -1,572 +1,131 @@
 [config]
 skip_core_tasks = false
-on_error_task = "notification"
 default_to_workspace = false
 
-[tasks.default]
-dependencies = ["format-check", "clippy", "test"]
-description = "Default task: format check, clippy, and tests"
+# This file is a local projection of the evidence ladder, not a second CI control plane.
+# GitHub verification authority lives in .github/workflows/verify.yml.
+# No task in this file publishes, deploys, pushes, creates releases, or otherwise actuates.
 
-# Formatting
+[tasks.default]
+dependencies = ["verify-fast"]
+description = "Run the cheapest high-information local verifier"
+
 [tasks.format]
 command = "cargo"
-args = ["fmt"]
-description = "Format code with rustfmt"
-
-[tasks.timeout-check]
-description = "Verify timeout command exists before running tasks"
-script = '''
-which timeout || (echo "ERROR: timeout command not found" && exit 1)
-'''
+args = ["fmt", "--all"]
+description = "Apply rustfmt locally; CI only verifies formatting"
 
 [tasks.format-check]
 command = "cargo"
-args = ["fmt", "--", "--check"]
-description = "Check code formatting"
+args = ["fmt", "--all", "--", "--check"]
+description = "Refuse formatting drift"
 
-# Linting
+[tasks.verify-no-wip]
+command = "python3"
+args = ["scripts/verify_no_wip.py"]
+description = "Refuse unfinished admitted implementation surfaces"
+
 [tasks.clippy]
 command = "cargo"
-args = ["clippy", "--", "-D", "warnings"]
-description = "Run clippy linter"
+args = ["clippy", "--workspace", "--all-targets", "--all-features", "--", "-D", "warnings"]
+description = "Compile and lint the maximal feature surface"
 
-[tasks.lint]
-dependencies = ["timeout-check", "format-check", "clippy"]
-description = "Run all linting checks"
-
-# Testing
-[tasks.test]
+[tasks.check-baseline]
 command = "cargo"
-args = ["test", "--quiet"]
-description = "Run tests (quiet mode)"
+args = ["check", "-p", "clap-noun-verb", "--all-targets", "--no-default-features"]
+description = "Compile the baseline surface without optional features"
 
-[tasks.test-default]
-workspace = false
-command = "cargo"
-args = ["test", "--workspace", "--quiet"]
-description = "Run tests with default features"
-
-[tasks.test-no-features]
-workspace = false
-command = "cargo"
-args = ["test", "--no-default-features", "--workspace", "--quiet"]
-description = "Run tests with no features"
-
-[tasks.test-repl]
-workspace = false
-command = "cargo"
-args = ["test", "--no-default-features", "--features", "repl", "--workspace", "--quiet"]
-description = "Run tests with only the repl feature enabled"
-
-[tasks.test-feature-combinations]
-workspace = false
-dependencies = ["test-no-features", "test-default", "test-repl"]
-description = "Run tests under different feature flag combinations (no features, default features, repl feature)"
-
-[tasks.test-timeout]
-description = "Run tests with 10ms cap using timeout enforcer"
+[tasks.check-features]
 script_runner = "@shell"
+description = "Derive every declared Cargo feature from Cargo.toml and compile it once"
 script = '''
-./scripts/test_timeout.sh . 0.01s
+set -eu
+cargo check -p clap-noun-verb --all-targets --no-default-features
+python3 - <<'PY'
+import subprocess, tomllib
+with open("Cargo.toml", "rb") as source:
+    features = sorted(tomllib.load(source)["features"])
+for feature in features:
+    print(f"feature={feature}", flush=True)
+    subprocess.run([
+        "cargo", "check", "-p", "clap-noun-verb", "--all-targets",
+        "--no-default-features", "--features", feature,
+    ], check=True)
+print(f"compiled_features={len(features)}")
+PY
+cargo check --workspace --all-targets --all-features
 '''
 
-[tasks.test-lib-deterministic]
-workspace = false
+[tasks.test-lib]
 command = "cargo"
-args = ["test", "--lib", "--quiet"]
-env = { RUST_TEST_THREADS = "1" }
-description = "Run library tests (deterministic, single-threaded, unfailable)"
-
-[tasks.test-integration-isolated]
-workspace = false
-command = "cargo"
-args = ["test", "--test", "*", "--quiet"]
-env = { RUST_TEST_THREADS = "1" }
-description = "Run integration tests (isolated, single-threaded, unfailable)"
-
-[tasks.test-unfailable]
-workspace = false
-dependencies = ["test-lib-deterministic", "test-integration-isolated"]
-description = "Run all tests with unfailable architecture (no timeouts needed)"
+args = ["test", "-p", "clap-noun-verb", "--lib", "--all-features"]
+description = "Load-bearing distributed-registry unit proof"
 
 [tasks.test-all]
-workspace = false
 command = "cargo"
-args = ["test", "--all-features"]
-description = "Run all tests with all features"
+args = ["test", "--workspace", "--all-features"]
+description = "Complete workspace behavior proof"
 
-[tasks.test-integration]
-workspace = false
-command = "cargo"
-args = ["test", "--test", "integration_examples", "--", "--ignored"]
-description = "Run integration tests for examples"
+[tasks.witness-replay]
+script_runner = "@shell"
+description = "Execute repository witnesses twice and require deterministic replay"
+script = '''
+set -eu
+mkdir -p target/verify/witnesses
+bash scripts/run_witnesses.sh target/verify/witnesses/first.txt
+bash scripts/run_witnesses.sh target/verify/witnesses/second.txt
+cmp target/verify/witnesses/first.txt target/verify/witnesses/second.txt
+sha256sum target/verify/witnesses/first.txt target/verify/witnesses/second.txt
+'''
 
-# Building
-[tasks.build]
+[tasks.doc]
 command = "cargo"
-args = ["build"]
-description = "Build the project"
+args = ["doc", "--workspace", "--all-features", "--no-deps"]
+env = { RUSTDOCFLAGS = "-D warnings" }
+description = "Build the public API with warnings refused"
+
+[tasks.bench-build]
+command = "cargo"
+args = ["bench", "-p", "clap-noun-verb", "--bench", "dispatch", "--all-features", "--no-run"]
+description = "Compile the benchmark surface without substituting synthetic performance claims"
+
+[tasks.supply-chain]
+command = "cargo"
+args = ["deny", "check", "advisories", "bans", "licenses", "sources", "--deny", "warnings"]
+description = "Run one consolidated supply-chain admission gate"
+
+[tasks.msrv]
+script_runner = "@shell"
+description = "Compile both crates on the declared Rust 1.74 MSRV"
+script = '''
+set -eu
+rustup toolchain install 1.74.0 --profile minimal --no-self-update
+cargo +1.74.0 check -p clap-noun-verb -p clap-noun-verb-macros --all-features
+'''
 
 [tasks.build-release]
 command = "cargo"
-args = ["build", "--release"]
-description = "Build in release mode"
+args = ["build", "--workspace", "--all-features", "--release"]
+description = "Manufacture release-mode binaries locally without publishing"
 
-[tasks.build-examples]
-workspace = false
-command = "cargo"
-args = ["build", "--examples"]
-description = "Build all examples"
+[tasks.verify-fast]
+dependencies = ["verify-no-wip", "format-check", "clippy", "test-lib"]
+description = "80/20 local verifier: unfinished-work refusal, format, maximal lint/compile, registry proof"
 
-[tasks.check]
-command = "cargo"
-args = ["check"]
-description = "Check code compilation"
-
-[tasks.check-all]
-command = "cargo"
-args = ["check", "--all-features"]
-description = "Check code with all features"
-
-# Documentation
-[tasks.doc]
-description = "Build documentation as docs.rs would (complete verification)"
-dependencies = ["build-examples"]
-command = "cargo"
-args = ["doc", "--no-deps", "--all-features"]
-env = { RUSTDOCFLAGS = "-D warnings" }
-
-[tasks.doc-open]
-command = "cargo"
-args = ["doc", "--open", "--no-deps"]
-description = "Build and open documentation"
-
-# Verification & CI
 [tasks.verify]
-description = "Verify code quality: format, clippy, and tests"
-dependencies = ["format-check", "clippy", "test-timeout"]
-
-[tasks.ci]
 dependencies = [
+    "verify-no-wip",
     "format-check",
     "clippy",
-    "test-feature-combinations",
-    "test-unfailable",
-    "build-examples",
-    "check-all",
-]
-description = "Run all CI checks (unfailable test architecture)"
-
-# Release
-[tasks.release-check]
-description = "Run all checks before release"
-dependencies = [
-    "format-check",
-    "clippy",
+    "check-features",
+    "test-lib",
     "test-all",
-    "build-release",
-    "build-examples",
-    "check-all",
+    "witness-replay",
     "doc",
+    "bench-build",
 ]
-
-# Publishing
-[tasks.publish-dry-run-macros]
-description = "Dry-run publish macros crate to crates.io"
-command = "cargo"
-args = [
-    "publish",
-    "--dry-run",
-    "--manifest-path",
-    "clap-noun-verb-macros/Cargo.toml",
-]
-
-[tasks.publish-macros]
-description = "Publish macros crate to crates.io"
-command = "cargo"
-args = ["publish", "--manifest-path", "clap-noun-verb-macros/Cargo.toml"]
-
-[tasks.publish-dry-run]
-description = "Dry-run publish main crate to crates.io"
-command = "cargo"
-args = ["publish", "--dry-run"]
-
-[tasks.publish]
-description = "Publish main crate to crates.io (after macros)"
-dependencies = ["publish-macros"]
-command = "cargo"
-args = ["publish"]
-
-[tasks.publish-all]
-description = "Complete publish workflow: checks + publish both crates"
-dependencies = [
-    "release-check",
-    "publish-dry-run-macros",
-    "publish-macros",
-    "publish-dry-run",
-    "publish",
-]
-
-[tasks.verify-publish]
-description = "Verify publication by searching crates.io"
-command = "cargo"
-args = ["search", "clap-noun-verb"]
-
-# Utilities
-[tasks.clean]
-command = "cargo"
-args = ["clean"]
-description = "Clean build artifacts"
-
-[tasks.audit]
-command = "cargo"
-args = ["audit"]
-description = "Run security audit"
-
-[tasks.notification]
-script = '''
-echo "Task failed - check output above"
-'''
-description = "Error notification task"
-
-# =============================================================================
-# FRONTIER FEATURE TESTING - Phase 1 Architecture Validation
-# =============================================================================
-
-[tasks.test-frontier-all]
-command = "cargo"
-args = ["test", "--features", "frontier-all", "--quiet"]
-description = "Test with all frontier features enabled"
-
-[tasks.test-frontier-minimal]
-command = "cargo"
-args = ["test", "--no-default-features", "--quiet"]
-description = "Test with minimal features (no frontiers)"
-
-[tasks.test-frontier-semantic]
-command = "cargo"
-args = ["test", "--features", "frontier-semantic", "--quiet"]
-description = "Test frontier-semantic meta-feature"
-
-[tasks.test-frontier-intelligence]
-command = "cargo"
-args = ["test", "--features", "frontier-intelligence", "--quiet"]
-description = "Test frontier-intelligence meta-feature"
-
-[tasks.test-frontier-quality]
-command = "cargo"
-args = ["test", "--features", "frontier-quality", "--quiet"]
-description = "Test frontier-quality meta-feature"
-
-[tasks.check-frontier-all]
-command = "cargo"
-args = ["check", "--features", "frontier-all"]
-description = "Check compilation with all frontier features"
-
-[tasks.check-frontier-minimal]
-command = "cargo"
-args = ["check", "--no-default-features"]
-description = "Check compilation with no features"
-
-[tasks.build-frontier-all]
-command = "cargo"
-args = ["build", "--features", "frontier-all"]
-description = "Build with all frontier features"
-
-[tasks.verify-frontier]
-dependencies = [
-    "check-frontier-minimal",
-    "check-frontier-all",
-    "test-frontier-all",
-]
-description = "Verify all frontier feature combinations compile and test"
-
-# Benchmarking
-[tasks.bench]
-command = "cargo"
-args = ["bench", "--all-features"]
-description = "Run all benchmarks with criterion"
-
-[tasks.bench-baseline]
-command = "cargo"
-args = ["bench", "--all-features", "--", "--save-baseline", "main"]
-description = "Run benchmarks and save as baseline"
-
-[tasks.bench-compare]
-command = "cargo"
-args = ["bench", "--all-features", "--", "--baseline", "main"]
-description = "Run benchmarks and compare against baseline"
-
-[tasks.slo-check]
-description = "Check performance SLOs (≤100ms CLI generation, ≤10MB memory, ≤2s compile)"
-script = '''
-echo "🎯 Performance SLO Validation"
-echo "=============================="
-echo ""
-echo "✅ Incremental Compilation: 0.66s (Target: ≤2s)"
-echo "   Status: PASS (67% faster than target)"
-echo ""
-echo "✅ Binary Size: 2.2MB (Target: ≤10MB)"
-echo "   Status: PASS (78% under target)"
-echo ""
-echo "✅ SLO Validation: COMPLETE"
-echo ""
-'''
-
-[tasks.bench-phase1]
-command = "cargo"
-args = ["bench", "--bench", "phase1_foundation_benchmarks"]
-description = "Run Phase 1 foundation benchmarks"
-
-[tasks.bench-phase2]
-command = "cargo"
-args = ["bench", "--all-features", "--bench", "phase2_rdf_benchmarks"]
-description = "Run Phase 2 RDF/Semantic benchmarks"
-
-[tasks.bench-phase3]
-command = "cargo"
-args = ["bench", "--all-features", "--bench", "phase3_optimization_benchmarks"]
-description = "Run Phase 3 Optimization & ML benchmarks"
-
-[tasks.bench-phase4]
-command = "cargo"
-args = ["bench", "--all-features", "--bench", "phase4_advanced_benchmarks"]
-description = "Run Phase 4 Advanced Features benchmarks"
-
-[tasks.profile]
-command = "cargo"
-args = ["bench", "--all-features", "--", "--profile-time", "10"]
-description = "Run benchmarks with profiling enabled"
-
-# =============================================================================
-# FRONTIER CI/CD TASKS - 5-Phase Development Infrastructure
-# =============================================================================
-
-[tasks.test-frontier]
-command = "cargo"
-args = ["test", "--all-features", "--quiet"]
-description = "Run all tests with all frontier features enabled"
-
-[tasks.test-frontier-matrix]
-description = "Run tests across all 23 feature combinations (Tier 0-4)"
-script_runner = "@shell"
-script = '''
-#!/bin/bash
-set -e
-
-echo "════════════════════════════════════════════════════════════════"
-echo "  FRONTIER FEATURE MATRIX TEST - 23 Combinations"
-echo "════════════════════════════════════════════════════════════════"
-
-# Counter for progress
-TOTAL=23
-CURRENT=0
-
-# Function to run tests with features
-test_features() {
-    CURRENT=$((CURRENT + 1))
-    echo ""
-    echo "[$CURRENT/$TOTAL] Testing: ${1:-baseline (no features)}"
-    echo "────────────────────────────────────────────────────────────────"
-
-    if [ -z "$1" ]; then
-        cargo test --quiet
-    elif [ "$1" = "no-default" ]; then
-        cargo test --no-default-features --quiet
-    else
-        cargo test --features "$1" --quiet
-    fi
-
-    if [ $? -eq 0 ]; then
-        echo "✅ PASS: ${1:-baseline}"
-    else
-        echo "❌ FAIL: ${1:-baseline}"
-        exit 1
-    fi
-}
-
-# Tier 0: Baseline
-test_features ""
-
-# Tier 1: Individual features
-test_features "meta-framework"
-test_features "rdf-composition"
-test_features "fractal-patterns"
-test_features "discovery-engine"
-test_features "federated-network"
-test_features "learning-trajectories"
-test_features "reflexive-testing"
-test_features "economic-sim"
-test_features "quantum-ready"
-
-# Tier 2: Meta-features
-test_features "frontier-semantic"
-test_features "frontier-intelligence"
-test_features "frontier-quality"
-
-# Tier 3: Critical combinations
-test_features "meta-framework,rdf-composition"
-test_features "discovery-engine,learning-trajectories"
-test_features "federated-network,rdf-composition"
-test_features "economic-sim,learning-trajectories"
-test_features "executable-specs"
-
-# Tier 4: Extremes
-test_features "frontier-all"
-test_features "no-default"
-test_features "repl"
-
-echo ""
-echo "════════════════════════════════════════════════════════════════"
-echo "  ✅ ALL 23 FEATURE COMBINATIONS PASSED"
-echo "════════════════════════════════════════════════════════════════"
-'''
-
-[tasks.coverage-report]
-description = "Generate code coverage report with tarpaulin (requires cargo install cargo-tarpaulin)"
-script_runner = "@shell"
-script = '''
-#!/bin/bash
-set -e
-
-echo "Generating code coverage report..."
-
-# Check if tarpaulin is installed
-if ! command -v cargo-tarpaulin &> /dev/null; then
-    echo "Installing cargo-tarpaulin..."
-    cargo install cargo-tarpaulin
-fi
-
-# Generate coverage
-cargo tarpaulin --all-features --workspace \
-    --out Html --out Xml \
-    --output-dir coverage \
-    --timeout 300 \
-    --exclude-files 'tests/*' 'benches/*' 'examples/*'
-
-echo "✅ Coverage report generated in ./coverage/"
-echo "Open ./coverage/index.html to view"
-
-# Check coverage threshold
-COVERAGE=$(grep -oP 'line-rate="\K[^"]+' coverage/cobertura.xml | head -1)
-COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
-echo "Coverage: ${COVERAGE_PCT}%"
-
-if (( $(echo "$COVERAGE_PCT < 80" | bc -l) )); then
-    echo "⚠️  WARNING: Coverage below 80% threshold"
-else
-    echo "✅ Coverage meets 80% threshold"
-fi
-'''
-
-[tasks.andon-check]
-description = "Complete Andon Signal Protocol check (stop-the-line validation)"
-dependencies = ["timeout-check"]
-script_runner = "@shell"
-script = '''
-#!/bin/bash
-set -e
-
-echo "════════════════════════════════════════════════════════════════"
-echo "  🚦 ANDON SIGNAL PROTOCOL - STOP THE LINE VALIDATION"
-echo "════════════════════════════════════════════════════════════════"
-
-# CRITICAL: Stop the line if any check fails
-
-echo ""
-echo "🚦 ANDON CHECK 1: Compiler Errors"
-cargo check 2>&1 | tee check.log
-if grep -q "error\[E" check.log; then
-    echo "❌ ANDON RED: STOP THE LINE - Compiler errors detected"
-    exit 1
-fi
-echo "✅ ANDON GREEN: No compiler errors"
-
-echo ""
-echo "🚦 ANDON CHECK 2: Compiler Warnings"
-if grep -q "warning:" check.log; then
-    echo "❌ ANDON YELLOW: STOP THE LINE - Compiler warnings detected"
-    exit 1
-fi
-echo "✅ ANDON GREEN: No compiler warnings"
-
-echo ""
-echo "🚦 ANDON CHECK 3: Test Failures"
-cargo test --quiet 2>&1 | tee test.log
-if grep -q "FAILED" test.log; then
-    echo "❌ ANDON RED: STOP THE LINE - Test failures detected"
-    exit 1
-fi
-echo "✅ ANDON GREEN: All tests pass"
-
-echo ""
-echo "🚦 ANDON CHECK 4: Clippy Warnings"
-cargo clippy -- -D warnings
-echo "✅ ANDON GREEN: No clippy warnings"
-
-echo ""
-echo "🚦 ANDON CHECK 5: Formatting"
-cargo fmt -- --check
-echo "✅ ANDON GREEN: Code properly formatted"
-
-echo ""
-echo "════════════════════════════════════════════════════════════════"
-echo "  ✅ ALL ANDON SIGNALS GREEN - PROCEED WITH CONFIDENCE"
-echo "════════════════════════════════════════════════════════════════"
-'''
-
-[tasks.security-scan]
-description = "Comprehensive security scanning (audit, deny, outdated)"
-script_runner = "@shell"
-script = '''
-#!/bin/bash
-set -e
-
-echo "════════════════════════════════════════════════════════════════"
-echo "  SECURITY SCANNING"
-echo "════════════════════════════════════════════════════════════════"
-
-# Install tools if needed
-command -v cargo-audit &> /dev/null || cargo install cargo-audit
-command -v cargo-deny &> /dev/null || cargo install cargo-deny
-command -v cargo-outdated &> /dev/null || cargo install cargo-outdated
-
-echo ""
-echo "🔒 Security Audit (cargo-audit)..."
-cargo audit
-echo "✅ No known vulnerabilities"
-
-echo ""
-echo "🔒 License & Advisory Check (cargo-deny)..."
-cargo deny check licenses
-cargo deny check advisories
-cargo deny check bans
-echo "✅ License and security checks passed"
-
-echo ""
-echo "🔒 Dependency Freshness (cargo-outdated)..."
-cargo outdated --root-deps-only
-echo "✅ Dependency check complete"
-
-echo ""
-echo "════════════════════════════════════════════════════════════════"
-echo "  ✅ SECURITY SCAN COMPLETE"
-echo "════════════════════════════════════════════════════════════════"
-'''
-
-[tasks.pre-commit-frontier]
-dependencies = ["format", "andon-check", "test-frontier"]
-description = "Pre-commit checks with frontier features: format, Andon signals, all tests"
-
-[tasks.release-validate]
-dependencies = [
-    "andon-check",
-    "test-frontier-matrix",
-    "coverage-report",
-    "bench-compare",
-    "slo-check",
-    "security-scan",
-    "build-release",
-    "doc",
-]
-description = "Comprehensive release validation (all checks)"
+description = "Complete local evidence ladder before external semantic/receipt verification"
+
+[tasks.release-admission]
+dependencies = ["verify", "supply-chain", "msrv", "build-release"]
+description = "Admission-only release gate; actual release DO must re-enter BRCE and emit its own receipt"
