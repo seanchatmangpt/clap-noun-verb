@@ -35,18 +35,18 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - name: Initialize exact-head evidence
+      - name: Admit exact subject and classify semantic scope
         id: scope
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
         run: |
           set -euo pipefail
-          mkdir -p target/ci/gates target/ci/witnesses
+          mkdir -p target/ci/witnesses
           jq -n \
             --arg repository "$GITHUB_REPOSITORY" \
-            --arg head_sha "$HEAD_SHA" \
             --arg base_sha "$BASE_SHA" \
+            --arg head_sha "$HEAD_SHA" \
             --arg event "$GITHUB_EVENT_NAME" \
             '{repository:$repository,base_sha:$base_sha,head_sha:$head_sha,event:$event,actuation_performed:false}' \
             > target/ci/IDENTITY.json
@@ -60,10 +60,9 @@ jobs:
           else
             semantic=false
           fi
-          echo "$semantic" > target/ci/semantic-required.txt
           echo "semantic=$semantic" >> "$GITHUB_OUTPUT"
+          echo "$semantic" > target/ci/semantic-required.txt
           cat target/ci/changed-paths.txt
-          echo "semantic_required=$semantic"
 
       - name: Provision pinned stable Rust
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
@@ -77,104 +76,116 @@ jobs:
           key: verify-${{ env.RUST_STABLE }}
           cache-all-crates: false
 
-      - name: Execute high-information core gates
+      - name: Refuse unfinished admitted work
+        id: unfinished
+        if: always()
+        continue-on-error: true
         run: |
           set -euo pipefail
+          python3 -m py_compile scripts/verify_no_wip.py scripts/test_verify_no_wip.py
+          python3 -m unittest scripts/test_verify_no_wip.py -v
+          python3 scripts/verify_no_wip.py --report target/ci/wip-verifier-report.json
 
-          gate() {
-            name="$1"
-            shift
-            echo "::group::$name"
-            set +e
-            "$@"
-            code=$?
-            set -e
-            echo "$code" > "target/ci/gates/$name.exit"
-            echo "gate=$name exit=$code"
-            echo '::endgroup::'
-            return 0
-          }
+      - name: Format
+        id: format
+        if: always()
+        continue-on-error: true
+        run: cargo fmt --all -- --check
 
-          unfinished_work() {
-            set -euo pipefail
-            python3 -m py_compile scripts/verify_no_wip.py scripts/test_verify_no_wip.py
-            python3 -m unittest scripts/test_verify_no_wip.py -v
-            python3 scripts/verify_no_wip.py --report target/ci/wip-verifier-report.json
-          }
+      - name: Clippy
+        id: clippy
+        if: always()
+        continue-on-error: true
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-          feature_closure() {
-            set -euo pipefail
-            cargo check -p clap-noun-verb --all-targets --no-default-features
-            python3 - <<'PY'
+      - name: Compile baseline, every feature, and all-features
+        id: features
+        if: always()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          cargo check -p clap-noun-verb --all-targets --no-default-features
+          python3 - <<'PY'
           import subprocess, tomllib
-          with open("Cargo.toml", "rb") as source:
-              features = sorted(tomllib.load(source)["features"])
+          with open('Cargo.toml', 'rb') as source:
+              features = sorted(tomllib.load(source)['features'])
           for feature in features:
-              print(f"feature={feature}", flush=True)
+              print(f'feature={feature}', flush=True)
               subprocess.run([
-                  "cargo", "check", "-p", "clap-noun-verb", "--all-targets",
-                  "--no-default-features", "--features", feature,
+                  'cargo','check','-p','clap-noun-verb','--all-targets',
+                  '--no-default-features','--features',feature,
               ], check=True)
-          print(f"compiled_features={len(features)}")
+          print(f'compiled_features={len(features)}')
           PY
-            cargo check --workspace --all-targets --all-features
-          }
+          cargo check --workspace --all-targets --all-features
 
-          witness_replay() {
-            set -euo pipefail
-            bash scripts/run_witnesses.sh target/ci/witnesses/first.txt
-            bash scripts/run_witnesses.sh target/ci/witnesses/second.txt
-            cmp target/ci/witnesses/first.txt target/ci/witnesses/second.txt
-            sha256sum target/ci/witnesses/first.txt target/ci/witnesses/second.txt > target/ci/witnesses/sha256.txt
-          }
+      - name: Load-bearing distributed registry proof
+        id: registry
+        if: always()
+        continue-on-error: true
+        run: cargo test -p clap-noun-verb --lib --all-features
 
-          docs_benchmark() {
-            set -euo pipefail
-            RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
-            cargo bench -p clap-noun-verb --bench dispatch --all-features --no-run
-          }
+      - name: Complete all-features behavior proof
+        id: tests
+        if: always()
+        continue-on-error: true
+        run: cargo test --workspace --all-features
 
-          gate unfinished-work unfinished_work
-          gate format cargo fmt --all -- --check
-          gate clippy cargo clippy --workspace --all-targets --all-features -- -D warnings
-          gate feature-closure feature_closure
-          gate registry-unit cargo test -p clap-noun-verb --lib --all-features
-          gate all-features cargo test --workspace --all-features
-          gate witness-replay witness_replay
-          gate docs-benchmark docs_benchmark
+      - name: Deterministic witness replay
+        id: replay
+        if: always()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          bash scripts/run_witnesses.sh target/ci/witnesses/first.txt
+          bash scripts/run_witnesses.sh target/ci/witnesses/second.txt
+          cmp target/ci/witnesses/first.txt target/ci/witnesses/second.txt
+          sha256sum target/ci/witnesses/first.txt target/ci/witnesses/second.txt > target/ci/witnesses/sha256.txt
+
+      - name: Public API and benchmark-build proof
+        id: docs_bench
+        if: always()
+        continue-on-error: true
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: |
+          set -euo pipefail
+          cargo doc --workspace --all-features --no-deps
+          cargo bench -p clap-noun-verb --bench dispatch --all-features --no-run
 
       - name: Install pinned cargo-deny
+        id: deny_install
+        if: always()
+        continue-on-error: true
         uses: taiki-e/install-action@c505b76b536c2cff45f2b7d03fd8fcdb19103465
         with:
           tool: cargo-deny
 
-      - name: Execute supply-chain gate
-        run: |
-          set +e
-          cargo deny check advisories bans licenses sources --deny warnings
-          code=$?
-          set -e
-          echo "$code" > target/ci/gates/supply-chain.exit
-          echo "gate=supply-chain exit=$code"
+      - name: Supply-chain admission
+        id: supply
+        if: always() && steps.deny_install.outcome == 'success'
+        continue-on-error: true
+        run: cargo deny check advisories bans licenses sources --deny warnings
 
-      - name: Execute declared MSRV gate
-        run: |
-          set +e
-          rustup toolchain install "$RUST_MSRV" --profile minimal --no-self-update
-          install_code=$?
-          if [ "$install_code" -eq 0 ]; then
-            cargo +${RUST_MSRV} check -p clap-noun-verb -p clap-noun-verb-macros --all-features
-            code=$?
-          else
-            code=$install_code
-          fi
-          set -e
-          echo "$code" > target/ci/gates/msrv.exit
-          echo "gate=msrv exit=$code"
+      - name: Provision declared MSRV
+        id: msrv_install
+        if: always()
+        continue-on-error: true
+        run: rustup toolchain install "$RUST_MSRV" --profile minimal --no-self-update
+
+      - name: Declared MSRV compile boundary
+        id: msrv
+        if: always() && steps.msrv_install.outcome == 'success'
+        continue-on-error: true
+        run: cargo +${RUST_MSRV} check -p clap-noun-verb -p clap-noun-verb-macros --all-features
 
       - name: Checkout pinned ggen authority
         id: ggen_checkout
-        if: steps.scope.outputs.semantic == 'true'
+        if: >-
+          always() && steps.scope.outputs.semantic == 'true' &&
+          steps.unfinished.outcome == 'success' && steps.format.outcome == 'success' &&
+          steps.clippy.outcome == 'success' && steps.features.outcome == 'success' &&
+          steps.registry.outcome == 'success' && steps.tests.outcome == 'success'
         continue-on-error: true
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -185,71 +196,62 @@ jobs:
 
       - name: Provision pinned ggen toolchain
         id: ggen_setup
-        if: steps.scope.outputs.semantic == 'true' && steps.ggen_checkout.outcome == 'success'
+        if: always() && steps.ggen_checkout.outcome == 'success'
         continue-on-error: true
         uses: ./.tooling/ggen/.github/actions/setup-ggen-build
 
-      - name: Execute semantic manufacture and replay gate
+      - name: Semantic manufacture, replay, and falsifiers
+        id: semantic
         if: always()
+        continue-on-error: true
         env:
           GGEN_CHECKOUT: ${{ steps.ggen_checkout.outcome }}
           GGEN_SETUP: ${{ steps.ggen_setup.outcome }}
         run: |
           set -euo pipefail
-          required=$(cat target/ci/semantic-required.txt)
-          if [ "$required" != true ]; then
-            echo 0 > target/ci/gates/semantic.exit
+          if [ "${{ steps.scope.outputs.semantic }}" != true ]; then
             echo 'semantic gate not required for this diff'
             exit 0
           fi
-          if [ "$GGEN_CHECKOUT" != success ] || [ "$GGEN_SETUP" != success ]; then
-            echo 1 > target/ci/gates/semantic.exit
-            echo "ggen authority unavailable: checkout=$GGEN_CHECKOUT setup=$GGEN_SETUP"
-            exit 0
-          fi
+          test "$GGEN_CHECKOUT" = success
+          test "$GGEN_SETUP" = success
+          python3 -m py_compile scripts/verify_ggen_contract.py scripts/test_verify_ggen_contract.py
+          python3 -m unittest scripts/test_verify_ggen_contract.py -v
+          python3 scripts/verify_ggen_contract.py --json | tee target/ci/ggen-contract.json
+          cargo build --manifest-path .tooling/ggen/Cargo.toml -p ggen-cli-lib --bin ggen
+          GGEN="$PWD/.tooling/ggen/target/debug/ggen"
 
-          set +e
+          "$GGEN" sync run
+          "$GGEN" receipt verify
           (
-            set -euo pipefail
-            python3 -m py_compile scripts/verify_ggen_contract.py scripts/test_verify_ggen_contract.py
-            python3 -m unittest scripts/test_verify_ggen_contract.py -v
-            python3 scripts/verify_ggen_contract.py --json | tee target/ci/ggen-contract.json
-            cargo build --manifest-path .tooling/ggen/Cargo.toml -p ggen-cli-lib --bin ggen
-            GGEN="$GITHUB_WORKSPACE/.tooling/ggen/target/debug/ggen"
-
+            cd examples/greet-demo
             "$GGEN" sync run
             "$GGEN" receipt verify
-
-            (
-              cd examples/greet-demo
-              "$GGEN" sync run
-              "$GGEN" receipt verify
-              cargo check
-              cargo test
-              cargo run --quiet -- tool greet --name Sean | tee "$GITHUB_WORKSPACE/target/ci/greet-output.json"
-            )
-            grep -q Sean target/ci/greet-output.json
-
-            (
-              cd packs/clap-noun-verb-capability-pack
-              "$GGEN" sync run
-              "$GGEN" receipt verify
-              jq -e '.admission == "ADMITTED" and .capabilities == 15 and .proof_surfaces == 45 and .actuation_performed == false' VERIFIER_REPORT.json
-              cargo test --manifest-path consumer/Cargo.toml
-            )
-
+            cargo check
+            cargo test
+            cargo run --quiet -- tool greet --name Sean | tee "$GITHUB_WORKSPACE/target/ci/greet-output.json"
+          )
+          grep -q Sean target/ci/greet-output.json
+          (
+            cd packs/clap-noun-verb-capability-pack
             "$GGEN" sync run
             "$GGEN" receipt verify
-            (cd examples/greet-demo && "$GGEN" sync run && "$GGEN" receipt verify)
-            (cd packs/clap-noun-verb-capability-pack && "$GGEN" sync run && "$GGEN" receipt verify)
-            git diff --exit-code -- examples/greet-demo/src/verbs packs/clap-noun-verb-capability-pack/consumer
-            test -s .ggen-v2/receipt.json
-            test -s examples/greet-demo/.ggen-v2/receipt.json
-            test -s packs/clap-noun-verb-capability-pack/.ggen-v2/receipt.json
+            jq -e '.admission == "ADMITTED" and .capabilities == 15 and .proof_surfaces == 45 and .actuation_performed == false' VERIFIER_REPORT.json
+            cargo test --manifest-path consumer/Cargo.toml
+          )
 
-            cp examples/greet-demo/ontology.ttl /tmp/greet-ontology.ttl
-            trap 'cp /tmp/greet-ontology.ttl examples/greet-demo/ontology.ttl' EXIT
-            cat >> examples/greet-demo/ontology.ttl <<'TTL'
+          "$GGEN" sync run
+          "$GGEN" receipt verify
+          (cd examples/greet-demo && "$GGEN" sync run && "$GGEN" receipt verify)
+          (cd packs/clap-noun-verb-capability-pack && "$GGEN" sync run && "$GGEN" receipt verify)
+          git diff --exit-code -- examples/greet-demo/src/verbs packs/clap-noun-verb-capability-pack/consumer
+          test -s .ggen-v2/receipt.json
+          test -s examples/greet-demo/.ggen-v2/receipt.json
+          test -s packs/clap-noun-verb-capability-pack/.ggen-v2/receipt.json
+
+          cp examples/greet-demo/ontology.ttl /tmp/greet-ontology.ttl
+          trap 'cp /tmp/greet-ontology.ttl examples/greet-demo/ontology.ttl' EXIT
+          cat >> examples/greet-demo/ontology.ttl <<'TTL'
           <http://clap-noun-verb.io/examples/greet-demo#collision-a>
             a <http://clap-noun-verb.io/ontology#Argument> ;
             <http://clap-noun-verb.io/ontology#hasArgumentName> "dry-run" .
@@ -261,19 +263,19 @@ jobs:
               <http://clap-noun-verb.io/examples/greet-demo#collision-a>,
               <http://clap-noun-verb.io/examples/greet-demo#collision-b> .
           TTL
-            set +e
-            (cd examples/greet-demo && "$GGEN" sync run) >/tmp/collision.out 2>/tmp/collision.err
-            collision_code=$?
-            set -e
-            cp /tmp/greet-ontology.ttl examples/greet-demo/ontology.ttl
-            trap - EXIT
-            test "$collision_code" -ne 0
-            grep -Ei 'collision|cnv-fieldname-collision' /tmp/collision.err
+          set +e
+          (cd examples/greet-demo && "$GGEN" sync run) >/tmp/collision.out 2>/tmp/collision.err
+          collision_code=$?
+          set -e
+          cp /tmp/greet-ontology.ttl examples/greet-demo/ontology.ttl
+          trap - EXIT
+          test "$collision_code" -ne 0
+          grep -Ei 'collision|cnv-fieldname-collision' /tmp/collision.err
 
-            pack=packs/clap-noun-verb-capability-pack
-            cp "$pack/ontology.ttl" /tmp/capability-ontology.ttl
-            trap 'cp /tmp/capability-ontology.ttl packs/clap-noun-verb-capability-pack/ontology.ttl' EXIT
-            cat >> "$pack/ontology.ttl" <<'TTL'
+          pack=packs/clap-noun-verb-capability-pack
+          cp "$pack/ontology.ttl" /tmp/capability-ontology.ttl
+          trap 'cp /tmp/capability-ontology.ttl packs/clap-noun-verb-capability-pack/ontology.ttl' EXIT
+          cat >> "$pack/ontology.ttl" <<'TTL'
           <https://chatmangpt.com/ns/clap-noun-verb#illegal-sixteenth>
             a <https://chatmangpt.com/ns/clap-noun-verb#Capability> ;
             <https://chatmangpt.com/ns/clap-noun-verb#featureName> "illegal-sixteenth" ;
@@ -282,22 +284,25 @@ jobs:
             <https://chatmangpt.com/ns/clap-noun-verb#implementation> "none" ;
             <https://chatmangpt.com/ns/clap-noun-verb#proofSurfaceCount> 3 .
           TTL
-            set +e
-            (cd "$pack" && "$GGEN" sync run) >/tmp/crown.out 2>/tmp/crown.err
-            crown_code=$?
-            set -e
-            cp /tmp/capability-ontology.ttl "$pack/ontology.ttl"
-            trap - EXIT
-            test "$crown_code" -ne 0
-            grep -Ei 'capability|gate|validation|violation' /tmp/crown.err
-          )
-          code=$?
+          set +e
+          (cd "$pack" && "$GGEN" sync run) >/tmp/crown.out 2>/tmp/crown.err
+          crown_code=$?
           set -e
-          echo "$code" > target/ci/gates/semantic.exit
-          echo "gate=semantic exit=$code"
+          cp /tmp/capability-ontology.ttl "$pack/ontology.ttl"
+          trap - EXIT
+          test "$crown_code" -ne 0
+          grep -Ei 'capability|gate|validation|violation' /tmp/crown.err
 
       - name: Checkout pinned wasm4pm receipt verifier
         id: wasm_checkout
+        if: >-
+          always() && steps.unfinished.outcome == 'success' && steps.format.outcome == 'success' &&
+          steps.clippy.outcome == 'success' && steps.features.outcome == 'success' &&
+          steps.registry.outcome == 'success' && steps.tests.outcome == 'success' &&
+          steps.replay.outcome == 'success' && steps.docs_bench.outcome == 'success' &&
+          steps.deny_install.outcome == 'success' && steps.supply.outcome == 'success' &&
+          steps.msrv_install.outcome == 'success' && steps.msrv.outcome == 'success' &&
+          steps.semantic.outcome == 'success'
         continue-on-error: true
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -308,48 +313,21 @@ jobs:
 
       - name: Build authoritative OCEL verifier
         id: wasm_build
-        if: steps.wasm_checkout.outcome == 'success'
+        if: always() && steps.wasm_checkout.outcome == 'success'
         continue-on-error: true
-        run: |
-          rustup default "$RUST_STABLE"
-          cargo build --manifest-path .tooling/wasm4pm/Cargo.toml -p wasm4pm-cli --bin wpm
+        run: cargo build --manifest-path .tooling/wasm4pm/Cargo.toml -p wasm4pm-cli --bin wpm
 
-      - name: Manufacture receipt only for a complete crown
-        if: always()
+      - name: Manufacture and verify exact-head receipt
+        id: receipt
+        if: always() && steps.wasm_build.outcome == 'success'
+        continue-on-error: true
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          WASM_CHECKOUT: ${{ steps.wasm_checkout.outcome }}
-          WASM_BUILD: ${{ steps.wasm_build.outcome }}
         run: |
           set -euo pipefail
-          set +e
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          required = [
-              'unfinished-work','format','clippy','feature-closure','registry-unit',
-              'all-features','witness-replay','docs-benchmark','supply-chain','msrv','semantic',
-          ]
-          exits = {}
-          for name in required:
-              path = Path(f'target/ci/gates/{name}.exit')
-              exits[name] = int(path.read_text().strip()) if path.exists() else 127
-          Path('target/ci/GATE_EXITS.json').write_text(json.dumps(exits, indent=2, sort_keys=True) + '\n')
-          if any(exits.values()):
-              raise SystemExit(42)
-          PY
-          gates_code=$?
-          set -e
-          if [ "$gates_code" -ne 0 ] || [ "$WASM_CHECKOUT" != success ] || [ "$WASM_BUILD" != success ]; then
-            printf 'receipt not manufactured: gates=%s wasm_checkout=%s wasm_build=%s\n' \
-              "$gates_code" "$WASM_CHECKOUT" "$WASM_BUILD" > target/ci/RECEIPT_NOT_MANUFACTURED.txt
-            echo 1 > target/ci/gates/receipt.exit
-            exit 0
-          fi
-
           observed_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           semantic_event='[]'
-          if [ "$(cat target/ci/semantic-required.txt)" = true ]; then
+          if [ "${{ steps.scope.outputs.semantic }}" = true ]; then
             semantic_event='["ggen-semantic-replay"]'
           fi
           jq -n \
@@ -374,49 +352,69 @@ jobs:
                 objectChanges:[]
               }
             }' > target/ci/VERIFICATION.ocel2.json
-
           .tooling/wasm4pm/target/debug/wpm receipt verify-ocel2 target/ci/VERIFICATION.ocel2.json
           .tooling/wasm4pm/target/debug/wpm receipt canonicalize-ocel2 target/ci/VERIFICATION.ocel2.json > target/ci/VERIFICATION.canonical.txt
-          echo 0 > target/ci/gates/receipt.exit
 
       - name: Record exact-head standing
+        id: report
         if: always()
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          UNFINISHED: ${{ steps.unfinished.outcome }}
+          FORMAT: ${{ steps.format.outcome }}
+          CLIPPY: ${{ steps.clippy.outcome }}
+          FEATURES: ${{ steps.features.outcome }}
+          REGISTRY: ${{ steps.registry.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          REPLAY: ${{ steps.replay.outcome }}
+          DOCS_BENCH: ${{ steps.docs_bench.outcome }}
+          DENY_INSTALL: ${{ steps.deny_install.outcome }}
+          SUPPLY: ${{ steps.supply.outcome }}
+          MSRV_INSTALL: ${{ steps.msrv_install.outcome }}
+          MSRV: ${{ steps.msrv.outcome }}
+          SEMANTIC: ${{ steps.semantic.outcome }}
           WASM_CHECKOUT: ${{ steps.wasm_checkout.outcome }}
           WASM_BUILD: ${{ steps.wasm_build.outcome }}
+          RECEIPT: ${{ steps.receipt.outcome }}
         run: |
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          gates = {}
-          for path in sorted(Path('target/ci/gates').glob('*.exit')):
-              gates[path.stem] = int(path.read_text().strip())
-          expected = {
-              'unfinished-work','format','clippy','feature-closure','registry-unit',
-              'all-features','witness-replay','docs-benchmark','supply-chain','msrv','semantic','receipt',
+          gates = {
+              'unfinished-work': os.environ['UNFINISHED'],
+              'format': os.environ['FORMAT'],
+              'clippy': os.environ['CLIPPY'],
+              'feature-closure': os.environ['FEATURES'],
+              'registry-unit': os.environ['REGISTRY'],
+              'all-features': os.environ['TESTS'],
+              'witness-replay': os.environ['REPLAY'],
+              'docs-benchmark': os.environ['DOCS_BENCH'],
+              'deny-install': os.environ['DENY_INSTALL'],
+              'supply-chain': os.environ['SUPPLY'],
+              'msrv-install': os.environ['MSRV_INSTALL'],
+              'msrv': os.environ['MSRV'],
+              'semantic': os.environ['SEMANTIC'],
+              'wasm4pm-checkout': os.environ['WASM_CHECKOUT'],
+              'wasm4pm-build': os.environ['WASM_BUILD'],
+              'receipt': os.environ['RECEIPT'],
           }
-          for missing in expected - gates.keys():
-              gates[missing] = 127
-          passed = all(code == 0 for code in gates.values()) and os.environ['WASM_CHECKOUT'] == 'success' and os.environ['WASM_BUILD'] == 'success'
-          if passed:
+          alive = all(value == 'success' for value in gates.values())
+          if alive:
               standing = 'ALIVE'
-          elif gates.get('unfinished-work') not in (0, None):
+          elif gates['unfinished-work'] == 'failure':
               standing = 'REFUSED:UNFINISHED_WORK_OR_STATIC_CONTRACT'
           else:
               standing = 'BUILD_BROKEN'
           report = {
-              'schema_version':'1.0.0',
+              'schema_version':'2.0.0',
               'repository':os.environ['GITHUB_REPOSITORY'],
               'head_sha':os.environ['HEAD_SHA'],
               'standing':standing,
               'semantic_required':Path('target/ci/semantic-required.txt').read_text().strip() == 'true',
-              'gate_exits':dict(sorted(gates.items())),
-              'wasm4pm_checkout':os.environ['WASM_CHECKOUT'],
-              'wasm4pm_build':os.environ['WASM_BUILD'],
+              'gates':gates,
               'execution_observed':True,
               'actuation_performed':False,
-              'receipt_verified':gates.get('receipt') == 0,
+              'receipt_verified':gates['receipt'] == 'success',
           }
           Path('target/ci/VERIFIER_REPORT.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
           print(json.dumps(report, indent=2, sort_keys=True))
