@@ -5,6 +5,11 @@
 //!
 //! Provides controlled execution environments for async tests that eliminate
 //! timing-dependent failures through deterministic time control.
+//!
+//! Shared across multiple integration-test binaries via `mod common;`; each
+//! binary only exercises the subset of fields/methods its own tests need, so
+//! per-binary dead-code analysis flags fields used only by other binaries.
+#![allow(dead_code)]
 
 use std::future::Future;
 use std::path::PathBuf;
