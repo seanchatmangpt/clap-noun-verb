@@ -463,6 +463,11 @@ impl TelemetryManager {
         Ok(Self { app_name: app_name.to_string() })
     }
 
+    /// The application name this manager was constructed with.
+    pub fn app_name(&self) -> &str {
+        &self.app_name
+    }
+
     /// Start a new root span with the given name
     pub fn start_span(&self, name: &str) -> Result<Span, NounVerbError> {
         Span::new(name)

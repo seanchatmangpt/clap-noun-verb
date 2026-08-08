@@ -200,36 +200,6 @@ pub fn format_output<T: Serialize>(
     format.format(data)
 }
 
-/// JSON formatter (compact)
-fn format_json<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(serde_json::to_string(&json)?)
-}
-
-/// JSON formatter (pretty-printed)
-fn format_json_pretty<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(serde_json::to_string_pretty(&json)?)
-}
-
-/// YAML formatter (built-in, no external deps)
-fn format_yaml<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(json_to_yaml(&json, 0))
-}
-
-/// Table formatter - converts JSON to ASCII table
-fn format_table<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(json_to_table(&json))
-}
-
-/// TSV formatter - converts JSON to tab-separated values
-fn format_tsv<S: Serialize>(value: &S) -> Result<String, Box<dyn std::error::Error>> {
-    let json = serde_json::to_value(value)?;
-    Ok(json_to_tsv(&json))
-}
-
 /// Helper: Build formatted table/TSV rows from JSON object array
 ///
 /// This generic helper reduces duplication between table and TSV formatting.

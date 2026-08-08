@@ -9,6 +9,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+#[cfg(test)]
 const CNV: &str = "http://clap-noun-verb.io/ontology#";
 
 /// RDF triple flattened from SPARQL or an RDF serialization.
@@ -141,10 +142,7 @@ pub struct SparqlResultList {
 }
 
 fn resource_local_name(value: &str) -> &str {
-    value
-        .rsplit(|character| matches!(character, '#' | '/' | ':'))
-        .find(|part| !part.is_empty())
-        .unwrap_or(value)
+    value.rsplit(['#', '/', ':']).find(|part| !part.is_empty()).unwrap_or(value)
 }
 
 fn noun_local_name(value: &str) -> String {
