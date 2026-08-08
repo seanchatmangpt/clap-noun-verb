@@ -281,12 +281,7 @@ impl QuantumReadyPolicy {
     /// Construct the default PQC allow-list.
     #[must_use]
     pub fn post_quantum() -> Self {
-        Self {
-            allowed: ["ML-KEM", "ML-DSA", "SLH-DSA"]
-                .into_iter()
-                .map(str::to_string)
-                .collect(),
-        }
+        Self { allowed: ["ML-KEM", "ML-DSA", "SLH-DSA"].into_iter().map(str::to_string).collect() }
     }
 
     /// Check whether an algorithm is admitted.
@@ -454,9 +449,10 @@ impl VickreyAuction {
             return Err("a Vickrey auction requires at least two bids".into());
         }
         let task_id = bids[0].task_id;
-        if bids.iter().any(|bid| {
-            bid.task_id != task_id || !bid.bid_value.is_finite() || bid.bid_value < 0.0
-        }) {
+        if bids
+            .iter()
+            .any(|bid| bid.task_id != task_id || !bid.bid_value.is_finite() || bid.bid_value < 0.0)
+        {
             return Err("all bids must target one task with finite non-negative values".into());
         }
         let mut ordered = bids.to_vec();
@@ -466,11 +462,7 @@ impl VickreyAuction {
                 .total_cmp(&left.bid_value)
                 .then_with(|| left.agent_id.cmp(&right.agent_id))
         });
-        Ok(AuctionOutcome {
-            winner: ordered[0].agent_id,
-            task_id,
-            payment: ordered[1].bid_value,
-        })
+        Ok(AuctionOutcome { winner: ordered[0].agent_id, task_id, payment: ordered[1].bid_value })
     }
 
     /// Verify non-negative truthful utility for the winner.
@@ -547,9 +539,7 @@ impl EconomicSimulation {
 
     /// Add one unique valid task.
     pub fn add_task(&mut self, task: Task) -> FrontierResult<()> {
-        if task.required_capability.trim().is_empty()
-            || !task.value.is_finite()
-            || task.value < 0.0
+        if task.required_capability.trim().is_empty() || !task.value.is_finite() || task.value < 0.0
         {
             return Err("task capability and value are outside admitted bounds".into());
         }
@@ -566,7 +556,9 @@ impl EconomicSimulation {
             let selected = self
                 .agents
                 .values()
-                .filter(|agent| agent.capabilities.iter().any(|item| item == &task.required_capability))
+                .filter(|agent| {
+                    agent.capabilities.iter().any(|item| item == &task.required_capability)
+                })
                 .max_by(|left, right| {
                     left.trust_score
                         .total_cmp(&right.trust_score)
@@ -655,7 +647,10 @@ impl<L: FractalLevel, T> FractalNoun<L, T> {
     }
 
     /// Compose only with the immediately adjacent child level.
-    pub fn compose<N: FractalLevel, U>(self, mut next: FractalNoun<N, U>) -> FrontierResult<FractalNoun<N, U>> {
+    pub fn compose<N: FractalLevel, U>(
+        self,
+        mut next: FractalNoun<N, U>,
+    ) -> FrontierResult<FractalNoun<N, U>> {
         if N::depth() != L::depth().saturating_add(1) {
             return Err(format!(
                 "non-adjacent fractal composition refused: {}({}) -> {}({})",

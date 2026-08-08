@@ -57,8 +57,8 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
     for (left_index, left_character) in left.iter().enumerate() {
         current[0] = left_index + 1;
         for (right_index, right_character) in right.iter().enumerate() {
-            let substitution = previous[right_index]
-                + usize::from(left_character != right_character);
+            let substitution =
+                previous[right_index] + usize::from(left_character != right_character);
             let insertion = current[right_index] + 1;
             let deletion = previous[right_index + 1] + 1;
             current[right_index + 1] = substitution.min(insertion).min(deletion);
@@ -108,9 +108,7 @@ impl NounVerbError {
                     ));
                 }
                 ActionTemplate::CommandFix { suggested_command, reason } => {
-                    rendered.push_str(&format!(
-                        "\nRecovery: run '{suggested_command}' ({reason})"
-                    ));
+                    rendered.push_str(&format!("\nRecovery: run '{suggested_command}' ({reason})"));
                 }
             }
         }
@@ -387,13 +385,7 @@ impl StructuredError {
             }
         };
 
-        Self {
-            kind,
-            severity,
-            message: error.to_string(),
-            details,
-            action_templates: actions,
-        }
+        Self { kind, severity, message: error.to_string(), details, action_templates: actions }
     }
 }
 

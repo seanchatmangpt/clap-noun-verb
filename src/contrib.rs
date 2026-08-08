@@ -39,11 +39,7 @@ impl Contributor {
                 "contributor display name must not be blank",
             ));
         }
-        Ok(Self {
-            id,
-            display_name,
-            roles: BTreeSet::new(),
-        })
+        Ok(Self { id, display_name, roles: BTreeSet::new() })
     }
 
     /// Add one non-empty role.
@@ -128,7 +124,8 @@ mod tests {
             .register(Contributor::new("alpha", "Alpha").expect("valid contributor"))
             .expect("unique contributor");
 
-        let ids: Vec<_> = registry.list().iter().map(|contributor| contributor.id.as_str()).collect();
+        let ids: Vec<_> =
+            registry.list().iter().map(|contributor| contributor.id.as_str()).collect();
         assert_eq!(ids, vec!["alpha", "zeta"]);
     }
 

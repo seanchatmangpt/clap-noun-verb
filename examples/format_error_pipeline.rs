@@ -12,8 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = Command::new("report")
         .arg(Arg::new("format").long("format").required(true))
         .try_get_matches_from(["report", "--format", "json"])?;
-    let args = VerbArgs::new(matches)
-        .with_context(VerbContext::new("render").with_noun("report"));
+    let args = VerbArgs::new(matches).with_context(VerbContext::new("render").with_noun("report"));
 
     let requested = args.get_one_str("format")?;
     let format = OutputFormat::from_str(&requested).map_err(std::io::Error::other)?;

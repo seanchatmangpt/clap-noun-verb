@@ -67,10 +67,11 @@ impl ProcessDataPipeline {
 
 fn apply_step(mut value: Value, step: &ProcessDataStep) -> Result<Value> {
     match step {
-        ProcessDataStep::SelectPointer(pointer) => value
-            .pointer(pointer)
-            .cloned()
-            .ok_or_else(|| NounVerbError::argument_error(format!("JSON pointer did not resolve: {pointer}"))),
+        ProcessDataStep::SelectPointer(pointer) => {
+            value.pointer(pointer).cloned().ok_or_else(|| {
+                NounVerbError::argument_error(format!("JSON pointer did not resolve: {pointer}"))
+            })
+        }
         ProcessDataStep::RenameField { from, to } => {
             let object = value.as_object_mut().ok_or_else(|| {
                 NounVerbError::argument_error("rename-field requires a JSON object")
@@ -131,7 +132,8 @@ mod tests {
 
     #[test]
     fn pipeline_composes_pointer_rename_and_null_removal() {
-        let input = json!({"payload": {"old": 7, "drop": null, "nested": {"drop": null, "keep": true}}});
+        let input =
+            json!({"payload": {"old": 7, "drop": null, "nested": {"drop": null, "keep": true}}});
         let pipeline = ProcessDataPipeline::new()
             .with_step(ProcessDataStep::SelectPointer("/payload".to_string()))
             .with_step(ProcessDataStep::RenameField {
@@ -159,10 +161,7 @@ mod tests {
     #[test]
     fn rename_refuses_overwrite() {
         let error = ProcessDataPipeline::new()
-            .with_step(ProcessDataStep::RenameField {
-                from: "a".to_string(),
-                to: "b".to_string(),
-            })
+            .with_step(ProcessDataStep::RenameField { from: "a".to_string(), to: "b".to_string() })
             .transform(&json!({"a": 1, "b": 2}))
             .expect_err("overwrites are not admitted");
         assert!(error.to_string().contains("destination field already exists"));

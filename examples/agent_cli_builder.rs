@@ -16,9 +16,9 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
                     "standing": "PARTIAL_ALIVE",
                     "actuation_performed": false
                 });
-                let rendered = OutputFormat::Json
-                    .format(&output)
-                    .map_err(|error| clap_noun_verb::NounVerbError::execution_error(error.to_string()))?;
+                let rendered = OutputFormat::Json.format(&output).map_err(|error| {
+                    clap_noun_verb::NounVerbError::execution_error(error.to_string())
+                })?;
                 println!("{rendered}");
                 Ok(())
             })]
@@ -27,10 +27,7 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
 }
 
 fn main() -> Result<()> {
-    run_cli_with_args(
-        vec!["agent-cli".into(), "capability".into(), "describe".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["agent-cli".into(), "capability".into(), "describe".into()], build())?;
     println!("Agent CLI builder dispatched a typed read-only capability route");
     Ok(())
 }

@@ -148,17 +148,15 @@ fn resource_local_name(value: &str) -> &str {
 }
 
 fn noun_local_name(value: &str) -> String {
-    resource_local_name(value)
-        .trim_end_matches("Noun")
-        .to_ascii_lowercase()
+    resource_local_name(value).trim_end_matches("Noun").to_ascii_lowercase()
 }
 
 fn rust_identifier(value: &str) -> String {
     const KEYWORDS: &[&str] = &[
-        "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else",
-        "enum", "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop",
-        "match", "mod", "move", "mut", "pub", "ref", "return", "self", "static",
-        "struct", "super", "trait", "true", "type", "unsafe", "use", "where", "while",
+        "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum",
+        "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move",
+        "mut", "pub", "ref", "return", "self", "static", "struct", "super", "trait", "true",
+        "type", "unsafe", "use", "where", "while",
     ];
 
     let mut rendered = String::new();
@@ -227,21 +225,14 @@ fn projected_return_type(return_type: &str) -> String {
 #[must_use]
 pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
     let mut code = String::new();
-    let documentation = if verb.docstring.is_empty() {
-        &verb.description
-    } else {
-        &verb.docstring
-    };
+    let documentation = if verb.docstring.is_empty() { &verb.description } else { &verb.docstring };
     for line in documentation.lines() {
         code.push_str(&format!("/// {line}\n"));
     }
 
     let verb_literal = rust_literal(&verb.name);
     if let Some(noun) = verb.noun_name.as_deref() {
-        code.push_str(&format!(
-            "#[verb({verb_literal}, {})]\n",
-            rust_literal(noun)
-        ));
+        code.push_str(&format!("#[verb({verb_literal}, {})]\n", rust_literal(noun)));
     } else {
         code.push_str(&format!("#[verb({verb_literal})]\n"));
     }
@@ -263,10 +254,7 @@ pub fn rdf_spec_to_verb_code(verb: &RdfVerbDefinition) -> String {
             .collect()
     };
 
-    code.push_str(&format!(
-        ") -> {} {{\n",
-        projected_return_type(&verb.return_type)
-    ));
+    code.push_str(&format!(") -> {} {{\n", projected_return_type(&verb.return_type)));
     let await_suffix = if verb.is_async { ".await" } else { "" };
     code.push_str(&format!(
         "    crate::handlers::{function_name}({}){await_suffix}\n",
@@ -281,11 +269,8 @@ fn required_binding<'a>(
     name: &str,
 ) -> Result<&'a SparqlBinding, Box<dyn std::error::Error>> {
     binding.get(name).ok_or_else(|| {
-        std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            format!("Missing ?{name} binding"),
-        )
-        .into()
+        std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Missing ?{name} binding"))
+            .into()
     })
 }
 
@@ -513,11 +498,7 @@ pub fn rdf_triples_to_verb_definitions(
                 arguments.entry(triple.subject).or_default().long_name = Some(triple.object);
             }
             "allowedValue" => {
-                arguments
-                    .entry(triple.subject)
-                    .or_default()
-                    .allowed_values
-                    .insert(triple.object);
+                arguments.entry(triple.subject).or_default().allowed_values.insert(triple.object);
             }
             _ => {}
         }
@@ -539,8 +520,7 @@ pub fn rdf_triples_to_verb_definitions(
             })?;
             verb.arguments.push(accumulator.finish(argument_uri)?);
         }
-        verb.arguments
-            .sort_by(|left, right| left.arg_uri.cmp(&right.arg_uri));
+        verb.arguments.sort_by(|left, right| left.arg_uri.cmp(&right.arg_uri));
     }
 
     if let Some(orphan) = arguments.keys().next() {
@@ -631,10 +611,7 @@ mod tests {
         }"#;
         let verbs = sparql_results_to_verb_definitions(sparql_json).expect("valid SPARQL");
         assert_eq!(
-            verbs
-                .iter()
-                .map(|verb| verb.name.as_str())
-                .collect::<Vec<_>>(),
+            verbs.iter().map(|verb| verb.name.as_str()).collect::<Vec<_>>(),
             vec!["alpha", "zeta"]
         );
     }
@@ -644,12 +621,42 @@ mod tests {
         let verb = "https://example.org/LoadGraphVerb";
         let argument = "https://example.org/PathArg";
         let triples = vec![
-            RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasVerbName"), object: "load".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasArguments"), object: argument.into(), object_type: ObjectType::Reference },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}hasArgumentName"), object: "path".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}valueType"), object: "String".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}required"), object: "true".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}argumentType"), object: format!("{CNV}Positional"), object_type: ObjectType::Reference },
+            RdfTriple {
+                subject: verb.into(),
+                predicate: format!("{CNV}hasVerbName"),
+                object: "load".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: verb.into(),
+                predicate: format!("{CNV}hasArguments"),
+                object: argument.into(),
+                object_type: ObjectType::Reference,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}hasArgumentName"),
+                object: "path".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}valueType"),
+                object: "String".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}required"),
+                object: "true".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}argumentType"),
+                object: format!("{CNV}Positional"),
+                object_type: ObjectType::Reference,
+            },
         ];
         let verbs = rdf_triples_to_verb_definitions(triples).expect("closed graph");
         assert_eq!(verbs[0].arguments.len(), 1);
@@ -661,9 +668,24 @@ mod tests {
         let verb = "https://example.org/LoadGraphVerb";
         let argument = "https://example.org/PathArg";
         let triples = vec![
-            RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasVerbName"), object: "load".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: verb.into(), predicate: format!("{CNV}hasArguments"), object: argument.into(), object_type: ObjectType::Reference },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}hasArgumentName"), object: "path".into(), object_type: ObjectType::Literal },
+            RdfTriple {
+                subject: verb.into(),
+                predicate: format!("{CNV}hasVerbName"),
+                object: "load".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: verb.into(),
+                predicate: format!("{CNV}hasArguments"),
+                object: argument.into(),
+                object_type: ObjectType::Reference,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}hasArgumentName"),
+                object: "path".into(),
+                object_type: ObjectType::Literal,
+            },
         ];
         assert!(rdf_triples_to_verb_definitions(triples).is_err());
     }
@@ -672,8 +694,18 @@ mod tests {
     fn orphan_argument_refuses_graph() {
         let argument = "https://example.org/PathArg";
         let triples = vec![
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}hasArgumentName"), object: "path".into(), object_type: ObjectType::Literal },
-            RdfTriple { subject: argument.into(), predicate: format!("{CNV}valueType"), object: "String".into(), object_type: ObjectType::Literal },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}hasArgumentName"),
+                object: "path".into(),
+                object_type: ObjectType::Literal,
+            },
+            RdfTriple {
+                subject: argument.into(),
+                predicate: format!("{CNV}valueType"),
+                object: "String".into(),
+                object_type: ObjectType::Literal,
+            },
         ];
         assert!(rdf_triples_to_verb_definitions(triples).is_err());
     }

@@ -28,18 +28,18 @@ pub mod tree;
 pub mod verb;
 
 // Feature-gated core extension and contributor surfaces.
-#[cfg(feature = "process-data")]
-pub mod process_data;
 #[cfg(feature = "contrib")]
 pub mod contrib;
+#[cfg(feature = "process-data")]
+pub mod process_data;
 
 // Autonomic CI/CD policies
 pub mod policies;
 
 // Graph operations, capability management, and diagnostics
-pub mod graph;
 pub mod capability;
 pub mod diagnostics;
+pub mod graph;
 
 // Federation support
 #[cfg(feature = "federated-network")]
@@ -61,34 +61,34 @@ pub mod federation;
 pub mod frontier;
 
 // Execution context, deprecation, formatting, shell, and REPL surfaces
+pub mod clap_ext;
 pub mod context;
 pub mod deprecation;
 pub mod format;
-pub mod shell;
-pub mod clap_ext;
 pub mod repl;
+pub mod shell;
 
 // RDF ↔ ggen synchronization
-pub mod rdf_to_ggen;
 pub mod ggen_to_rdf;
 pub mod ontology_sync;
+pub mod rdf_to_ggen;
 
 // =============================================================================
 // PUBLIC RE-EXPORTS
 // =============================================================================
 
-pub use cli::run;
 pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
+pub use cli::run;
 pub use error::{ActionTemplate, ErrorKind, NounVerbError, Result, Severity, StructuredError};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
 
-#[cfg(feature = "process-data")]
-pub use process_data::{ProcessDataPipeline, ProcessDataStep};
 #[cfg(feature = "contrib")]
 pub use contrib::{Contributor, ContributorRegistry};
+#[cfg(feature = "process-data")]
+pub use process_data::{ProcessDataPipeline, ProcessDataStep};
 
 pub use policies::{
     GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict, TargetPressurePolicy,
@@ -110,12 +110,12 @@ pub use validators::{
 // Facade re-exports so consumers do not need a direct clap dependency.
 pub use clap::{Arg, ArgAction, ArgMatches, Command};
 
-pub use graph::{Graph, GraphLoadedOutput, QueryResultOutput, Triple, ValidationResultOutput};
 pub use capability::{
     CapabilityPackage, CapabilityRegistry, CapabilityStanding, PackAddedOutput, PackRemovedOutput,
     ProofSurface,
 };
 pub use diagnostics::{DoctorOutput, HealthIssue};
+pub use graph::{Graph, GraphLoadedOutput, QueryResultOutput, Triple, ValidationResultOutput};
 pub use repl::Repl;
 
 pub use builder::CliBuilder as Cli;

@@ -26,10 +26,34 @@ struct PipelineSummary {
 
 fn deals() -> Vec<Deal> {
     vec![
-        Deal { company: "Acme Corp", amount: 5_000, stage: "Proposal", probability: 75, days_inactive: 2 },
-        Deal { company: "TechStart", amount: 25_000, stage: "Interested", probability: 60, days_inactive: 4 },
-        Deal { company: "StartupXYZ", amount: 2_000, stage: "Proposal", probability: 85, days_inactive: 1 },
-        Deal { company: "BigTech Inc", amount: 15_000, stage: "Interested", probability: 50, days_inactive: 8 },
+        Deal {
+            company: "Acme Corp",
+            amount: 5_000,
+            stage: "Proposal",
+            probability: 75,
+            days_inactive: 2,
+        },
+        Deal {
+            company: "TechStart",
+            amount: 25_000,
+            stage: "Interested",
+            probability: 60,
+            days_inactive: 4,
+        },
+        Deal {
+            company: "StartupXYZ",
+            amount: 2_000,
+            stage: "Proposal",
+            probability: 85,
+            days_inactive: 1,
+        },
+        Deal {
+            company: "BigTech Inc",
+            amount: 15_000,
+            stage: "Interested",
+            probability: 50,
+            days_inactive: 8,
+        },
     ]
 }
 
@@ -48,11 +72,8 @@ fn summary() -> PipelineSummary {
         .filter(|deal| deal.stage == "Proposal" && deal.probability > 60)
         .map(weighted_value)
         .sum();
-    let at_risk = deals
-        .iter()
-        .filter(|deal| deal.days_inactive > 7)
-        .map(|deal| deal.company)
-        .collect();
+    let at_risk =
+        deals.iter().filter(|deal| deal.days_inactive > 7).map(|deal| deal.company).collect();
     PipelineSummary {
         deals: deals.len(),
         open_weighted_value,
@@ -76,9 +97,7 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
         builder.name("revops").version("26.7.62").noun(noun!(
             "pipeline",
             "Inspect the admitted sales pipeline",
-            [verb!("summary", "Render weighted pipeline standing", |_args: &VerbArgs| {
-                emit()
-            })]
+            [verb!("summary", "Render weighted pipeline standing", |_args: &VerbArgs| { emit() })]
         ))
     }
 }
@@ -88,10 +107,7 @@ fn main() -> Result<()> {
     assert_eq!(observed.deals, 4);
     assert_eq!(observed.top_deal, "TechStart");
     assert_eq!(observed.at_risk, vec!["BigTech Inc"]);
-    run_cli_with_args(
-        vec!["revops".into(), "pipeline".into(), "summary".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["revops".into(), "pipeline".into(), "summary".into()], build())?;
     println!("Pipeline summary dispatched without filesystem mutation");
     Ok(())
 }

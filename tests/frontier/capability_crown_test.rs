@@ -86,18 +86,8 @@ fn learning_trajectory_observes_monotonic_bounded_scores() {
 fn reflexive_report_refuses_success_without_replay() {
     use clap_noun_verb::frontier::ReflexiveReport;
 
-    assert!(!ReflexiveReport {
-        passed: 45,
-        failed: 0,
-        replay_verified: false,
-    }
-    .is_alive());
-    assert!(ReflexiveReport {
-        passed: 45,
-        failed: 0,
-        replay_verified: true,
-    }
-    .is_alive());
+    assert!(!ReflexiveReport { passed: 45, failed: 0, replay_verified: false }.is_alive());
+    assert!(ReflexiveReport { passed: 45, failed: 0, replay_verified: true }.is_alive());
 }
 
 #[cfg(feature = "quantum-ready")]
@@ -128,11 +118,7 @@ fn economic_simulation_allocates_to_the_highest_trust_capable_agent() {
             .expect("valid agent");
     }
     simulation
-        .add_task(Task {
-            id: TaskId(7),
-            required_capability: "compile".to_string(),
-            value: 120.0,
-        })
+        .add_task(Task { id: TaskId(7), required_capability: "compile".to_string(), value: 120.0 })
         .expect("valid task");
 
     let allocations = simulation.step().expect("bounded allocation");

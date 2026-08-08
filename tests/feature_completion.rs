@@ -30,11 +30,8 @@ fn contrib_list_is_deterministic_and_duplicate_safe() {
         .register(Contributor::new("alpha", "Alpha").expect("valid contributor"))
         .expect("unique contributor");
 
-    let listed: Vec<_> = registry
-        .list()
-        .iter()
-        .map(|contributor| contributor.id.as_str())
-        .collect();
+    let listed: Vec<_> =
+        registry.list().iter().map(|contributor| contributor.id.as_str()).collect();
     assert_eq!(listed, vec!["alpha", "beta"]);
     assert!(registry
         .register(Contributor::new("alpha", "Duplicate").expect("valid contributor"))
