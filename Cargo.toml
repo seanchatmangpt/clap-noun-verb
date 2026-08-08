@@ -179,6 +179,14 @@ cargo-make = "0.37"
 # RUSTSEC-2026-0204 (invalid pointer dereference in fmt::Pointer for
 # Atomic/Shared), fixed only from 0.9.20 onward.
 crossbeam-epoch = ">=0.9.20, <0.10"
+# Transitive via cargo-make and (with the repl feature) rustyline. home's
+# Cargo.toml manifest itself declares a rust-version that keeps climbing in
+# patch releases (0.5.12 requires 1.88) even though the crate's actual API
+# surface hasn't changed; a pre-1.88 cargo binary cannot even parse that
+# manifest's edition/rust-version keys, which breaks the declared-MSRV
+# (1.74) compile boundary before our own code is ever reached. Pinned to the
+# newest release whose manifest is old-cargo-parseable (rust-version 1.70).
+home = "=0.5.9"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.0"
