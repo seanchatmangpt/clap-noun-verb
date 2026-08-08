@@ -85,3 +85,4 @@ hive-mind-prompt-*.txt
 vendors/
 vendors/
 clap-nv.toml
+__pycache__/
