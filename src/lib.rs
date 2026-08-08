@@ -5,8 +5,8 @@
 
 //! `clap-noun-verb` is a framework for composable noun-verb command-line interfaces.
 //!
-//! Version 26.7.62 preserves the small core while activating the previously
-//! placeholder frontier feature matrix as bounded, deterministic capabilities.
+//! Version 26.8.8 preserves the small core while completing every declared crown
+//! capability as a bounded, deterministic implementation surface.
 //! Domain computation remains in handlers; the CLI validates and routes.
 
 // =============================================================================
@@ -26,6 +26,12 @@ pub mod registry;
 pub mod telemetry;
 pub mod tree;
 pub mod verb;
+
+// Feature-gated core extension and contributor surfaces.
+#[cfg(feature = "process-data")]
+pub mod process_data;
+#[cfg(feature = "contrib")]
+pub mod contrib;
 
 // Autonomic CI/CD policies
 pub mod policies;
@@ -78,6 +84,11 @@ pub use noun::{CompoundNounCommand, NounCommand, NounContext};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};
+
+#[cfg(feature = "process-data")]
+pub use process_data::{ProcessDataPipeline, ProcessDataStep};
+#[cfg(feature = "contrib")]
+pub use contrib::{Contributor, ContributorRegistry};
 
 pub use policies::{
     GitPhaseDirtyPolicy, PolicyEvent, PolicyMode, PolicySet, PolicyVerdict, TargetPressurePolicy,
