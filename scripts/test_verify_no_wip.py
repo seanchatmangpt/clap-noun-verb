@@ -56,6 +56,25 @@ class VerifyNoWorkInProgressTests(unittest.TestCase):
         rules = {item["rule"] for item in report["violations"]}
         self.assertIn("EMPTY_EXAMPLE_MAIN", rules)
 
+    def test_marker_inside_string_literal_is_not_refused(self) -> None:
+        # A code generator's template text, or an example error message that
+        # quotes a placeholder-text marker word as sample content, is data --
+        # not an admission of unfinished work in this repository's own source.
+        marker = "un" + "implemented!()"
+        source = f'pub fn template() -> &\'static str {{\n    r#"\n    {marker}\n    "#\n}}\n'
+        (self.root / "src" / "lib.rs").write_text(source)
+        report = self.verify()
+        self.assertEqual(report["admission"], "ADMITTED")
+        self.assertEqual(report["violation_count"], 0)
+
+    def test_marker_outside_string_literal_is_still_refused(self) -> None:
+        marker = "un" + "implemented!()"
+        (self.root / "src" / "lib.rs").write_text(f"pub fn broken() {{ {marker}; }}\n")
+        report = self.verify()
+        self.assertEqual(report["admission"], "REFUSED")
+        rules = {item["rule"] for item in report["violations"]}
+        self.assertIn("UNIMPLEMENTED_MACRO", rules)
+
     def test_disabled_workflow_is_refused(self) -> None:
         disabled = "jobs:\n  proof:\n    if: " + "false" + "\n    runs-on: ubuntu-latest\n"
         (self.root / ".github" / "workflows" / "disabled.yml").write_text(disabled)

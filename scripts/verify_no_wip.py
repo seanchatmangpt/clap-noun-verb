@@ -59,6 +59,91 @@ MARKER_RULES = (
 
 EMPTY_MAIN = re.compile(r"fn\s+main\s*\(\s*\)\s*\{\s*\}", re.DOTALL)
 
+# A marker word appearing inside a Rust string or raw-string literal -- e.g. a
+# code generator's template text, or an example error message quoting "TODO" as
+# sample placeholder text -- describes data, not an admission of unfinished work
+# in *this* repository's own source. Real markers in real code or comments must
+# still be refused, so blanking is done with a small hand-rolled scanner rather
+# than a single regex: Rust raw strings (`r#"..."#` with an arbitrary, matching
+# hash count) and escapes inside normal strings (`\"`, `\\`) are not reliably
+# expressible as a single non-backtracking regex without risking exactly the
+# false "raw string start" match a stray `r"` substring inside an unrelated
+# normal string (e.g. the word "later" immediately before a closing quote) would
+# trigger.
+def blank_string_literals(text: str) -> str:
+    """Replace the contents of Rust string/raw-string literals with spaces,
+    preserving line breaks and overall length so line numbers and snippet
+    extraction against the original text stay accurate. Comments and real code
+    are left untouched."""
+
+    out = list(text)
+    i = 0
+    n = len(text)
+
+    def blank_range(start: int, end: int) -> None:
+        for idx in range(start, end):
+            if out[idx] != "\n":
+                out[idx] = " "
+
+    while i < n:
+        ch = text[i]
+
+        # Line comment: skip to end of line untouched.
+        if ch == "/" and i + 1 < n and text[i + 1] == "/":
+            i = text.find("\n", i)
+            i = n if i < 0 else i
+            continue
+
+        # Block comment: skip to closing */ untouched (non-nesting).
+        if ch == "/" and i + 1 < n and text[i + 1] == "*":
+            end = text.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            continue
+
+        # Raw string: r, br, or Rb followed by zero-or-more # then a quote.
+        if ch in "rb":
+            j = i
+            if text[j] == "b" and j + 1 < n and text[j + 1] == "r":
+                j += 1
+            if j < n and text[j] == "r":
+                k = j + 1
+                hashes = 0
+                while k < n and text[k] == "#":
+                    hashes += 1
+                    k += 1
+                if k < n and text[k] == '"':
+                    content_start = k + 1
+                    terminator = '"' + ("#" * hashes)
+                    end = text.find(terminator, content_start)
+                    if end < 0:
+                        end = n
+                        blank_range(content_start, end)
+                        i = end
+                    else:
+                        blank_range(content_start, end)
+                        i = end + len(terminator)
+                    continue
+
+        # Normal (possibly byte) string: "..." with \x escapes.
+        if ch == '"' or (ch == "b" and i + 1 < n and text[i + 1] == '"'):
+            start = i + (1 if ch == "b" else 0)
+            content_start = start + 1
+            j = content_start
+            while j < n:
+                if text[j] == "\\" and j + 1 < n:
+                    j += 2
+                    continue
+                if text[j] == '"':
+                    break
+                j += 1
+            blank_range(content_start, j)
+            i = j + 1 if j < n else n
+            continue
+
+        i += 1
+
+    return "".join(out)
+
 
 @dataclass(frozen=True)
 class Violation:
@@ -93,8 +178,9 @@ def scan_file(root: Path, path: Path) -> list[Violation]:
     relative = path.relative_to(root).as_posix()
     violations: list[Violation] = []
 
+    marker_text = blank_string_literals(text) if path.suffix == ".rs" else text
     for rule, pattern in MARKER_RULES:
-        for match in pattern.finditer(text):
+        for match in pattern.finditer(marker_text):
             start = text.rfind("\n", 0, match.start()) + 1
             end = text.find("\n", match.end())
             if end < 0:
