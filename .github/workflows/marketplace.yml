@@ -14,10 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CARGO_TERM_COLOR: always
-  RUST_STABLE: "1.97.1"
-  GGEN_REPOSITORY: seanchatmangpt/ggen
-  GGEN_SHA: 68952593c40214ac1a681073d65f3902a9cdfce4
   GGEN_MARKETPLACE_REPOSITORY: seanchatmangpt/ggen-marketplace
   GGEN_MARKETPLACE_SHA: 7e9cf4f4e79357e0dab3981ae93c0f4b2cef8aed
 
@@ -25,20 +21,12 @@ jobs:
   qualify:
     name: Exact-head marketplace qualification
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
-
-      - name: Checkout pinned ggen compiler
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          repository: ${{ env.GGEN_REPOSITORY }}
-          ref: ${{ env.GGEN_SHA }}
-          path: .tooling/ggen
           fetch-depth: 1
 
       - name: Checkout pinned ggen-marketplace capability source
@@ -49,11 +37,12 @@ jobs:
           path: .tooling/ggen-marketplace
           fetch-depth: 1
 
-      - name: Provision pinned ggen toolchain
-        uses: ./.tooling/ggen/.github/actions/setup-ggen-build
-
-      - name: Build pinned ggen compiler
-        run: cargo build --manifest-path .tooling/ggen/Cargo.toml -p ggen-cli-lib --bin ggen
+      - name: Install marketplace-owned digest-pinned ggen
+        run: |
+          set -euo pipefail
+          ggen_bin="$(bash .tooling/ggen-marketplace/scripts/install-ggen.sh)"
+          echo "GGEN_BIN=$ggen_bin" >> "$GITHUB_ENV"
+          "$ggen_bin" --version | tee /tmp/ggen-version.txt
 
       - name: Qualify marketplace and require decomposed clap packs
         env:
@@ -61,14 +50,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p target/ci/marketplace
-          GGEN="$PWD/.tooling/ggen/target/debug/ggen"
           python3 .tooling/ggen-marketplace/scripts/qualify_packs.py \
-            --ggen "$GGEN" \
+            --ggen "$GGEN_BIN" \
             --workers 8 \
             --timeout-seconds 5 \
             --report target/ci/marketplace/qualification.json
           python3 - <<'PY'
-          import json, os
+          import hashlib, json, os
           from pathlib import Path
 
           required = {
@@ -86,12 +74,14 @@ jobs:
           refused = sorted(name for name in required if name in observed and observed[name]['status'] != 'ALIVE')
           if missing or refused:
               raise SystemExit(f'REFUSED:GGEN_MARKETPLACE_CLAP_COMPOSITION:missing={missing}:refused={refused}')
+          installer = Path('.tooling/ggen-marketplace/scripts/install-ggen.sh').read_bytes()
           receipt = {
-              'schema_version': '1.0.0',
+              'schema_version': '1.1.0',
               'repository': os.environ['GITHUB_REPOSITORY'],
               'head_sha': os.environ['HEAD_SHA'],
-              'ggen_sha': os.environ['GGEN_SHA'],
               'ggen_marketplace_sha': os.environ['GGEN_MARKETPLACE_SHA'],
+              'ggen_installer_sha256': hashlib.sha256(installer).hexdigest(),
+              'ggen_version': Path('/tmp/ggen-version.txt').read_text().strip(),
               'required_packs': sorted(required),
               'pack_count': len(report['packs']),
               'standing': 'ALIVE',
@@ -106,9 +96,8 @@ jobs:
       - name: Replay marketplace qualification
         run: |
           set -euo pipefail
-          GGEN="$PWD/.tooling/ggen/target/debug/ggen"
           python3 .tooling/ggen-marketplace/scripts/qualify_packs.py \
-            --ggen "$GGEN" \
+            --ggen "$GGEN_BIN" \
             --workers 8 \
             --timeout-seconds 5 \
             --report target/ci/marketplace/qualification-replay.json
