@@ -15,13 +15,12 @@ env:
   CARGO_TERM_COLOR: never
   RUST_BACKTRACE: "1"
   RUST_STABLE: "1.97.1"
-  RUST_MSRV: "1.74.0"
 
 jobs:
   diagnose:
     name: Exact-head causal evidence
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 25
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -33,7 +32,6 @@ jobs:
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
         with:
           toolchain: ${{ env.RUST_STABLE }}
-          components: rustfmt
 
       - name: Reuse Rust cache identity
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
@@ -41,75 +39,72 @@ jobs:
           key: diagnose-${{ env.RUST_STABLE }}
           cache-all-crates: false
 
-      - name: Diagnose formatting
-        id: format
+      - name: Exact workspace all-features command
+        id: all_features
         continue-on-error: true
         run: |
           mkdir -p target/diag
           set +e
-          cargo fmt --all -- --check >target/diag/format.log 2>&1
+          cargo check --workspace --all-targets --all-features >target/diag/all-features.log 2>&1
           rc=$?
           set -e
-          echo "FORMAT_EXIT=$rc"
-          tail -n 200 target/diag/format.log
+          printf '%s\n' "$rc" > target/diag/all-features.exit
+          echo "ALL_FEATURES_EXIT=$rc"
+          cat target/diag/all-features.log
           exit "$rc"
 
-      - name: Diagnose all feature closure
-        id: features
+      - name: Install pinned cargo-deny
+        id: deny_install
         if: always()
+        continue-on-error: true
+        uses: taiki-e/install-action@c505b76b536c2cff45f2b7d03fd8fcdb19103465
+        with:
+          tool: cargo-deny
+
+      - name: Exact cargo-deny command
+        id: supply
+        if: always() && steps.deny_install.outcome == 'success'
         continue-on-error: true
         run: |
           mkdir -p target/diag
           set +e
-          {
-            cargo check -p clap-noun-verb --all-targets --no-default-features
-            python3 - <<'PY'
-          import subprocess, tomllib
-          with open('Cargo.toml', 'rb') as source:
-              features = sorted(tomllib.load(source)['features'])
-          for feature in features:
-              print(f'feature={feature}', flush=True)
-              subprocess.run([
-                  'cargo','check','-p','clap-noun-verb','--all-targets',
-                  '--no-default-features','--features',feature,
-              ], check=True)
-          print(f'compiled_features={len(features)}')
-          PY
-            cargo check --workspace --all-targets --all-features
-          } >target/diag/features.log 2>&1
+          cargo deny check advisories bans licenses sources >target/diag/cargo-deny.log 2>&1
           rc=$?
           set -e
-          echo "FEATURES_EXIT=$rc"
-          tail -n 240 target/diag/features.log
+          printf '%s\n' "$rc" > target/diag/cargo-deny.exit
+          echo "CARGO_DENY_EXIT=$rc"
+          cat target/diag/cargo-deny.log
           exit "$rc"
 
-      - name: Provision declared MSRV
+      - name: Write diagnostic receipt
         if: always()
-        run: rustup toolchain install "$RUST_MSRV" --profile minimal --no-self-update
-
-      - name: Diagnose MSRV boundary
-        id: msrv
-        if: always()
-        continue-on-error: true
+        env:
+          ALL_FEATURES: ${{ steps.all_features.outcome }}
+          DENY_INSTALL: ${{ steps.deny_install.outcome }}
+          SUPPLY: ${{ steps.supply.outcome }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           mkdir -p target/diag
-          set +e
-          cargo +${RUST_MSRV} check -p clap-noun-verb -p clap-noun-verb-macros --all-features >target/diag/msrv.log 2>&1
-          rc=$?
-          set -e
-          echo "MSRV_EXIT=$rc"
-          tail -n 240 target/diag/msrv.log
-          exit "$rc"
+          printf '{\n  "head_sha": "%s",\n  "all_features": "%s",\n  "deny_install": "%s",\n  "supply_chain": "%s"\n}\n' \
+            "$HEAD_SHA" "$ALL_FEATURES" "$DENY_INSTALL" "$SUPPLY" > target/diag/receipt.json
+          cat target/diag/receipt.json
+
+      - name: Upload causal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clap-noun-verb-diagnose-${{ github.event.pull_request.head.sha || github.sha }}
+          path: target/diag
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Raw diagnostic standing
         if: always()
         env:
-          FORMAT: ${{ steps.format.outcome }}
-          FEATURES: ${{ steps.features.outcome }}
-          MSRV: ${{ steps.msrv.outcome }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          ALL_FEATURES: ${{ steps.all_features.outcome }}
+          DENY_INSTALL: ${{ steps.deny_install.outcome }}
+          SUPPLY: ${{ steps.supply.outcome }}
         run: |
-          printf 'HEAD_SHA=%s\nFORMAT=%s\nFEATURES=%s\nMSRV=%s\n' "$HEAD_SHA" "$FORMAT" "$FEATURES" "$MSRV"
-          test "$FORMAT" = success
-          test "$FEATURES" = success
-          test "$MSRV" = success
+          test "$ALL_FEATURES" = success
+          test "$DENY_INSTALL" = success
+          test "$SUPPLY" = success
