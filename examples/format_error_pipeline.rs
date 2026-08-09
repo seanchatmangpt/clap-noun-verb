@@ -11,6 +11,7 @@ use std::str::FromStr;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = Command::new("report")
         .arg(Arg::new("format").long("format").required(true))
+        .arg(Arg::new("missing").long("missing"))
         .try_get_matches_from(["report", "--format", "json"])?;
     let args = VerbArgs::new(matches).with_context(VerbContext::new("render").with_noun("report"));
 

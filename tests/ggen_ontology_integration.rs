@@ -70,12 +70,12 @@ fn test_rdf_to_ggen_round_trip() {
 
     // Verify code structure
     assert!(code.contains("/// Load a graph from file or stdin"));
-    assert!(code.contains("#[verb(\"load\")]"));
+    assert!(code.contains("#[verb(\"load\", \"graph\")]"));
     assert!(code.contains("pub fn graph_load("));
     assert!(code.contains("path: String,"));
     assert!(code.contains("format: Option<String>,"));
     assert!(code.contains("Result<GraphLoadedOutput>"));
-    assert!(code.contains("unimplemented!"));
+    assert!(code.contains("crate::handlers::graph_load(path, format)"));
 }
 
 // =============================================================================

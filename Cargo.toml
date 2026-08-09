@@ -73,7 +73,7 @@ autonomic = ["process-data"]
 contrib = ["process-data"]
 
 # Interactive REPL
-repl = ["dep:rustyline"]
+repl = ["dep:rustyline", "dep:home"]
 
 # OpenTelemetry instrumentation of the CLI dispatch path (registry run/route)
 otel = [
@@ -118,6 +118,10 @@ frontier-all = [
 [dependencies]
 # CLI Framework
 rustyline = { version = "14.0.0", optional = true }
+# `rustyline` accepts compatible `home` 0.5.x releases. `home` 0.5.12 requires
+# Rust 1.88 / Edition 2024, so bind the `repl` closure to the newest version
+# compatible with this crate's declared Rust 1.74 MSRV.
+home = { version = "=0.5.9", optional = true }
 clap = { workspace = true }
 clap-noun-verb-macros = { workspace = true }
 
