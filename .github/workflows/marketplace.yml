@@ -1,0 +1,135 @@
+name: Marketplace
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marketplace-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_STABLE: "1.97.1"
+  GGEN_REPOSITORY: seanchatmangpt/ggen
+  GGEN_SHA: 68952593c40214ac1a681073d65f3902a9cdfce4
+  GGEN_MARKETPLACE_REPOSITORY: seanchatmangpt/ggen-marketplace
+  GGEN_MARKETPLACE_SHA: 7e9cf4f4e79357e0dab3981ae93c0f4b2cef8aed
+
+jobs:
+  qualify:
+    name: Exact-head marketplace qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Checkout pinned ggen compiler
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ env.GGEN_REPOSITORY }}
+          ref: ${{ env.GGEN_SHA }}
+          path: .tooling/ggen
+          fetch-depth: 1
+
+      - name: Checkout pinned ggen-marketplace capability source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ env.GGEN_MARKETPLACE_REPOSITORY }}
+          ref: ${{ env.GGEN_MARKETPLACE_SHA }}
+          path: .tooling/ggen-marketplace
+          fetch-depth: 1
+
+      - name: Provision pinned ggen toolchain
+        uses: ./.tooling/ggen/.github/actions/setup-ggen-build
+
+      - name: Build pinned ggen compiler
+        run: cargo build --manifest-path .tooling/ggen/Cargo.toml -p ggen-cli-lib --bin ggen
+
+      - name: Qualify marketplace and require decomposed clap packs
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/ci/marketplace
+          GGEN="$PWD/.tooling/ggen/target/debug/ggen"
+          python3 .tooling/ggen-marketplace/scripts/qualify_packs.py \
+            --ggen "$GGEN" \
+            --workers 8 \
+            --timeout-seconds 5 \
+            --report target/ci/marketplace/qualification.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          required = {
+              'clap-noun-verb-schema-pack',
+              'clap-noun-verb-crate-pack',
+              'clap-noun-verb-routing-pack',
+              'clap-noun-verb-behavior-pack',
+              'clap-noun-verb-boundary-pack',
+              'clap-noun-verb-verification-pack',
+          }
+          report_path = Path('target/ci/marketplace/qualification.json')
+          report = json.loads(report_path.read_text())
+          observed = {item['name']: item for item in report['packs']}
+          missing = sorted(required - observed.keys())
+          refused = sorted(name for name in required if name in observed and observed[name]['status'] != 'ALIVE')
+          if missing or refused:
+              raise SystemExit(f'REFUSED:GGEN_MARKETPLACE_CLAP_COMPOSITION:missing={missing}:refused={refused}')
+          receipt = {
+              'schema_version': '1.0.0',
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'head_sha': os.environ['HEAD_SHA'],
+              'ggen_sha': os.environ['GGEN_SHA'],
+              'ggen_marketplace_sha': os.environ['GGEN_MARKETPLACE_SHA'],
+              'required_packs': sorted(required),
+              'pack_count': len(report['packs']),
+              'standing': 'ALIVE',
+              'actuation_performed': False,
+          }
+          Path('target/ci/marketplace/VERIFIER_REPORT.json').write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + '\n'
+          )
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+          PY
+
+      - name: Replay marketplace qualification
+        run: |
+          set -euo pipefail
+          GGEN="$PWD/.tooling/ggen/target/debug/ggen"
+          python3 .tooling/ggen-marketplace/scripts/qualify_packs.py \
+            --ggen "$GGEN" \
+            --workers 8 \
+            --timeout-seconds 5 \
+            --report target/ci/marketplace/qualification-replay.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          def normalized(path):
+              payload = json.loads(Path(path).read_text())
+              return [(p['name'], p['profile'], p['status'], p.get('consequence_sha256'), p.get('source_sha256')) for p in payload['packs']]
+          if normalized('target/ci/marketplace/qualification.json') != normalized('target/ci/marketplace/qualification-replay.json'):
+              raise SystemExit('REFUSED:GGEN_MARKETPLACE_NONDETERMINISTIC_REPLAY')
+          PY
+
+      - name: Upload marketplace receipts
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: clap-noun-verb-marketplace-${{ github.event.pull_request.head.sha || github.sha }}
+          path: target/ci/marketplace
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce marketplace crown
+        run: jq -e '.standing == "ALIVE" and .actuation_performed == false' target/ci/marketplace/VERIFIER_REPORT.json
