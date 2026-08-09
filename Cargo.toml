@@ -171,7 +171,6 @@ opentelemetry_sdk = { version = "0.27", optional = true }
 
 [dev-dependencies]
 # Testing frameworks
-cargo-make = "0.37"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.0"
@@ -189,7 +188,7 @@ serial_test = "3.0"
 tempfile = "3.8"
 
 [workspace.metadata.make]
-# Cargo-make configuration
+# Cargo-make configuration is consumed only by an externally installed cargo-make binary.
 verbose = false
 
 # =============================================================================
