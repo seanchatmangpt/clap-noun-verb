@@ -15,7 +15,7 @@ concurrency:
 
 env:
   GGEN_MARKETPLACE_REPOSITORY: seanchatmangpt/ggen-marketplace
-  GGEN_MARKETPLACE_SHA: 3c835a6935320a90bad4fc94cc0904908492437c
+  GGEN_MARKETPLACE_SHA: a5e11f6edea3a73a7cfd4e9cc88cd24d87f3e347
 
 jobs:
   qualify:
