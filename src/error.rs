@@ -411,9 +411,10 @@ fn add_command_fix(
     if let Some(first) = clean_suggestion(suggestion).split(", ").next() {
         if !first.is_empty() {
             let command = noun.map_or_else(|| first.to_string(), |noun| format!("{noun} {first}"));
+            let kind = if noun.is_some() { "verb" } else { "command" };
             actions.push(ActionTemplate::CommandFix {
                 suggested_command: command,
-                reason: format!("Suggested correction for misspelled input '{misspelled}'"),
+                reason: format!("Suggested correction for misspelled {kind} '{misspelled}'"),
             });
         }
     }
