@@ -1,92 +1,31 @@
 {
-  "version": "1.0",
-  "project": {
-    "name": "clap-noun-verb",
-    "description": "Rust CLI framework with noun-verb command patterns (v26.6.1)",
-    "type": "rust-workspace",
-    "primaryLanguage": "rust"
+  "env": {
+    "RUST_BACKTRACE": "1",
+    "RUST_LOG": "debug",
+    "RUSTFLAGS": "-D warnings",
+    "CARGO_INCREMENTAL": "1"
   },
+  "model": "sonnet",
   "permissions": {
-    "allowlist": {
-      "enabled": true,
-      "reducePrompts": true,
-      "rules": [
-        {
-          "command": "cargo",
-          "description": "Rust package manager - required for all build tasks",
-          "allowed": true,
-          "paths": ["**"]
-        },
-        {
-          "command": "cargo-make",
-          "description": "Task runner - all Makefile.toml tasks",
-          "allowed": true,
-          "paths": ["**"]
-        },
-        {
-          "command": "bash",
-          "description": "Shell scripts in scripts/ and Makefile.toml",
-          "allowed": true,
-          "paths": ["scripts/**", "Makefile.toml"]
-        },
-        {
-          "command": "git",
-          "description": "Version control - commits, branches, status",
-          "allowed": true,
-          "paths": ["**"],
-          "restrictions": {
-            "deniedFlags": ["--force", "-f", "--no-verify", "reset --hard"],
-            "requireConfirmation": ["push", "rebase", "reset"]
-          }
-        }
-      ]
-    }
-  },
-  "environment": {
-    "variables": {
-      "RUST_BACKTRACE": "1",
-      "RUST_LOG": "debug",
-      "RUSTFLAGS": "-D warnings",
-      "CARGO_INCREMENTAL": "1"
-    },
-    "profile": "development"
-  },
-  "model": {
-    "defaults": {
-      "model": "claude-opus-4-1",
-      "temperature": 0.2,
-      "maxTokens": 8000
-    }
-  },
-  "hooks": {
-    "enabled": true,
-    "preCommit": {
-      "enabled": true,
-      "tasks": [
-        "cargo make format-check",
-        "cargo make clippy",
-        "cargo make test-lib-deterministic"
-      ]
-    },
-    "prePush": {
-      "enabled": true,
-      "tasks": ["cargo make ci"]
-    }
-  },
-  "buildSystem": {
-    "primary": "cargo-make",
-    "fallback": "cargo"
-  },
-  "versionControl": {
-    "enabled": true,
-    "system": "git",
-    "commitStyle": {
-      "type": "conventional"
-    },
-    "denyRules": {
-      "forcePush": true,
-      "resetHard": true,
-      "noVerify": true
-    }
+    "allow": [
+      "Bash(cargo *)",
+      "Bash(cargo-make *)",
+      "Bash(git *)",
+      "Bash(bash scripts/*)",
+      "Bash(kubectl get *)",
+      "mcp__plugin_lumen_lumen__semantic_search",
+      "mcp__oclnr__audit"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git *--no-verify*)",
+      "Bash(git reset --hard*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git rebase*)",
+      "Bash(git reset*)"
+    ]
   }
 }

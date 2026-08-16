@@ -7,7 +7,7 @@
 
 [project]
 name = "clap-noun-verb"
-version = "26.7.62"
+version = "26.8.8"
 description = "Authoritative ggen pack for noun-verb CLIs: admitted RDF manufactures thin #[verb] interfaces while consumer-owned handlers retain domain behavior (A = mu(O*))."
 
 [ontology]
