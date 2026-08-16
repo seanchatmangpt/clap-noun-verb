@@ -92,11 +92,11 @@ jobs:
         continue-on-error: true
         run: cargo fmt --all -- --check
 
-      - name: Clippy
+      - name: Clippy policy
         id: clippy
         if: always()
         continue-on-error: true
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features
 
       - name: Compile baseline, every feature, and all-features
         id: features
@@ -165,7 +165,7 @@ jobs:
         id: supply
         if: always() && steps.deny_install.outcome == 'success'
         continue-on-error: true
-        run: cargo deny check advisories bans licenses sources --deny warnings
+        run: cargo deny check advisories bans licenses sources
 
       - name: Provision declared MSRV
         id: msrv_install

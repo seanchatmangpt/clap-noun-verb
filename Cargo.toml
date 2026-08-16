@@ -78,7 +78,7 @@ autonomic = ["process-data"]
 contrib = ["process-data"]
 
 # Interactive REPL
-repl = ["dep:rustyline"]
+repl = ["dep:rustyline", "dep:home"]
 
 # OpenTelemetry instrumentation of the CLI dispatch path (registry run/route)
 otel = [
@@ -123,6 +123,10 @@ frontier-all = [
 [dependencies]
 # CLI Framework
 rustyline = { version = "14.0.0", optional = true }
+# `rustyline` accepts compatible `home` 0.5.x releases. `home` 0.5.12 requires
+# Rust 1.88 / Edition 2024, so bind the `repl` closure to the newest version
+# compatible with this crate's declared Rust 1.74 MSRV.
+home = { version = "=0.5.9", optional = true }
 clap = { workspace = true }
 clap-noun-verb-macros = { workspace = true }
 
@@ -172,21 +176,12 @@ opentelemetry_sdk = { version = "0.27", optional = true }
 
 [dev-dependencies]
 # Testing frameworks
-cargo-make = "0.37"
-# Transitive via cargo-make (ignore) and criterion (rayon-core); pinned to a
-# minimum here, not just via a locally-updated lockfile (none is committed --
-# see .gitignore), to keep CI's fresh dependency resolution off
-# RUSTSEC-2026-0204 (invalid pointer dereference in fmt::Pointer for
-# Atomic/Shared), fixed only from 0.9.20 onward.
+# Transitive via criterion (rayon-core); pinned to a minimum here, not just
+# via a locally-updated lockfile (none is committed -- see .gitignore), to
+# keep CI's fresh dependency resolution off RUSTSEC-2026-0204 (invalid
+# pointer dereference in fmt::Pointer for Atomic/Shared), fixed only from
+# 0.9.20 onward.
 crossbeam-epoch = ">=0.9.20, <0.10"
-# Transitive via cargo-make and (with the repl feature) rustyline. home's
-# Cargo.toml manifest itself declares a rust-version that keeps climbing in
-# patch releases (0.5.12 requires 1.88) even though the crate's actual API
-# surface hasn't changed; a pre-1.88 cargo binary cannot even parse that
-# manifest's edition/rust-version keys, which breaks the declared-MSRV
-# (1.74) compile boundary before our own code is ever reached. Pinned to the
-# newest release whose manifest is old-cargo-parseable (rust-version 1.70).
-home = "=0.5.9"
 chicago-tdd-tools = { version = "1.0.0", features = ["testing-extras"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.0"
@@ -204,7 +199,7 @@ serial_test = "3.0"
 tempfile = "3.8"
 
 [workspace.metadata.make]
-# Cargo-make configuration
+# Cargo-make configuration is consumed only by an externally installed cargo-make binary.
 verbose = false
 
 # =============================================================================
