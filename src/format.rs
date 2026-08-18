@@ -270,15 +270,43 @@ fn json_to_table(value: &serde_json::Value) -> String {
                 other => other.to_string(),
             })
         }
-        serde_json::Value::Object(obj) => {
-            let mut output = String::new();
-            for (k, v) in obj {
-                output.push_str(&format!("{}\t{}\n", k, v));
+        serde_json::Value::Object(obj) => object_with_array_field_as_table(obj, |val, _key| {
+            match val {
+                serde_json::Value::Null => "-".to_string(),
+                other => other.to_string(),
             }
-            output
-        }
+        }),
         other => other.to_string(),
     }
+}
+
+/// Helper: Render an object that wraps a list field (e.g. `{ packs: [...], total: N }`,
+/// the shape produced by noun-verb `list` commands) as a table over that list, with any
+/// remaining scalar fields appended as trailing key/value rows. Falls back to the plain
+/// key/value dump used previously when no array field is present, so single flat objects
+/// keep their existing rendering.
+fn object_with_array_field_as_table<F>(
+    obj: &serde_json::Map<String, serde_json::Value>,
+    formatter: F,
+) -> String
+where
+    F: Fn(&serde_json::Value, &str) -> String,
+{
+    if let Some((_, serde_json::Value::Array(arr))) = obj.iter().find(|(_, v)| v.is_array()) {
+        let mut output = format_object_array(arr, &formatter);
+        for (k, v) in obj {
+            if !v.is_array() {
+                output.push_str(&format!("{}\t{}\n", k, formatter(v, k)));
+            }
+        }
+        return output;
+    }
+
+    let mut output = String::new();
+    for (k, v) in obj {
+        output.push_str(&format!("{}\t{}\n", k, formatter(v, k)));
+    }
+    output
 }
 
 /// Helper: Convert JSON value to YAML-like format (built-in, no serde_yaml dep)
@@ -294,7 +322,28 @@ fn json_to_yaml(value: &serde_json::Value, indent: usize) -> String {
                 "[]".to_string()
             } else {
                 arr.iter()
-                    .map(|v| format!("{}- {}", prefix, json_to_yaml(v, indent + 1)))
+                    .map(|v| {
+                        let child = json_to_yaml(v, indent + 1);
+                        if v.is_object() || v.is_array() {
+                            // `child` is already indented with `indent + 1` levels on every
+                            // line (map/array entries each emit their own prefix). Strip
+                            // that indent from the first line so it sits right after "- ",
+                            // keeping it aligned with the sibling keys on the lines below
+                            // instead of being crammed onto the dash line.
+                            let child_prefix = "  ".repeat(indent + 1);
+                            let mut lines = child.lines();
+                            let first = lines.next().unwrap_or("");
+                            let first = first.strip_prefix(&child_prefix).unwrap_or(first);
+                            let mut rendered = format!("{}- {}", prefix, first);
+                            for line in lines {
+                                rendered.push('\n');
+                                rendered.push_str(line);
+                            }
+                            rendered
+                        } else {
+                            format!("{}- {}", prefix, child)
+                        }
+                    })
                     .collect::<Vec<_>>()
                     .join("\n")
             }
@@ -340,13 +389,9 @@ fn json_to_tsv(value: &serde_json::Value) -> String {
             // TSV formatter: escape special characters
             format_object_array(arr, |val, _key| escape_tsv(&val.to_string()))
         }
-        serde_json::Value::Object(obj) => {
-            let mut output = String::new();
-            for (k, v) in obj {
-                output.push_str(&format!("{}\t{}\n", k, escape_tsv(&v.to_string())));
-            }
-            output
-        }
+        serde_json::Value::Object(obj) => object_with_array_field_as_table(obj, |val, _key| {
+            escape_tsv(&val.to_string())
+        }),
         other => other.to_string(),
     }
 }
