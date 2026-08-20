@@ -15,7 +15,7 @@ CommandRegistry / Clap graph
   -> ReplayVerification
 ```
 
-Kubernetes and container modules are CONSTRUCT-only projections: they render manifests/build artifacts and never contact a cluster, registry, or container runtime.
+Kubernetes and container modules are CONSTRUCT-only projections: they render validated manifests/build artifacts and never contact a cluster, registry, or container runtime.
 
 ## Features
 
@@ -28,7 +28,7 @@ All features are enabled by default and can be selected independently.
 
 ## MCP 2026-07-28
 
-The crate targets the modern stateless MCP era. It does not expose the legacy `initialize`/`initialized` session handshake. Every request must identify protocol revision `2026-07-28` in the reserved request `_meta` envelope and provide client capabilities. `server/discover` is available for explicit capability discovery. Successful responses carry server identity metadata; list responses carry deterministic cache hints.
+The crate targets the modern stateless MCP era. It does not expose the legacy `initialize`/`initialized` session handshake. Every request must identify protocol revision `2026-07-28` in the reserved request `_meta` envelope and provide client capabilities. `server/discover` is available for explicit capability discovery. Successful responses carry `resultType: "complete"` and server identity metadata; list responses carry deterministic cache hints and tools are returned in stable name order.
 
 ```rust
 use clap_noun_verb_deploy::{Deploy, ProcessExecutor};
@@ -75,6 +75,8 @@ observation -> tool/schema selection -> invocation construction
 
 No model output, MCP request, HTTP request, Kubernetes manifest, or generated artifact has ambient execution authority. A transport can propose an invocation; policy admits it; an executor actuates it; the gateway manufactures an execution record.
 
+Request-scoped environment mutation is refused by the default admission policy and independently refused by `ProcessExecutor`. An embedding application must explicitly allow a name at both boundaries before an invocation can supply it. This prevents a pinned executable from being undermined by loader/runtime environment variables.
+
 The built-in fingerprint is deliberately only a deterministic corruption/replay guard. It is not a cryptographic signature and does not replace an external receipt authority. This keeps future cryptographic receipt systems, policy engines, or proof systems composable without falsely promoting a local hash to execution standing.
 
 The core boundary is transport-neutral so future A2A, queue, workflow-engine, serverless, WASI, and agent-runtime adapters can reuse the same `CliSchema`, `Invocation`, `AdmissionPolicy`, `Gateway`, `ExecutionRecord`, and replay types.
@@ -84,12 +86,30 @@ The core boundary is transport-neutral so future A2A, queue, workflow-engine, se
 ```rust
 use clap_noun_verb_deploy::kubernetes::KubernetesConfig;
 
+# fn example() -> Result<(), Box<dyn std::error::Error>> {
 let mut config = KubernetesConfig::new("my-cli", "ghcr.io/acme/my-cli:sha-123");
 config.args = vec!["serve".into(), "http".into()];
-print!("{}", config.render());
+print!("{}", config.render()?);
+# Ok(())
+# }
 ```
 
-The default projection runs non-root, uses a read-only root filesystem, drops Linux capabilities, exposes HTTP liveness/readiness probes, and creates a ClusterIP Service.
+The projection validates Kubernetes identity/image/environment grammar before rendering and quotes command, argument, and environment values. Defaults include non-root execution, read-only root filesystem, dropped Linux capabilities, `RuntimeDefault` seccomp, disabled service-account-token automount, HTTP liveness/readiness probes, and a ClusterIP Service.
+
+## Container projection
+
+```rust
+use clap_noun_verb_deploy::container::ContainerConfig;
+
+# fn example() -> Result<(), Box<dyn std::error::Error>> {
+let mut config = ContainerConfig::new("my-cli", "my-cli");
+config.args = vec!["serve".into(), "http".into()];
+print!("{}", config.render_dockerfile()?);
+# Ok(())
+# }
+```
+
+Dockerfile grammar-bearing fields are validated before rendering, while entrypoint arguments are JSON-escaped. Invalid fields produce typed construction errors rather than manufacturing a different build program.
 
 ## Receipts and replay
 
