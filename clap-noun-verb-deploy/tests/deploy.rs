@@ -21,11 +21,7 @@ fn derives_callable_tool_and_argument_types() {
     let tools = schema.tools();
     assert_eq!(tools.len(), 1);
     assert_eq!(tools[0].name, "user__create");
-    let command = schema
-        .commands
-        .iter()
-        .find(|command| command.callable)
-        .expect("leaf command");
+    let command = schema.commands.iter().find(|command| command.callable).expect("leaf command");
     assert_eq!(command.arguments[0].kind, ArgumentKind::String);
     assert_eq!(command.arguments[1].kind, ArgumentKind::Boolean);
     assert_eq!(command.arguments[2].kind, ArgumentKind::Array);
@@ -37,14 +33,11 @@ fn manufactures_validated_argv_without_actuation() {
     arguments.insert("name".into(), json!("Ada"));
     arguments.insert("admin".into(), json!(true));
     arguments.insert("tag".into(), json!(["math", "ops"]));
-    let invocation = schema()
-        .build_invocation("user__create", &arguments)
-        .expect("admitted invocation");
+    let invocation =
+        schema().build_invocation("user__create", &arguments).expect("admitted invocation");
     assert_eq!(
         invocation.args,
-        [
-            "user", "create", "--name", "Ada", "--admin", "--tag", "math", "--tag", "ops"
-        ]
+        ["user", "create", "--name", "Ada", "--admin", "--tag", "math", "--tag", "ops"]
     );
 }
 
@@ -62,7 +55,7 @@ fn refuses_unknown_arguments_before_executor_boundary() {
 #[cfg(feature = "mcp")]
 mod mcp {
     use super::*;
-    use clap_noun_verb_deploy::mcp::McpServer;
+    use clap_noun_verb_deploy::mcp::{McpServer, MCP_PROTOCOL_VERSION};
     use clap_noun_verb_deploy::{Execution, Executor, Invocation};
     use std::convert::Infallible;
 
@@ -73,11 +66,7 @@ mod mcp {
         type Error = Infallible;
 
         fn execute(&self, _invocation: &Invocation) -> Result<Execution, Self::Error> {
-            Ok(Execution {
-                exit_code: 0,
-                stdout: "created".into(),
-                stderr: String::new(),
-            })
+            Ok(Execution { exit_code: 0, stdout: "created".into(), stderr: String::new() })
         }
     }
 
@@ -85,24 +74,70 @@ mod mcp {
         McpServer::new("demo", "1.0.0", schema(), RecordingExecutor)
     }
 
+    fn request(id: u64, method: &str, params: serde_json::Value) -> serde_json::Value {
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": method,
+            "params": params,
+            "_meta": {
+                "io.modelcontextprotocol/protocolVersion": MCP_PROTOCOL_VERSION,
+                "io.modelcontextprotocol/clientCapabilities": {},
+                "io.modelcontextprotocol/clientInfo": {"name": "test-client", "version": "1.0.0"}
+            }
+        })
+    }
+
     #[test]
-    fn lists_cli_leaf_as_mcp_tool() {
+    fn discovers_stateless_modern_protocol() {
         let response = server()
-            .handle(&json!({"jsonrpc":"2.0","id":1,"method":"tools/list"}))
+            .handle(&request(1, "server/discover", json!({})))
+            .expect("handled")
+            .expect("response");
+        assert_eq!(response["result"]["supportedVersions"][0], MCP_PROTOCOL_VERSION);
+        assert_eq!(
+            response["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]["name"],
+            "demo"
+        );
+    }
+
+    #[test]
+    fn lists_cli_leaf_as_cacheable_mcp_tool() {
+        let response = server()
+            .handle(&request(2, "tools/list", json!({})))
             .expect("handled")
             .expect("response");
         assert_eq!(response["result"]["tools"][0]["name"], "user__create");
+        assert_eq!(response["result"]["cacheScope"], "public");
+        assert!(response["result"]["ttlMs"].as_u64().is_some());
+    }
+
+    #[test]
+    fn refuses_missing_modern_protocol_envelope() {
+        let response = server()
+            .handle(&json!({"jsonrpc":"2.0","id":3,"method":"tools/list"}))
+            .expect("handled")
+            .expect("response");
+        assert_eq!(response["error"]["code"], -32600);
+    }
+
+    #[test]
+    fn initialize_is_not_available_in_modern_era() {
+        let response = server()
+            .handle(&request(4, "initialize", json!({})))
+            .expect("handled")
+            .expect("response");
+        assert_eq!(response["error"]["code"], -32601);
     }
 
     #[test]
     fn refuses_invalid_call_as_json_rpc_invalid_params() {
         let response = server()
-            .handle(&json!({
-                "jsonrpc":"2.0",
-                "id":2,
-                "method":"tools/call",
-                "params":{"name":"user__create","arguments":{"shell":"/bin/sh"}}
-            }))
+            .handle(&request(
+                5,
+                "tools/call",
+                json!({"name":"user__create","arguments":{"shell":"/bin/sh"}}),
+            ))
             .expect("handled")
             .expect("response");
         assert_eq!(response["error"]["code"], -32602);
@@ -122,22 +157,14 @@ mod http {
         type Error = Infallible;
 
         fn execute(&self, invocation: &Invocation) -> Result<Execution, Self::Error> {
-            Ok(Execution {
-                exit_code: 0,
-                stdout: invocation.args.join(" "),
-                stderr: String::new(),
-            })
+            Ok(Execution { exit_code: 0, stdout: invocation.args.join(" "), stderr: String::new() })
         }
     }
 
     #[test]
     fn invoke_uses_same_schema_admission_as_mcp() {
         let response = HttpServer::new(schema(), EchoExecutor)
-            .handle(
-                "POST",
-                "/invoke",
-                br#"{"tool":"user__create","arguments":{"name":"Ada"}}"#,
-            )
+            .handle("POST", "/invoke", br#"{"tool":"user__create","arguments":{"name":"Ada"}}"#)
             .expect("response");
         assert_eq!(response.status, 200);
         assert!(response.body.contains("user create --name Ada"));
