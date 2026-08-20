@@ -12,6 +12,7 @@ CommandRegistry / Clap graph
   -> Gateway
   -> Executor
   -> ExecutionRecord
+  -> ReplayVerification
 ```
 
 Kubernetes and container modules are CONSTRUCT-only projections: they render manifests/build artifacts and never contact a cluster, registry, or container runtime.
@@ -28,19 +29,53 @@ All features are enabled by default and can be selected independently.
 ## MCP
 
 ```rust
-use clap_noun_verb_deploy::{AdmitValidated, Deploy, Gateway, ProcessExecutor};
+use clap_noun_verb_deploy::{Deploy, ProcessExecutor};
 use clap_noun_verb_deploy::mcp::McpServer;
 
 # fn example(registry: &clap_noun_verb::CommandRegistry) -> Result<(), Box<dyn std::error::Error>> {
 let deploy = Deploy::from_registry(registry);
-let gateway = Gateway::new("my-cli", ProcessExecutor::new("my-cli"), AdmitValidated);
-let server = McpServer::new("my-cli", env!("CARGO_PKG_VERSION"), deploy.into_schema(), gateway);
+let server = McpServer::new(
+    "my-cli",
+    env!("CARGO_PKG_VERSION"),
+    deploy.into_schema(),
+    ProcessExecutor::new("my-cli"),
+);
 server.serve_stdio(std::io::stdin().lock(), std::io::stdout())?;
 # Ok(())
 # }
 ```
 
-Protocol input cannot choose an arbitrary host executable: `ProcessExecutor` is pinned when constructed. `CliSchema` refuses unknown tools/arguments and type mismatches before the gateway is reachable; the admission policy can further restrict callable command paths.
+For autonomous execution, use `McpServer::with_policy` with a bounded `AdmissionPolicy`. Protocol input cannot choose an arbitrary host executable: `ProcessExecutor` is pinned when constructed. `CliSchema` refuses unknown tools/arguments and type mismatches before the gateway is reachable; the policy can further restrict callable command paths.
+
+## Autonomous / post-AGI operation
+
+The post-AGI boundary is not a claim about intelligence level. It is an execution model designed for heterogeneous autonomous planners that may discover and compose tools without ambient authority.
+
+```rust
+use clap_noun_verb_deploy::{CommandAllowList, Gateway, Invocation, ProcessExecutor};
+
+# fn example() -> Result<(), Box<dyn std::error::Error>> {
+let policy = CommandAllowList::default().allow(["cluster", "inspect"]);
+let gateway = Gateway::new("ops-cli", ProcessExecutor::new("ops-cli"), policy);
+let record = gateway.execute(Invocation::new(["cluster", "inspect", "prod"]))?;
+assert!(record.verify_integrity());
+# Ok(())
+# }
+```
+
+The intended composition law is:
+
+```text
+observation -> tool/schema selection -> invocation construction
+            -> admission/refusal -> explicit executor
+            -> execution record -> deterministic replay verification
+```
+
+No model output, MCP request, HTTP request, Kubernetes manifest, or generated artifact has ambient execution authority. A transport can propose an invocation; policy admits it; an executor actuates it; the gateway manufactures an execution record.
+
+The built-in fingerprint is deliberately only a deterministic corruption/replay guard. It is not a cryptographic signature and does not replace an external receipt authority. This keeps future cryptographic receipt systems, policy engines, or proof systems composable without falsely promoting a local hash to execution standing.
+
+The core boundary is transport-neutral so future A2A, queue, workflow-engine, serverless, WASI, and agent-runtime adapters can reuse the same `CliSchema`, `Invocation`, `AdmissionPolicy`, `Gateway`, `ExecutionRecord`, and replay types.
 
 ## Kubernetes
 
@@ -56,4 +91,4 @@ The default projection runs non-root, uses a read-only root filesystem, drops Li
 
 ## Receipts and replay
 
-Every successful `Gateway::execute` manufactures an `ExecutionRecord` binding subject, admitted invocation, and observed execution. `ExecutionRecord::replay` re-executes the exact invocation and compares the result. The built-in deterministic fingerprint is a local integrity/replay guard, not a cryptographic signature or external receipt authority.
+Every successful `Gateway::execute` manufactures an `ExecutionRecord` binding subject, admitted invocation, and observed execution. `ExecutionRecord::replay` re-executes the exact invocation and compares the observed result to the stored result. Replay mismatch remains an explicit failed verification rather than being collapsed into success.
