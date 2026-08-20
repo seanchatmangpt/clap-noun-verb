@@ -114,3 +114,7 @@ Dockerfile grammar-bearing fields are validated before rendering, while entrypoi
 ## Receipts and replay
 
 Every successful `Gateway::execute` manufactures an `ExecutionRecord` binding subject, admitted invocation, and observed execution. `ExecutionRecord::replay` re-executes the exact invocation and compares the observed result to the stored result. Replay mismatch remains an explicit failed verification rather than being collapsed into success.
+
+## Verification
+
+The repository includes a dedicated `Deploy Crate` workflow that runs `cargo check`, tests, clippy, rustdoc, and a crate-scoped rustfmt check. The workflow uses concurrency cancellation so superseded branch runs do not become evidence for a newer head. Passing CI is execution evidence for the exact commit only; the existence of this workflow is not itself an ALIVE receipt.
