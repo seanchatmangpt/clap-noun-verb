@@ -125,15 +125,19 @@ where
                 "cacheScope": "public"
             }),
             "ping" => json!({}),
-            "tools/list" => json!({
-                "tools": self.schema.tools().into_iter().map(|tool| json!({
-                    "name": tool.name,
-                    "description": tool.description.unwrap_or_default(),
-                    "inputSchema": tool.input_schema
-                })).collect::<Vec<_>>(),
-                "ttlMs": 60_000,
-                "cacheScope": "public"
-            }),
+            "tools/list" => {
+                let mut tools = self.schema.tools();
+                tools.sort_by(|left, right| left.name.cmp(&right.name));
+                json!({
+                    "tools": tools.into_iter().map(|tool| json!({
+                        "name": tool.name,
+                        "description": tool.description.unwrap_or_default(),
+                        "inputSchema": tool.input_schema
+                    })).collect::<Vec<_>>(),
+                    "ttlMs": 60_000,
+                    "cacheScope": "public"
+                })
+            }
             "tools/call" => return self.call_tool(id, request),
             _ => return Ok(Some(self.error(id, -32601, "Method not found"))),
         };
@@ -185,6 +189,9 @@ where
     }
 
     fn success(&self, id: Value, mut result: Value) -> Value {
+        if let Some(result_object) = result.as_object_mut() {
+            result_object.insert("resultType".to_owned(), Value::String("complete".to_owned()));
+        }
         stamp_server_info(&mut result, &self.name, &self.version);
         json!({"jsonrpc": "2.0", "id": id, "result": result})
     }
