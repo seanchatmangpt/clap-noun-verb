@@ -3,12 +3,14 @@ use clap_noun_verb_deploy::{ArgumentKind, CliSchema, InvocationBuildError};
 use serde_json::{json, Map};
 
 fn schema() -> CliSchema {
-    CliSchema::from_command(&Command::new("demo").subcommand(
-        Command::new("run")
-            .arg(Arg::new("feature").long("feature").action(ArgAction::SetTrue))
-            .arg(Arg::new("cache").long("cache").action(ArgAction::SetFalse))
-            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::Count)),
-    ))
+    CliSchema::from_command(
+        &Command::new("demo").subcommand(
+            Command::new("run")
+                .arg(Arg::new("feature").long("feature").action(ArgAction::SetTrue))
+                .arg(Arg::new("cache").long("cache").action(ArgAction::SetFalse))
+                .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::Count)),
+        ),
+    )
 }
 
 #[test]

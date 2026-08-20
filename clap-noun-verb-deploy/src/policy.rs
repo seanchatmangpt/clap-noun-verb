@@ -63,7 +63,9 @@ impl AdmissionPolicy for CommandAllowList {
         if self.commands.iter().any(|command| invocation.args.starts_with(command.as_slice())) {
             Admission::Admitted
         } else {
-            Admission::Refused { reason: "command path is outside the admitted allow-list".to_owned() }
+            Admission::Refused {
+                reason: "command path is outside the admitted allow-list".to_owned(),
+            }
         }
     }
 }

@@ -158,11 +158,10 @@ spec:
 
 fn validate_dns_label(value: &str, field: &'static str) -> Result<(), KubernetesRenderError> {
     let length_valid = !value.is_empty() && value.len() <= 63;
-    let edge_valid = value
-        .as_bytes()
-        .first()
-        .zip(value.as_bytes().last())
-        .is_some_and(|(first, last)| first.is_ascii_alphanumeric() && last.is_ascii_alphanumeric());
+    let edge_valid =
+        value.as_bytes().first().zip(value.as_bytes().last()).is_some_and(|(first, last)| {
+            first.is_ascii_alphanumeric() && last.is_ascii_alphanumeric()
+        });
     let body_valid = value
         .bytes()
         .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-');
@@ -178,7 +177,10 @@ fn validate_dns_label(value: &str, field: &'static str) -> Result<(), Kubernetes
 
 fn validate_image(value: &str) -> Result<(), KubernetesRenderError> {
     if value.is_empty() {
-        return Err(KubernetesRenderError::InvalidField { field: "image", reason: "must not be empty" });
+        return Err(KubernetesRenderError::InvalidField {
+            field: "image",
+            reason: "must not be empty",
+        });
     }
     if value.chars().any(char::is_whitespace) || value.chars().any(char::is_control) {
         return Err(KubernetesRenderError::InvalidField {

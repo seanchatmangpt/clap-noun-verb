@@ -74,7 +74,10 @@ fn validate_identifier(value: &str, field: &'static str) -> Result<(), Container
     if value.is_empty() {
         return Err(ContainerRenderError::InvalidField { field, reason: "must not be empty" });
     }
-    if !value.chars().all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.')) {
+    if !value
+        .chars()
+        .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.'))
+    {
         return Err(ContainerRenderError::InvalidField {
             field,
             reason: "must contain only ASCII alphanumerics, '-', '_' or '.'",

@@ -7,7 +7,7 @@ use thiserror::Error;
 /// A bounded request to invoke the configured CLI executable.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Invocation {
-    /// Arguments after argv[0].
+    /// Arguments after argv\[0\].
     pub args: Vec<String>,
     /// Explicit environment additions for this invocation.
     #[serde(default)]
@@ -110,10 +110,8 @@ impl Executor for ProcessExecutor {
     type Error = ProcessExecutionError;
 
     fn execute(&self, invocation: &Invocation) -> Result<Execution, Self::Error> {
-        if let Some(name) = invocation
-            .env
-            .keys()
-            .find(|name| !self.invocation_env_allowlist.contains(*name))
+        if let Some(name) =
+            invocation.env.keys().find(|name| !self.invocation_env_allowlist.contains(*name))
         {
             return Err(ProcessExecutionError::EnvironmentRefused(name.clone()));
         }

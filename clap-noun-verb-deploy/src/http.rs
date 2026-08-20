@@ -178,10 +178,11 @@ fn read_request(stream: &mut TcpStream) -> Result<Request, HttpError> {
     while bytes.len() < body_start + content_length {
         let read = stream.read(&mut buffer)?;
         if read == 0 {
-            return Err(
-                std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "request body truncated")
-                    .into(),
-            );
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "request body truncated",
+            )
+            .into());
         }
         bytes.extend_from_slice(&buffer[..read]);
         if bytes.len() > MAX_REQUEST_BYTES {

@@ -158,9 +158,7 @@ where
 
         let invocation = match self.schema.build_invocation(name, &arguments) {
             Ok(invocation) => invocation,
-            Err(build_error) => {
-                return Ok(Some(self.error(id, -32602, &build_error.to_string())))
-            }
+            Err(build_error) => return Ok(Some(self.error(id, -32602, &build_error.to_string()))),
         };
         let record = match self.gateway.execute(invocation) {
             Ok(record) => record,
