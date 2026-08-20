@@ -45,10 +45,8 @@ impl ContainerConfig {
 }
 
 fn json_array<'a>(values: impl Iterator<Item = &'a str>) -> String {
-    let encoded = values
-        .map(|value| format!("\"{}\"", escape(value)))
-        .collect::<Vec<_>>()
-        .join(", ");
+    let encoded =
+        values.map(|value| format!("\"{}\"", escape(value))).collect::<Vec<_>>().join(", ");
     format!("[{encoded}]")
 }
 
