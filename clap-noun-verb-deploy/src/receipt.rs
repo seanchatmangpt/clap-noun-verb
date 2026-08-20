@@ -20,13 +20,7 @@ impl ExecutionRecord {
     pub fn new(subject: impl Into<String>, invocation: Invocation, execution: Execution) -> Self {
         let subject = subject.into();
         let fingerprint = fingerprint(&subject, &invocation, &execution);
-        Self {
-            schema_version: 1,
-            subject,
-            invocation,
-            execution,
-            fingerprint,
-        }
+        Self { schema_version: 1, subject, invocation, execution, fingerprint }
     }
 
     /// Verify that the record has not changed since manufacture.
