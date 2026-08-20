@@ -19,14 +19,16 @@ Kubernetes and container modules are CONSTRUCT-only projections: they render man
 
 ## Features
 
-- `mcp`: MCP JSON-RPC over stdio (`initialize`, `ping`, `tools/list`, `tools/call`).
+- `mcp`: MCP 2026-07-28 JSON-RPC over stdio (`server/discover`, `ping`, `tools/list`, `tools/call`).
 - `http`: health, readiness, schema, tool-list, and admitted invocation serving.
 - `kubernetes`: deterministic hardened Deployment + Service YAML.
 - `container`: deterministic multi-stage Dockerfile projection.
 
 All features are enabled by default and can be selected independently.
 
-## MCP
+## MCP 2026-07-28
+
+The crate targets the modern stateless MCP era. It does not expose the legacy `initialize`/`initialized` session handshake. Every request must identify protocol revision `2026-07-28` in the reserved request `_meta` envelope and provide client capabilities. `server/discover` is available for explicit capability discovery. Successful responses carry server identity metadata; list responses carry deterministic cache hints.
 
 ```rust
 use clap_noun_verb_deploy::{Deploy, ProcessExecutor};
