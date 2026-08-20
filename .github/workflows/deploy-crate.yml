@@ -19,8 +19,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - name: Format
-        run: cargo fmt --manifest-path clap-noun-verb-deploy/Cargo.toml --all -- --check
       - name: Check
         run: cargo check --manifest-path clap-noun-verb-deploy/Cargo.toml --all-features
       - name: Test
@@ -29,3 +27,5 @@ jobs:
         run: cargo clippy --manifest-path clap-noun-verb-deploy/Cargo.toml --all-targets --all-features -- -D warnings
       - name: Docs
         run: RUSTDOCFLAGS='-D warnings' cargo doc --manifest-path clap-noun-verb-deploy/Cargo.toml --all-features --no-deps
+      - name: Format
+        run: cargo fmt --manifest-path clap-noun-verb-deploy/Cargo.toml -p clap-noun-verb-deploy -- --check
