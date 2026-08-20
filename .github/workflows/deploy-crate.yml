@@ -11,6 +11,10 @@ on:
       - 'clap-noun-verb-deploy/**'
       - '.github/workflows/deploy-crate.yml'
 
+concurrency:
+  group: deploy-crate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-crate:
     runs-on: ubuntu-latest
