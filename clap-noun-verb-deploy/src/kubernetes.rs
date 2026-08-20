@@ -5,6 +5,7 @@
 //! operations.
 
 use std::collections::BTreeMap;
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KubernetesConfig {
@@ -19,6 +20,12 @@ pub struct KubernetesConfig {
     pub service_account_name: Option<String>,
     pub read_only_root_filesystem: bool,
     pub run_as_non_root: bool,
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum KubernetesRenderError {
+    #[error("invalid Kubernetes field '{field}': {reason}")]
+    InvalidField { field: &'static str, reason: &'static str },
 }
 
 impl KubernetesConfig {
@@ -39,9 +46,21 @@ impl KubernetesConfig {
         }
     }
 
-    /// Render Deployment and ClusterIP Service YAML in stable key order.
-    #[must_use]
-    pub fn render(&self) -> String {
+    /// Render Deployment and ClusterIP Service YAML in stable key order after
+    /// validating every scalar that can affect YAML structure or Kubernetes identity.
+    pub fn render(&self) -> Result<String, KubernetesRenderError> {
+        validate_dns_label(&self.name, "name")?;
+        if let Some(namespace) = &self.namespace {
+            validate_dns_label(namespace, "namespace")?;
+        }
+        if let Some(service_account_name) = &self.service_account_name {
+            validate_dns_label(service_account_name, "service_account_name")?;
+        }
+        validate_image(&self.image)?;
+        for name in self.env.keys() {
+            validate_env_name(name)?;
+        }
+
         let metadata_namespace = self
             .namespace
             .as_ref()
@@ -66,12 +85,12 @@ impl KubernetesConfig {
                 .env
                 .iter()
                 .map(|(name, value)| {
-                    format!("\n        - name: {}\n          value: \"{}\"", name, escape(value))
+                    format!("\n        - name: {name}\n          value: {}", yaml_string(value))
                 })
                 .collect::<String>();
             format!("\n        env:{values}")
         };
-        format!(
+        Ok(format!(
             "apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -88,6 +107,10 @@ spec:
       labels:
         app.kubernetes.io/name: {name}
     spec:{service_account}
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: {name}
         image: {image}
@@ -129,7 +152,54 @@ spec:
             port = self.port,
             read_only = self.read_only_root_filesystem,
             non_root = self.run_as_non_root,
-        )
+        ))
+    }
+}
+
+fn validate_dns_label(value: &str, field: &'static str) -> Result<(), KubernetesRenderError> {
+    let length_valid = !value.is_empty() && value.len() <= 63;
+    let edge_valid = value
+        .as_bytes()
+        .first()
+        .zip(value.as_bytes().last())
+        .is_some_and(|(first, last)| first.is_ascii_alphanumeric() && last.is_ascii_alphanumeric());
+    let body_valid = value
+        .bytes()
+        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-');
+    if length_valid && edge_valid && body_valid {
+        Ok(())
+    } else {
+        Err(KubernetesRenderError::InvalidField {
+            field,
+            reason: "must be a lowercase DNS-1123 label of at most 63 characters",
+        })
+    }
+}
+
+fn validate_image(value: &str) -> Result<(), KubernetesRenderError> {
+    if value.is_empty() {
+        return Err(KubernetesRenderError::InvalidField { field: "image", reason: "must not be empty" });
+    }
+    if value.chars().any(char::is_whitespace) || value.chars().any(char::is_control) {
+        return Err(KubernetesRenderError::InvalidField {
+            field: "image",
+            reason: "must not contain whitespace or control characters",
+        });
+    }
+    Ok(())
+}
+
+fn validate_env_name(value: &str) -> Result<(), KubernetesRenderError> {
+    let mut characters = value.chars();
+    let first_valid = characters.next().is_some_and(|character| character == '_' || character.is_ascii_alphabetic());
+    let rest_valid = characters.all(|character| character == '_' || character.is_ascii_alphanumeric());
+    if first_valid && rest_valid {
+        Ok(())
+    } else {
+        Err(KubernetesRenderError::InvalidField {
+            field: "env",
+            reason: "environment names must use ASCII letters, digits and '_' and not start with a digit",
+        })
     }
 }
 
@@ -137,11 +207,10 @@ fn yaml_inline_array(name: &str, values: &[String]) -> String {
     if values.is_empty() {
         return String::new();
     }
-    let values =
-        values.iter().map(|value| format!("\"{}\"", escape(value))).collect::<Vec<_>>().join(", ");
+    let values = values.iter().map(|value| yaml_string(value)).collect::<Vec<_>>().join(", ");
     format!("\n        {name}: [{values}]")
 }
 
-fn escape(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('"', "\\\"")
+fn yaml_string(value: &str) -> String {
+    serde_json::to_string(value).expect("serializing a Rust string to JSON cannot fail")
 }
