@@ -34,7 +34,8 @@ pub use policy::{
 };
 pub use receipt::{ExecutionRecord, ReplayError, ReplayVerification};
 pub use schema::{
-    ArgumentKind, ArgumentSchema, CliSchema, CommandSchema, InvocationBuildError, ToolSchema,
+    ArgumentBehavior, ArgumentKind, ArgumentSchema, CliSchema, CommandSchema, InvocationBuildError,
+    ToolSchema,
 };
 
 use clap_noun_verb::CommandRegistry;
