@@ -1,16 +1,20 @@
-//! MCP stdio adapter for a projected CLI.
+//! MCP 2026-07-28 stdio adapter for a projected CLI.
 //!
-//! The server implements the core JSON-RPC methods required for CLI tools:
-//! `initialize`, `tools/list`, and `tools/call`. Requests are admitted through
-//! [`CliSchema`](crate::CliSchema) and [`Gateway`](crate::Gateway) before an
-//! executor can receive an invocation.
+//! The modern MCP era is stateless: there is no `initialize` handshake or
+//! protocol session. Every request carries protocol metadata, optional discovery
+//! uses `server/discover`, and all tool execution still crosses the same schema,
+//! admission, gateway, executor, and execution-record boundary.
 
 use crate::{AdmissionPolicy, AdmitValidated, CliSchema, Executor, Gateway, GatewayError};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::io::{BufRead, Write};
 use thiserror::Error;
 
-pub const MCP_PROTOCOL_VERSION: &str = "2025-06-18";
+pub const MCP_PROTOCOL_VERSION: &str = "2026-07-28";
+const PROTOCOL_VERSION_META: &str = "io.modelcontextprotocol/protocolVersion";
+const CLIENT_INFO_META: &str = "io.modelcontextprotocol/clientInfo";
+const CLIENT_CAPABILITIES_META: &str = "io.modelcontextprotocol/clientCapabilities";
+const SERVER_INFO_META: &str = "io.modelcontextprotocol/serverInfo";
 
 pub struct McpServer<E, P = AdmitValidated> {
     name: String,
@@ -97,23 +101,28 @@ where
         Ok(())
     }
 
-    /// Handle one MCP JSON-RPC request. Notifications intentionally return `None`.
+    /// Handle one modern MCP JSON-RPC request. Notifications return `None`.
     pub fn handle(&self, request: &Value) -> Result<Option<Value>, McpError> {
         let Some(id) = request.get("id").cloned() else {
             return Ok(None);
         };
         if request.get("jsonrpc").and_then(Value::as_str) != Some("2.0") {
-            return Ok(Some(error(id, -32600, "Invalid Request")));
+            return Ok(Some(self.error(id, -32600, "Invalid Request")));
         }
         let Some(method) = request.get("method").and_then(Value::as_str) else {
-            return Ok(Some(error(id, -32600, "Invalid Request")));
+            return Ok(Some(self.error(id, -32600, "Invalid Request")));
         };
+        if let Err(message) = validate_request_meta(request) {
+            return Ok(Some(self.error(id, -32600, message)));
+        }
 
         let result = match method {
-            "initialize" => json!({
-                "protocolVersion": MCP_PROTOCOL_VERSION,
+            "server/discover" => json!({
+                "supportedVersions": [MCP_PROTOCOL_VERSION],
                 "capabilities": {"tools": {"listChanged": false}},
-                "serverInfo": {"name": self.name, "version": self.version}
+                "instructions": "CLI tools are schema-validated and policy-admitted before execution.",
+                "ttlMs": 60_000,
+                "cacheScope": "public"
             }),
             "ping" => json!({}),
             "tools/list" => json!({
@@ -121,37 +130,38 @@ where
                     "name": tool.name,
                     "description": tool.description.unwrap_or_default(),
                     "inputSchema": tool.input_schema
-                })).collect::<Vec<_>>()
+                })).collect::<Vec<_>>(),
+                "ttlMs": 60_000,
+                "cacheScope": "public"
             }),
             "tools/call" => return self.call_tool(id, request),
-            _ => return Ok(Some(error(id, -32601, "Method not found"))),
+            _ => return Ok(Some(self.error(id, -32601, "Method not found"))),
         };
 
-        Ok(Some(json!({"jsonrpc": "2.0", "id": id, "result": result})))
+        Ok(Some(self.success(id, result)))
     }
 
     fn call_tool(&self, id: Value, request: &Value) -> Result<Option<Value>, McpError> {
         let params = request.get("params").and_then(Value::as_object);
         let Some(params) = params else {
-            return Ok(Some(error(id, -32602, "Invalid params")));
+            return Ok(Some(self.error(id, -32602, "Invalid params")));
         };
         let Some(name) = params.get("name").and_then(Value::as_str) else {
-            return Ok(Some(error(id, -32602, "Missing tool name")));
+            return Ok(Some(self.error(id, -32602, "Missing tool name")));
         };
-        let arguments = params
-            .get("arguments")
-            .and_then(Value::as_object)
-            .cloned()
-            .unwrap_or_default();
+        let arguments =
+            params.get("arguments").and_then(Value::as_object).cloned().unwrap_or_default();
 
         let invocation = match self.schema.build_invocation(name, &arguments) {
             Ok(invocation) => invocation,
-            Err(build_error) => return Ok(Some(error(id, -32602, &build_error.to_string()))),
+            Err(build_error) => {
+                return Ok(Some(self.error(id, -32602, &build_error.to_string())))
+            }
         };
         let record = match self.gateway.execute(invocation) {
             Ok(record) => record,
             Err(GatewayError::Refused(reason)) => {
-                return Ok(Some(error(id, -32602, &format!("refused: {reason}"))))
+                return Ok(Some(self.error(id, -32602, &format!("refused: {reason}"))))
             }
             Err(gateway_error) => return Err(McpError::Execution(gateway_error.to_string())),
         };
@@ -161,27 +171,66 @@ where
         } else {
             record.execution.stdout.clone()
         };
-        Ok(Some(json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "result": {
-                "content": [{"type": "text", "text": text}],
-                "isError": is_error,
-                "_meta": {
-                    "clapNounVerbDeploy": {
-                        "subject": record.subject,
-                        "fingerprint": record.fingerprint
-                    }
+        let result = json!({
+            "content": [{"type": "text", "text": text}],
+            "isError": is_error,
+            "_meta": {
+                "clapNounVerbDeploy": {
+                    "subject": record.subject,
+                    "fingerprint": record.fingerprint
                 }
             }
-        })))
+        });
+        Ok(Some(self.success(id, result)))
+    }
+
+    fn success(&self, id: Value, mut result: Value) -> Value {
+        stamp_server_info(&mut result, &self.name, &self.version);
+        json!({"jsonrpc": "2.0", "id": id, "result": result})
+    }
+
+    fn error(&self, id: Value, code: i32, message: &str) -> Value {
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": {"code": code, "message": message},
+            "_meta": {
+                SERVER_INFO_META: {"name": self.name, "version": self.version}
+            }
+        })
     }
 }
 
-fn error(id: Value, code: i32, message: &str) -> Value {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": {"code": code, "message": message}
-    })
+fn validate_request_meta(request: &Value) -> Result<(), &'static str> {
+    let Some(meta) = request.get("_meta").and_then(Value::as_object) else {
+        return Err("missing MCP 2026-07-28 request metadata");
+    };
+    if meta.get(PROTOCOL_VERSION_META).and_then(Value::as_str) != Some(MCP_PROTOCOL_VERSION) {
+        return Err("unsupported or missing MCP protocol version");
+    }
+    if !meta.get(CLIENT_CAPABILITIES_META).is_some_and(Value::is_object) {
+        return Err("missing or malformed MCP client capabilities");
+    }
+    if let Some(client_info) = meta.get(CLIENT_INFO_META) {
+        let Some(client_info) = client_info.as_object() else {
+            return Err("malformed MCP client info");
+        };
+        if client_info.get("name").and_then(Value::as_str).is_none()
+            || client_info.get("version").and_then(Value::as_str).is_none()
+        {
+            return Err("malformed MCP client info");
+        }
+    }
+    Ok(())
+}
+
+fn stamp_server_info(result: &mut Value, name: &str, version: &str) {
+    let Some(result) = result.as_object_mut() else {
+        return;
+    };
+    let meta = result.entry("_meta").or_insert_with(|| Value::Object(Map::new()));
+    let Some(meta) = meta.as_object_mut() else {
+        return;
+    };
+    meta.insert(SERVER_INFO_META.to_owned(), json!({"name": name, "version": version}));
 }
