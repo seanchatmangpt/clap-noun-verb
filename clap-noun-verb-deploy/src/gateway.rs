@@ -12,11 +12,7 @@ pub struct Gateway<E, P> {
 impl<E, P> Gateway<E, P> {
     #[must_use]
     pub fn new(subject: impl Into<String>, executor: E, policy: P) -> Self {
-        Self {
-            subject: subject.into(),
-            executor,
-            policy,
-        }
+        Self { subject: subject.into(), executor, policy }
     }
 
     #[must_use]
@@ -47,10 +43,6 @@ where
             .executor
             .execute(&invocation)
             .map_err(|error| GatewayError::Execution(error.to_string()))?;
-        Ok(ExecutionRecord::new(
-            self.subject.clone(),
-            invocation,
-            execution,
-        ))
+        Ok(ExecutionRecord::new(self.subject.clone(), invocation, execution))
     }
 }
