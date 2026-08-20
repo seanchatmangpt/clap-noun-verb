@@ -1,5 +1,6 @@
 use clap_noun_verb_deploy::{
-    AdmissionPolicy, CommandAllowList, Execution, Executor, Gateway, GatewayError, Invocation,
+    AdmissionPolicy, AdmitValidated, CommandAllowList, EnvironmentAllowList, Execution, Executor,
+    Gateway, GatewayError, Invocation, ProcessExecutionError, ProcessExecutor,
 };
 use std::convert::Infallible;
 
@@ -10,11 +11,7 @@ impl Executor for Echo {
     type Error = Infallible;
 
     fn execute(&self, invocation: &Invocation) -> Result<Execution, Self::Error> {
-        Ok(Execution {
-            exit_code: 0,
-            stdout: invocation.args.join(" "),
-            stderr: String::new(),
-        })
+        Ok(Execution { exit_code: 0, stdout: invocation.args.join(" "), stderr: String::new() })
     }
 }
 
@@ -43,7 +40,22 @@ fn execution_record_replays_exact_invocation() {
 #[test]
 fn allow_list_is_pure_admission() {
     let policy = CommandAllowList::default().allow(["safe", "read"]);
-    assert!(policy
-        .admit(&Invocation::new(["safe", "read", "--format", "json"]))
-        .is_admitted());
+    assert!(policy.admit(&Invocation::new(["safe", "read", "--format", "json"])).is_admitted());
+}
+
+#[test]
+fn default_policy_refuses_per_invocation_environment() {
+    let invocation = Invocation::new(["safe", "read"]).with_env("LD_PRELOAD", "/tmp/inject.so");
+    assert!(!AdmitValidated.admit(&invocation).is_admitted());
+}
+
+#[test]
+fn environment_requires_explicit_policy_and_executor_authority() {
+    let invocation = Invocation::new(["safe", "read"]).with_env("TENANT", "alpha");
+    let policy = EnvironmentAllowList::new(AdmitValidated, ["TENANT"]);
+    assert!(policy.admit(&invocation).is_admitted());
+
+    let executor = ProcessExecutor::new("definitely-not-a-real-executable");
+    let error = executor.execute(&invocation).expect_err("executor must independently refuse env");
+    assert!(matches!(error, ProcessExecutionError::EnvironmentRefused(name) if name == "TENANT"));
 }
