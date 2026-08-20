@@ -72,7 +72,7 @@ impl KubernetesConfig {
             format!("\n        env:{values}")
         };
         format!(
-"apiVersion: apps/v1
+            "apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {name}{metadata_namespace}
@@ -137,11 +137,8 @@ fn yaml_inline_array(name: &str, values: &[String]) -> String {
     if values.is_empty() {
         return String::new();
     }
-    let values = values
-        .iter()
-        .map(|value| format!("\"{}\"", escape(value)))
-        .collect::<Vec<_>>()
-        .join(", ");
+    let values =
+        values.iter().map(|value| format!("\"{}\"", escape(value))).collect::<Vec<_>>().join(", ");
     format!("\n        {name}: [{values}]")
 }
 
