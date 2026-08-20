@@ -95,6 +95,7 @@ mod mcp {
             .expect("handled")
             .expect("response");
         assert_eq!(response["result"]["supportedVersions"][0], MCP_PROTOCOL_VERSION);
+        assert_eq!(response["result"]["resultType"], "complete");
         assert_eq!(
             response["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]["name"],
             "demo"
@@ -108,14 +109,29 @@ mod mcp {
             .expect("handled")
             .expect("response");
         assert_eq!(response["result"]["tools"][0]["name"], "user__create");
+        assert_eq!(response["result"]["resultType"], "complete");
         assert_eq!(response["result"]["cacheScope"], "public");
         assert!(response["result"]["ttlMs"].as_u64().is_some());
     }
 
     #[test]
+    fn successful_tool_call_is_complete() {
+        let response = server()
+            .handle(&request(
+                3,
+                "tools/call",
+                json!({"name":"user__create","arguments":{"name":"Ada"}}),
+            ))
+            .expect("handled")
+            .expect("response");
+        assert_eq!(response["result"]["resultType"], "complete");
+        assert_eq!(response["result"]["content"][0]["text"], "created");
+    }
+
+    #[test]
     fn refuses_missing_modern_protocol_envelope() {
         let response = server()
-            .handle(&json!({"jsonrpc":"2.0","id":3,"method":"tools/list"}))
+            .handle(&json!({"jsonrpc":"2.0","id":4,"method":"tools/list"}))
             .expect("handled")
             .expect("response");
         assert_eq!(response["error"]["code"], -32600);
@@ -124,7 +140,7 @@ mod mcp {
     #[test]
     fn initialize_is_not_available_in_modern_era() {
         let response = server()
-            .handle(&request(4, "initialize", json!({})))
+            .handle(&request(5, "initialize", json!({})))
             .expect("handled")
             .expect("response");
         assert_eq!(response["error"]["code"], -32601);
@@ -134,7 +150,7 @@ mod mcp {
     fn refuses_invalid_call_as_json_rpc_invalid_params() {
         let response = server()
             .handle(&request(
-                5,
+                6,
                 "tools/call",
                 json!({"name":"user__create","arguments":{"shell":"/bin/sh"}}),
             ))
