@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::process::Command;
 use thiserror::Error;
@@ -18,13 +18,10 @@ impl Invocation {
     /// Construct an invocation with no environment additions.
     #[must_use]
     pub fn new(args: impl IntoIterator<Item = impl Into<String>>) -> Self {
-        Self {
-            args: args.into_iter().map(Into::into).collect(),
-            env: BTreeMap::new(),
-        }
+        Self { args: args.into_iter().map(Into::into).collect(), env: BTreeMap::new() }
     }
 
-    /// Add one explicit environment value.
+    /// Add one explicit environment value. Admission and executor policy still apply.
     #[must_use]
     pub fn with_env(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
         self.env.insert(name.into(), value.into());
@@ -64,16 +61,18 @@ pub struct ProcessExecutor {
     executable: OsString,
     clear_env: bool,
     base_env: BTreeMap<String, String>,
+    invocation_env_allowlist: BTreeSet<String>,
 }
 
 impl ProcessExecutor {
-    /// Pin the executor to one executable.
+    /// Pin the executor to one executable. Per-invocation environment is denied by default.
     #[must_use]
     pub fn new(executable: impl Into<OsString>) -> Self {
         Self {
             executable: executable.into(),
             clear_env: false,
             base_env: BTreeMap::new(),
+            invocation_env_allowlist: BTreeSet::new(),
         }
     }
 
@@ -90,10 +89,19 @@ impl ProcessExecutor {
         self.base_env.insert(name.into(), value.into());
         self
     }
+
+    /// Permit one per-invocation environment name at the final process boundary.
+    #[must_use]
+    pub fn allow_invocation_env(mut self, name: impl Into<String>) -> Self {
+        self.invocation_env_allowlist.insert(name.into());
+        self
+    }
 }
 
 #[derive(Debug, Error)]
 pub enum ProcessExecutionError {
+    #[error("invocation environment variable '{0}' is not allowed by the executor")]
+    EnvironmentRefused(String),
     #[error("failed to execute deployed CLI: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -102,15 +110,20 @@ impl Executor for ProcessExecutor {
     type Error = ProcessExecutionError;
 
     fn execute(&self, invocation: &Invocation) -> Result<Execution, Self::Error> {
+        if let Some(name) = invocation
+            .env
+            .keys()
+            .find(|name| !self.invocation_env_allowlist.contains(*name))
+        {
+            return Err(ProcessExecutionError::EnvironmentRefused(name.clone()));
+        }
+
         let mut command = Command::new(&self.executable);
         if self.clear_env {
             command.env_clear();
         }
-        let output = command
-            .args(&invocation.args)
-            .envs(&self.base_env)
-            .envs(&invocation.env)
-            .output()?;
+        let output =
+            command.args(&invocation.args).envs(&self.base_env).envs(&invocation.env).output()?;
 
         Ok(Execution {
             exit_code: output.status.code().unwrap_or(1),
