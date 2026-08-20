@@ -191,8 +191,11 @@ fn validate_image(value: &str) -> Result<(), KubernetesRenderError> {
 
 fn validate_env_name(value: &str) -> Result<(), KubernetesRenderError> {
     let mut characters = value.chars();
-    let first_valid = characters.next().is_some_and(|character| character == '_' || character.is_ascii_alphabetic());
-    let rest_valid = characters.all(|character| character == '_' || character.is_ascii_alphanumeric());
+    let first_valid = characters
+        .next()
+        .is_some_and(|character| character == '_' || character.is_ascii_alphabetic());
+    let rest_valid =
+        characters.all(|character| character == '_' || character.is_ascii_alphanumeric());
     if first_valid && rest_valid {
         Ok(())
     } else {
@@ -212,5 +215,22 @@ fn yaml_inline_array(name: &str, values: &[String]) -> String {
 }
 
 fn yaml_string(value: &str) -> String {
-    serde_json::to_string(value).expect("serializing a Rust string to JSON cannot fail")
+    let mut output = String::with_capacity(value.len() + 2);
+    output.push('"');
+    for character in value.chars() {
+        match character {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            character if character.is_control() => {
+                use std::fmt::Write as _;
+                let _ = write!(output, "\\u{:04x}", u32::from(character));
+            }
+            character => output.push(character),
+        }
+    }
+    output.push('"');
+    output
 }
