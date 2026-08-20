@@ -195,11 +195,13 @@ fn renders_hardened_kubernetes_projection_deterministically() {
 
     let mut config = KubernetesConfig::new("demo", "ghcr.io/example/demo:sha-123");
     config.args = vec!["serve".into(), "http".into()];
-    let first = config.render();
-    assert_eq!(first, config.render());
+    let first = config.render().expect("valid Kubernetes projection");
+    assert_eq!(first, config.render().expect("deterministic projection"));
     assert!(first.contains("kind: Deployment"));
     assert!(first.contains("readOnlyRootFilesystem: true"));
     assert!(first.contains("runAsNonRoot: true"));
+    assert!(first.contains("automountServiceAccountToken: false"));
+    assert!(first.contains("type: RuntimeDefault"));
 }
 
 #[cfg(feature = "container")]
@@ -209,7 +211,7 @@ fn renders_locked_multi_stage_container_projection() {
 
     let mut config = ContainerConfig::new("my-cli", "my-cli");
     config.args = vec!["serve".into(), "http".into()];
-    let dockerfile = config.render_dockerfile();
+    let dockerfile = config.render_dockerfile().expect("valid container projection");
     assert!(dockerfile.contains("cargo build --release --locked -p my-cli"));
     assert!(dockerfile.contains("ENTRYPOINT [\"my-cli\", \"serve\", \"http\"]"));
 }
