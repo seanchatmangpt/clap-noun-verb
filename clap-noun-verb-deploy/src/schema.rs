@@ -11,7 +11,19 @@ use thiserror::Error;
 pub enum ArgumentKind {
     String,
     Boolean,
+    Integer,
     Array,
+}
+
+/// Clap action semantics required to reconstruct argv without ambiguity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArgumentBehavior {
+    Value,
+    Append,
+    SetTrue,
+    SetFalse,
+    Count,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,6 +49,7 @@ pub struct ArgumentSchema {
     pub required: bool,
     pub positional: bool,
     pub kind: ArgumentKind,
+    pub behavior: ArgumentBehavior,
 }
 
 /// Protocol-neutral tool description derived from one callable command.
@@ -58,11 +71,9 @@ pub enum InvocationBuildError {
     #[error("unknown argument '{argument}' for tool '{tool}'")]
     UnknownArgument { tool: String, argument: String },
     #[error("argument '{argument}' for tool '{tool}' expected {expected}")]
-    InvalidType {
-        tool: String,
-        argument: String,
-        expected: &'static str,
-    },
+    InvalidType { tool: String, argument: String, expected: &'static str },
+    #[error("argument '{argument}' for tool '{tool}' is outside {expected}")]
+    OutOfRange { tool: String, argument: String, expected: &'static str },
 }
 
 impl CliSchema {
@@ -144,11 +155,8 @@ impl CommandSchema {
         arguments: &Map<String, Value>,
     ) -> Result<Invocation, InvocationBuildError> {
         let tool = self.tool_name();
-        let admitted = self
-            .arguments
-            .iter()
-            .map(ArgumentSchema::external_name)
-            .collect::<BTreeSet<_>>();
+        let admitted =
+            self.arguments.iter().map(ArgumentSchema::external_name).collect::<BTreeSet<_>>();
 
         for key in arguments.keys() {
             if !admitted.contains(key.as_str()) {
@@ -187,6 +195,7 @@ impl ArgumentSchema {
         match self.kind {
             ArgumentKind::String => json!({"type": "string"}),
             ArgumentKind::Boolean => json!({"type": "boolean"}),
+            ArgumentKind::Integer => json!({"type": "integer", "minimum": 0, "maximum": 255}),
             ArgumentKind::Array => json!({"type": "array", "items": {"type": "string"}}),
         }
     }
@@ -197,8 +206,8 @@ impl ArgumentSchema {
         value: &Value,
         argv: &mut Vec<String>,
     ) -> Result<(), InvocationBuildError> {
-        match self.kind {
-            ArgumentKind::Boolean => {
+        match self.behavior {
+            ArgumentBehavior::SetTrue => {
                 let Some(enabled) = value.as_bool() else {
                     return Err(self.invalid_type(tool, "boolean"));
                 };
@@ -206,13 +215,36 @@ impl ArgumentSchema {
                     self.push_switch(argv);
                 }
             }
-            ArgumentKind::String => {
+            ArgumentBehavior::SetFalse => {
+                let Some(enabled) = value.as_bool() else {
+                    return Err(self.invalid_type(tool, "boolean"));
+                };
+                if !enabled {
+                    self.push_switch(argv);
+                }
+            }
+            ArgumentBehavior::Count => {
+                let Some(count) = value.as_u64() else {
+                    return Err(self.invalid_type(tool, "integer from 0 through 255"));
+                };
+                if count > u64::from(u8::MAX) {
+                    return Err(InvocationBuildError::OutOfRange {
+                        tool: tool.to_owned(),
+                        argument: self.external_name().to_owned(),
+                        expected: "the Clap Count range 0 through 255",
+                    });
+                }
+                for _ in 0..count {
+                    self.push_switch(argv);
+                }
+            }
+            ArgumentBehavior::Value => {
                 let Some(text) = value.as_str() else {
                     return Err(self.invalid_type(tool, "string"));
                 };
                 self.push_value(argv, text);
             }
-            ArgumentKind::Array => {
+            ArgumentBehavior::Append => {
                 let Some(values) = value.as_array() else {
                     return Err(self.invalid_type(tool, "array of strings"));
                 };
@@ -278,13 +310,18 @@ fn collect(command: &Command, parent: &mut Vec<String>, output: &mut Vec<Command
 }
 
 fn argument_schema(argument: &Arg) -> ArgumentSchema {
-    let action = argument.get_action();
-    let kind = if matches!(action, ArgAction::SetTrue | ArgAction::SetFalse | ArgAction::Count) {
-        ArgumentKind::Boolean
-    } else if matches!(action, ArgAction::Append) {
-        ArgumentKind::Array
-    } else {
-        ArgumentKind::String
+    let behavior = match argument.get_action() {
+        ArgAction::Append => ArgumentBehavior::Append,
+        ArgAction::SetTrue => ArgumentBehavior::SetTrue,
+        ArgAction::SetFalse => ArgumentBehavior::SetFalse,
+        ArgAction::Count => ArgumentBehavior::Count,
+        _ => ArgumentBehavior::Value,
+    };
+    let kind = match behavior {
+        ArgumentBehavior::SetTrue | ArgumentBehavior::SetFalse => ArgumentKind::Boolean,
+        ArgumentBehavior::Count => ArgumentKind::Integer,
+        ArgumentBehavior::Append => ArgumentKind::Array,
+        ArgumentBehavior::Value => ArgumentKind::String,
     };
 
     ArgumentSchema {
@@ -294,5 +331,6 @@ fn argument_schema(argument: &Arg) -> ArgumentSchema {
         required: argument.is_required_set(),
         positional: argument.get_long().is_none() && argument.get_short().is_none(),
         kind,
+        behavior,
     }
 }
