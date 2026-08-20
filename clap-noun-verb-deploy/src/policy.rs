@@ -23,13 +23,13 @@ pub trait AdmissionPolicy: Send + Sync {
     fn admit(&self, invocation: &Invocation) -> Admission;
 }
 
-/// Policy which admits every invocation that already passed schema validation.
+/// Admit schema-validated argv while refusing per-invocation environment mutation.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AdmitValidated;
 
 impl AdmissionPolicy for AdmitValidated {
-    fn admit(&self, _invocation: &Invocation) -> Admission {
-        Admission::Admitted
+    fn admit(&self, invocation: &Invocation) -> Admission {
+        admit_no_environment(invocation)
     }
 }
 
@@ -42,31 +42,69 @@ pub struct CommandAllowList {
 impl CommandAllowList {
     #[must_use]
     pub fn new(commands: impl IntoIterator<Item = Vec<String>>) -> Self {
-        Self {
-            commands: commands.into_iter().collect(),
-        }
+        Self { commands: commands.into_iter().filter(|command| !command.is_empty()).collect() }
     }
 
     #[must_use]
     pub fn allow(mut self, command_path: impl IntoIterator<Item = impl Into<String>>) -> Self {
-        self.commands
-            .insert(command_path.into_iter().map(Into::into).collect());
+        let command = command_path.into_iter().map(Into::into).collect::<Vec<_>>();
+        if !command.is_empty() {
+            self.commands.insert(command);
+        }
         self
     }
 }
 
 impl AdmissionPolicy for CommandAllowList {
     fn admit(&self, invocation: &Invocation) -> Admission {
-        if self
-            .commands
-            .iter()
-            .any(|command| invocation.args.starts_with(command.as_slice()))
-        {
+        if !invocation.env.is_empty() {
+            return admit_no_environment(invocation);
+        }
+        if self.commands.iter().any(|command| invocation.args.starts_with(command.as_slice())) {
             Admission::Admitted
         } else {
-            Admission::Refused {
-                reason: "command path is outside the admitted allow-list".to_owned(),
-            }
+            Admission::Refused { reason: "command path is outside the admitted allow-list".to_owned() }
+        }
+    }
+}
+
+/// Explicitly permits selected per-invocation environment names after another policy admits argv.
+#[derive(Debug, Clone)]
+pub struct EnvironmentAllowList<P> {
+    inner: P,
+    names: BTreeSet<String>,
+}
+
+impl<P> EnvironmentAllowList<P> {
+    #[must_use]
+    pub fn new(inner: P, names: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self { inner, names: names.into_iter().map(Into::into).collect() }
+    }
+}
+
+impl<P: AdmissionPolicy> AdmissionPolicy for EnvironmentAllowList<P> {
+    fn admit(&self, invocation: &Invocation) -> Admission {
+        let mut argv_only = invocation.clone();
+        argv_only.env.clear();
+        match self.inner.admit(&argv_only) {
+            Admission::Admitted => {}
+            refused => return refused,
+        }
+        if let Some(name) = invocation.env.keys().find(|name| !self.names.contains(*name)) {
+            return Admission::Refused {
+                reason: format!("environment variable '{name}' is outside the admitted allow-list"),
+            };
+        }
+        Admission::Admitted
+    }
+}
+
+fn admit_no_environment(invocation: &Invocation) -> Admission {
+    if invocation.env.is_empty() {
+        Admission::Admitted
+    } else {
+        Admission::Refused {
+            reason: "per-invocation environment mutation is not admitted by default".to_owned(),
         }
     }
 }
