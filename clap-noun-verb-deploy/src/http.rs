@@ -20,9 +20,7 @@ pub struct HttpConfig {
 
 impl Default for HttpConfig {
     fn default() -> Self {
-        Self {
-            bind: "0.0.0.0:8080".to_owned(),
-        }
+        Self { bind: "0.0.0.0:8080".to_owned() }
     }
 }
 
@@ -42,10 +40,7 @@ impl<E> HttpServer<E, AdmitValidated> {
     #[must_use]
     pub fn new(schema: CliSchema, executor: E) -> Self {
         let subject = schema.name.clone();
-        Self {
-            schema,
-            gateway: Gateway::new(subject, executor, AdmitValidated),
-        }
+        Self { schema, gateway: Gateway::new(subject, executor, AdmitValidated) }
     }
 }
 
@@ -53,10 +48,7 @@ impl<E, P> HttpServer<E, P> {
     #[must_use]
     pub fn with_policy(schema: CliSchema, executor: E, policy: P) -> Self {
         let subject = schema.name.clone();
-        Self {
-            schema,
-            gateway: Gateway::new(subject, executor, policy),
-        }
+        Self { schema, gateway: Gateway::new(subject, executor, policy) }
     }
 }
 
@@ -76,12 +68,7 @@ where
     P: AdmissionPolicy,
 {
     /// Handle a decoded HTTP request without opening a socket.
-    pub fn handle(
-        &self,
-        method: &str,
-        path: &str,
-        body: &[u8],
-    ) -> Result<HttpResponse, HttpError> {
+    pub fn handle(&self, method: &str, path: &str, body: &[u8]) -> Result<HttpResponse, HttpError> {
         let response = match (method, path) {
             ("GET", "/healthz") | ("GET", "/readyz") => response(200, json!({"status": "ok"})),
             ("GET", "/schema") => response(200, json!(self.schema)),
@@ -120,11 +107,8 @@ where
         let Some(tool) = value.get("tool").and_then(Value::as_str) else {
             return Ok(response(400, json!({"error": "missing_tool"})));
         };
-        let arguments = value
-            .get("arguments")
-            .and_then(Value::as_object)
-            .cloned()
-            .unwrap_or_else(Map::new);
+        let arguments =
+            value.get("arguments").and_then(Value::as_object).cloned().unwrap_or_else(Map::new);
         let invocation = match self.schema.build_invocation(tool, &arguments) {
             Ok(invocation) => invocation,
             Err(build_error) => {
@@ -159,7 +143,9 @@ fn read_request(stream: &mut TcpStream) -> Result<Request, HttpError> {
     let header_end = loop {
         let read = stream.read(&mut buffer)?;
         if read == 0 {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "request closed").into());
+            return Err(
+                std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "request closed").into()
+            );
         }
         bytes.extend_from_slice(&buffer[..read]);
         if bytes.len() > MAX_REQUEST_BYTES {
@@ -192,19 +178,18 @@ fn read_request(stream: &mut TcpStream) -> Result<Request, HttpError> {
     while bytes.len() < body_start + content_length {
         let read = stream.read(&mut buffer)?;
         if read == 0 {
-            break;
+            return Err(
+                std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "request body truncated")
+                    .into(),
+            );
         }
         bytes.extend_from_slice(&buffer[..read]);
         if bytes.len() > MAX_REQUEST_BYTES {
             return Err(HttpError::RequestTooLarge);
         }
     }
-    let body_end = std::cmp::min(bytes.len(), body_start + content_length);
-    Ok(Request {
-        method,
-        path,
-        body: bytes[body_start..body_end].to_vec(),
-    })
+    let body_end = body_start + content_length;
+    Ok(Request { method, path, body: bytes[body_start..body_end].to_vec() })
 }
 
 fn find_header_end(bytes: &[u8]) -> Option<usize> {
@@ -212,11 +197,7 @@ fn find_header_end(bytes: &[u8]) -> Option<usize> {
 }
 
 fn response(status: u16, body: Value) -> HttpResponse {
-    HttpResponse {
-        status,
-        content_type: "application/json",
-        body: body.to_string(),
-    }
+    HttpResponse { status, content_type: "application/json", body: body.to_string() }
 }
 
 fn write_response(stream: &mut TcpStream, response: &HttpResponse) -> Result<(), std::io::Error> {
