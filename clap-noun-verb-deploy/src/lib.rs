@@ -28,7 +28,10 @@ pub mod mcp;
 
 pub use executor::{Execution, Executor, Invocation, ProcessExecutionError, ProcessExecutor};
 pub use gateway::{Gateway, GatewayError};
-pub use policy::{Admission, AdmissionError, AdmissionPolicy, AdmitValidated, CommandAllowList};
+pub use policy::{
+    Admission, AdmissionError, AdmissionPolicy, AdmitValidated, CommandAllowList,
+    EnvironmentAllowList,
+};
 pub use receipt::{ExecutionRecord, ReplayError, ReplayVerification};
 pub use schema::{
     ArgumentKind, ArgumentSchema, CliSchema, CommandSchema, InvocationBuildError, ToolSchema,
@@ -48,17 +51,13 @@ impl Deploy {
     /// This operation is read-only and cannot execute a verb.
     #[must_use]
     pub fn from_registry(registry: &CommandRegistry) -> Self {
-        Self {
-            schema: CliSchema::from_command(&registry.build_command()),
-        }
+        Self { schema: CliSchema::from_command(&registry.build_command()) }
     }
 
     /// Build a deployment projection from a raw Clap command graph.
     #[must_use]
     pub fn from_command(command: &clap_noun_verb::Command) -> Self {
-        Self {
-            schema: CliSchema::from_command(command),
-        }
+        Self { schema: CliSchema::from_command(command) }
     }
 
     /// Return the immutable CLI schema shared by all transports.
