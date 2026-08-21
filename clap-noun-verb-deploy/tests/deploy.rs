@@ -401,7 +401,8 @@ fn omits_tmp_empty_dir_when_root_filesystem_is_already_writable() {
 fn renders_hardened_cronjob_projection_deterministically() {
     use clap_noun_verb_deploy::kubernetes::CronJobConfig;
 
-    let mut config = CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "0 3 * * *");
+    let mut config =
+        CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "0 3 * * *");
     config.args = vec!["report".into(), "generate".into()];
     let first = config.render().expect("valid CronJob projection");
     assert_eq!(first, config.render().expect("deterministic projection"));
@@ -421,12 +422,10 @@ fn renders_hardened_cronjob_projection_deterministically() {
 fn cronjob_refuses_a_malformed_schedule_before_rendering_any_yaml() {
     use clap_noun_verb_deploy::kubernetes::{CronJobConfig, KubernetesRenderError};
 
-    let config = CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "not-a-cron-schedule");
+    let config =
+        CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "not-a-cron-schedule");
     let error = config.render().expect_err("a malformed schedule must be refused");
-    assert!(matches!(
-        error,
-        KubernetesRenderError::InvalidField { field: "schedule", .. }
-    ));
+    assert!(matches!(error, KubernetesRenderError::InvalidField { field: "schedule", .. }));
 }
 
 #[cfg(feature = "kubernetes")]
@@ -434,12 +433,14 @@ fn cronjob_refuses_a_malformed_schedule_before_rendering_any_yaml() {
 fn cronjob_adds_writable_tmp_empty_dir_when_root_filesystem_is_read_only() {
     use clap_noun_verb_deploy::kubernetes::CronJobConfig;
 
-    let mut config = CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "0 3 * * *");
+    let mut config =
+        CronJobConfig::new("nightly-report", "ghcr.io/example/demo:sha-123", "0 3 * * *");
     config.read_only_root_filesystem = true;
     let rendered = config.render().expect("valid CronJob projection");
 
     assert!(rendered.contains("readOnlyRootFilesystem: true"));
-    assert!(rendered.contains("volumeMounts:\n                - name: tmp\n                  mountPath: /tmp"));
+    assert!(rendered
+        .contains("volumeMounts:\n                - name: tmp\n                  mountPath: /tmp"));
     assert!(rendered.contains("volumes:\n              - name: tmp\n                emptyDir: {}"));
 }
 

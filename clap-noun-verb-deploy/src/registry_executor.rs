@@ -35,8 +35,7 @@ impl Executor for RegistryExecutor {
 
     fn execute(&self, invocation: &Invocation) -> Result<Execution, Self::Error> {
         let registry_lock = CommandRegistry::get();
-        let registry =
-            registry_lock.lock().map_err(|_| RegistryExecutorError::LockPoisoned)?;
+        let registry = registry_lock.lock().map_err(|_| RegistryExecutorError::LockPoisoned)?;
 
         // `execute_single_step` expects a real argv, args[0] being the
         // (unused, for parsing purposes only) binary name -- exactly what
@@ -50,7 +49,9 @@ impl Executor for RegistryExecutor {
                 stdout: output.to_json().unwrap_or_default(),
                 stderr: String::new(),
             }),
-            Err(error) => Ok(Execution { exit_code: 1, stdout: String::new(), stderr: error.to_string() }),
+            Err(error) => {
+                Ok(Execution { exit_code: 1, stdout: String::new(), stderr: error.to_string() })
+            }
         }
     }
 }

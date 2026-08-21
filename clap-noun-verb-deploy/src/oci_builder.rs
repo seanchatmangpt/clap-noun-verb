@@ -52,7 +52,11 @@ pub struct OciBuildRequest {
 
 impl OciBuildRequest {
     #[must_use]
-    pub fn new(context_dir: impl Into<PathBuf>, dockerfile_path: impl Into<PathBuf>, tag: impl Into<String>) -> Self {
+    pub fn new(
+        context_dir: impl Into<PathBuf>,
+        dockerfile_path: impl Into<PathBuf>,
+        tag: impl Into<String>,
+    ) -> Self {
         Self {
             context_dir: context_dir.into(),
             dockerfile_path: dockerfile_path.into(),
@@ -81,7 +85,11 @@ impl OciBuildResult {
 #[derive(Debug, Error)]
 pub enum OciBuildError {
     #[error("failed to spawn '{program}': {source}")]
-    Spawn { program: String, #[source] source: std::io::Error },
+    Spawn {
+        program: String,
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 /// Builds real OCI images by shelling out to a real, already-installed
@@ -187,8 +195,7 @@ mod tests {
     #[test]
     fn command_line_builds_the_real_argv_docker_would_receive() {
         let builder = OciBuilder::new(OciBuildTool::Docker);
-        let mut request =
-            OciBuildRequest::new("/tmp/build-ctx", "Dockerfile", "my-cli:sha-123");
+        let mut request = OciBuildRequest::new("/tmp/build-ctx", "Dockerfile", "my-cli:sha-123");
         request.build_args.insert("VERSION".to_owned(), "26.9.1".to_owned());
 
         let argv = builder.command_line(&request);
@@ -267,15 +274,13 @@ mod tests {
         write_dockerfile(&context_dir, Path::new("Dockerfile"), "FROM scratch\n")
             .expect("write real Dockerfile");
 
-        let request = OciBuildRequest::new(&context_dir, "Dockerfile", "cnv-oci-builder-test:local");
+        let request =
+            OciBuildRequest::new(&context_dir, "Dockerfile", "cnv-oci-builder-test:local");
         let result = builder.build(&request).expect("real docker build subprocess must spawn");
 
         assert!(result.success(), "real docker build failed: {}", result.stderr);
 
-        Command::new("docker")
-            .args(["rmi", "-f", "cnv-oci-builder-test:local"])
-            .output()
-            .ok();
+        Command::new("docker").args(["rmi", "-f", "cnv-oci-builder-test:local"]).output().ok();
         std::fs::remove_dir_all(&context_dir).ok();
     }
 }

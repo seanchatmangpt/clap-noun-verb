@@ -40,8 +40,7 @@ fn cronjob_projection_refuses_identity_injection_and_quotes_values() {
     let error = config.render().expect_err("name grammar injection must be refused");
     assert!(matches!(error, KubernetesRenderError::InvalidField { field: "name", .. }));
 
-    let mut config =
-        CronJobConfig::new("demo", "ghcr.io/example/demo:sha-123", "0 3 * * *");
+    let mut config = CronJobConfig::new("demo", "ghcr.io/example/demo:sha-123", "0 3 * * *");
     config.env.insert("MESSAGE".into(), "line1\nline2: value".into());
     config.args.push("hello\nworld".into());
     let yaml = config.render().expect("values are safely quoted");

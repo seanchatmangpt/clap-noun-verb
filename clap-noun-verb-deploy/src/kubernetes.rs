@@ -232,7 +232,11 @@ impl CronJobRestartPolicy {
 
 impl CronJobConfig {
     #[must_use]
-    pub fn new(name: impl Into<String>, image: impl Into<String>, schedule: impl Into<String>) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        image: impl Into<String>,
+        schedule: impl Into<String>,
+    ) -> Self {
         Self {
             name: name.into(),
             namespace: None,
@@ -285,7 +289,10 @@ impl CronJobConfig {
                 .env
                 .iter()
                 .map(|(name, value)| {
-                    format!("\n                - name: {name}\n                  value: {}", yaml_string(value))
+                    format!(
+                        "\n                - name: {name}\n                  value: {}",
+                        yaml_string(value)
+                    )
                 })
                 .collect::<String>();
             format!("\n                env:{values}")
