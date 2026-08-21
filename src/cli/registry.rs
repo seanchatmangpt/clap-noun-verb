@@ -185,9 +185,13 @@ pub struct CommandRegistry {
 }
 
 /// Metadata for a registered noun
+///
+/// No `name` field: the noun's name is already the key of
+/// `CommandRegistry::nouns`, and nothing here ever needed a second copy of
+/// it (removed rather than kept `#[allow(dead_code)]`, per ADL-005 --
+/// unused code is either wired into real use or deleted, not permanently
+/// suppressed).
 struct NounMetadata {
-    #[allow(dead_code)] // Reserved for future use
-    name: String,
     about: String,
     long_about: Option<String>,
 }
@@ -258,11 +262,11 @@ pub struct ArgMetadata {
 }
 
 /// Metadata for a registered verb
+///
+/// No `noun_name`/`verb_name` fields: both are already the keys of the
+/// nested `CommandRegistry::verbs`/`root_verbs` maps this struct lives in
+/// (removed rather than kept `#[allow(dead_code)]`, per ADL-005).
 struct VerbMetadata {
-    #[allow(dead_code)] // Reserved for future use
-    noun_name: String,
-    #[allow(dead_code)] // Reserved for future use
-    verb_name: String,
     about: String,
     args: Vec<ArgMetadata>,
     handler_fn: Box<dyn Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync>,
@@ -304,11 +308,9 @@ impl CommandRegistry {
             })
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
-        reg.nouns.entry(name.to_string()).or_insert_with(|| NounMetadata {
-            name: name.to_string(),
-            about: about.to_string(),
-            long_about: None,
-        });
+        reg.nouns
+            .entry(name.to_string())
+            .or_insert_with(|| NounMetadata { about: about.to_string(), long_about: None });
     }
 
     /// Register a verb (called by macro-generated code)
@@ -342,13 +344,8 @@ impl CommandRegistry {
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
 
-        let verb_metadata = VerbMetadata {
-            noun_name: noun_name.to_string(),
-            verb_name: verb_name.to_string(),
-            about: about.to_string(),
-            args,
-            handler_fn: Box::new(handler),
-        };
+        let verb_metadata =
+            VerbMetadata { about: about.to_string(), args, handler_fn: Box::new(handler) };
 
         if noun_name.is_empty() {
             reg.root_verbs.insert(verb_name.to_string(), verb_metadata);
