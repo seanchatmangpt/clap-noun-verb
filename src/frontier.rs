@@ -1401,6 +1401,161 @@ mod tests {
     }
 
     #[test]
+    fn discovery_engine_search_matches_by_exact_name() {
+        // `record.name == term` is the first disjunct of search()'s filter.
+        // Give this record a tag set that deliberately does NOT contain the
+        // search term, so a match here can only be explained by the name
+        // branch, not the tag branch.
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: BTreeSet::from(["finance".to_string()]),
+                route: "svc://billing".to_string(),
+            })
+            .expect("valid record");
+
+        let results = engine.search("billing");
+        assert_eq!(results.len(), 1, "the record with name == term must be returned");
+        assert_eq!(results[0].name, "billing");
+        assert!(
+            !results[0].tags.contains("billing"),
+            "tags must not contain the term, so this match is provably from the name branch"
+        );
+    }
+
+    #[test]
+    fn discovery_engine_search_matches_by_tag_membership() {
+        // `record.tags.contains(term)` is the second disjunct of search()'s
+        // filter. Give this record a name that differs from the search
+        // term, so a match here can only be explained by the tag branch.
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "invoicing".to_string(),
+                tags: BTreeSet::from(["billing".to_string(), "finance".to_string()]),
+                route: "svc://invoicing".to_string(),
+            })
+            .expect("valid record");
+
+        let results = engine.search("billing");
+        assert_eq!(results.len(), 1, "the record whose tags contain the term must be returned");
+        assert_eq!(
+            results[0].name, "invoicing",
+            "name != term, so this match is provably from the tag branch"
+        );
+        assert!(results[0].tags.contains("billing"));
+    }
+
+    #[test]
+    fn discovery_engine_search_returns_multiple_matches_in_canonical_name_order() {
+        // Registered out of alphabetical order, and with a mix of
+        // name-match and tag-match records, so this test cannot pass by
+        // coincidence of insertion order or by only exercising one match
+        // reason: the doc comment promises "canonical name order" for
+        // *all* matches, regardless of why each one matched.
+        let mut engine = DiscoveryEngine::default();
+        for (name, tags) in [
+            ("zeta", vec!["target"]),      // tag match
+            ("target", vec!["unrelated"]), // exact name match
+            ("middle", vec!["unrelated"]), // must NOT match at all
+            ("alpha", vec!["target"]),     // tag match
+        ] {
+            engine
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: tags.into_iter().map(str::to_string).collect(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
+
+        let results = engine.search("target");
+        let names: Vec<&str> = results.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(
+            names,
+            vec!["alpha", "target", "zeta"],
+            "matches must come back in canonical (sorted-by-name) order regardless of \
+             registration order or which disjunct (name vs. tag) produced the match, and \
+             the non-matching \"middle\" record must be excluded entirely"
+        );
+    }
+
+    #[test]
+    fn discovery_engine_search_does_not_match_a_substring_of_a_real_name() {
+        // Proves the doc comment's "exact name" guarantee is actually
+        // enforced by `==`, not merely documented: "billing" is a real
+        // substring of the registered name "billing-service", and the
+        // record is still present in the registry (unlike the
+        // already-deregistered case covered above), so an empty result
+        // here can only be explained by search() refusing partial matches.
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "billing-service".to_string(),
+                tags: BTreeSet::from(["finance".to_string()]),
+                route: "svc://billing-service".to_string(),
+            })
+            .expect("valid record");
+
+        assert!(
+            engine.search("billing").is_empty(),
+            "\"billing\" is only a substring of \"billing-service\" (not an exact name \
+             match) and is not itself a registered tag, so search() must return no results"
+        );
+    }
+
+    #[test]
+    fn discovery_engine_register_refuses_a_duplicate_name_and_names_the_real_duplicate() {
+        // A distinct, already-registered decoy capability with a route
+        // that shares no substring with either capability's name, so a
+        // bug that interpolated the wrong field into register()'s own
+        // "capability already registered: {}" message (the decoy's name,
+        // or the rejected record's own route instead of its name) would
+        // produce a string this test can actually tell apart from the
+        // correct one. Every existing test that reaches this error path
+        // (none do directly today) would otherwise only need
+        // `is_err()`/`expect_err()` to pass.
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "invoicing".to_string(),
+                tags: BTreeSet::new(),
+                route: "endpoint-99".to_string(),
+            })
+            .expect("valid record");
+        engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: BTreeSet::new(),
+                route: "endpoint-77".to_string(),
+            })
+            .expect("valid record");
+
+        let error = engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: BTreeSet::new(),
+                route: "endpoint-13".to_string(),
+            })
+            .expect_err("a duplicate capability name must be refused");
+        assert!(error.contains("capability already registered"));
+        assert!(error.contains("billing"), "error must name the real duplicate: {error}");
+        assert!(
+            !error.contains("invoicing"),
+            "error must not name an unrelated registered capability: {error}"
+        );
+        assert!(
+            !error.contains("endpoint"),
+            "error must name the capability, not any route: {error}"
+        );
+
+        // The rejected re-registration must not have replaced the
+        // original record's route.
+        assert_eq!(engine.search("billing")[0].route, "endpoint-77");
+    }
+
+    #[test]
     fn discovery_engine_names_lists_every_registered_capability_in_canonical_order() {
         // Registered in scrambled (non-alphabetical) order so this test
         // cannot pass by coincidence: with registration already in
@@ -1454,18 +1609,38 @@ mod tests {
 
     #[test]
     fn discovery_engine_recommend_refuses_a_candidate_that_was_never_registered() {
+        // A registered decoy candidate ("billing") is included alongside
+        // the real unregistered one ("phantom-capability") so the check
+        // in `recommend` actually has to walk past a valid entry before
+        // reaching the invalid one. With only one candidate name in the
+        // call (the shape this test used before), a bug that always
+        // named the wrong loop iteration's candidate (e.g. the first
+        // entry, or an index off by one) could never be told apart from
+        // the correct behavior -- there was only ever one name it could
+        // possibly print. Two differently named, non-substring-sharing
+        // candidates make the check discriminating.
         let mut engine = DiscoveryEngine::default();
         engine
             .register(DiscoveryRecord {
-                name: "known".to_string(),
+                name: "billing".to_string(),
                 tags: BTreeSet::new(),
-                route: "svc://known".to_string(),
+                route: "svc://billing".to_string(),
             })
             .expect("valid record");
 
-        let histories = vec![("unknown-capability".to_string(), LearningTrajectory::default())];
+        let histories = vec![
+            ("billing".to_string(), LearningTrajectory::default()),
+            ("phantom-capability".to_string(), LearningTrajectory::default()),
+        ];
         let error = engine.recommend(&histories).expect_err("unregistered candidate refused");
-        assert!(error.contains("unknown-capability"));
+        assert!(
+            error.contains("phantom-capability"),
+            "error must name the real unregistered candidate: {error}"
+        );
+        assert!(
+            !error.contains("billing"),
+            "error must not name the registered decoy candidate instead: {error}"
+        );
     }
 
     #[test]
@@ -1478,13 +1653,15 @@ mod tests {
     #[test]
     fn discovery_engine_recommend_refuses_a_duplicate_candidate_name() {
         let mut engine = DiscoveryEngine::default();
-        engine
-            .register(DiscoveryRecord {
-                name: "solo".to_string(),
-                tags: BTreeSet::new(),
-                route: "svc://solo".to_string(),
-            })
-            .expect("valid record");
+        for name in ["alpha", "beta"] {
+            engine
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: BTreeSet::new(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
 
         // Two distinct trajectories under the same name -- if `recommend`
         // silently accepted this, both would be folded into UCB1's arm
@@ -1495,9 +1672,25 @@ mod tests {
         let mut second = LearningTrajectory::default();
         second.observe(0.8).expect("valid score");
 
-        let histories = vec![("solo".to_string(), first), ("solo".to_string(), second)];
+        // "alpha" appears exactly once (unique) and "beta" appears twice
+        // (the real duplicate) -- with a single repeated name (the shape
+        // this test used before, where every entry was "solo"), a bug
+        // that named the wrong candidate in the error (the first entry
+        // seen, or any other already-registered name) would be
+        // indistinguishable from correct behavior, since there was only
+        // ever one possible name to print. A distinct, non-duplicated
+        // "alpha" candidate makes the check discriminating.
+        let histories = vec![
+            ("alpha".to_string(), first),
+            ("beta".to_string(), second.clone()),
+            ("beta".to_string(), second),
+        ];
         let error = engine.recommend(&histories).expect_err("duplicate candidate name refused");
-        assert!(error.contains("solo"));
+        assert!(error.contains("beta"), "error must name the real duplicate: {error}");
+        assert!(
+            !error.contains("alpha"),
+            "error must not name the unique, non-duplicated candidate instead: {error}"
+        );
     }
 
     #[test]
@@ -1681,19 +1874,32 @@ mod tests {
     #[test]
     fn meta_framework_register_layer_refuses_a_duplicate_name_and_leaves_it_registered_once() {
         let mut framework = MetaFramework::new();
+        // A second, distinct layer is registered alongside the one under
+        // test so the "layer already registered: {name}" message actually
+        // has to name the *real* duplicate ("admission") rather than any
+        // already-registered layer. With only one registered layer name
+        // (the shape this test used before), a bug that interpolated any
+        // other already-registered layer instead of the attempted one
+        // could never be distinguished from correct behavior, because
+        // there was only ever one name the message could contain.
         framework.register_layer("admission").expect("first registration is unique");
+        framework.register_layer("audit").expect("a second, distinct layer registers cleanly");
 
         let error = framework
             .register_layer("admission")
             .expect_err("a duplicate layer name must be refused");
         assert!(error.contains("layer already registered"));
-        assert!(error.contains("admission"));
+        assert!(error.contains("admission"), "error must name the real duplicate: {error}");
+        assert!(
+            !error.contains("audit"),
+            "error must not name an unrelated registered layer instead: {error}"
+        );
 
         // The rejected re-registration must not have duplicated the
         // entry: exactly one "admission" layer is registered, not two
         // collapsed by luck of `BTreeSet`'s own dedup semantics without
         // this path ever having been exercised by a test.
-        assert_eq!(framework.layers(), vec!["admission"]);
+        assert_eq!(framework.layers(), vec!["admission", "audit"]);
     }
 
     #[test]
@@ -2799,6 +3005,25 @@ mod tests {
         // FrontierResult signature implies -- exactly why parameter_value
         // exists as the safe alternative.
         let _ = spec.validate(|params| params["nonexistent_key"] == 0);
+    }
+
+    #[test]
+    fn executable_spec_validate_err_message_names_the_failing_spec() {
+        // Neither existing validate() call site (Ok(true) above, and the
+        // should_panic characterization above that never reaches Err at
+        // all) nor tests/frontier/phase4_integration_test.rs's
+        // test_spec_validation_fails (which only asserts is_err()) checks
+        // that the real Err(false-predicate) branch actually interpolates
+        // the spec's own name into the message. Use a name that appears
+        // nowhere else in the test suite so a coincidental substring match
+        // cannot pass this test for the wrong reason.
+        let spec = ExecutableSpec::new("Quorum Threshold Breach Spec", "Regression probe");
+
+        let result = spec.validate(|_| false);
+
+        let error_message = result.expect_err("false predicate must produce Err");
+        assert_eq!(error_message, "executable specification failed: Quorum Threshold Breach Spec");
+        assert!(error_message.contains("Quorum Threshold Breach Spec"));
     }
 
     // -------------------------------------------------------------------
