@@ -15,6 +15,7 @@ mod executor;
 mod gateway;
 mod policy;
 mod receipt;
+pub mod registry_executor;
 mod schema;
 
 #[cfg(feature = "container")]
