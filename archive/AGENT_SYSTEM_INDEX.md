@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Specialized Agent System: Complete Index and Navigation
 
 This document serves as the master index for the specialized subagent system designed for clap-noun-verb.

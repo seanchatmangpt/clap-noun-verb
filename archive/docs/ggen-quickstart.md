@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # GGen Quick Start
 
 **For:** Developers extending cargo-cicd or creating new domain CLIs

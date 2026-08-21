@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Agent Design Summary: clap-noun-verb Specialized Subagents
 
 ## Executive Overview

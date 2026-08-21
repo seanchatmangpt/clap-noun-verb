@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Specialized Subagent Specifications for clap-noun-verb
 
 This document defines 6 specialized subagent types optimized for the clap-noun-verb codebase, with clear responsibilities, tool access, decision criteria, and success metrics.

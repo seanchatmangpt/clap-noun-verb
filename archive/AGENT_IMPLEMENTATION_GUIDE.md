@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Agent Implementation and Configuration Guide
 
 This guide provides practical implementation details for instantiating and operating the 6 specialized agents in your Claude Code workflow.

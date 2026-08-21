@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # GGen Manufacturing System
 
 **Version:** 26.6.1

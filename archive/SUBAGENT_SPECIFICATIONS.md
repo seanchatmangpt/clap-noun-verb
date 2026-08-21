@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Specialized Subagent Types for clap-noun-verb
 
 **Framework Version:** 26.6.14 | **Target Rust:** 1.74+ | **Edition:** 2021

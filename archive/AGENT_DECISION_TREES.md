@@ -1,3 +1,5 @@
+> Archived 2026-08-20: superseded/stale as of v26.8.20.
+
 # Agent Decision Trees and Tactical Playbooks
 
 This document provides decision trees and tactical playbooks for each agent to use when encountering common scenarios.
