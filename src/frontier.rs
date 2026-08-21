@@ -3170,6 +3170,118 @@ mod tests {
     }
 
     // -------------------------------------------------------------------
+    // Property-based tests (proptest): DiscoveryEngine::search_all_tags,
+    // DiscoveryEngine::search_by_route, and the recommend/select_ucb1
+    // consistency property. Every existing hand-picked test for
+    // search_all_tags/search_by_route above uses exactly two fixed
+    // records; these generalize the real invariants confirmed from each
+    // function's actual body above across a randomized input space that
+    // satisfies register()'s own real precondition (distinct, non-empty
+    // names; non-empty routes; no uniqueness constraint on route or
+    // tags), rather than adding more hand-picked cases.
+    // -------------------------------------------------------------------
+
+    /// A small, shared pool of candidate route strings -- deliberately
+    /// reused across generated records so a registration set with a
+    /// shared, non-unique route is common, exercising
+    /// `search_by_route`'s real "route need not be unique" behavior
+    /// (confirmed from `register`'s validation above: it rejects only a
+    /// duplicate *name*, never a duplicate route).
+    fn route_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("svc://alpha".to_string()),
+            Just("svc://beta".to_string()),
+            Just("svc://gamma".to_string()),
+            Just("svc://delta".to_string()),
+        ]
+    }
+
+    /// A small, shared pool of candidate tag strings -- deliberately
+    /// small so generated query tag sets frequently overlap (and
+    /// frequently do not overlap) real record tag sets, exercising both
+    /// matching and non-matching cases, not only the vacuous empty-query
+    /// case the hand-picked test already covers.
+    fn tag_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("billing".to_string()),
+            Just("read-only".to_string()),
+            Just("admin".to_string()),
+            Just("beta".to_string()),
+        ]
+    }
+
+    /// Zero or more tags drawn from the shared pool, deduplicated --
+    /// matches the real `DiscoveryRecord::tags` field type
+    /// (`BTreeSet<String>`) exactly.
+    fn tags_strategy() -> impl Strategy<Value = BTreeSet<String>> {
+        prop::collection::btree_set(tag_pool_strategy(), 0..4)
+    }
+
+    /// Zero or more query tags drawn from the same shared pool used by
+    /// `tags_strategy` above.
+    fn tag_query_strategy() -> impl Strategy<Value = Vec<String>> {
+        prop::collection::vec(tag_pool_strategy(), 0..4)
+    }
+
+    /// One or more real `DiscoveryRecord`s with distinct, non-empty
+    /// names -- `register`'s only real uniqueness constraint (confirmed
+    /// from its body above: it checks only `record.name` via
+    /// `self.records.contains_key`, never `record.route` or
+    /// `record.tags`) -- and non-empty routes drawn from the small
+    /// shared pool above. Distinct names are guaranteed by construction
+    /// via a `HashSet`, the same technique `valid_bids_strategy` above
+    /// uses for distinct agent ids, never by post-hoc filtering or
+    /// retrying, so every generated record satisfies `register`'s real
+    /// precondition.
+    fn discovery_records_strategy() -> impl Strategy<Value = Vec<DiscoveryRecord>> {
+        prop::collection::hash_set("[a-z][a-z0-9]{0,7}", 1..8).prop_flat_map(|names| {
+            let names: Vec<String> = names.into_iter().collect();
+            let len = names.len();
+            prop::collection::vec((route_pool_strategy(), tags_strategy()), len).prop_map(
+                move |routes_and_tags| {
+                    names
+                        .iter()
+                        .cloned()
+                        .zip(routes_and_tags)
+                        .map(|(name, (route, tags))| DiscoveryRecord { name, tags, route })
+                        .collect()
+                },
+            )
+        })
+    }
+
+    /// A real `DiscoveryEngine` with every generated name registered,
+    /// paired with a `histories` vector naming each of those same names
+    /// exactly once -- `recommend`'s own real precondition, confirmed
+    /// from its body above: every history name must already be
+    /// registered, and no name may repeat. Each trajectory is built via
+    /// the existing `trajectory_strategy` helper above, so it always
+    /// satisfies `LearningTrajectory::observe`'s own real precondition
+    /// too.
+    fn engine_and_histories_strategy(
+    ) -> impl Strategy<Value = (DiscoveryEngine, Vec<(String, LearningTrajectory)>)> {
+        prop::collection::hash_set("[a-z][a-z0-9]{0,7}", 1..8).prop_flat_map(|names| {
+            let names: Vec<String> = names.into_iter().collect();
+            let len = names.len();
+            prop::collection::vec(trajectory_strategy(), len).prop_map(move |trajectories| {
+                let mut engine = DiscoveryEngine::default();
+                let mut histories = Vec::with_capacity(names.len());
+                for (name, trajectory) in names.iter().cloned().zip(trajectories) {
+                    engine
+                        .register(DiscoveryRecord {
+                            name: name.clone(),
+                            tags: BTreeSet::new(),
+                            route: format!("svc://{name}"),
+                        })
+                        .expect("generated name is non-empty and unique within this set");
+                    histories.push((name, trajectory));
+                }
+                (engine, histories)
+            })
+        })
+    }
+
+    // -------------------------------------------------------------------
     // Property-based tests (proptest): RdfFragment::compose and
     // CompositionChain::push. Both are covered above only by hand-picked
     // examples; these generalize the real invariants that follow from
@@ -3202,6 +3314,80 @@ mod tests {
 
     fn push_candidate_strategy() -> impl Strategy<Value = String> {
         prop_oneof![Just(String::new()), "[ \t\n]{0,4}", "[ \t]{0,2}[a-zA-Z0-9]{1,6}[ \t]{0,2}",]
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): ExecutableSpec::to_gherkin and
+    // ExecutableSpec::parameter/parameter_value. Both are covered above
+    // only by hand-picked examples (test_gherkin_generation and
+    // test_roadmap_milestone_as_spec in
+    // tests/frontier/phase4_integration_test.rs's executable_specs_tests
+    // module always call given()/when()/then()/and() in that same
+    // canonical order and only assert `contains(...)` on a substring of
+    // the output; executable_spec_round_trips_through_json_including_private_parameters
+    // above never calls to_gherkin() at all). These generalize the real
+    // invariants confirmed from to_gherkin()'s own body (this file,
+    // ExecutableSpec::to_gherkin): the four clause-kind sections are
+    // always grouped Given-When-Then-And in that fixed order regardless of
+    // the order the builder methods were actually called in (each of
+    // given()/when()/then()/and() only ever pushes onto its own distinct
+    // Vec field; to_gherkin() then extends its output vector from those
+    // four fields in a fixed field order), and that parameter()/
+    // parameter_value() go through an unconditional `BTreeMap::insert`
+    // with real last-write-wins overwrite semantics.
+    //
+    // The clause and parameter-name strategies below avoid embedded
+    // newlines deliberately: to_gherkin() joins every rendered line with
+    // "\n" and applies no sanitization to clause content at all (confirmed
+    // from its body above), and neither ExecutableSpec's struct doc
+    // comment nor given()/when()/then()/and()'s own doc comments claim any
+    // restriction on clause content -- so a clause containing an embedded
+    // newline is a real, currently-unaddressed edge case (it would inflate
+    // the physical line count of the rendered text beyond this file's own
+    // "one clause, one line" model) rather than a caller responsibility
+    // documented anywhere in this module. That gap is noted here, not
+    // exercised by these properties, which stay inside the well-formed
+    // input space to keep the invariants below unambiguous.
+    // -------------------------------------------------------------------
+
+    #[derive(Debug, Clone, Copy)]
+    enum GherkinClauseKind {
+        Given,
+        When,
+        Then,
+        And,
+    }
+
+    fn gherkin_clause_kind_strategy() -> impl Strategy<Value = GherkinClauseKind> {
+        prop_oneof![
+            Just(GherkinClauseKind::Given),
+            Just(GherkinClauseKind::When),
+            Just(GherkinClauseKind::Then),
+            Just(GherkinClauseKind::And),
+        ]
+    }
+
+    /// A short, newline-free clause string -- alphanumeric and spaces
+    /// only, deliberately excluding `\n` (see the section note above).
+    fn gherkin_clause_strategy() -> impl Strategy<Value = String> {
+        "[a-zA-Z0-9 ]{0,16}"
+    }
+
+    /// A random sequence of (builder-method, clause) pairs, in the exact
+    /// order the builder methods would actually be called -- deliberately
+    /// not sorted by kind, so the call order very often differs from
+    /// to_gherkin()'s fixed Given-When-Then-And output order.
+    fn gherkin_call_sequence_strategy() -> impl Strategy<Value = Vec<(GherkinClauseKind, String)>> {
+        prop::collection::vec((gherkin_clause_kind_strategy(), gherkin_clause_strategy()), 0..12)
+    }
+
+    /// A short parameter name shaped like a real identifier
+    /// (`total_nodes`, `byzantine_nodes`) without being constrained to
+    /// those exact names -- a generated name may or may not collide with
+    /// one of `ExecutableSpec::new`'s own defaults, and the invariants
+    /// below hold either way.
+    fn parameter_name_strategy() -> impl Strategy<Value = String> {
+        "[a-zA-Z_][a-zA-Z0-9_]{0,15}"
     }
 
     proptest! {
@@ -3282,6 +3468,110 @@ mod tests {
             prop_assert_eq!(selected, first_empty);
         }
 
+        /// For ANY set of registered `DiscoveryRecord`s (arbitrary
+        /// names, tags, and routes) and ANY query tag set,
+        /// `search_all_tags` returns exactly the subset of registered
+        /// records whose tags is a real superset of every query tag --
+        /// confirmed from `search_all_tags`'s real body above
+        /// (`terms.iter().all(|term| record.tags.contains(*term))`), not
+        /// assumed. No existing test exercises more than two hand-picked
+        /// records or more than one hand-picked query.
+        #[test]
+        fn discovery_engine_search_all_tags_returns_exactly_the_real_tag_superset(
+            records in discovery_records_strategy(),
+            query_terms in tag_query_strategy()
+        ) {
+            let mut engine = DiscoveryEngine::default();
+            for record in &records {
+                engine
+                    .register(record.clone())
+                    .expect("generated records have distinct, non-empty names and routes");
+            }
+
+            let query_refs: Vec<&str> = query_terms.iter().map(String::as_str).collect();
+            let mut expected: Vec<&str> = records
+                .iter()
+                .filter(|record| query_refs.iter().all(|term| record.tags.contains(*term)))
+                .map(|record| record.name.as_str())
+                .collect();
+            expected.sort_unstable();
+
+            let mut actual: Vec<&str> = engine
+                .search_all_tags(&query_refs)
+                .into_iter()
+                .map(|record| record.name.as_str())
+                .collect();
+            actual.sort_unstable();
+
+            prop_assert_eq!(actual, expected);
+        }
+
+        /// For ANY set of registered `DiscoveryRecord`s and ANY query
+        /// route string, `search_by_route` returns exactly the subset of
+        /// registered records whose route field equals that string
+        /// exactly -- confirmed from `search_by_route`'s real body above
+        /// (`record.route == route`). Route is real-confirmed (from
+        /// `register`'s own body) to not be required unique, so more
+        /// than one returned record for a shared route is a real,
+        /// expected case, not a bug. No existing test exercises more
+        /// than two hand-picked records sharing one hand-picked route.
+        #[test]
+        fn discovery_engine_search_by_route_returns_exactly_the_real_route_matches(
+            records in discovery_records_strategy(),
+            route in route_pool_strategy()
+        ) {
+            let mut engine = DiscoveryEngine::default();
+            for record in &records {
+                engine
+                    .register(record.clone())
+                    .expect("generated records have distinct, non-empty names and routes");
+            }
+
+            let mut expected: Vec<&str> = records
+                .iter()
+                .filter(|record| record.route == route)
+                .map(|record| record.name.as_str())
+                .collect();
+            expected.sort_unstable();
+
+            let mut actual: Vec<&str> = engine
+                .search_by_route(&route)
+                .into_iter()
+                .map(|record| record.name.as_str())
+                .collect();
+            actual.sort_unstable();
+
+            prop_assert_eq!(actual, expected);
+        }
+
+        /// For ANY valid `histories` vector (each name distinct and
+        /// registered -- `recommend`'s own real precondition, confirmed
+        /// from its body above), `recommend`'s chosen name is exactly
+        /// the name at the same index `select_ucb1` independently
+        /// chooses when given the same trajectories, in the same order.
+        /// This confirms `recommend` is a thin, correct wrapper around
+        /// `select_ucb1` and has not silently drifted (e.g. via a stale
+        /// index after a sort, or an off-by-one in the vec-to-name
+        /// mapping) -- a genuinely different check from the two
+        /// `select_ucb1`-only properties above, which never construct or
+        /// call a `DiscoveryEngine` at all.
+        #[test]
+        fn discovery_engine_recommend_always_matches_an_independent_select_ucb1_call(
+            (engine, histories) in engine_and_histories_strategy()
+        ) {
+            let trajectories: Vec<LearningTrajectory> =
+                histories.iter().map(|(_, trajectory)| trajectory.clone()).collect();
+            let expected_index = ExplorationPolicy::select_ucb1(&trajectories)
+                .expect("a non-empty trajectory slice always yields a real selection");
+            let expected_name = histories[expected_index].0.as_str();
+
+            let recommended = engine
+                .recommend(&histories)
+                .expect("every history names a distinct, registered capability");
+
+            prop_assert_eq!(recommended, expected_name);
+        }
+
         #[test]
         fn rdf_fragment_construction_is_insertion_order_independent(
             triples in triple_list_strategy()
@@ -3359,6 +3649,129 @@ mod tests {
             let expected: Vec<String> =
                 candidates.into_iter().filter(|c| !c.trim().is_empty()).collect();
             prop_assert_eq!(chain.entries(), expected.as_slice());
+        }
+
+        /// For ANY sequence of given()/when()/then()/and() calls in ANY
+        /// order, to_gherkin() always groups its output into the fixed
+        /// Given-When-Then-And section order -- never the actual call
+        /// order -- with every clause verbatim on its own prefixed line
+        /// and a total line count of exactly 2 (Feature + description)
+        /// plus the real total clause count. No existing test (hand-picked
+        /// or property-based) calls the builder methods out of their own
+        /// canonical order, so this direction was previously unverified.
+        #[test]
+        fn to_gherkin_groups_given_when_then_and_in_that_fixed_order_regardless_of_call_order(
+            calls in gherkin_call_sequence_strategy()
+        ) {
+            let mut spec = ExecutableSpec::new("Name", "Description");
+            for (kind, clause) in &calls {
+                spec = match kind {
+                    GherkinClauseKind::Given => spec.given(clause.clone()),
+                    GherkinClauseKind::When => spec.when(clause.clone()),
+                    GherkinClauseKind::Then => spec.then(clause.clone()),
+                    GherkinClauseKind::And => spec.and(clause.clone()),
+                };
+            }
+
+            let gherkin = spec.to_gherkin();
+            let lines: Vec<&str> = gherkin.lines().collect();
+
+            prop_assert_eq!(lines.len(), 2 + calls.len());
+            prop_assert_eq!(lines[0], "Feature: Name");
+            prop_assert_eq!(lines[1], "  Description");
+
+            let given: Vec<&String> = calls
+                .iter()
+                .filter(|(kind, _)| matches!(kind, GherkinClauseKind::Given))
+                .map(|(_, clause)| clause)
+                .collect();
+            let when: Vec<&String> = calls
+                .iter()
+                .filter(|(kind, _)| matches!(kind, GherkinClauseKind::When))
+                .map(|(_, clause)| clause)
+                .collect();
+            let then: Vec<&String> = calls
+                .iter()
+                .filter(|(kind, _)| matches!(kind, GherkinClauseKind::Then))
+                .map(|(_, clause)| clause)
+                .collect();
+            let and: Vec<&String> = calls
+                .iter()
+                .filter(|(kind, _)| matches!(kind, GherkinClauseKind::And))
+                .map(|(_, clause)| clause)
+                .collect();
+
+            let mut index = 2usize;
+            for clause in &given {
+                prop_assert_eq!(lines[index], format!("  Given {clause}"));
+                index += 1;
+            }
+            for clause in &when {
+                prop_assert_eq!(lines[index], format!("  When {clause}"));
+                index += 1;
+            }
+            for clause in &then {
+                prop_assert_eq!(lines[index], format!("  Then {clause}"));
+                index += 1;
+            }
+            for clause in &and {
+                prop_assert_eq!(lines[index], format!("  And {clause}"));
+                index += 1;
+            }
+        }
+
+        /// to_gherkin() reads only name/description/preconditions/actions/
+        /// outcomes/invariants (confirmed from its body,
+        /// ExecutableSpec::to_gherkin above) and never touches
+        /// `parameters` -- so its output is byte-for-byte unaffected by
+        /// any sequence of parameter() calls placed after the clauses are
+        /// built, including calls that overwrite a default key
+        /// (total_nodes, byzantine_nodes) or repeat the same name many
+        /// times. No existing test calls to_gherkin() on a spec that also
+        /// has any parameter() call applied to it.
+        #[test]
+        fn to_gherkin_output_is_unaffected_by_any_sequence_of_parameter_calls(
+            calls in gherkin_call_sequence_strategy(),
+            params in prop::collection::vec((parameter_name_strategy(), any::<u64>()), 0..8)
+        ) {
+            let mut spec = ExecutableSpec::new("Name", "Description");
+            for (kind, clause) in &calls {
+                spec = match kind {
+                    GherkinClauseKind::Given => spec.given(clause.clone()),
+                    GherkinClauseKind::When => spec.when(clause.clone()),
+                    GherkinClauseKind::Then => spec.then(clause.clone()),
+                    GherkinClauseKind::And => spec.and(clause.clone()),
+                };
+            }
+            let before = spec.to_gherkin();
+
+            for (name, value) in &params {
+                spec = spec.parameter(name.clone(), *value);
+            }
+            let after = spec.to_gherkin();
+
+            prop_assert_eq!(before, after);
+        }
+
+        /// parameter() calls BTreeMap::insert unconditionally (confirmed
+        /// from its body, ExecutableSpec::parameter above), which replaces
+        /// any existing value under the same key -- so for any name set
+        /// repeatedly (including the common two-call case of setting a
+        /// name and then overwriting it once more), parameter_value() must
+        /// always return the LAST value passed for that name. No existing
+        /// test calls parameter() more than once with the same name.
+        #[test]
+        fn parameter_value_returns_the_real_last_value_set_for_a_repeated_name(
+            name in parameter_name_strategy(),
+            values in prop::collection::vec(any::<u64>(), 1..8)
+        ) {
+            let mut spec = ExecutableSpec::new("Name", "Description");
+            for &value in &values {
+                spec = spec.parameter(name.clone(), value);
+            }
+            let expected_last =
+                *values.last().expect("values has at least one element by construction");
+            prop_assert_eq!(spec.parameter_value(&name), Some(expected_last));
         }
     }
 
