@@ -1,7 +1,8 @@
-# ggen.toml -- generates this repo's own Autonomic Layer, per this
-# project's no-hand-coding-clap-noun-verb-code policy. src/autonomic.rs is
-# ggen-generated from ontology.ttl below; do not hand-edit it -- edit
-# ontology.ttl and run `ggen sync run`.
+# ggen.toml -- generates this repo's own Autonomic Layer and CI/CD
+# Policies module, per this project's no-hand-coding-clap-noun-verb-code
+# policy. src/autonomic.rs and src/policies.rs are ggen-generated from
+# ontology.ttl below; do not hand-edit either -- edit ontology.ttl and run
+# `ggen sync run`.
 
 [project]
 name = "clap-noun-verb"
@@ -11,12 +12,14 @@ source = "ontology.ttl"
 
 [ontology.prefixes]
 cnv-autonomic = "https://clap-noun-verb.dev/ontology/autonomic#"
+cnv-policies = "https://clap-noun-verb.dev/ontology/policies#"
 rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 
 [packs]
 clap-noun-verb-autonomic-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-autonomic-pack" }
+clap-noun-verb-policies-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-policies-pack" }
 
 [templates]
 # No project-local templates of our own (only the composed pack's
