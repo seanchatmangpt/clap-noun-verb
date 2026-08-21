@@ -174,6 +174,42 @@ pub static __VERB_REGISTRY: [fn()] = [..];
 /// Global registry for registered commands
 static REGISTRY: OnceLock<Mutex<CommandRegistry>> = OnceLock::new();
 
+/// Guards evaluated before every verb dispatch (namespaced and root alike),
+/// process-wide. See [`CommandRegistry::add_guard`].
+static GLOBAL_GUARDS: OnceLock<Mutex<crate::autonomic::GuardSet>> = OnceLock::new();
+
+fn global_guards() -> &'static Mutex<crate::autonomic::GuardSet> {
+    GLOBAL_GUARDS.get_or_init(|| Mutex::new(crate::autonomic::GuardSet::new()))
+}
+
+/// Evaluate every registered global guard against `noun`/`verb`/`input`,
+/// before the handler is ever invoked. `Ok(())` admits the dispatch;
+/// `Err` carries a human-readable summary of every denial (a guard
+/// refusal never short-circuits on the first denying guard -- see
+/// [`crate::autonomic::GuardSet::evaluate`]), and is recorded as a failed
+/// [`crate::autonomic::Receipt`] the same way a handler failure is, since
+/// a refused invocation is a real outcome worth an audit trail entry.
+fn admit_or_refuse(noun: &str, verb: &str, input: &HandlerInput) -> Result<()> {
+    let args_json = serde_json::Value::Object(
+        input.args.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect(),
+    );
+    let ctx = crate::autonomic::GuardContext { noun, verb, args: &args_json };
+    let guards = global_guards().lock().unwrap_or_else(|e| e.into_inner());
+    if let Err(denials) = guards.evaluate(&ctx) {
+        drop(guards);
+        let summary = denials
+            .iter()
+            .map(|d| format!("{}: {}", d.code, d.reason))
+            .collect::<Vec<_>>()
+            .join("; ");
+        crate::autonomic::record_receipt(noun, verb, crate::autonomic::Effect::Unknown, false);
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "refused by guard(s): {summary}"
+        )));
+    }
+    Ok(())
+}
+
 /// Command registry for attribute macro discovered functions
 pub struct CommandRegistry {
     /// Registered nouns (name -> noun metadata)
@@ -273,6 +309,16 @@ struct VerbMetadata {
 }
 
 impl CommandRegistry {
+    /// Register a guard evaluated before every verb dispatch (namespaced
+    /// and root alike), process-wide -- the Autonomic Layer's
+    /// [`crate::autonomic::GuardSet`] wired into the real dispatch path,
+    /// not merely available as a standalone type. A denying guard refuses
+    /// the invocation before the handler ever runs, and the refusal is
+    /// recorded as a failed [`crate::autonomic::Receipt`].
+    pub fn add_guard(guard: Box<dyn crate::autonomic::Guard>) {
+        global_guards().lock().unwrap_or_else(|e| e.into_inner()).add(guard);
+    }
+
     /// Initialize the registry (called once during first access)
     pub fn init() -> &'static Mutex<CommandRegistry> {
         let registry = REGISTRY.get_or_init(|| {
@@ -410,6 +456,8 @@ impl CommandRegistry {
                 &candidates,
             )
         })?;
+
+        admit_or_refuse(noun_name, verb_name, &input)?;
 
         let start = std::time::Instant::now();
         let result = (verb.handler_fn)(input);
@@ -1042,6 +1090,8 @@ impl CommandRegistry {
             candidates.extend(self.nouns.keys().map(|s| s.as_str()));
             crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
         })?;
+
+        admit_or_refuse("_root", verb_name, &input)?;
 
         let start = std::time::Instant::now();
         let result = (verb.handler_fn)(input);
