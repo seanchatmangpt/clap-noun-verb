@@ -25,6 +25,8 @@ pub mod http;
 pub mod kubernetes;
 #[cfg(feature = "mcp")]
 pub mod mcp;
+#[cfg(feature = "container")]
+pub mod oci_builder;
 
 pub use executor::{Execution, Executor, Invocation, ProcessExecutionError, ProcessExecutor};
 pub use gateway::{Gateway, GatewayError};
@@ -35,7 +37,7 @@ pub use policy::{
 pub use receipt::{ExecutionRecord, ReplayError, ReplayVerification};
 pub use schema::{
     ArgumentBehavior, ArgumentKind, ArgumentSchema, CliSchema, CommandSchema, InvocationBuildError,
-    ToolSchema,
+    ManifestError, ToolSchema,
 };
 
 use clap_noun_verb::CommandRegistry;
@@ -59,6 +61,14 @@ impl Deploy {
     #[must_use]
     pub fn from_command(command: &clap_noun_verb::Command) -> Self {
         Self { schema: CliSchema::from_command(command) }
+    }
+
+    /// Build a deployment projection directly from an already-obtained schema
+    /// (for example, one loaded from a manifest file via
+    /// [`CliSchema::from_manifest_path`] for a non-`clap-noun-verb` target).
+    #[must_use]
+    pub const fn from_schema(schema: CliSchema) -> Self {
+        Self { schema }
     }
 
     /// Return the immutable CLI schema shared by all transports.
