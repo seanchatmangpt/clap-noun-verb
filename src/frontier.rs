@@ -2920,6 +2920,44 @@ mod tests {
     }
 
     #[test]
+    fn learning_observation_deserializes_out_of_range_score_without_validation() {
+        // Characterization test (derive-vs-constructor-invariant gap):
+        // `LearningObservation::score`'s doc comment states an explicit
+        // domain invariant -- "Score in the inclusive range 0.0..=1.0." --
+        // but that invariant is enforced ONLY by `LearningTrajectory::observe`
+        // (`if !score.is_finite() || !(0.0..=1.0).contains(&score) { ... }`),
+        // which runs the check *before* constructing a `LearningObservation`.
+        // `LearningObservation` itself carries a plain
+        // `#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]` with
+        // no `deserialize_with`, no `#[serde(...)]` validation attribute, and
+        // no manual `Deserialize` impl anywhere in this file, so
+        // `serde_json::from_str` builds one directly from untrusted JSON and
+        // never calls `observe` at all. This test pins down today's real,
+        // current behavior: an out-of-range score deserializes successfully
+        // with the invalid value intact.
+        let json = r#"{"sequence":0,"score":99.0}"#;
+        let observation: LearningObservation =
+            serde_json::from_str(json).expect("plain derive imposes no range check on `score`");
+
+        assert_eq!(observation.sequence, 0);
+        assert_eq!(
+            observation.score, 99.0,
+            "the out-of-range score survives deserialization unchanged -- the documented \
+             0.0..=1.0 invariant is not enforced by Deserialize"
+        );
+
+        // For contrast: the SAME value is correctly rejected by the type's
+        // own real constructor method, `LearningTrajectory::observe`, which
+        // is the only place this invariant is actually checked.
+        let mut trajectory = LearningTrajectory::default();
+        let result = trajectory.observe(observation.score);
+        assert!(
+            result.is_err(),
+            "observe() enforces the 0.0..=1.0 bound that deserialization bypassed"
+        );
+    }
+
+    #[test]
     fn reflexive_report_round_trips_through_json() {
         let report = ReflexiveReport { passed: 97, failed: 3, replay_verified: true };
         let json = serde_json::to_string(&report).expect("serializable");
@@ -3019,6 +3057,45 @@ mod tests {
         let json = serde_json::to_string(&agent).expect("serializable");
         let restored: Agent = serde_json::from_str(&json).expect("deserializable");
         assert_eq!(restored, agent);
+    }
+
+    #[test]
+    fn agent_deserializes_out_of_range_trust_score_without_validation() {
+        // Characterization test (derive-vs-constructor-invariant gap):
+        // `Agent::trust_score`'s doc comment states an explicit domain
+        // invariant -- "Trust score in 0.0..=1.0." -- but that invariant is
+        // enforced ONLY by `EconomicSimulation::add_agent`
+        // (`!(0.0..=1.0).contains(&agent.trust_score)` is checked and
+        // rejected before the agent is ever inserted). `Agent` itself
+        // carries a plain
+        // `#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]` with
+        // no `deserialize_with`, no `#[serde(...)]` validation attribute,
+        // and no manual `Deserialize` impl anywhere in this file, so
+        // `serde_json::from_str` builds one directly from untrusted JSON
+        // and never calls `add_agent` at all. This test pins down today's
+        // real, current behavior: an out-of-range trust score deserializes
+        // successfully with the invalid value intact.
+        let json = r#"{"id":1,"capabilities":["compute"],"trust_score":5.0,"valuation":100.0}"#;
+        let agent: Agent = serde_json::from_str(json)
+            .expect("plain derive imposes no range check on `trust_score`");
+
+        assert_eq!(agent.id, AgentId(1));
+        assert_eq!(
+            agent.trust_score, 5.0,
+            "the out-of-range trust score survives deserialization unchanged -- the \
+             documented 0.0..=1.0 invariant is not enforced by Deserialize"
+        );
+
+        // For contrast: the SAME agent is correctly rejected by the type's
+        // own real constructor method, `EconomicSimulation::add_agent`,
+        // which is the only place this invariant is actually checked.
+        let mut sim = EconomicSimulation::new();
+        let result = sim.add_agent(agent);
+        assert!(
+            result.is_err(),
+            "add_agent() enforces the 0.0..=1.0 trust bound that deserialization bypassed"
+        );
+        assert_eq!(sim.agent_count(), 0, "the rejected agent must not be inserted");
     }
 
     #[test]
