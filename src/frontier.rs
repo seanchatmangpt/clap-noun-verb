@@ -46,7 +46,7 @@ pub struct Invariant {
 }
 
 /// Deterministic registry of layers and invariants.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MetaFramework {
     layers: BTreeSet<String>,
     invariants: BTreeMap<String, Invariant>,
@@ -230,7 +230,7 @@ pub struct DiscoveryRecord {
 }
 
 /// Deterministic capability discovery index.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiscoveryEngine {
     records: BTreeMap<String, DiscoveryRecord>,
 }
@@ -814,7 +814,7 @@ pub struct Allocation {
 }
 
 /// Bounded economic simulation.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EconomicSimulation {
     agents: BTreeMap<AgentId, Agent>,
     tasks: BTreeMap<TaskId, Task>,
@@ -831,6 +831,10 @@ impl EconomicSimulation {
     }
 
     /// Add one unique valid agent.
+    ///
+    /// # Errors
+    /// Returns an error if the agent's trust/valuation are out of bounds,
+    /// or if `agent.id` is already registered.
     pub fn add_agent(&mut self, agent: Agent) -> FrontierResult<()> {
         if !agent.trust_score.is_finite()
             || !(0.0..=1.0).contains(&agent.trust_score)
@@ -839,21 +843,34 @@ impl EconomicSimulation {
         {
             return Err("agent trust and valuation are outside admitted bounds".into());
         }
-        if self.agents.insert(agent.id, agent).is_some() {
+        // Check-before-insert, not insert-then-check-the-return-value:
+        // `BTreeMap::insert` on an existing key REPLACES the value and
+        // returns the old one -- checking `.is_some()` on that return
+        // value happens only after the overwrite already occurred, so a
+        // rejected duplicate would still have clobbered the original
+        // agent's data before this method's `Err` is even returned.
+        if self.agents.contains_key(&agent.id) {
             return Err("duplicate agent id".into());
         }
+        self.agents.insert(agent.id, agent);
         Ok(())
     }
 
     /// Add one unique valid task.
+    ///
+    /// # Errors
+    /// Returns an error if the task's capability/value are out of bounds,
+    /// or if `task.id` is already registered.
     pub fn add_task(&mut self, task: Task) -> FrontierResult<()> {
         if task.required_capability.trim().is_empty() || !task.value.is_finite() || task.value < 0.0
         {
             return Err("task capability and value are outside admitted bounds".into());
         }
-        if self.tasks.insert(task.id, task).is_some() {
+        // Same check-before-insert fix as `add_agent`, for the same reason.
+        if self.tasks.contains_key(&task.id) {
             return Err("duplicate task id".into());
         }
+        self.tasks.insert(task.id, task);
         Ok(())
     }
 
@@ -1156,7 +1173,7 @@ impl ExecutableSpec {
 }
 
 /// Ordered collection of executable specifications.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SpecificationSuite {
     specs: BTreeMap<String, ExecutableSpec>,
 }
@@ -1750,6 +1767,57 @@ mod tests {
     }
 
     // -------------------------------------------------------------------
+    // VickreyAuction: bid-value validation and single-bid refusal
+    // (frontier-gap-sweep: run_auction already validates these -- see
+    // src/frontier.rs:748 and :754 -- but no existing test exercised a
+    // negative bid, a zero bid, or a single-/zero-bid auction.)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn vickrey_auction_refuses_a_negative_bid_value() {
+        let mut auction = VickreyAuction::new();
+        let bids = [
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: -5.0 },
+        ];
+        let error = auction
+            .run_auction(&bids)
+            .expect_err("a negative bid value must be refused, not silently priced");
+        assert!(error.contains("finite non-negative values"));
+    }
+
+    #[test]
+    fn vickrey_auction_allows_and_prices_a_zero_bid_as_the_second_price() {
+        // `bid_value < 0.0` is false for exactly 0.0, so a zero bid is
+        // admitted -- this locks in that boundary rather than leaving it
+        // implicit.
+        let mut auction = VickreyAuction::new();
+        let bids = [
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 50.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 0.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("a zero bid is admitted, not refused");
+        assert_eq!(outcome.winner, AgentId(1));
+        assert_eq!(outcome.payment, 0.0);
+    }
+
+    #[test]
+    fn vickrey_auction_refuses_zero_and_single_bid_auctions() {
+        // With fewer than two bids there is no second price to compare
+        // against, so `run_auction` refuses outright rather than, say,
+        // charging the sole bidder its own bid.
+        for bids in [
+            Vec::<Bid>::new(),
+            vec![Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 }],
+        ] {
+            let error = VickreyAuction::new()
+                .run_auction(&bids)
+                .expect_err("fewer than two bids must be refused");
+            assert!(error.contains("at least two bids"));
+        }
+    }
+
+    // -------------------------------------------------------------------
     // EconomicSimulation::step consumes allocated tasks
     // -------------------------------------------------------------------
 
@@ -1808,6 +1876,270 @@ mod tests {
     }
 
     // -------------------------------------------------------------------
+    // EconomicSimulation::step with no capability match, and with
+    // multiple simultaneous tasks (frontier-gap-sweep)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn economic_simulation_step_leaves_a_task_pending_when_no_agent_has_the_required_capability() {
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compile".to_string(),
+            value: 50.0,
+        })
+        .expect("valid task");
+
+        // No agent advertises "compile", so this step must silently
+        // produce zero allocations -- not an error -- and the task must
+        // remain pending rather than being dropped.
+        let produced = sim.step().expect("a step with no eligible agent still succeeds");
+        assert!(produced.is_empty());
+        assert!(sim.allocations().is_empty());
+        assert_eq!(sim.time, 1.0, "logical time still advances even with no allocation");
+
+        // A second step with still no capable agent must behave
+        // identically -- the unmatched task is not silently lost.
+        let second = sim.step().expect("second step still succeeds");
+        assert!(second.is_empty());
+        assert_eq!(sim.time, 2.0);
+
+        // Once a capable agent is admitted, the same task the earlier
+        // steps left pending is allocated -- proving it was retained,
+        // not dropped, while no agent matched.
+        sim.add_agent(Agent {
+            id: AgentId(2),
+            capabilities: vec!["compile".to_string()],
+            trust_score: 0.5,
+            valuation: 10.0,
+        })
+        .expect("valid agent");
+        let third = sim.step().expect("third step succeeds");
+        assert_eq!(third.len(), 1);
+        assert_eq!(third[0].agent_id, AgentId(2));
+        assert_eq!(third[0].task_id, TaskId(1));
+    }
+
+    #[test]
+    fn economic_simulation_step_allocates_disjoint_capability_tasks_independently_in_one_call() {
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_agent(Agent {
+            id: AgentId(2),
+            capabilities: vec!["network".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 100.0,
+        })
+        .expect("valid task");
+        sim.add_task(Task {
+            id: TaskId(2),
+            required_capability: "network".to_string(),
+            value: 50.0,
+        })
+        .expect("valid task");
+
+        let produced = sim.step().expect("step succeeds");
+        assert_eq!(produced.len(), 2, "both simultaneous tasks must be allocated in one step");
+        assert_eq!(produced[0].task_id, TaskId(1));
+        assert_eq!(produced[0].agent_id, AgentId(1));
+        assert_eq!(produced[1].task_id, TaskId(2));
+        assert_eq!(produced[1].agent_id, AgentId(2));
+
+        // Both tasks were consumed -- a further step produces nothing.
+        let after = sim.step().expect("second step succeeds");
+        assert!(after.is_empty());
+        assert_eq!(sim.allocations().len(), 2);
+    }
+
+    #[test]
+    fn economic_simulation_step_can_allocate_the_same_top_trust_agent_to_every_contending_task() {
+        // `step` selects independently per task and never removes the
+        // chosen agent from consideration for the remaining tasks in the
+        // same call -- so two tasks requiring the same capability both
+        // go to the single highest-trust agent within one step, with no
+        // per-step capacity limit. This is the module's real current
+        // behavior; it is locked in here rather than left implicit.
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_agent(Agent {
+            id: AgentId(2),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.5,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 100.0,
+        })
+        .expect("valid task");
+        sim.add_task(Task {
+            id: TaskId(2),
+            required_capability: "compute".to_string(),
+            value: 50.0,
+        })
+        .expect("valid task");
+
+        let produced = sim.step().expect("step succeeds");
+        assert_eq!(produced.len(), 2);
+        assert!(
+            produced.iter().all(|allocation| allocation.agent_id == AgentId(1)),
+            "the single higher-trust agent wins both contending tasks in one step"
+        );
+    }
+
+    // -------------------------------------------------------------------
+    // EconomicSimulation::add_agent/add_task: negative and zero bounds,
+    // and duplicate-id state preservation (frontier-gap-sweep: the range
+    // checks at src/frontier.rs:835-841/850-852 existed in production
+    // code but were never exercised; the check-before-insert fix above
+    // closes a real bug where a rejected duplicate id still silently
+    // overwrote the original agent's/task's data via BTreeMap::insert's
+    // replace-and-return-old semantics before the Err was returned.)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn economic_simulation_add_agent_refuses_a_negative_valuation_and_does_not_insert_it() {
+        let mut sim = EconomicSimulation::new();
+        let error = sim
+            .add_agent(Agent {
+                id: AgentId(1),
+                capabilities: vec!["compute".to_string()],
+                trust_score: 0.5,
+                valuation: -1.0,
+            })
+            .expect_err("a negative valuation must be refused");
+        assert!(error.contains("outside admitted bounds"));
+        assert_eq!(sim.agent_count(), 0, "the rejected agent must not be inserted");
+    }
+
+    #[test]
+    fn economic_simulation_add_task_refuses_a_negative_value_and_does_not_insert_it() {
+        let mut sim = EconomicSimulation::new();
+        let error = sim
+            .add_task(Task {
+                id: TaskId(1),
+                required_capability: "compute".to_string(),
+                value: -10.0,
+            })
+            .expect_err("a negative task value must be refused");
+        assert!(error.contains("outside admitted bounds"));
+
+        // The rejected task must not occupy TaskId(1) -- a later, valid
+        // task under the same id succeeds rather than colliding with a
+        // half-admitted duplicate.
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 10.0,
+        })
+        .expect("the id was never actually occupied by the rejected task");
+    }
+
+    #[test]
+    fn economic_simulation_add_agent_and_add_task_admit_exactly_zero_as_a_valid_bound() {
+        // `valuation < 0.0` and `value < 0.0` are both false for exactly
+        // 0.0, so a zero valuation/value is admitted, not refused -- this
+        // locks in that boundary rather than leaving it implicit.
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.0,
+            valuation: 0.0,
+        })
+        .expect("zero valuation and trust are within admitted bounds");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 0.0,
+        })
+        .expect("zero task value is within admitted bounds");
+        assert_eq!(sim.agent_count(), 1);
+    }
+
+    #[test]
+    fn economic_simulation_add_agent_and_add_task_preserve_the_original_on_a_rejected_duplicate_id()
+    {
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        let error = sim
+            .add_agent(Agent {
+                id: AgentId(1),
+                capabilities: vec!["network".to_string()],
+                trust_score: 0.1,
+                valuation: 5.0,
+            })
+            .expect_err("duplicate agent id must be refused");
+        assert!(error.contains("duplicate agent id"));
+
+        // The rejected re-registration must not have corrupted the
+        // original agent's data -- an Err return must leave state
+        // untouched, not silently overwrite it first.
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 10.0,
+        })
+        .expect("valid task");
+        let produced = sim.step().expect("step succeeds");
+        assert_eq!(
+            produced.len(),
+            1,
+            "the original agent's \"compute\" capability must still be present"
+        );
+        assert_eq!(produced[0].agent_id, AgentId(1));
+
+        // Same defect, same fix, for add_task.
+        sim.add_task(Task {
+            id: TaskId(2),
+            required_capability: "compute".to_string(),
+            value: 50.0,
+        })
+        .expect("valid task");
+        let duplicate_task_error = sim
+            .add_task(Task {
+                id: TaskId(2),
+                required_capability: "network".to_string(),
+                value: 999.0,
+            })
+            .expect_err("duplicate task id must be refused");
+        assert!(duplicate_task_error.contains("duplicate task id"));
+    }
+
+    // -------------------------------------------------------------------
     // FederatedNetwork::add_peer/remove_peer
     // -------------------------------------------------------------------
 
@@ -1838,6 +2170,202 @@ mod tests {
         // Adding the same peer again is idempotent, not an error.
         let added_again = network.add_peer(fresh_peer).await.expect("lock not poisoned");
         assert!(!added_again);
+    }
+
+    // -------------------------------------------------------------------
+    // FederatedNetwork under real concurrent contention (frontier-gap-sweep):
+    // every prior test above drives add_peer/remove_peer/discover_peers/
+    // advertise_capability with sequential `.await`s on a single task --
+    // none of them exercise the real `Arc<RwLock<...>>` registries under
+    // genuine simultaneous access from more than one real thread/task.
+    // -------------------------------------------------------------------
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+    async fn federated_network_add_peer_survives_real_concurrent_tasks_without_losing_or_duplicating_peers(
+    ) {
+        // Arrange: `FederatedNetwork::clone` is a shallow `Arc` clone (see
+        // its `Arc<RwLock<...>>` fields), so every clone below is a real
+        // handle onto the SAME shared peer registry -- exactly the shape
+        // multiple concurrent dispatch tasks would produce in a real
+        // caller.
+        let network = FederatedNetwork::new("node-concurrent-add").expect("valid node id");
+        let baseline = network.discover_peers().await.expect("real peer list");
+
+        const TASKS: usize = 16;
+        const PER_TASK: usize = 20;
+
+        // Act: TASKS real concurrent async tasks (scheduled across the
+        // multi-thread tokio runtime's real OS worker threads), each
+        // adding PER_TASK distinct new peers to the SAME shared registry
+        // at the same time -- not one after another.
+        let mut handles = Vec::with_capacity(TASKS);
+        for task_idx in 0..TASKS {
+            let network = network.clone();
+            handles.push(tokio::spawn(async move {
+                for i in 0..PER_TASK {
+                    let peer = PeerId(format!("concurrent-peer-{task_idx}-{i}"));
+                    network.add_peer(peer).await.expect("lock not poisoned");
+                }
+            }));
+        }
+        for handle in handles {
+            handle.await.expect("task must not panic");
+        }
+
+        // Assert: every one of the TASKS * PER_TASK distinct peers landed
+        // exactly once -- a real race (e.g. a future refactor that checks
+        // `contains` then writes without holding one lock across both
+        // steps) would either lose peers or duplicate them.
+        let after = network.discover_peers().await.expect("real peer list");
+        assert_eq!(
+            after.len(),
+            baseline.len() + TASKS * PER_TASK,
+            "no concurrently-added peer may be lost or duplicated"
+        );
+        let unique: BTreeSet<&PeerId> = after.iter().collect();
+        assert_eq!(unique.len(), after.len(), "the final peer set must contain no duplicates");
+        for task_idx in 0..TASKS {
+            for i in 0..PER_TASK {
+                let expected = PeerId(format!("concurrent-peer-{task_idx}-{i}"));
+                assert!(after.contains(&expected), "peer {expected:?} must not be lost to a race");
+            }
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+    async fn federated_network_add_remove_and_discover_peers_run_correctly_under_real_concurrent_contention(
+    ) {
+        // Arrange
+        let network = FederatedNetwork::new("node-concurrent-mixed").expect("valid node id");
+        let baseline = network.discover_peers().await.expect("real peer list");
+        assert_eq!(baseline.len(), 3, "the constructor's own documented baseline peer count");
+
+        const ADDERS: usize = 8;
+        const READERS: usize = 8;
+
+        // Act: real concurrent tasks simultaneously adding new peers,
+        // removing every baseline peer, and repeatedly discovering the
+        // peer set -- add_peer/remove_peer/discover_peers all hitting the
+        // SAME shared registry at the same time.
+        let mut handles = Vec::new();
+
+        for adder_idx in 0..ADDERS {
+            let network = network.clone();
+            handles.push(tokio::spawn(async move {
+                let peer = PeerId(format!("mixed-added-{adder_idx}"));
+                network.add_peer(peer).await.expect("lock not poisoned");
+            }));
+        }
+        for baseline_peer in baseline.clone() {
+            let network = network.clone();
+            handles.push(tokio::spawn(async move {
+                network.remove_peer(&baseline_peer).await.expect("lock not poisoned");
+            }));
+        }
+        for _ in 0..READERS {
+            let network = network.clone();
+            handles.push(tokio::spawn(async move {
+                for _ in 0..25 {
+                    // A reader must never observe a torn/partial write --
+                    // every returned Vec is a real, fully-formed snapshot.
+                    network.discover_peers().await.expect("lock not poisoned");
+                }
+            }));
+        }
+
+        for handle in handles {
+            handle.await.expect("task must not panic");
+        }
+
+        // Assert: every baseline peer is gone, every concurrently-added
+        // peer landed exactly once -- the real registry reflects every
+        // real concurrent writer with no lost update and no duplicate.
+        let after = network.discover_peers().await.expect("real peer list");
+        for baseline_peer in &baseline {
+            assert!(!after.contains(baseline_peer), "every baseline peer must have been removed");
+        }
+        assert_eq!(after.len(), ADDERS, "every concurrently-added peer must land exactly once");
+        let unique: BTreeSet<&PeerId> = after.iter().collect();
+        assert_eq!(unique.len(), after.len(), "no duplicate peers after concurrent contention");
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
+    async fn federated_network_advertise_capability_survives_real_concurrent_tasks_without_losing_any(
+    ) {
+        // Arrange
+        let network = FederatedNetwork::new("node-concurrent-capability").expect("valid node id");
+
+        const TASKS: usize = 16;
+
+        // Act: real concurrent tasks advertising distinct capabilities
+        // against the SAME shared `capabilities` registry -- a separate
+        // `Arc<RwLock<_>>` field from `peers`, never exercised under
+        // contention until now.
+        let mut handles = Vec::with_capacity(TASKS);
+        for task_idx in 0..TASKS {
+            let mut network = network.clone();
+            handles.push(tokio::spawn(async move {
+                let capability = Capability {
+                    name: format!("capability-{task_idx}"),
+                    version: "1.0".to_string(),
+                    endpoint: format!("local://capability-{task_idx}"),
+                };
+                network.advertise_capability(&capability).await.expect("lock not poisoned");
+            }));
+        }
+        for handle in handles {
+            handle.await.expect("task must not panic");
+        }
+
+        // Assert: every concurrently-advertised capability actually
+        // resolves -- a lost update from a real race would leave some of
+        // these absent.
+        for task_idx in 0..TASKS {
+            let resolved = network
+                .resolve(&format!("capability-{task_idx}"))
+                .unwrap_or_else(|e| panic!("capability-{task_idx} must have been advertised: {e}"));
+            assert_eq!(resolved.endpoint, format!("local://capability-{task_idx}"));
+        }
+    }
+
+    #[tokio::test]
+    async fn federated_network_add_peer_surfaces_a_typed_error_when_the_peer_registry_lock_is_really_poisoned(
+    ) {
+        // Arrange: reach into the private `peers` field (legal here --
+        // this test lives inside `frontier`'s own module) to poison the
+        // REAL lock exactly the way `std::sync::RwLock` poisons for real:
+        // a writer panicking while holding the write guard.
+        let network = FederatedNetwork::new("node-poison").expect("valid node id");
+        let peers_for_poisoning = network.peers.clone();
+
+        let handle = std::thread::spawn(move || {
+            let _guard = peers_for_poisoning.write().expect("lock not yet poisoned");
+            panic!("intentional panic to poison the real lock for this test");
+        });
+        let joined = handle.join();
+        assert!(
+            joined.is_err(),
+            "the spawned thread must have panicked (expected setup, not a test failure)"
+        );
+
+        // Act: both the write path (add_peer) and the read path
+        // (discover_peers) must surface the real poison as a typed
+        // FrontierResult error, never panic themselves -- confirming the
+        // `.map_err(...)?` propagation this module relies on instead of
+        // `.unwrap()` on the lock result.
+        let add_result = network.add_peer(PeerId("after-poison".to_string())).await;
+        let discover_result = network.discover_peers().await;
+
+        // Assert
+        let add_error =
+            add_result.expect_err("a poisoned lock must surface as a typed Err, not a panic");
+        assert!(add_error.contains("poisoned"), "error must name the real cause: {add_error}");
+        let discover_error =
+            discover_result.expect_err("a poisoned lock must surface as a typed Err on reads too");
+        assert!(
+            discover_error.contains("poisoned"),
+            "error must name the real cause: {discover_error}"
+        );
     }
 
     // -------------------------------------------------------------------
@@ -1898,5 +2426,311 @@ mod tests {
         // FrontierResult signature implies -- exactly why parameter_value
         // exists as the safe alternative.
         let _ = spec.validate(|params| params["nonexistent_key"] == 0);
+    }
+
+    // -------------------------------------------------------------------
+    // Serialize/Deserialize round-trip coverage (frontier-serde-gap-sweep)
+    //
+    // Every type below derives Serialize + Deserialize but, before this
+    // section, had zero round-trip test anywhere in the repo -- so a
+    // silent regression (a stray `#[serde(skip)]`, a rename mismatch, a
+    // field that stops round-tripping through a private-field type) would
+    // not have been caught. `SemanticTriple`/`RdfFragment` are excluded
+    // here: `rdf_fragment_round_trips_through_json` above already
+    // round-trips a `RdfFragment` containing a real `SemanticTriple`.
+    //
+    // `MetaFramework`, `DiscoveryEngine`, `EconomicSimulation`, and
+    // `SpecificationSuite` did not derive `PartialEq` at all (a real gap:
+    // Serialize/Deserialize/Clone without PartialEq blocks exactly the
+    // round-trip-then-assert_eq pattern these tests use) -- each now
+    // derives `PartialEq` (plus `Eq` where every field supports it; the
+    // three with an f64-bearing field transitively, `EconomicSimulation`,
+    // stays `PartialEq`-only) so the gap is closed, not just noted.
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn admission_state_round_trips_every_variant_through_json() {
+        for state in [
+            AdmissionState::Unknown,
+            AdmissionState::Admitted,
+            AdmissionState::Alive,
+            AdmissionState::Blocked,
+        ] {
+            let json = serde_json::to_string(&state).expect("serializable");
+            let restored: AdmissionState = serde_json::from_str(&json).expect("deserializable");
+            assert_eq!(restored, state);
+        }
+    }
+
+    #[test]
+    fn invariant_round_trips_through_json() {
+        let invariant = Invariant {
+            id: "zero-unreceipted-actuation".to_string(),
+            description: "Every effect has a receipt".to_string(),
+            satisfied: true,
+        };
+        let json = serde_json::to_string(&invariant).expect("serializable");
+        let restored: Invariant = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, invariant);
+    }
+
+    #[test]
+    fn meta_framework_round_trips_through_json_after_real_registration() {
+        let mut framework = MetaFramework::new();
+        framework.register_layer("admission").expect("unique layer");
+        framework.register_layer("execution").expect("unique layer");
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "Every effect has a receipt".to_string(),
+                satisfied: true,
+            })
+            .expect("valid invariant");
+
+        let json = serde_json::to_string(&framework).expect("serializable");
+        let restored: MetaFramework = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, framework);
+        // Also confirm the restored value's own public accessors still see
+        // the same state (would catch a rename that fooled struct equality
+        // but broke lookup by field name).
+        assert_eq!(restored.layers(), vec!["admission", "execution"]);
+        assert!(restored.invariant("zero-unreceipted-actuation").is_some());
+    }
+
+    #[test]
+    fn discovery_record_round_trips_through_json() {
+        let record = DiscoveryRecord {
+            name: "billing".to_string(),
+            tags: ["billing", "read-only"].into_iter().map(str::to_string).collect(),
+            route: "svc://billing".to_string(),
+        };
+        let json = serde_json::to_string(&record).expect("serializable");
+        let restored: DiscoveryRecord = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, record);
+    }
+
+    #[test]
+    fn discovery_engine_round_trips_through_json_after_real_registration() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: ["billing"].into_iter().map(str::to_string).collect(),
+                route: "svc://billing".to_string(),
+            })
+            .expect("valid record");
+
+        let json = serde_json::to_string(&engine).expect("serializable");
+        let restored: DiscoveryEngine = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, engine);
+        assert_eq!(restored.names(), vec!["billing"]);
+    }
+
+    #[test]
+    fn learning_observation_round_trips_through_json() {
+        let observation = LearningObservation { sequence: 3, score: 0.75 };
+        let json = serde_json::to_string(&observation).expect("serializable");
+        let restored: LearningObservation = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, observation);
+    }
+
+    #[test]
+    fn learning_trajectory_round_trips_through_json_after_real_observations() {
+        let mut trajectory = LearningTrajectory::default();
+        trajectory.observe(0.2).expect("valid score");
+        trajectory.observe(0.6).expect("valid score");
+
+        let json = serde_json::to_string(&trajectory).expect("serializable");
+        let restored: LearningTrajectory = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, trajectory);
+        assert_eq!(restored.len(), 2);
+    }
+
+    #[test]
+    fn reflexive_report_round_trips_through_json() {
+        let report = ReflexiveReport { passed: 97, failed: 3, replay_verified: true };
+        let json = serde_json::to_string(&report).expect("serializable");
+        let restored: ReflexiveReport = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, report);
+    }
+
+    #[test]
+    fn quantum_algorithm_round_trips_every_variant_through_json() {
+        for algorithm in
+            [QuantumAlgorithm::MlKem, QuantumAlgorithm::MlDsa, QuantumAlgorithm::SlhDsa]
+        {
+            let json = serde_json::to_string(&algorithm).expect("serializable");
+            let restored: QuantumAlgorithm = serde_json::from_str(&json).expect("deserializable");
+            assert_eq!(restored, algorithm);
+        }
+    }
+
+    #[test]
+    fn quantum_ready_policy_round_trips_through_json() {
+        let policy = QuantumReadyPolicy::post_quantum();
+        let json = serde_json::to_string(&policy).expect("serializable");
+        let restored: QuantumReadyPolicy = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, policy);
+        assert_eq!(restored.admitted().len(), 3);
+    }
+
+    #[test]
+    fn peer_id_round_trips_through_json() {
+        let peer = PeerId("node-a-peer-1".to_string());
+        let json = serde_json::to_string(&peer).expect("serializable");
+        // Newtype structs serialize transparently: the wire form is the
+        // bare inner value, not a one-element array or object.
+        assert_eq!(json, "\"node-a-peer-1\"");
+        let restored: PeerId = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, peer);
+    }
+
+    #[test]
+    fn capability_round_trips_through_json() {
+        let capability = Capability {
+            name: "sparql-query".to_string(),
+            version: "1.1".to_string(),
+            endpoint: "http://localhost:7878/sparql".to_string(),
+        };
+        let json = serde_json::to_string(&capability).expect("serializable");
+        let restored: Capability = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, capability);
+    }
+
+    #[test]
+    fn agent_id_and_task_id_round_trip_through_json_as_bare_numbers() {
+        let agent_id = AgentId(42);
+        let agent_json = serde_json::to_string(&agent_id).expect("serializable");
+        assert_eq!(agent_json, "42");
+        let restored_agent: AgentId = serde_json::from_str(&agent_json).expect("deserializable");
+        assert_eq!(restored_agent, agent_id);
+
+        let task_id = TaskId(7);
+        let task_json = serde_json::to_string(&task_id).expect("serializable");
+        assert_eq!(task_json, "7");
+        let restored_task: TaskId = serde_json::from_str(&task_json).expect("deserializable");
+        assert_eq!(restored_task, task_id);
+    }
+
+    #[test]
+    fn bid_round_trips_through_json() {
+        let bid = Bid { agent_id: AgentId(1), task_id: TaskId(7), bid_value: 10.0 };
+        let json = serde_json::to_string(&bid).expect("serializable");
+        let restored: Bid = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, bid);
+    }
+
+    #[test]
+    fn auction_outcome_round_trips_through_json_from_a_real_auction() {
+        let mut auction = VickreyAuction::new();
+        let outcome = auction
+            .run_auction(&[
+                Bid { agent_id: AgentId(1), task_id: TaskId(7), bid_value: 10.0 },
+                Bid { agent_id: AgentId(2), task_id: TaskId(7), bid_value: 8.0 },
+            ])
+            .expect("valid auction");
+
+        let json = serde_json::to_string(&outcome).expect("serializable");
+        let restored: AuctionOutcome = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, outcome);
+    }
+
+    #[test]
+    fn agent_round_trips_through_json() {
+        let agent = Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string(), "storage".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        };
+        let json = serde_json::to_string(&agent).expect("serializable");
+        let restored: Agent = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, agent);
+    }
+
+    #[test]
+    fn task_round_trips_through_json() {
+        let task = Task { id: TaskId(1), required_capability: "compute".to_string(), value: 150.0 };
+        let json = serde_json::to_string(&task).expect("serializable");
+        let restored: Task = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, task);
+    }
+
+    #[test]
+    fn allocation_round_trips_through_json() {
+        let allocation = Allocation { task_id: TaskId(1), agent_id: AgentId(1) };
+        let json = serde_json::to_string(&allocation).expect("serializable");
+        let restored: Allocation = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, allocation);
+    }
+
+    #[test]
+    fn economic_simulation_round_trips_through_json_after_a_real_step() {
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 150.0,
+        })
+        .expect("valid task");
+        sim.step().expect("step succeeds");
+
+        let json = serde_json::to_string(&sim).expect("serializable");
+        let restored: EconomicSimulation = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, sim);
+        assert_eq!(restored.allocations().len(), 1);
+        assert_eq!(restored.agent_count(), 1);
+    }
+
+    #[test]
+    fn composition_chain_round_trips_through_json_after_real_pushes() {
+        let mut chain = CompositionChain::new();
+        chain.push("auth");
+        chain.push("user");
+
+        let json = serde_json::to_string(&chain).expect("serializable");
+        let restored: CompositionChain = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, chain);
+        assert_eq!(restored.entries(), &["auth".to_string(), "user".to_string()]);
+    }
+
+    #[test]
+    fn executable_spec_round_trips_through_json_including_private_parameters() {
+        let spec = ExecutableSpec::new("Spec", "Description")
+            .given("a precondition")
+            .when("an action")
+            .then("an outcome")
+            .and("an invariant")
+            .parameter("total_nodes", 12);
+
+        let json = serde_json::to_string(&spec).expect("serializable");
+        let restored: ExecutableSpec = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, spec);
+        // The `parameters` field is private -- confirm it actually
+        // round-tripped, not just the public fields, via the public
+        // accessor (a serde skip on a private field would pass the
+        // struct-equality check above only if every field were public).
+        assert_eq!(restored.parameter_value("total_nodes"), Some(12));
+        assert_eq!(restored.parameter_value("byzantine_nodes"), Some(3));
+    }
+
+    #[test]
+    fn specification_suite_round_trips_through_json_after_real_add_spec() {
+        let mut suite = SpecificationSuite::default();
+        suite.add_spec(ExecutableSpec::new("Spec 1", "First"));
+        suite.add_spec(ExecutableSpec::new("Spec 2", "Second").parameter("total_nodes", 5));
+
+        let json = serde_json::to_string(&suite).expect("serializable");
+        let restored: SpecificationSuite = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, suite);
+        let names: Vec<&str> = restored.names().collect();
+        assert_eq!(names, vec!["Spec 1", "Spec 2"]);
     }
 }
