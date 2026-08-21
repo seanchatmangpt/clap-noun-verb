@@ -270,12 +270,12 @@ fn json_to_table(value: &serde_json::Value) -> String {
                 other => other.to_string(),
             })
         }
-        serde_json::Value::Object(obj) => object_with_array_field_as_table(obj, |val, _key| {
-            match val {
+        serde_json::Value::Object(obj) => {
+            object_with_array_field_as_table(obj, |val, _key| match val {
                 serde_json::Value::Null => "-".to_string(),
                 other => other.to_string(),
-            }
-        }),
+            })
+        }
         other => other.to_string(),
     }
 }
@@ -389,9 +389,9 @@ fn json_to_tsv(value: &serde_json::Value) -> String {
             // TSV formatter: escape special characters
             format_object_array(arr, |val, _key| escape_tsv(&val.to_string()))
         }
-        serde_json::Value::Object(obj) => object_with_array_field_as_table(obj, |val, _key| {
-            escape_tsv(&val.to_string())
-        }),
+        serde_json::Value::Object(obj) => {
+            object_with_array_field_as_table(obj, |val, _key| escape_tsv(&val.to_string()))
+        }
         other => other.to_string(),
     }
 }
