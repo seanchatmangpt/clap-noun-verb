@@ -21,7 +21,10 @@
 //! one.
 
 pub mod doctor;
+pub mod multi;
 pub mod scaffold;
+
+pub use multi::{merge_schemas, MultiExecutor, MultiExecutorError};
 
 use clap_noun_verb_deploy::{
     CliSchema, Deploy, Execution, Executor, Invocation, ManifestError, ProcessExecutor,
