@@ -306,6 +306,10 @@ struct VerbMetadata {
     about: String,
     args: Vec<ArgMetadata>,
     handler_fn: Box<dyn Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync>,
+    /// The declared `Effect` for this verb (`Effect::Unknown` unless the
+    /// `#[verb(..., effect = "...")]` attribute declared one -- see
+    /// `CommandRegistry::register_verb_with_args_and_effect`).
+    effect: crate::autonomic::Effect,
 }
 
 impl CommandRegistry {
@@ -371,12 +375,40 @@ impl CommandRegistry {
         Self::register_verb_with_args(noun_name, verb_name, about, Vec::new(), handler)
     }
 
-    /// Register a verb with argument metadata
+    /// Register a verb with argument metadata. Effect defaults to
+    /// [`crate::autonomic::Effect::Unknown`] -- use
+    /// [`Self::register_verb_with_args_and_effect`] to declare a real one.
     pub fn register_verb_with_args<F>(
         noun_name: &'static str,
         verb_name: &'static str,
         about: &'static str,
         args: Vec<ArgMetadata>,
+        handler: F,
+    ) where
+        F: Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync + 'static,
+    {
+        Self::register_verb_with_args_and_effect(
+            noun_name,
+            verb_name,
+            about,
+            args,
+            crate::autonomic::Effect::Unknown,
+            handler,
+        );
+    }
+
+    /// Register a verb with argument metadata and a declared
+    /// [`crate::autonomic::Effect`] -- the target of the
+    /// `#[verb(..., effect = "...")]` macro attribute. The declared effect
+    /// is used for every real [`crate::autonomic::Receipt`] recorded for
+    /// this verb, instead of the [`crate::autonomic::Effect::Unknown`]
+    /// default.
+    pub fn register_verb_with_args_and_effect<F>(
+        noun_name: &'static str,
+        verb_name: &'static str,
+        about: &'static str,
+        args: Vec<ArgMetadata>,
+        effect: crate::autonomic::Effect,
         handler: F,
     ) where
         F: Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync + 'static,
@@ -391,7 +423,7 @@ impl CommandRegistry {
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
 
         let verb_metadata =
-            VerbMetadata { about: about.to_string(), args, handler_fn: Box::new(handler) };
+            VerbMetadata { about: about.to_string(), args, handler_fn: Box::new(handler), effect };
 
         if noun_name.is_empty() {
             reg.root_verbs.insert(verb_name.to_string(), verb_metadata);
@@ -463,16 +495,9 @@ impl CommandRegistry {
         let result = (verb.handler_fn)(input);
         let duration_ms = start.elapsed().as_millis();
         crate::ocel::record_invocation(noun_name, verb_name, result.is_ok(), duration_ms);
-        // Effect::Unknown: no macro-level attribute yet declares a verb's
-        // effect kind (read-only/mutating/idempotent) -- see
-        // src/autonomic.rs's module doc. Never guessed as ReadOnly/Idempotent
-        // without a real declaration to back it.
-        crate::autonomic::record_receipt(
-            noun_name,
-            verb_name,
-            crate::autonomic::Effect::Unknown,
-            result.is_ok(),
-        );
+        // The verb's declared Effect (Effect::Unknown unless a real
+        // `#[verb(..., effect = "...")]` attribute set one -- never guessed).
+        crate::autonomic::record_receipt(noun_name, verb_name, verb.effect, result.is_ok());
         result
     }
 
@@ -1100,12 +1125,7 @@ impl CommandRegistry {
         // "command" object id ("_root:<verb>") stays distinct from any real
         // noun:verb pair and remains stable/idempotent across invocations.
         crate::ocel::record_invocation("_root", verb_name, result.is_ok(), duration_ms);
-        crate::autonomic::record_receipt(
-            "_root",
-            verb_name,
-            crate::autonomic::Effect::Unknown,
-            result.is_ok(),
-        );
+        crate::autonomic::record_receipt("_root", verb_name, verb.effect, result.is_ok());
         result
     }
 }

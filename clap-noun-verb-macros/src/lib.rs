@@ -379,6 +379,7 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
                     None,
                     None,
                     arg_relationships,
+                    None,
                 );
             }
         };
@@ -445,7 +446,49 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // Clean docstring for about - remove # Arguments section and relationship tags
     let clean_about = clean_docstring_for_about(&docstring);
-    generate_verb_registration(input_fn, verb_name, noun_name, Some(clean_about), arg_relationships)
+    let effect = extract_verb_effect(&args_vec);
+    generate_verb_registration(
+        input_fn,
+        verb_name,
+        noun_name,
+        Some(clean_about),
+        arg_relationships,
+        effect,
+    )
+}
+
+/// Scan `#[verb(...)]`'s argument list for a real, optional
+/// `effect = "read_only" | "mutating" | "idempotent"` declaration,
+/// independent of the fixed-position verb-name/noun-name arguments (an
+/// `effect = "..."` entry parses as `syn::Expr::Assign`, never matching
+/// the `Expr::Lit` positional checks, so scanning for it separately never
+/// disturbs that existing positional parsing).
+fn extract_verb_effect(
+    args_vec: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Option<proc_macro2::TokenStream> {
+    for expr in args_vec {
+        if let syn::Expr::Assign(assign) = expr {
+            let is_effect_key = matches!(
+                &*assign.left,
+                syn::Expr::Path(path) if path.path.is_ident("effect")
+            );
+            if !is_effect_key {
+                continue;
+            }
+            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) = &*assign.right {
+                let value = s.value();
+                return match value.as_str() {
+                    "read_only" => Some(quote! { ::clap_noun_verb::autonomic::Effect::ReadOnly }),
+                    "mutating" => Some(quote! { ::clap_noun_verb::autonomic::Effect::Mutating }),
+                    "idempotent" => {
+                        Some(quote! { ::clap_noun_verb::autonomic::Effect::Idempotent })
+                    }
+                    _ => None,
+                };
+            }
+        }
+    }
+    None
 }
 
 /// Extract verb name from function name (remove common prefixes)
@@ -940,6 +983,7 @@ fn generate_verb_registration(
     noun_name: Option<String>,
     about: Option<String>,
     arg_relationships: std::collections::HashMap<String, DocArgRelationships>,
+    effect: Option<proc_macro2::TokenStream>,
 ) -> TokenStream {
     let fn_name = &input_fn.sig.ident;
     let wrapper_name = quote::format_ident!("__{}_wrapper", fn_name);
@@ -1619,6 +1663,32 @@ fn generate_verb_registration(
         }
     }
 
+    // Emit the effect-aware registration call only when a real
+    // `effect = "..."` was declared -- every other verb keeps the exact
+    // registration call it always has, so this is purely additive.
+    let registration_call = if let Some(effect_tokens) = &effect {
+        quote! {
+            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args_and_effect::<_>(
+                noun_name_static,
+                verb_name_final,
+                #about_str,
+                args,
+                #effect_tokens,
+                #wrapper_name,
+            );
+        }
+    } else {
+        quote! {
+            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
+                noun_name_static,
+                verb_name_final,
+                #about_str,
+                args,
+                #wrapper_name,
+            );
+        }
+    };
+
     let expanded = quote! {
         #output_fn
 
@@ -1712,13 +1782,7 @@ fn generate_verb_registration(
                 };
 
                 let args = vec![#(#arg_metadata),*];
-                ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
-                    noun_name_static,
-                    verb_name_final,
-                    #about_str,
-                    args,
-                    #wrapper_name,
-                );
+                #registration_call
             }
             __register_impl  // Return function pointer (not a call!)
         };
