@@ -2563,6 +2563,52 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn federated_network_advertise_capability_re_advertising_the_same_name_overwrites_the_prior_version_and_endpoint(
+    ) {
+        // Arrange: `advertise_capability` does an unconditional
+        // `BTreeMap::insert(name, capability)` -- a real last-write-wins
+        // upsert on a repeated capability name, with no duplicate-refusal.
+        // Every existing test in this file (and in
+        // tests/frontier/phase4_integration_test.rs,
+        // tests/frontier/capability_crown_test.rs) only ever advertises
+        // each capability name ONCE before resolving it, so the overwrite
+        // path has never actually been exercised -- the same gap class
+        // already fixed for MetaFramework::admit_invariant and
+        // ExecutableSpec::parameter.
+        let mut network =
+            FederatedNetwork::new("node-capability-overwrite").expect("valid node id");
+
+        // Act: advertise "sparql-query" twice under the SAME name with
+        // genuinely different version/endpoint fields, then resolve once.
+        network
+            .advertise_capability(&Capability {
+                name: "sparql-query".to_string(),
+                version: "1.0".to_string(),
+                endpoint: "local://sparql-query-v1".to_string(),
+            })
+            .await
+            .expect("first advertisement is valid");
+        network
+            .advertise_capability(&Capability {
+                name: "sparql-query".to_string(),
+                version: "2.0".to_string(),
+                endpoint: "local://sparql-query-v2".to_string(),
+            })
+            .await
+            .expect("second advertisement is valid");
+
+        // Assert: resolve returns the LAST-advertised version/endpoint,
+        // not the first -- proving the real overwrite semantics rather
+        // than merely that resolve() returns something advertised.
+        let resolved = network.resolve("sparql-query").expect("capability was advertised");
+        assert_eq!(resolved.version, "2.0", "resolve must return the latest advertised version");
+        assert_eq!(
+            resolved.endpoint, "local://sparql-query-v2",
+            "resolve must return the latest advertised endpoint"
+        );
+    }
+
+    #[tokio::test]
     async fn federated_network_add_peer_surfaces_a_typed_error_when_the_peer_registry_lock_is_really_poisoned(
     ) {
         // Arrange: reach into the private `peers` field (legal here --
@@ -3125,6 +3171,24 @@ mod tests {
                 })
             },
         )
+    }
+
+    /// A valuation to test `VickreyAuction::verify_truthfulness` against a
+    /// real auction outcome -- deliberately spans all three cases its real
+    /// condition (`valuation.is_finite() && valuation >= outcome.payment`)
+    /// can see: finite values that land below the real payment, finite
+    /// values that land at or above it, and non-finite values (NaN, +/-
+    /// infinity). Every existing hand-picked test only ever calls
+    /// `verify_truthfulness` with a valuation comfortably above the real
+    /// payment, so a stub that always returned `true` would currently go
+    /// undetected.
+    fn valuation_strategy() -> impl Strategy<Value = f64> {
+        prop_oneof![
+            8 => -1_000_000.0f64..2_000_000.0f64,
+            1 => Just(f64::NAN),
+            1 => Just(f64::INFINITY),
+            1 => Just(f64::NEG_INFINITY),
+        ]
     }
 
     /// A real observation score -- matches `LearningTrajectory::observe`'s
@@ -3758,6 +3822,36 @@ mod tests {
                 outcome.payment,
                 expected_payment,
                 "the payment must equal a real other bid's value, not a fabricated number"
+            );
+        }
+
+        /// For ANY valid Vickrey auction outcome and ANY valuation (finite
+        /// below the real payment, finite at or above it, or non-finite):
+        /// `verify_truthfulness`'s result must equal an independently
+        /// recomputed check performed here, never copied from
+        /// `verify_truthfulness`'s own body -- otherwise a bug that always
+        /// returned `true` (a stub, or an accidentally dropped
+        /// `is_finite()` guard) would go undetected, since every existing
+        /// hand-picked test only ever calls this with a valuation
+        /// comfortably above the real payment.
+        #[test]
+        fn verify_truthfulness_matches_an_independently_recomputed_check(
+            (_, bids) in valid_bids_strategy(),
+            valuation in valuation_strategy()
+        ) {
+            let mut auction = VickreyAuction::new();
+            let outcome = auction
+                .run_auction(&bids)
+                .expect("generated bids satisfy run_auction's own real precondition");
+
+            let actual = auction.verify_truthfulness(valuation, &outcome);
+            let expected = valuation.is_finite() && valuation >= outcome.payment;
+
+            prop_assert_eq!(
+                actual,
+                expected,
+                "verify_truthfulness must match an independently recomputed check, \
+                 not merely agree on the finite-above-payment happy path"
             );
         }
 

@@ -166,6 +166,41 @@ mod economic_simulation_tests {
     }
 
     #[test]
+    fn test_vickrey_truthfulness_returns_false_for_valuation_below_payment() {
+        // Arrange - a real auction whose real payment is 80.0
+        let mut auction = VickreyAuction::new();
+        let bids = vec![
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("Auction failed");
+        assert_eq!(outcome.payment, 80.0, "sanity check on the real payment used below");
+
+        // Act - a valuation lower than the real payment
+        let result = auction.verify_truthfulness(50.0, &outcome);
+
+        // Assert - truthfulness must correctly report a loss, not just the happy path
+        assert!(!result, "verify_truthfulness must return false when valuation < payment");
+    }
+
+    #[test]
+    fn test_vickrey_truthfulness_returns_false_for_non_finite_valuation() {
+        // Arrange - a real auction; NaN can never satisfy `valuation >= payment`
+        let mut auction = VickreyAuction::new();
+        let bids = vec![
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("Auction failed");
+
+        // Act - a NaN valuation
+        let result = auction.verify_truthfulness(f64::NAN, &outcome);
+
+        // Assert - the is_finite() guard must actually reject non-finite valuations
+        assert!(!result, "verify_truthfulness must return false for a non-finite valuation");
+    }
+
+    #[test]
     fn test_simulation_agent_addition() {
         // Arrange
         let mut sim = EconomicSimulation::new();
