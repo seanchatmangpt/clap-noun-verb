@@ -655,6 +655,75 @@ pub fn write_signal_pack(dir: &Path, signals: &[PackSelectionSignal]) -> io::Res
     Ok(())
 }
 
+const DRIFT_PACK_TOML: &str = r#"[pack]
+name = "ocel-drift"
+version = "0.0.0"
+description = "Regenerated each cycle from a real DriftReport via clap_noun_verb::ocel::write_drift_pack. Do not hand-edit -- overwritten on every regeneration."
+"#;
+
+// This pack's own template deliberately does NOT render the human-facing
+// status report -- `ocel-drift-pack` (the sibling pack this data pack is
+// always composed alongside) already does, at `docs/DRIFT_STATUS.md`.
+// Rendering the same report from both packs would collide on that output
+// path the moment both are composed together (every ggen pack must ship
+// at least one template, so this one exists purely to satisfy that rule
+// with a real, distinct, non-conflicting artifact).
+const DRIFT_PACK_TEMPLATE: &str = r#"---
+to: ".drift-data-provenance.md"
+force: true
+sparql:
+  drift: |
+    PREFIX cnv-ocel: <https://clap-noun-verb.dev/ontology/ocel#>
+    SELECT ?coverage_ratio ?min_coverage_ratio WHERE {
+      ?report a cnv-ocel:DriftReport ;
+              cnv-ocel:coverageRatio ?coverage_ratio ;
+              cnv-ocel:minCoverageRatio ?min_coverage_ratio .
+    }
+---
+Regenerated drift data (coverage_ratio={{ drift[0].coverage_ratio }},
+min_coverage_ratio={{ drift[0].min_coverage_ratio }}). See
+`docs/DRIFT_STATUS.md` (rendered by `ocel-drift-pack`) for the
+human-facing report.
+"#;
+
+/// Project a [`DriftReport`] plus a chosen coverage floor as Turtle RDF: one
+/// `cnv-ocel:DriftReport` individual carrying `coverageRatio` (the report's
+/// real, observed value) and `minCoverageRatio` (the floor a gate should
+/// enforce against it).
+#[must_use]
+pub fn drift_report_to_rdf(report: &DriftReport, min_coverage_ratio: f64) -> String {
+    format!(
+        "@prefix cnv-ocel: <{RDF_BASE_IRI}> .\n\
+         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n\
+         cnv-ocel:drift-report a cnv-ocel:DriftReport ;\n\
+         \x20   cnv-ocel:coverageRatio \"{}\"^^xsd:double ;\n\
+         \x20   cnv-ocel:minCoverageRatio \"{}\"^^xsd:double .\n",
+        report.coverage_ratio, min_coverage_ratio
+    )
+}
+
+/// Write a complete, ggen-composable "drift pack" directory from a
+/// [`DriftReport`] and a chosen coverage floor -- `pack.toml` +
+/// `ontology.ttl` (via [`drift_report_to_rdf`]) + one status template --
+/// ready to compose alongside a project's own `cnv:Cli` ontology next to
+/// `ocel-drift-pack` (see `~/ggen-marketplace/packs/ocel-drift-pack`), the
+/// same single-call closure [`write_signal_pack`] gives for per-command
+/// signals, but for the project-wide coverage ratio instead.
+pub fn write_drift_pack(
+    dir: &Path,
+    report: &DriftReport,
+    min_coverage_ratio: f64,
+) -> io::Result<()> {
+    fs::create_dir_all(dir)?;
+    let templates_dir = dir.join("templates");
+    fs::create_dir_all(&templates_dir)?;
+
+    fs::write(dir.join("pack.toml"), DRIFT_PACK_TOML)?;
+    fs::write(dir.join("ontology.ttl"), drift_report_to_rdf(report, min_coverage_ratio))?;
+    fs::write(templates_dir.join("drift-status.md.tmpl"), DRIFT_PACK_TEMPLATE)?;
+    Ok(())
+}
+
 // =============================================================================
 // RDF (Turtle) export
 // =============================================================================
@@ -1705,6 +1774,75 @@ mod tests {
         assert!(template.contains("cnv-ocel:Signal"));
 
         fs::remove_dir_all(&dir).ok();
+    }
+
+    // =========================================================================
+    // write_drift_pack -- the ggen-composable projection of drift_report.
+    // =========================================================================
+
+    #[test]
+    fn test_drift_report_to_rdf_emits_a_real_queryable_drift_report_individual() {
+        // Arrange: a real drift report over a real merged corpus.
+        let mut observed = OcelDocument::empty();
+        observed.events.push(regards_event_for_test("fleet:alive"));
+        let admitted = [("fleet", "alive"), ("fleet", "dead")];
+        let report = drift_report(&admitted, &observed);
+        assert!((report.coverage_ratio - 0.5).abs() < f64::EPSILON);
+
+        // Act
+        let turtle = drift_report_to_rdf(&report, 0.8);
+
+        // Assert
+        assert!(turtle.contains("cnv-ocel:drift-report a cnv-ocel:DriftReport ;"));
+        assert!(turtle.contains("cnv-ocel:coverageRatio \"0.5\"^^xsd:double ;"));
+        assert!(turtle.contains("cnv-ocel:minCoverageRatio \"0.8\"^^xsd:double ."));
+    }
+
+    #[test]
+    fn test_write_drift_pack_writes_a_real_composable_pack_directory() {
+        // Arrange
+        let dir = temp_dir("drift-pack");
+        let report = DriftReport {
+            admitted_never_exercised: vec!["fleet:dead".to_string()],
+            exercised: vec!["fleet:alive".to_string()],
+            coverage_ratio: 0.5,
+        };
+
+        // Act
+        write_drift_pack(&dir, &report, 0.8).expect("write real drift pack directory");
+
+        // Assert: real files on disk.
+        let pack_toml =
+            fs::read_to_string(dir.join("pack.toml")).expect("read real pack.toml back");
+        assert!(pack_toml.contains("name = \"ocel-drift\""));
+
+        let ontology =
+            fs::read_to_string(dir.join("ontology.ttl")).expect("read real ontology.ttl back");
+        assert!(ontology.contains("cnv-ocel:coverageRatio \"0.5\"^^xsd:double"));
+        assert!(ontology.contains("cnv-ocel:minCoverageRatio \"0.8\"^^xsd:double"));
+
+        let template = fs::read_to_string(dir.join("templates").join("drift-status.md.tmpl"))
+            .expect("read real template back");
+        assert!(template.starts_with("---\n"));
+        assert!(template.contains("cnv-ocel:DriftReport"));
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    fn regards_event_for_test(command_id: &str) -> OcelEvent {
+        OcelEvent {
+            id: generate_event_id(),
+            event_type: "cli_invocation".to_string(),
+            time: now_rfc3339(),
+            attributes: vec![EventAttributeValue {
+                name: "success".to_string(),
+                value: serde_json::json!(true),
+            }],
+            relationships: vec![Relationship {
+                object_id: command_id.to_string(),
+                qualifier: "regards".to_string(),
+            }],
+        }
     }
 
     // =========================================================================
