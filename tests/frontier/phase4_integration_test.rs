@@ -315,6 +315,11 @@ mod fractal_patterns_tests {
 
         // Assert
         assert_eq!(level3.depth(), 3);
+        assert_eq!(level3.lineage(), &["Root", "Domain", "Noun", "Verb"]);
+
+        let chain = CompositionChain::from(&level3);
+        assert_eq!(chain.entries(), level3.lineage());
+        assert_eq!(chain.entries(), &["Root", "Domain", "Noun", "Verb"]);
     }
 }
 

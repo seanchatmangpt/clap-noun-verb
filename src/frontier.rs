@@ -302,10 +302,14 @@ impl DiscoveryEngine {
     /// once and only candidates actually registered here.
     ///
     /// # Errors
-    /// Returns an error if `histories` is empty, or if any name in
+    /// Returns an error if `histories` is empty, if any name in
     /// `histories` is not currently registered (a caller recommending
     /// against a stale or foreign capability set is a real bug, not
-    /// something to silently ignore).
+    /// something to silently ignore), or if a name appears more than
+    /// once. A duplicate would otherwise be cloned into the UCB1 arm
+    /// set twice, silently inflating the shared `total_pulls` term
+    /// that every arm's exploration bonus depends on and biasing the
+    /// recommendation -- not just for the duplicated candidate.
     pub fn recommend<'a>(
         &self,
         histories: &'a [(String, LearningTrajectory)],
@@ -313,9 +317,13 @@ impl DiscoveryEngine {
         if histories.is_empty() {
             return Err("recommend requires at least one candidate history".to_string());
         }
+        let mut seen_names = BTreeSet::new();
         for (name, _) in histories {
             if !self.records.contains_key(name) {
                 return Err(format!("recommend candidate is not a registered capability: {name}"));
+            }
+            if !seen_names.insert(name) {
+                return Err(format!("recommend candidate named more than once: {name}"));
             }
         }
         let trajectories: Vec<LearningTrajectory> =
@@ -1018,6 +1026,22 @@ impl CompositionChain {
     }
 }
 
+impl<L: FractalLevel, T> From<&FractalNoun<L, T>> for CompositionChain {
+    /// Cross the serialization boundary: `FractalNoun` is typed and does
+    /// not derive `Serialize`/`Deserialize`, while `CompositionChain` is
+    /// this module's untyped, serializable trace of a composition. Without
+    /// this conversion a caller holding a composed `FractalNoun` had no
+    /// path from `lineage()` to the one serializable trace type in the
+    /// module except hand-looping `push` themselves.
+    fn from(noun: &FractalNoun<L, T>) -> Self {
+        let mut chain = CompositionChain::new();
+        for segment in noun.lineage() {
+            chain.push(segment.clone());
+        }
+        chain
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Executable specifications
 // -----------------------------------------------------------------------------
@@ -1275,6 +1299,18 @@ mod tests {
     }
 
     #[test]
+    fn learning_trajectory_observe_refuses_non_finite_scores() {
+        // `is_finite()` is false for NaN, +inf, and -inf alike -- confirm all
+        // three are rejected before the 0.0..=1.0 range check runs, and that
+        // a rejected observation never partially lands in the trajectory.
+        let mut traj = LearningTrajectory::default();
+        for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(traj.observe(bad).is_err());
+        }
+        assert!(traj.is_empty());
+    }
+
+    #[test]
     fn discovery_engine_deregister_removes_a_real_record_and_refuses_an_unknown_one() {
         let mut engine = DiscoveryEngine::default();
         engine
@@ -1355,6 +1391,31 @@ mod tests {
         let engine = DiscoveryEngine::default();
         let error = engine.recommend(&[]).expect_err("no candidates to recommend among");
         assert!(error.contains("at least one candidate"));
+    }
+
+    #[test]
+    fn discovery_engine_recommend_refuses_a_duplicate_candidate_name() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "solo".to_string(),
+                tags: BTreeSet::new(),
+                route: "svc://solo".to_string(),
+            })
+            .expect("valid record");
+
+        // Two distinct trajectories under the same name -- if `recommend`
+        // silently accepted this, both would be folded into UCB1's arm
+        // set, inflating the shared `total_pulls` term and biasing every
+        // arm's score, not just the duplicated one.
+        let mut first = LearningTrajectory::default();
+        first.observe(0.2).expect("valid score");
+        let mut second = LearningTrajectory::default();
+        second.observe(0.8).expect("valid score");
+
+        let histories = vec![("solo".to_string(), first), ("solo".to_string(), second)];
+        let error = engine.recommend(&histories).expect_err("duplicate candidate name refused");
+        assert!(error.contains("solo"));
     }
 
     // -------------------------------------------------------------------
@@ -1667,6 +1728,27 @@ mod tests {
         assert!(error.contains("one bid per agent") || error.contains("one bid per auction"));
     }
 
+    #[test]
+    fn vickrey_auction_breaks_an_exact_bid_tie_by_lowest_agent_id_regardless_of_order() {
+        // Locks in the tie-break direction (`then_with(|| left.agent_id.cmp(&right.agent_id))`
+        // in `run_auction`'s sort comparator) against a future refactor -- no
+        // existing test used an exact tie, so this direction was untested.
+        for bids in [
+            vec![
+                Bid { agent_id: AgentId(5), task_id: TaskId(1), bid_value: 7.0 },
+                Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 7.0 },
+            ],
+            vec![
+                Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 7.0 },
+                Bid { agent_id: AgentId(5), task_id: TaskId(1), bid_value: 7.0 },
+            ],
+        ] {
+            let outcome = VickreyAuction::new().run_auction(&bids).expect("valid auction");
+            assert_eq!(outcome.winner, AgentId(2));
+            assert_eq!(outcome.payment, 7.0);
+        }
+    }
+
     // -------------------------------------------------------------------
     // EconomicSimulation::step consumes allocated tasks
     // -------------------------------------------------------------------
@@ -1693,6 +1775,36 @@ mod tests {
         let second = sim.step().expect("second step succeeds");
         assert!(second.is_empty(), "the task was already allocated and consumed");
         assert_eq!(sim.allocations().len(), 1);
+    }
+
+    #[test]
+    fn economic_simulation_step_breaks_a_trust_tie_by_lowest_agent_id() {
+        // `self.agents` is a BTreeMap keyed by AgentId, so `.values()` always
+        // iterates in ascending id order regardless of insertion order --
+        // `step`'s `max_by` comparator reverses the id comparison
+        // (`then_with(|| right.id.cmp(&left.id))`) specifically so an exact
+        // trust-score tie still resolves to the lowest id. Insertion order
+        // here (3, 1, 2) guards against that reversal being "corrected" into
+        // a silent highest-id-wins flip in a future refactor.
+        let mut sim = EconomicSimulation::new();
+        for id in [3u64, 1, 2] {
+            sim.add_agent(Agent {
+                id: AgentId(id),
+                capabilities: vec!["compute".to_string()],
+                trust_score: 0.9,
+                valuation: 10.0,
+            })
+            .expect("valid agent");
+        }
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 1.0,
+        })
+        .expect("valid task");
+
+        let produced = sim.step().expect("step succeeds");
+        assert_eq!(produced[0].agent_id, AgentId(1));
     }
 
     // -------------------------------------------------------------------
