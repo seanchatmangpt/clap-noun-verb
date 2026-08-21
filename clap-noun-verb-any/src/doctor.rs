@@ -118,6 +118,25 @@ fn diagnose_executable(executable: &Path, report: &mut DoctorReport) {
     }
 }
 
+/// Real shape-validation errors in `schema` alone (no filesystem access,
+/// no executable check) -- the exact same rules [`diagnose`] applies to a
+/// manifest's schema, exposed standalone so a caller that already holds a
+/// parsed [`CliSchema`] in memory (like `wrap()`) can validate it without
+/// re-reading the manifest file from disk. Empty iff the schema has no
+/// shape errors (it may still have warnings, which this deliberately
+/// omits -- a warning-only manifest is not malformed).
+#[must_use]
+pub fn schema_shape_errors(schema: &CliSchema) -> Vec<String> {
+    let mut report = DoctorReport::default();
+    diagnose_schema(schema, &mut report);
+    report
+        .findings
+        .into_iter()
+        .filter(|f| f.severity == Severity::Error)
+        .map(|f| f.message)
+        .collect()
+}
+
 fn diagnose_schema(schema: &CliSchema, report: &mut DoctorReport) {
     if schema.commands.is_empty() {
         report.push_warning("manifest admits zero commands -- nothing will be callable");

@@ -36,6 +36,12 @@ use thiserror::Error;
 pub enum WrapError {
     #[error("failed to load manifest: {0}")]
     Manifest(#[from] ManifestError),
+    /// The manifest parsed as valid JSON but its shape is internally
+    /// inconsistent (see [`doctor::schema_shape_errors`]) -- refused
+    /// before any process is ever spawned, the same fail-closed
+    /// discipline every ggen admission gate in this ecosystem uses.
+    #[error("manifest failed shape validation: {}", .0.join("; "))]
+    InvalidShape(Vec<String>),
 }
 
 /// An [`Executor`] wrapper that records an OCEL 2.0 `cli_invocation` event
@@ -137,6 +143,10 @@ impl Wrapped {
 /// `clap-noun-verb` binary.
 pub fn wrap(executable: impl Into<OsString>, manifest_path: &Path) -> Result<Wrapped, WrapError> {
     let schema = CliSchema::from_manifest_path(manifest_path)?;
+    let shape_errors = doctor::schema_shape_errors(&schema);
+    if !shape_errors.is_empty() {
+        return Err(WrapError::InvalidShape(shape_errors));
+    }
     let executor = OcelExecutor::new(ProcessExecutor::new(executable.into()), schema.clone());
     let deploy = Deploy::from_schema(schema);
     Ok(Wrapped { deploy, executor })
