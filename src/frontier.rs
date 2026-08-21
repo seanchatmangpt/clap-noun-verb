@@ -234,6 +234,87 @@ impl LearningTrajectory {
     pub fn is_monotonic(&self) -> bool {
         self.observations.windows(2).all(|pair| pair[0].score <= pair[1].score)
     }
+
+    /// Number of observations recorded so far (the arm's "pull count" in
+    /// multi-armed-bandit terms).
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.observations.len()
+    }
+
+    /// Whether no observation has been recorded yet.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.observations.is_empty()
+    }
+
+    /// The arithmetic mean of every recorded score, or `None` if empty.
+    #[must_use]
+    pub fn mean(&self) -> Option<f64> {
+        if self.observations.is_empty() {
+            return None;
+        }
+        let sum: f64 = self.observations.iter().map(|observation| observation.score).sum();
+        Some(sum / self.observations.len() as f64)
+    }
+}
+
+/// Deterministic explore/exploit arm selection over a set of
+/// [`LearningTrajectory`]s -- the innovative-exploration counterpart to
+/// [`DiscoveryEngine`]'s static capability search: given several
+/// candidate options each with their own history of measured rewards,
+/// [`ExplorationPolicy::select_ucb1`] decides which one to try next.
+///
+/// Implements UCB1 (Auer, Cesa-Bianchi & Fischer, 2002): an arm that has
+/// never been tried always wins first (an infinite upper confidence
+/// bound), guaranteeing every option gets a first real observation before
+/// exploitation begins; afterward each arm's score is
+/// `mean_reward + sqrt(2 * ln(total_pulls) / pulls)`, so an option with
+/// fewer observations keeps a wider confidence bonus even if its current
+/// mean is lower -- the formal, well-known trade-off between trying an
+/// under-sampled option (explore) and picking the best-known one
+/// (exploit). Entirely deterministic given real recorded trajectories --
+/// no randomness, so it is exactly reproducible and testable.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ExplorationPolicy;
+
+impl ExplorationPolicy {
+    /// Select the index into `trajectories` to try next via UCB1.
+    ///
+    /// # Errors
+    /// Returns an error if `trajectories` is empty -- there is no arm to
+    /// select among.
+    pub fn select_ucb1(trajectories: &[LearningTrajectory]) -> FrontierResult<usize> {
+        if trajectories.is_empty() {
+            return Err("UCB1 selection requires at least one trajectory".to_string());
+        }
+
+        // Any never-tried arm always wins (an infinite confidence bound),
+        // in trajectory order -- guarantees every arm gets a first real
+        // observation before exploitation kicks in.
+        if let Some(index) = trajectories.iter().position(LearningTrajectory::is_empty) {
+            return Ok(index);
+        }
+
+        let total_pulls: f64 = trajectories.iter().map(|trajectory| trajectory.len() as f64).sum();
+
+        let mut best_index = 0;
+        let mut best_score = f64::NEG_INFINITY;
+        for (index, trajectory) in trajectories.iter().enumerate() {
+            // Safe: the empty-arm check above already returned for any
+            // trajectory with zero observations, so `mean()`/`len()` are
+            // always `Some`/nonzero here.
+            let mean = trajectory.mean().unwrap_or(0.0);
+            let pulls = trajectory.len() as f64;
+            let exploration_bonus = (2.0 * total_pulls.ln() / pulls).sqrt();
+            let score = mean + exploration_bonus;
+            if score > best_score {
+                best_score = score;
+                best_index = index;
+            }
+        }
+        Ok(best_index)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -864,5 +945,72 @@ mod tests {
     fn alive_requires_replay() {
         assert!(!ReflexiveReport { passed: 10, failed: 0, replay_verified: false }.is_alive());
         assert!(ReflexiveReport { passed: 10, failed: 0, replay_verified: true }.is_alive());
+    }
+
+    #[test]
+    fn ucb1_refuses_an_empty_arm_set() {
+        let error = ExplorationPolicy::select_ucb1(&[]).expect_err("no arms to select among");
+        assert!(error.contains("at least one trajectory"));
+    }
+
+    #[test]
+    fn ucb1_always_explores_a_never_tried_arm_first() {
+        let mut tried = LearningTrajectory::default();
+        tried.observe(0.9).expect("valid score");
+        let never_tried = LearningTrajectory::default();
+
+        // Even though `tried`'s mean (0.9) is high, the untried arm must
+        // win -- every option gets a first real observation before
+        // exploitation kicks in.
+        let selected =
+            ExplorationPolicy::select_ucb1(&[tried, never_tried]).expect("valid selection");
+        assert_eq!(selected, 1);
+    }
+
+    #[test]
+    fn ucb1_prefers_the_under_sampled_arm_when_means_are_close_via_the_confidence_bonus() {
+        // Arm 0: tried many times with a slightly higher mean.
+        let mut well_sampled = LearningTrajectory::default();
+        for _ in 0..20 {
+            well_sampled.observe(0.6).expect("valid score");
+        }
+        // Arm 1: tried only twice, slightly lower mean -- but its wider
+        // confidence bonus (fewer pulls) should let it win over arm 0
+        // once both have at least one observation.
+        let mut under_sampled = LearningTrajectory::default();
+        under_sampled.observe(0.55).expect("valid score");
+        under_sampled.observe(0.55).expect("valid score");
+
+        let selected = ExplorationPolicy::select_ucb1(&[well_sampled, under_sampled])
+            .expect("valid selection");
+        assert_eq!(selected, 1, "the under-sampled arm's exploration bonus must win here");
+    }
+
+    #[test]
+    fn ucb1_exploits_the_clear_winner_once_every_arm_has_comparable_history() {
+        let mut winner = LearningTrajectory::default();
+        let mut loser = LearningTrajectory::default();
+        for _ in 0..50 {
+            winner.observe(0.95).expect("valid score");
+            loser.observe(0.10).expect("valid score");
+        }
+
+        let selected = ExplorationPolicy::select_ucb1(&[loser, winner]).expect("valid selection");
+        assert_eq!(selected, 1, "with equal sampling, the arm with the far higher mean must win");
+    }
+
+    #[test]
+    fn learning_trajectory_mean_and_len_report_real_aggregate_state() {
+        let mut trajectory = LearningTrajectory::default();
+        assert!(trajectory.is_empty());
+        assert_eq!(trajectory.mean(), None);
+
+        trajectory.observe(0.2).expect("valid score");
+        trajectory.observe(0.4).expect("valid score");
+        trajectory.observe(0.6).expect("valid score");
+
+        assert_eq!(trajectory.len(), 3);
+        assert!(!trajectory.is_empty());
+        assert!((trajectory.mean().expect("real mean") - 0.4).abs() < f64::EPSILON);
     }
 }
