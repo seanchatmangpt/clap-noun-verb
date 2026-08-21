@@ -91,10 +91,7 @@ fn tools_call_routes_greet_through_the_real_greet_sh_process() {
 
     let response = server.handle(&request).expect("real handle() call").expect("a real response");
     assert_eq!(response["result"]["isError"], serde_json::json!(false));
-    assert_eq!(
-        response["result"]["content"][0]["text"],
-        serde_json::json!("Hello, World!\n")
-    );
+    assert_eq!(response["result"]["content"][0]["text"], serde_json::json!("Hello, World!\n"));
 }
 
 #[test]

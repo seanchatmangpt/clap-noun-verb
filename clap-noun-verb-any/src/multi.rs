@@ -76,7 +76,11 @@ impl Executor for MultiExecutor {
 /// [`MultiExecutor`] built from the same wrapped targets, in the same
 /// order. `name`/`about` describe the merged deployment as a whole.
 #[must_use]
-pub fn merge_schemas(name: impl Into<String>, about: Option<String>, schemas: &[CliSchema]) -> CliSchema {
+pub fn merge_schemas(
+    name: impl Into<String>,
+    about: Option<String>,
+    schemas: &[CliSchema],
+) -> CliSchema {
     let commands = schemas.iter().flat_map(|schema| schema.commands.iter().cloned()).collect();
     CliSchema { name: name.into(), about, commands }
 }

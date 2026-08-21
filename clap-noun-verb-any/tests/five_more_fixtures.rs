@@ -104,8 +104,7 @@ fn calc_sh_adds_two_real_integers() {
 #[test]
 fn list_fruits_sh_joins_repeated_append_values() {
     let mut arguments = serde_json::Map::new();
-    arguments
-        .insert("item".to_owned(), serde_json::json!(["apple", "banana", "cherry"]));
+    arguments.insert("item".to_owned(), serde_json::json!(["apple", "banana", "cherry"]));
 
     let (execution, noun) =
         wrap_and_execute("list-fruits.sh", "list-fruits.json", "list", arguments, "list-fruits");
