@@ -6,8 +6,8 @@ exclude = ["playground", "examples/playground", "examples/greet-demo", "vendors"
 [workspace.dependencies]
 # CLI Framework
 clap = { version = ">=4.5, <4.6", features = ["derive", "env", "suggestions"] }
-clap-noun-verb = { path = ".", version = "26.8.8" }
-clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.8.8" }
+clap-noun-verb = { path = ".", version = "26.8.20" }
+clap-noun-verb-macros = { path = "clap-noun-verb-macros", version = "26.8.22" }
 
 # Auto-discovery
 linkme = "0.3"
@@ -36,7 +36,7 @@ tokio = { version = "1.40", features = ["full"] }
 
 [package]
 name = "clap-noun-verb"
-version = "26.8.8"
+version = "26.8.22"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -162,6 +162,9 @@ url = "2.5"
 
 # RDF/Ontology generators
 chrono = "0.4"
+
+# Logging facade (library code logs via log::*, never println!)
+log = "0.4"
 
 # OpenTelemetry instrumentation, optional behind `otel`
 tracing = { version = "0.1", optional = true }
@@ -342,6 +345,11 @@ unnecessary_map_or = "allow"
 [[bench]]
 name = "dispatch"
 path = "benches/dispatch.rs"
+harness = false
+
+[[bench]]
+name = "ocel_scale"
+path = "benches/ocel_scale.rs"
 harness = false
 
 [[test]]
