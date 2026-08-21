@@ -3390,6 +3390,277 @@ mod tests {
         "[a-zA-Z_][a-zA-Z0-9_]{0,15}"
     }
 
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): MetaFramework::register_layer/
+    // admit_invariant/state/layers/invariants across arbitrary sequences.
+    // Every existing hand-picked MetaFramework test above
+    // (meta_framework_layers_and_invariant_accessors_report_real_registered_state,
+    // meta_framework_register_layer_refuses_a_duplicate_name_and_leaves_it_registered_once,
+    // meta_framework_admit_invariant_silently_overwrites_a_duplicate_id_unlike_every_other_identity_registration,
+    // meta_framework_blocks_on_an_unsatisfied_invariant_even_with_a_receipt,
+    // meta_framework_blocks_when_no_invariants_are_admitted_at_all) drives
+    // at most one or two fixed layer/invariant registrations before
+    // asserting anything. These generalize the real duplicate-refusal
+    // (`register_layer`, confirmed from its body above: `BTreeSet::insert`'s
+    // boolean return gates an `Err`) and duplicate-overwrite
+    // (`admit_invariant`, confirmed from its body above: an unconditional
+    // `BTreeMap::insert`, return value discarded) behaviors, plus
+    // `validate_invariants`/`state`'s real logic (confirmed from each body
+    // above), across randomized sequences mixing both kinds of call in an
+    // arbitrary order.
+    // -------------------------------------------------------------------
+
+    /// A small, shared pool of candidate layer names -- deliberately small
+    /// so a generated sequence of `register_layer` calls frequently
+    /// repeats a name, exercising the real duplicate-refusal path and not
+    /// only first-time registrations.
+    fn layer_name_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("admission".to_string()),
+            Just("execution".to_string()),
+            Just("capability".to_string()),
+        ]
+    }
+
+    /// A small, shared pool of candidate invariant ids -- deliberately
+    /// small so a generated sequence of `admit_invariant` calls
+    /// frequently repeats an id, exercising the real duplicate-overwrite
+    /// path.
+    fn invariant_id_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("zero-unreceipted-actuation".to_string()),
+            Just("sufficient-capacity".to_string()),
+            Just("bounded-latency".to_string()),
+        ]
+    }
+
+    /// One operation applied to a `MetaFramework` under test: either a
+    /// `register_layer` call with a name from the shared pool above, or
+    /// an `admit_invariant` call with an id from the shared pool above
+    /// and a random `satisfied` value.
+    #[derive(Debug, Clone)]
+    enum MetaFrameworkOp {
+        RegisterLayer(String),
+        AdmitInvariant(String, bool),
+    }
+
+    fn meta_framework_op_strategy() -> impl Strategy<Value = MetaFrameworkOp> {
+        prop_oneof![
+            layer_name_pool_strategy().prop_map(MetaFrameworkOp::RegisterLayer),
+            (invariant_id_pool_strategy(), any::<bool>())
+                .prop_map(|(id, satisfied)| MetaFrameworkOp::AdmitInvariant(id, satisfied)),
+        ]
+    }
+
+    /// An arbitrary-length sequence of the operations above, in an
+    /// arbitrary order -- `register_layer` and `admit_invariant` calls
+    /// freely interleaved, each individually valid (non-empty name/id by
+    /// construction, matching both methods' own real precondition) so
+    /// every `Err` result the test below observes comes only from the
+    /// real duplicate-refusal rule, never from the empty-name/id
+    /// precondition already covered by hand-picked tests elsewhere in
+    /// this file.
+    fn meta_framework_op_sequence_strategy() -> impl Strategy<Value = Vec<MetaFrameworkOp>> {
+        prop::collection::vec(meta_framework_op_strategy(), 0..30)
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): QuantumReadyPolicy::restricted/
+    // admits/admitted. Every existing hand-picked test above
+    // (quantum_ready_policy_restricted_admits_only_the_given_algorithm,
+    // quantum_ready_policy_restricted_with_no_algorithms_admits_nothing,
+    // quantum_ready_policy_post_quantum_admits_every_real_algorithm)
+    // exercises exactly one fixed one-element or zero-element or
+    // three-element subset. This generalizes the real invariant
+    // confirmed from `admits`/`admitted`/`restricted`'s own bodies above
+    // across every one of the 8 possible subsets of the fixed 3-variant
+    // `QuantumAlgorithm` enum.
+    // -------------------------------------------------------------------
+
+    /// One independent bool per real `QuantumAlgorithm` variant, in the
+    /// fixed `MlKem, MlDsa, SlhDsa` order `admitted()`'s own body
+    /// iterates in, selecting whether that variant belongs to the
+    /// generated subset -- the "subset-selection strategy over a fixed
+    /// small set" this file's existing hand-picked tests only exercise
+    /// with one fixed one-element and one fixed three-element subset.
+    /// `QuantumAlgorithm` is a small, fixed, 3-variant enum (confirmed
+    /// from its real definition above), so this enumerates its full
+    /// subset space directly rather than using an open-ended generator.
+    fn quantum_algorithm_subset_strategy() -> impl Strategy<Value = Vec<QuantumAlgorithm>> {
+        (any::<bool>(), any::<bool>(), any::<bool>()).prop_map(
+            |(has_ml_kem, has_ml_dsa, has_slh_dsa)| {
+                let mut subset = Vec::new();
+                if has_ml_kem {
+                    subset.push(QuantumAlgorithm::MlKem);
+                }
+                if has_ml_dsa {
+                    subset.push(QuantumAlgorithm::MlDsa);
+                }
+                if has_slh_dsa {
+                    subset.push(QuantumAlgorithm::SlhDsa);
+                }
+                subset
+            },
+        )
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): SpecificationSuite::add_spec,
+    // remove_spec, names, len, is_empty, and get_spec. The only existing
+    // test for this type (specification_suite_enumeration_and_removal_
+    // reflect_real_state above) exercises exactly one add-add-remove
+    // sequence over two hand-picked names; this generalizes the real
+    // invariants confirmed from each method's own body above across an
+    // arbitrary sequence of add_spec/remove_spec calls. add_spec's own
+    // doc comment explicitly documents its upsert ("Add or replace a
+    // specification by name"), so re-adding an existing name is real,
+    // intended behavior exercised here on purpose, not a bug being
+    // guarded against.
+    // -------------------------------------------------------------------
+
+    /// The exact, fixed pool of candidate spec names every generated
+    /// operation below draws from. Deliberately small (four names) so
+    /// that, across up to 24 generated operations, a name being added
+    /// twice in a row or re-added after removal is virtually guaranteed
+    /// rather than left to chance across an unbounded name space.
+    const SPEC_NAME_POOL: [&str; 4] = ["Spec A", "Spec B", "Spec C", "Spec D"];
+
+    fn spec_name_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just(SPEC_NAME_POOL[0].to_string()),
+            Just(SPEC_NAME_POOL[1].to_string()),
+            Just(SPEC_NAME_POOL[2].to_string()),
+            Just(SPEC_NAME_POOL[3].to_string()),
+        ]
+    }
+
+    /// One real operation against a `SpecificationSuite`: add a fresh
+    /// `ExecutableSpec` under a pool name, or remove a pool name.
+    #[derive(Debug, Clone)]
+    enum SpecOp {
+        Add(String),
+        Remove(String),
+    }
+
+    fn spec_op_strategy() -> impl Strategy<Value = SpecOp> {
+        prop_oneof![
+            spec_name_pool_strategy().prop_map(SpecOp::Add),
+            spec_name_pool_strategy().prop_map(SpecOp::Remove),
+        ]
+    }
+
+    /// An arbitrary sequence of add/remove operations over the shared
+    /// name pool above -- every individual operation is unconditionally
+    /// valid (neither `add_spec` nor `remove_spec` has any precondition
+    /// to satisfy), so no filtering is needed for every generated
+    /// sequence to be admissible.
+    fn spec_ops_strategy() -> impl Strategy<Value = Vec<SpecOp>> {
+        prop::collection::vec(spec_op_strategy(), 0..24)
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): EconomicSimulation::step's
+    // structural allocation invariants. All existing hand-picked
+    // step()-related tests above (disjoint-capability allocation,
+    // no-match pending tasks, trust-score tie-break, double-allocation
+    // prevention, and the add_agent/add_task duplicate-id tests) are
+    // example-based, each using two or three hand-picked agents and
+    // tasks; these generalize the real structural invariants confirmed
+    // from `step`'s own body above (it iterates `self.tasks` in
+    // `BTreeMap` order, filters agents by a real capability match, picks
+    // the real max by trust score with a real id tie-break, and consumes
+    // every allocated task) across randomly generated agent/task sets
+    // that satisfy `add_agent`/`add_task`'s own real validation
+    // preconditions by construction -- the same distinct-id-via-HashSet
+    // technique `valid_bids_strategy` above uses, never post-hoc
+    // filtering.
+    // -------------------------------------------------------------------
+
+    /// A small, shared pool of capability strings -- deliberately small
+    /// (three options) so generated agents and tasks frequently share a
+    /// capability, exercising real matches as well as real mismatches,
+    /// the same technique `tag_pool_strategy`/`route_pool_strategy`
+    /// above use.
+    fn capability_pool_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("compute".to_string()),
+            Just("network".to_string()),
+            Just("storage".to_string()),
+        ]
+    }
+
+    /// A finite, non-negative value -- matches `add_agent`'s valuation
+    /// bound and `add_task`'s value bound exactly (both real
+    /// preconditions: `is_finite() && >= 0.0`).
+    fn nonnegative_value_strategy() -> impl Strategy<Value = f64> {
+        0.0f64..1_000_000.0f64
+    }
+
+    /// A real trust score within `add_agent`'s own real precondition
+    /// (`0.0..=1.0`, finite by construction).
+    fn trust_score_strategy() -> impl Strategy<Value = f64> {
+        0.0f64..=1.0f64
+    }
+
+    /// One or more real capabilities for a single agent, drawn from the
+    /// shared pool above. Nothing in `add_agent`'s real validation
+    /// requires distinct or single-capability lists, so this
+    /// deliberately allows repeats.
+    fn agent_capabilities_strategy() -> impl Strategy<Value = Vec<String>> {
+        prop::collection::vec(capability_pool_strategy(), 1..3)
+    }
+
+    /// Zero or more real, valid `Agent`s with distinct ids -- satisfies
+    /// `add_agent`'s own real precondition (finite trust in `0.0..=1.0`,
+    /// finite non-negative valuation, unique id within this set) by
+    /// construction.
+    fn valid_agents_strategy() -> impl Strategy<Value = Vec<Agent>> {
+        prop::collection::hash_set(0u64..1_000u64, 0..8).prop_flat_map(|ids| {
+            let ids: Vec<u64> = ids.into_iter().collect();
+            let len = ids.len();
+            prop::collection::vec(
+                (
+                    agent_capabilities_strategy(),
+                    trust_score_strategy(),
+                    nonnegative_value_strategy(),
+                ),
+                len,
+            )
+            .prop_map(move |rows| {
+                ids.iter()
+                    .zip(rows)
+                    .map(|(&id, (capabilities, trust_score, valuation))| Agent {
+                        id: AgentId(id),
+                        capabilities,
+                        trust_score,
+                        valuation,
+                    })
+                    .collect()
+            })
+        })
+    }
+
+    /// Zero or more real, valid `Task`s with distinct ids -- satisfies
+    /// `add_task`'s own real precondition (non-blank capability, finite
+    /// non-negative value, unique id within this set) by construction.
+    fn valid_tasks_strategy() -> impl Strategy<Value = Vec<Task>> {
+        prop::collection::hash_set(0u64..1_000u64, 0..8).prop_flat_map(|ids| {
+            let ids: Vec<u64> = ids.into_iter().collect();
+            let len = ids.len();
+            prop::collection::vec((capability_pool_strategy(), nonnegative_value_strategy()), len)
+                .prop_map(move |rows| {
+                    ids.iter()
+                        .zip(rows)
+                        .map(|(&id, (required_capability, value))| Task {
+                            id: TaskId(id),
+                            required_capability,
+                            value,
+                        })
+                        .collect()
+                })
+        })
+    }
+
     proptest! {
         /// For ANY valid Vickrey auction input (2+ bids, one real common
         /// task, each bid finite/non-negative, one bid per agent): the
@@ -3466,6 +3737,33 @@ mod tests {
             let selected = ExplorationPolicy::select_ucb1(&trajectories)
                 .expect("a non-empty trajectory slice always yields a real selection");
             prop_assert_eq!(selected, first_empty);
+        }
+
+        /// For ANY sequence of valid scores fed through `observe` in
+        /// order, `is_monotonic` must equal an independently recomputed
+        /// check over the very same generated scores
+        /// (`scores.windows(2).all(|w| w[0] <= w[1])`, computed here from
+        /// the input the test generated, not copied from
+        /// `is_monotonic`'s own body) -- the only existing test for
+        /// `is_monotonic` (in `tests/frontier/capability_crown_test.rs`)
+        /// observes a single hand-picked ascending sequence and only
+        /// ever asserts the `true` case; this confirms the real
+        /// implementation matches an independently stated specification
+        /// across both the ascending and the regressing case, not just
+        /// its own body reflected back.
+        #[test]
+        fn is_monotonic_matches_an_independent_windowed_check(
+            scores in prop::collection::vec(score_strategy(), 0..8)
+        ) {
+            let mut trajectory = LearningTrajectory::default();
+            for &score in &scores {
+                trajectory
+                    .observe(score)
+                    .expect("generated score is within the valid 0.0..=1.0 range");
+            }
+
+            let expected = scores.windows(2).all(|pair| pair[0] <= pair[1]);
+            prop_assert_eq!(trajectory.is_monotonic(), expected);
         }
 
         /// For ANY set of registered `DiscoveryRecord`s (arbitrary
@@ -3772,6 +4070,277 @@ mod tests {
             let expected_last =
                 *values.last().expect("values has at least one element by construction");
             prop_assert_eq!(spec.parameter_value(&name), Some(expected_last));
+        }
+
+        /// For ANY sequence of `register_layer()`/`admit_invariant()` calls
+        /// (some producing `Ok`, some deliberately producing `Err` via a
+        /// repeated layer name -- confirmed above, `register_layer`
+        /// refuses a duplicate; a repeated invariant id never produces
+        /// `Err`, it silently overwrites -- confirmed above,
+        /// `admit_invariant` calls `BTreeMap::insert` unconditionally):
+        /// `layers()` always reports exactly the real set of distinct
+        /// names that were ever successfully registered; `invariants()`
+        /// always reports, for every id ever admitted, the LAST
+        /// `satisfied` value passed for that id, never an earlier
+        /// overwritten one; `validate_invariants()` is true if and only
+        /// if at least one invariant was admitted and every admitted
+        /// invariant's last-written `satisfied` value is `true`;
+        /// `state(true)` is `Alive` if and only if `validate_invariants()`
+        /// is true; and `state(false)` is never `Alive` (only `Admitted`
+        /// or `Blocked`) -- confirmed from `state`'s own body above. No
+        /// existing test drives more than two fixed registrations before
+        /// checking any of this.
+        #[test]
+        fn meta_framework_layers_and_invariants_and_state_reflect_the_real_sequence_semantics(
+            ops in meta_framework_op_sequence_strategy()
+        ) {
+            let mut framework = MetaFramework::new();
+            let mut expected_layers: BTreeSet<String> = BTreeSet::new();
+            let mut expected_invariants: BTreeMap<String, bool> = BTreeMap::new();
+
+            for op in &ops {
+                match op {
+                    MetaFrameworkOp::RegisterLayer(name) => {
+                        let result = framework.register_layer(name.clone());
+                        if expected_layers.contains(name) {
+                            prop_assert!(
+                                result.is_err(),
+                                "a repeated layer name must be refused, not silently re-admitted"
+                            );
+                        } else {
+                            prop_assert!(
+                                result.is_ok(),
+                                "a genuinely new, non-empty layer name must always succeed"
+                            );
+                            expected_layers.insert(name.clone());
+                        }
+                    }
+                    MetaFrameworkOp::AdmitInvariant(id, satisfied) => {
+                        let result = framework.admit_invariant(Invariant {
+                            id: id.clone(),
+                            description: format!("description for {id}"),
+                            satisfied: *satisfied,
+                        });
+                        prop_assert!(
+                            result.is_ok(),
+                            "admitting a non-empty invariant id always succeeds, first time \
+                             or as an overwrite"
+                        );
+                        expected_invariants.insert(id.clone(), *satisfied);
+                    }
+                }
+            }
+
+            let mut actual_layers = framework.layers();
+            actual_layers.sort_unstable();
+            let mut expected_layers_vec: Vec<&str> =
+                expected_layers.iter().map(String::as_str).collect();
+            expected_layers_vec.sort_unstable();
+            prop_assert_eq!(actual_layers, expected_layers_vec);
+
+            let actual_invariants = framework.invariants();
+            prop_assert_eq!(actual_invariants.len(), expected_invariants.len());
+            for invariant in &actual_invariants {
+                let expected_satisfied = expected_invariants.get(&invariant.id).expect(
+                    "every invariant reported by invariants() must be one this test admitted",
+                );
+                prop_assert_eq!(
+                    invariant.satisfied,
+                    *expected_satisfied,
+                    "invariants() must reflect the LAST satisfied value admitted under this id"
+                );
+            }
+
+            let expected_validate = !expected_invariants.is_empty()
+                && expected_invariants.values().all(|&satisfied| satisfied);
+            prop_assert_eq!(framework.validate_invariants(), expected_validate);
+
+            prop_assert_eq!(framework.state(true) == AdmissionState::Alive, expected_validate);
+            prop_assert_ne!(framework.state(false), AdmissionState::Alive);
+
+            let expected_state_no_receipt = if expected_validate {
+                AdmissionState::Admitted
+            } else {
+                AdmissionState::Blocked
+            };
+            prop_assert_eq!(framework.state(false), expected_state_no_receipt);
+
+            let expected_state_with_receipt =
+                if expected_validate { AdmissionState::Alive } else { AdmissionState::Blocked };
+            prop_assert_eq!(framework.state(true), expected_state_with_receipt);
+        }
+
+        /// For ANY subset of the fixed three real `QuantumAlgorithm`
+        /// variants used to construct a policy via `restricted()`,
+        /// `admits()` is true for exactly the algorithms in that subset
+        /// and false for every other real variant, and `admitted()`
+        /// always returns exactly that same subset (in the fixed
+        /// `MlKem, MlDsa, SlhDsa` order, confirmed from `admitted()`'s
+        /// own body above) as real `QuantumAlgorithm` values, never the
+        /// underlying name strings. No existing test
+        /// (`quantum_ready_policy_restricted_admits_only_the_given_algorithm`,
+        /// `quantum_ready_policy_restricted_with_no_algorithms_admits_nothing`,
+        /// `quantum_ready_policy_post_quantum_admits_every_real_algorithm`)
+        /// exercises more than one fixed subset.
+        #[test]
+        fn quantum_ready_policy_restricted_admits_exactly_the_real_given_subset(
+            subset in quantum_algorithm_subset_strategy()
+        ) {
+            let policy = QuantumReadyPolicy::restricted(subset.clone());
+
+            for algorithm in
+                [QuantumAlgorithm::MlKem, QuantumAlgorithm::MlDsa, QuantumAlgorithm::SlhDsa]
+            {
+                prop_assert_eq!(
+                    policy.admits(algorithm),
+                    subset.contains(&algorithm),
+                    "admits() must agree with real subset membership for every real variant"
+                );
+            }
+
+            prop_assert_eq!(policy.admitted(), subset);
+        }
+
+        /// For ANY arbitrary sequence of `add_spec`/`remove_spec` calls
+        /// over a small shared name pool (including re-adding a name
+        /// after removing it, and adding the same name twice in a row --
+        /// both real, intended upsert/removal behavior confirmed from
+        /// each method's own body above, not bugs): `names()` always
+        /// reports exactly the set of names currently present, in sorted
+        /// order (the same `BTreeMap`-backed canonical-order pattern this
+        /// file already property-tests for `MetaFramework::layers`
+        /// above); `len()`/`is_empty()` always reflect the real current
+        /// count; `get_spec(name)` returns `Ok` for exactly the names
+        /// currently present and `Err` for every other pool name; and a
+        /// name removed and then re-added is genuinely present again, not
+        /// permanently gone. No existing test drives more than one fixed
+        /// add-add-remove sequence over two hand-picked names before
+        /// checking any of this.
+        #[test]
+        fn specification_suite_names_len_is_empty_and_get_spec_always_reflect_the_real_current_state(
+            ops in spec_ops_strategy()
+        ) {
+            let mut suite = SpecificationSuite::default();
+            let mut expected: BTreeSet<String> = BTreeSet::new();
+
+            for op in &ops {
+                match op {
+                    SpecOp::Add(name) => {
+                        suite.add_spec(ExecutableSpec::new(name.clone(), "generated"));
+                        expected.insert(name.clone());
+                    }
+                    SpecOp::Remove(name) => {
+                        suite.remove_spec(name);
+                        expected.remove(name);
+                    }
+                }
+            }
+
+            let actual_names: Vec<&str> = suite.names().collect();
+            let expected_names: Vec<&str> = expected.iter().map(String::as_str).collect();
+            prop_assert_eq!(
+                actual_names,
+                expected_names,
+                "names() must be exactly the currently-present names, in sorted order"
+            );
+
+            prop_assert_eq!(suite.len(), expected.len());
+            prop_assert_eq!(suite.is_empty(), expected.is_empty());
+
+            // The pool is fixed and every operation drew only from it, so
+            // checking every pool name's real presence is a complete
+            // check of get_spec's behavior for this suite -- no name
+            // outside the pool could ever have been inserted.
+            for name in SPEC_NAME_POOL {
+                prop_assert_eq!(
+                    suite.get_spec(name).is_ok(),
+                    expected.contains(name),
+                    "get_spec(\"{}\") must be Ok iff the name is currently present",
+                    name
+                );
+            }
+        }
+
+        /// For ANY randomly generated set of real, valid agents and tasks
+        /// admitted via `add_agent`/`add_task` (each satisfying those
+        /// methods' own real validation preconditions, confirmed from
+        /// their bodies above): repeatedly calling `step()` until it
+        /// produces no further allocations always yields allocations
+        /// that each name a real registered agent id genuinely holding
+        /// the task's required capability -- never a fabricated or
+        /// mismatched pairing; no single `step()` call ever allocates the
+        /// same task_id twice; and the total number of allocations
+        /// produced across the whole run never exceeds the total number
+        /// of tasks ever added. No existing test (all of which use two or
+        /// three small, hand-picked agents and tasks) exercises this
+        /// across a randomized input space.
+        #[test]
+        fn economic_simulation_step_allocations_are_always_real_capability_matches_never_duplicated_per_task_and_never_exceed_total_tasks(
+            agents in valid_agents_strategy(),
+            tasks in valid_tasks_strategy()
+        ) {
+            let mut sim = EconomicSimulation::new();
+            for agent in &agents {
+                sim.add_agent(agent.clone())
+                    .expect("generated agent satisfies add_agent's own real precondition");
+            }
+            for task in &tasks {
+                sim.add_task(task.clone())
+                    .expect("generated task satisfies add_task's own real precondition");
+            }
+
+            let total_tasks = tasks.len();
+            let mut total_allocations = 0usize;
+            // Every produced allocation consumes its task (confirmed from
+            // `step`'s own body above: `self.tasks.retain(|id, _|
+            // !allocated.contains(id))`), so no more than `total_tasks`
+            // non-empty steps are possible before a final empty one --
+            // this loop is bounded regardless of whether the invariants
+            // below actually hold.
+            for _ in 0..=total_tasks {
+                let produced = sim.step().expect("step never fails");
+                if produced.is_empty() {
+                    break;
+                }
+
+                let mut seen_in_this_step: BTreeSet<TaskId> = BTreeSet::new();
+                for allocation in &produced {
+                    prop_assert!(
+                        seen_in_this_step.insert(allocation.task_id),
+                        "a single step() call must never allocate the same task twice"
+                    );
+
+                    let agent = agents.iter().find(|agent| agent.id == allocation.agent_id);
+                    prop_assert!(
+                        agent.is_some(),
+                        "every allocation's agent_id must name a real registered agent"
+                    );
+                    let agent = agent.expect("checked Some above");
+
+                    let task = tasks.iter().find(|task| task.id == allocation.task_id);
+                    prop_assert!(
+                        task.is_some(),
+                        "every allocation's task_id must name a real registered task"
+                    );
+                    let task = task.expect("checked Some above");
+
+                    prop_assert!(
+                        agent
+                            .capabilities
+                            .iter()
+                            .any(|capability| capability == &task.required_capability),
+                        "an allocated agent must genuinely hold the task's required capability"
+                    );
+                }
+
+                total_allocations += produced.len();
+            }
+
+            prop_assert!(
+                total_allocations <= total_tasks,
+                "total allocations across repeated step() calls must never exceed the total \
+                 tasks added"
+            );
         }
     }
 
