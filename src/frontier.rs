@@ -97,6 +97,44 @@ impl MetaFramework {
             AdmissionState::Admitted
         }
     }
+
+    /// All currently registered layer names, in canonical order.
+    #[must_use]
+    pub fn layers(&self) -> Vec<&str> {
+        self.layers.iter().map(String::as_str).collect()
+    }
+
+    /// Resolve one previously admitted invariant by its stable identifier.
+    #[must_use]
+    pub fn invariant(&self, id: &str) -> Option<&Invariant> {
+        self.invariants.get(id)
+    }
+
+    /// All admitted invariants, in canonical (id-sorted) order.
+    #[must_use]
+    pub fn invariants(&self) -> Vec<&Invariant> {
+        self.invariants.values().collect()
+    }
+
+    /// Remove a previously registered layer.
+    ///
+    /// # Errors
+    /// Returns an error if `name` is not currently registered.
+    pub fn remove_layer(&mut self, name: &str) -> FrontierResult<()> {
+        if self.layers.remove(name) {
+            Ok(())
+        } else {
+            Err(format!("layer not registered: {name}"))
+        }
+    }
+
+    /// Remove a previously admitted invariant, returning the removed value.
+    ///
+    /// # Errors
+    /// Returns an error if no invariant is registered under `id`.
+    pub fn remove_invariant(&mut self, id: &str) -> FrontierResult<Invariant> {
+        self.invariants.remove(id).ok_or_else(|| format!("invariant not registered: {id}"))
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -138,6 +176,11 @@ impl RdfFragment {
         Ok(self.triples.insert(triple))
     }
 
+    /// Retract a triple; returns `true` if it was present.
+    pub fn remove(&mut self, triple: &SemanticTriple) -> bool {
+        self.triples.remove(triple)
+    }
+
     /// Compose two fragments with deterministic set-union semantics.
     #[must_use]
     pub fn compose(&self, other: &Self) -> Self {
@@ -150,6 +193,24 @@ impl RdfFragment {
     #[must_use]
     pub fn triples(&self) -> Vec<&SemanticTriple> {
         self.triples.iter().collect()
+    }
+
+    /// Match triples against an optional (subject, predicate, object)
+    /// pattern. `None` in any position matches every value in that
+    /// position.
+    #[must_use]
+    pub fn matching(
+        &self,
+        subject: Option<&str>,
+        predicate: Option<&str>,
+        object: Option<&str>,
+    ) -> Vec<&SemanticTriple> {
+        self.triples
+            .iter()
+            .filter(|t| subject.map_or(true, |s| t.subject == s))
+            .filter(|t| predicate.map_or(true, |p| t.predicate == p))
+            .filter(|t| object.map_or(true, |o| t.object == o))
+            .collect()
     }
 }
 
@@ -194,6 +255,23 @@ impl DiscoveryEngine {
             .values()
             .filter(|record| record.name == term || record.tags.contains(term))
             .collect()
+    }
+
+    /// Records whose tag set is a superset of every tag in `terms` (AND
+    /// semantics). An empty `terms` slice matches every registered record.
+    #[must_use]
+    pub fn search_all_tags(&self, terms: &[&str]) -> Vec<&DiscoveryRecord> {
+        self.records
+            .values()
+            .filter(|record| terms.iter().all(|term| record.tags.contains(*term)))
+            .collect()
+    }
+
+    /// Records whose route matches exactly (route is not required to be
+    /// unique across records, unlike name).
+    #[must_use]
+    pub fn search_by_route(&self, route: &str) -> Vec<&DiscoveryRecord> {
+        self.records.values().filter(|record| record.route == route).collect()
     }
 
     /// Remove a previously registered capability by name, returning the
@@ -307,6 +385,14 @@ impl LearningTrajectory {
         let sum: f64 = self.observations.iter().map(|observation| observation.score).sum();
         Some(sum / self.observations.len() as f64)
     }
+
+    /// Discard every recorded observation, returning the trajectory to its
+    /// initial (never-tried) state -- e.g. after a capability's underlying
+    /// route is redeployed and its prior learning history should no longer
+    /// bias [`ExplorationPolicy::select_ucb1`]/[`DiscoveryEngine::recommend`].
+    pub fn reset(&mut self) {
+        self.observations.clear();
+    }
 }
 
 /// Deterministic explore/exploit arm selection over a set of
@@ -388,6 +474,30 @@ impl ReflexiveReport {
     pub fn is_alive(&self) -> bool {
         self.passed > 0 && self.failed == 0 && self.replay_verified
     }
+
+    /// Combine two reports from separate verifier runs (e.g. sharded
+    /// execution, or an initial run plus a replay run). The merged run is
+    /// only replay-verified if both constituent runs were.
+    #[must_use]
+    pub fn merge(&self, other: &Self) -> Self {
+        Self {
+            passed: self.passed + other.passed,
+            failed: self.failed + other.failed,
+            replay_verified: self.replay_verified && other.replay_verified,
+        }
+    }
+
+    /// Fraction of checks that passed, in `[0.0, 1.0]`. Returns `0.0` when
+    /// no checks were recorded (avoids a divide-by-zero at call sites).
+    #[must_use]
+    pub fn pass_rate(&self) -> f64 {
+        let total = self.passed + self.failed;
+        if total == 0 {
+            0.0
+        } else {
+            self.passed as f64 / total as f64
+        }
+    }
 }
 
 /// Post-quantum algorithm family admitted by policy.
@@ -418,12 +528,33 @@ impl QuantumReadyPolicy {
     /// Check whether an algorithm is admitted.
     #[must_use]
     pub fn admits(&self, algorithm: QuantumAlgorithm) -> bool {
-        let name = match algorithm {
+        self.allowed.contains(Self::algorithm_name(algorithm))
+    }
+
+    /// Construct a policy admitting exactly the given algorithms (may be
+    /// empty, or a subset of the full PQC set `post_quantum` admits).
+    #[must_use]
+    pub fn restricted(algorithms: impl IntoIterator<Item = QuantumAlgorithm>) -> Self {
+        Self {
+            allowed: algorithms.into_iter().map(Self::algorithm_name).map(str::to_string).collect(),
+        }
+    }
+
+    /// List every algorithm this policy currently admits.
+    #[must_use]
+    pub fn admitted(&self) -> Vec<QuantumAlgorithm> {
+        [QuantumAlgorithm::MlKem, QuantumAlgorithm::MlDsa, QuantumAlgorithm::SlhDsa]
+            .into_iter()
+            .filter(|algorithm| self.admits(*algorithm))
+            .collect()
+    }
+
+    const fn algorithm_name(algorithm: QuantumAlgorithm) -> &'static str {
+        match algorithm {
             QuantumAlgorithm::MlKem => "ML-KEM",
             QuantumAlgorithm::MlDsa => "ML-DSA",
             QuantumAlgorithm::SlhDsa => "SLH-DSA",
-        };
-        self.allowed.contains(name)
+        }
     }
 }
 
@@ -501,6 +632,36 @@ impl FederatedNetwork {
                 peers.len()
             ))
         }
+    }
+
+    /// Admit a new peer into the local registry. Returns `false` (not an
+    /// error) if the peer was already present -- adding an existing peer
+    /// is idempotent, not a failure.
+    ///
+    /// # Errors
+    /// Returns an error if the peer registry lock is poisoned.
+    pub async fn add_peer(&self, peer: PeerId) -> FrontierResult<bool> {
+        let mut peers =
+            self.peers.write().map_err(|_| "federation peer registry lock poisoned".to_string())?;
+        if peers.contains(&peer) {
+            return Ok(false);
+        }
+        peers.push(peer);
+        Ok(true)
+    }
+
+    /// Remove a peer from the local registry (e.g. offline or
+    /// Byzantine-excluded). Returns `false` (not an error) if the peer was
+    /// not present.
+    ///
+    /// # Errors
+    /// Returns an error if the peer registry lock is poisoned.
+    pub async fn remove_peer(&self, peer: &PeerId) -> FrontierResult<bool> {
+        let mut peers =
+            self.peers.write().map_err(|_| "federation peer registry lock poisoned".to_string())?;
+        let before = peers.len();
+        peers.retain(|p| p != peer);
+        Ok(peers.len() != before)
     }
 
     /// Advertise one validated capability without performing remote I/O.
@@ -585,6 +746,14 @@ impl VickreyAuction {
             .any(|bid| bid.task_id != task_id || !bid.bid_value.is_finite() || bid.bid_value < 0.0)
         {
             return Err("all bids must target one task with finite non-negative values".into());
+        }
+        // Each agent may submit at most one bid: without this, a single
+        // agent's own second-highest bid could become the "second price"
+        // it pays, instead of a genuine competitor's valuation -- silently
+        // corrupting the Vickrey mechanism's truthfulness guarantee.
+        let mut seen_agents = BTreeSet::new();
+        if !bids.iter().all(|bid| seen_agents.insert(bid.agent_id)) {
+            return Err("each agent may submit at most one bid per auction".into());
         }
         let mut ordered = bids.to_vec();
         ordered.sort_by(|left, right| {
@@ -699,6 +868,11 @@ impl EconomicSimulation {
                 produced.push(Allocation { task_id: task.id, agent_id: agent.id });
             }
         }
+        // Consume every task allocated this step -- without this, a task
+        // stays in `self.tasks` forever and a second `step()` call would
+        // silently re-allocate (and double-count) the same task.
+        let allocated: BTreeSet<TaskId> = produced.iter().map(|a| a.task_id).collect();
+        self.tasks.retain(|id, _| !allocated.contains(id));
         self.allocations.extend(produced.iter().cloned());
         self.time += 1.0;
         Ok(produced)
@@ -836,6 +1010,12 @@ impl CompositionChain {
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
+
+    /// Ordered view of the chain's segments.
+    #[must_use]
+    pub fn entries(&self) -> &[String] {
+        &self.entries
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -913,6 +1093,14 @@ impl ExecutableSpec {
         self
     }
 
+    /// Read one parameter value, if set. A safe alternative to indexing
+    /// the raw parameter map a `validate` predicate receives -- indexing
+    /// a missing key panics, this returns `None` instead.
+    #[must_use]
+    pub fn parameter_value(&self, name: &str) -> Option<u64> {
+        self.parameters.get(name).copied()
+    }
+
     /// Evaluate the specification predicate.
     pub fn validate<F>(&self, predicate: F) -> FrontierResult<bool>
     where
@@ -964,6 +1152,28 @@ impl SpecificationSuite {
     /// Resolve a specification by exact name.
     pub fn get_spec(&self, name: &str) -> FrontierResult<&ExecutableSpec> {
         self.specs.get(name).ok_or_else(|| format!("specification not found: {name}"))
+    }
+
+    /// Names of all specifications currently in the suite, in sorted order.
+    pub fn names(&self) -> impl Iterator<Item = &str> {
+        self.specs.keys().map(String::as_str)
+    }
+
+    /// Remove a specification by name, returning it if present.
+    pub fn remove_spec(&mut self, name: &str) -> Option<ExecutableSpec> {
+        self.specs.remove(name)
+    }
+
+    /// Number of specifications in the suite.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.specs.len()
+    }
+
+    /// Whether the suite has no specifications.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.specs.is_empty()
     }
 }
 
@@ -1145,5 +1355,436 @@ mod tests {
         let engine = DiscoveryEngine::default();
         let error = engine.recommend(&[]).expect_err("no candidates to recommend among");
         assert!(error.contains("at least one candidate"));
+    }
+
+    // -------------------------------------------------------------------
+    // MetaFramework: layers()/invariant()/invariants(), remove_layer/
+    // remove_invariant, and Blocked-state coverage (frontier-gap-sweep)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn meta_framework_layers_and_invariant_accessors_report_real_registered_state() {
+        let mut framework = MetaFramework::new();
+        framework.register_layer("admission").expect("unique layer");
+        framework.register_layer("execution").expect("unique layer");
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "Every effect has a receipt".to_string(),
+                satisfied: true,
+            })
+            .expect("valid invariant");
+
+        assert_eq!(framework.layers(), vec!["admission", "execution"]);
+        assert_eq!(framework.invariants().len(), 1);
+        let invariant =
+            framework.invariant("zero-unreceipted-actuation").expect("registered invariant");
+        assert!(invariant.satisfied);
+        assert!(framework.invariant("unknown-id").is_none());
+    }
+
+    #[test]
+    fn meta_framework_remove_layer_and_invariant_actually_retract_registered_state() {
+        let mut framework = MetaFramework::new();
+        framework.register_layer("admission").expect("unique layer");
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "Every effect has a receipt".to_string(),
+                satisfied: true,
+            })
+            .expect("valid invariant");
+
+        framework.remove_layer("admission").expect("registered layer");
+        assert!(framework.layers().is_empty());
+        let error = framework.remove_layer("admission").expect_err("already removed");
+        assert!(error.contains("not registered"));
+
+        let removed =
+            framework.remove_invariant("zero-unreceipted-actuation").expect("registered invariant");
+        assert!(removed.satisfied);
+        assert!(framework.invariant("zero-unreceipted-actuation").is_none());
+        // Removing the only invariant leaves the set empty, so validation
+        // must fail again -- retraction actually changes admission standing.
+        assert!(!framework.validate_invariants());
+    }
+
+    #[test]
+    fn meta_framework_blocks_on_an_unsatisfied_invariant_even_with_a_receipt() {
+        let mut framework = MetaFramework::new();
+        framework.register_layer("admission").expect("unique layer");
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "Every effect has a receipt".to_string(),
+                satisfied: false,
+            })
+            .expect("valid invariant");
+
+        assert!(!framework.validate_invariants());
+        assert_eq!(framework.state(false), AdmissionState::Blocked);
+        assert_eq!(
+            framework.state(true),
+            AdmissionState::Blocked,
+            "a receipt must not override a blocked invariant"
+        );
+    }
+
+    #[test]
+    fn meta_framework_blocks_when_no_invariants_are_admitted_at_all() {
+        let framework = MetaFramework::new();
+        assert!(!framework.validate_invariants());
+        assert_eq!(framework.state(false), AdmissionState::Blocked);
+        assert_eq!(framework.state(true), AdmissionState::Blocked);
+    }
+
+    // -------------------------------------------------------------------
+    // RdfFragment: remove()/matching() + round-trip + compose dedup
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn rdf_fragment_remove_retracts_a_present_triple_and_refuses_twice() {
+        let triple = SemanticTriple {
+            subject: "cnv:tool".to_string(),
+            predicate: "cnv:defaultVerb".to_string(),
+            object: "cnv:run".to_string(),
+        };
+        let mut fragment = RdfFragment::new();
+        fragment.insert(triple.clone()).expect("valid triple");
+
+        assert!(fragment.remove(&triple));
+        assert!(fragment.triples().is_empty());
+        assert!(!fragment.remove(&triple));
+    }
+
+    #[test]
+    fn rdf_fragment_matching_filters_by_subject_pattern() {
+        let mut fragment = RdfFragment::new();
+        fragment
+            .insert(SemanticTriple {
+                subject: "cnv:tool".to_string(),
+                predicate: "cnv:defaultVerb".to_string(),
+                object: "cnv:run".to_string(),
+            })
+            .expect("valid triple");
+        fragment
+            .insert(SemanticTriple {
+                subject: "cnv:tool".to_string(),
+                predicate: "rdf:type".to_string(),
+                object: "cnv:Noun".to_string(),
+            })
+            .expect("valid triple");
+        fragment
+            .insert(SemanticTriple {
+                subject: "cnv:noun".to_string(),
+                predicate: "rdf:type".to_string(),
+                object: "cnv:Concept".to_string(),
+            })
+            .expect("valid triple");
+
+        let matches = fragment.matching(Some("cnv:tool"), None, None);
+        assert_eq!(matches.len(), 2);
+        assert!(matches.iter().all(|t| t.subject == "cnv:tool"));
+    }
+
+    #[test]
+    fn rdf_fragment_round_trips_through_json() {
+        let mut fragment = RdfFragment::new();
+        fragment
+            .insert(SemanticTriple {
+                subject: "cnv:tool".to_string(),
+                predicate: "cnv:defaultVerb".to_string(),
+                object: "cnv:run".to_string(),
+            })
+            .expect("valid triple");
+
+        let json = serde_json::to_string(&fragment).expect("serializable");
+        let restored: RdfFragment = serde_json::from_str(&json).expect("deserializable");
+        assert_eq!(restored, fragment);
+    }
+
+    #[test]
+    fn rdf_composition_dedupes_a_shared_triple_across_two_fragments() {
+        let shared = SemanticTriple {
+            subject: "cnv:tool".to_string(),
+            predicate: "cnv:defaultVerb".to_string(),
+            object: "cnv:run".to_string(),
+        };
+        let mut left = RdfFragment::new();
+        left.insert(shared.clone()).expect("valid triple");
+
+        let mut right = RdfFragment::new();
+        right.insert(shared).expect("valid triple");
+        right
+            .insert(SemanticTriple {
+                subject: "cnv:tool".to_string(),
+                predicate: "rdf:type".to_string(),
+                object: "cnv:Noun".to_string(),
+            })
+            .expect("valid triple");
+
+        let composed = left.compose(&right);
+        assert_eq!(composed.triples().len(), 2, "the shared triple must not be duplicated");
+    }
+
+    // -------------------------------------------------------------------
+    // DiscoveryEngine: search_all_tags/search_by_route
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn discovery_engine_search_all_tags_uses_and_semantics_across_tags() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: ["billing", "read-only"].into_iter().map(str::to_string).collect(),
+                route: "svc://billing".to_string(),
+            })
+            .expect("valid record");
+        engine
+            .register(DiscoveryRecord {
+                name: "refunds".to_string(),
+                tags: ["billing"].into_iter().map(str::to_string).collect(),
+                route: "svc://refunds".to_string(),
+            })
+            .expect("valid record");
+
+        assert_eq!(engine.search_all_tags(&["billing", "read-only"]).len(), 1);
+        assert_eq!(engine.search_all_tags(&["billing", "read-only"])[0].name, "billing");
+        assert_eq!(engine.search_all_tags(&["billing"]).len(), 2);
+        assert_eq!(engine.search_all_tags(&[]).len(), 2, "vacuous AND over no terms matches all");
+    }
+
+    #[test]
+    fn discovery_engine_search_by_route_matches_a_shared_route_and_refuses_unknown() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "primary".to_string(),
+                tags: BTreeSet::new(),
+                route: "svc://shared".to_string(),
+            })
+            .expect("valid record");
+        engine
+            .register(DiscoveryRecord {
+                name: "replica".to_string(),
+                tags: BTreeSet::new(),
+                route: "svc://shared".to_string(),
+            })
+            .expect("valid record");
+
+        assert_eq!(engine.search_by_route("svc://shared").len(), 2);
+        assert!(engine.search_by_route("svc://missing").is_empty());
+    }
+
+    // -------------------------------------------------------------------
+    // LearningTrajectory::reset
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn learning_trajectory_reset_clears_history_and_a_fresh_observation_starts_at_zero() {
+        let mut trajectory = LearningTrajectory::default();
+        trajectory.observe(0.2).expect("valid score");
+        trajectory.observe(0.4).expect("valid score");
+        trajectory.observe(0.6).expect("valid score");
+
+        trajectory.reset();
+        assert!(trajectory.is_empty());
+        assert_eq!(trajectory.len(), 0);
+        assert_eq!(trajectory.mean(), None);
+        assert_eq!(trajectory.latest(), None);
+
+        let sequence = trajectory.observe(0.9).expect("valid score");
+        assert_eq!(sequence, 0, "the underlying history must actually be cleared, not just hidden");
+    }
+
+    // -------------------------------------------------------------------
+    // ReflexiveReport::merge/pass_rate
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn reflexive_report_merge_ands_replay_verified_and_sums_counts() {
+        let a = ReflexiveReport { passed: 10, failed: 0, replay_verified: true };
+        let b = ReflexiveReport { passed: 5, failed: 2, replay_verified: false };
+        let merged = a.merge(&b);
+        assert_eq!(merged.passed, 15);
+        assert_eq!(merged.failed, 2);
+        assert!(!merged.replay_verified, "AND semantics, not OR");
+        assert!(!merged.is_alive());
+    }
+
+    #[test]
+    fn reflexive_report_pass_rate_computes_fraction_and_handles_empty_run() {
+        let report = ReflexiveReport { passed: 97, failed: 3, replay_verified: true };
+        assert!((report.pass_rate() - 0.97).abs() < 1e-9);
+
+        let empty = ReflexiveReport { passed: 0, failed: 0, replay_verified: false };
+        assert_eq!(empty.pass_rate(), 0.0);
+    }
+
+    // -------------------------------------------------------------------
+    // QuantumReadyPolicy::restricted/admitted
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn quantum_ready_policy_restricted_admits_only_given_algorithms() {
+        let policy = QuantumReadyPolicy::restricted([QuantumAlgorithm::MlKem]);
+        assert!(policy.admits(QuantumAlgorithm::MlKem));
+        assert!(!policy.admits(QuantumAlgorithm::MlDsa));
+        assert!(!policy.admits(QuantumAlgorithm::SlhDsa));
+    }
+
+    #[test]
+    fn quantum_ready_policy_restricted_empty_admits_nothing() {
+        let policy = QuantumReadyPolicy::restricted(std::iter::empty());
+        assert!(policy.admitted().is_empty());
+    }
+
+    #[test]
+    fn quantum_ready_policy_admitted_enumerates_post_quantum_set() {
+        let admitted = QuantumReadyPolicy::post_quantum().admitted();
+        assert_eq!(admitted.len(), 3);
+        assert!(admitted.contains(&QuantumAlgorithm::MlKem));
+        assert!(admitted.contains(&QuantumAlgorithm::MlDsa));
+        assert!(admitted.contains(&QuantumAlgorithm::SlhDsa));
+    }
+
+    // -------------------------------------------------------------------
+    // VickreyAuction: reject duplicate-agent bids (real truthfulness bug)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn vickrey_auction_refuses_a_duplicate_agent_bid_instead_of_using_its_own_second_bid() {
+        let mut auction = VickreyAuction::new();
+        let bids = [
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 90.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 10.0 },
+        ];
+        let error = auction
+            .run_auction(&bids)
+            .expect_err("an agent bidding twice must be refused, not silently priced");
+        assert!(error.contains("one bid per agent") || error.contains("one bid per auction"));
+    }
+
+    // -------------------------------------------------------------------
+    // EconomicSimulation::step consumes allocated tasks
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn economic_simulation_step_does_not_double_allocate_the_same_task_on_a_second_call() {
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.9,
+            valuation: 100.0,
+        })
+        .expect("valid agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 150.0,
+        })
+        .expect("valid task");
+
+        let first = sim.step().expect("first step succeeds");
+        assert_eq!(first.len(), 1);
+        let second = sim.step().expect("second step succeeds");
+        assert!(second.is_empty(), "the task was already allocated and consumed");
+        assert_eq!(sim.allocations().len(), 1);
+    }
+
+    // -------------------------------------------------------------------
+    // FederatedNetwork::add_peer/remove_peer
+    // -------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn federated_network_add_and_remove_peer_actually_mutate_the_registry() {
+        let network = FederatedNetwork::new("node-a").expect("valid node id");
+        let before = network.discover_peers().await.expect("real peer list");
+        assert_eq!(before.len(), 3);
+
+        let target = before[0].clone();
+        let removed = network.remove_peer(&target).await.expect("lock not poisoned");
+        assert!(removed);
+        let after_remove = network.discover_peers().await.expect("real peer list");
+        assert_eq!(after_remove.len(), 2);
+        assert!(!after_remove.contains(&target));
+
+        // Removing again is a real no-op, not an error.
+        let removed_again = network.remove_peer(&target).await.expect("lock not poisoned");
+        assert!(!removed_again);
+
+        let fresh_peer = PeerId("node-a-peer-fresh".to_string());
+        let added = network.add_peer(fresh_peer.clone()).await.expect("lock not poisoned");
+        assert!(added);
+        let after_add = network.discover_peers().await.expect("real peer list");
+        assert_eq!(after_add.len(), 3);
+        assert!(after_add.contains(&fresh_peer));
+
+        // Adding the same peer again is idempotent, not an error.
+        let added_again = network.add_peer(fresh_peer).await.expect("lock not poisoned");
+        assert!(!added_again);
+    }
+
+    // -------------------------------------------------------------------
+    // CompositionChain::entries
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn composition_chain_entries_returns_the_real_ordered_segments() {
+        let mut chain = CompositionChain::new();
+        chain.push("auth");
+        chain.push("user");
+        assert_eq!(chain.entries(), &["auth".to_string(), "user".to_string()]);
+    }
+
+    // -------------------------------------------------------------------
+    // SpecificationSuite: names/remove_spec/len/is_empty
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn specification_suite_enumeration_and_removal_reflect_real_state() {
+        let mut suite = SpecificationSuite::default();
+        suite.add_spec(ExecutableSpec::new("Spec 1", "First"));
+        suite.add_spec(ExecutableSpec::new("Spec 2", "Second"));
+
+        let names: Vec<&str> = suite.names().collect();
+        assert_eq!(names, vec!["Spec 1", "Spec 2"]);
+        assert_eq!(suite.len(), 2);
+        assert!(!suite.is_empty());
+
+        let removed = suite.remove_spec("Spec 1").expect("registered spec");
+        assert_eq!(removed.name(), "Spec 1");
+        assert!(suite.get_spec("Spec 1").is_err());
+        assert_eq!(suite.len(), 1);
+    }
+
+    // -------------------------------------------------------------------
+    // ExecutableSpec::parameter_value (safe accessor vs. the raw-index
+    // panic boundary the validate() predicate is otherwise exposed to)
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn executable_spec_parameter_value_avoids_the_raw_index_panic_for_a_missing_key() {
+        let spec = ExecutableSpec::new("Partial", "Only default params");
+        assert_eq!(spec.parameter_value("total_nodes"), Some(10));
+        assert_eq!(spec.parameter_value("nonexistent_key"), None);
+
+        let result = spec.validate(|_| spec.parameter_value("nonexistent_key").is_none());
+        assert!(result.is_ok());
+        assert!(result.expect("checked Ok above"));
+    }
+
+    #[test]
+    #[should_panic]
+    fn executable_spec_validate_predicate_indexing_a_missing_key_panics() {
+        let spec = ExecutableSpec::new("Partial", "Only default params");
+        // Documents the existing contract: indexing a BTreeMap with an
+        // absent key panics rather than surfacing as the Err the
+        // FrontierResult signature implies -- exactly why parameter_value
+        // exists as the safe alternative.
+        let _ = spec.validate(|params| params["nonexistent_key"] == 0);
     }
 }
