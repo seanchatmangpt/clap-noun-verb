@@ -3,9 +3,7 @@
 
 [advisories]
 # advisories checks are enabled by default. Ignore lists can be added below.
-ignore = [
-    "RUSTSEC-2024-0370", # proc-macro-error is unmaintained
-]
+ignore = []
 
 [licenses]
 unused-allowed-license = "allow"
