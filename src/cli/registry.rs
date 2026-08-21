@@ -263,7 +263,19 @@ pub struct ArgMetadata {
     pub value_name: Option<String>,
     /// Aliases for the argument (e.g., ["verbose", "v"])
     pub aliases: Vec<String>,
-    /// Positional argument index (e.g., 0, 1, 2)
+    /// Positional argument index, already in clap's own 1-based numbering
+    /// (1 = first positional, 2 = second, ...) -- i.e. this is the exact value
+    /// passed straight through to `clap::Arg::index()` in `build_argument` below.
+    ///
+    /// This is *not* the same numbering as the public, documented
+    /// `#[arg(index = N)]` macro attribute, which uses 0 for the first
+    /// positional (see `examples/tutorial/positional.rs` and `CHANGELOG.md`).
+    /// The macro converts the user-facing 0-based `index = N` to this
+    /// 1-based, clap-ready value at parse time
+    /// (`clap-noun-verb-macros/src/lib.rs`, the `"index" =>` arm) so that this
+    /// field has one consistent meaning regardless of whether it was
+    /// populated by the macro or built by hand (as
+    /// `tests/command_chaining.rs` does via `register_verb_with_args`).
     pub positional: Option<usize>,
     /// Custom action type (e.g., Count, SetFalse)
     pub action: Option<clap::ArgAction>,
@@ -640,6 +652,11 @@ impl CommandRegistry {
             Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
 
         let mut arg = if let Some(index) = arg_meta.positional {
+            // `arg_meta.positional` is already clap's own 1-based index (see the
+            // field doc above) -- passed straight through here. The 0-based ->
+            // 1-based conversion for the public `#[arg(index = N)]` macro syntax
+            // happens once, at macro-parse time
+            // (`clap-noun-verb-macros/src/lib.rs`, the `"index" =>` arm), not here.
             let mut pos_arg = clap::Arg::new(arg_name).index(index);
             if arg_meta.trailing_vararg {
                 pos_arg = pos_arg.num_args(1..);

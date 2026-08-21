@@ -1970,14 +1970,32 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         }
                                     }
                                     "index" => {
-                                        // Parse index = 0 (positional argument index)
+                                        // Parse index = 0 (positional argument index).
+                                        //
+                                        // The public, documented `#[arg(index = N)]`
+                                        // syntax is 0-based: `index = 0` is the first
+                                        // positional, `index = 1` the second, etc. --
+                                        // see examples/tutorial/positional.rs and
+                                        // CHANGELOG.md. clap's own `Arg::index()` is
+                                        // 1-based (`.index(1)` == "first positional"),
+                                        // so convert here, at the one place the
+                                        // public 0-based literal is parsed, to the
+                                        // 1-based value `ArgMetadata::positional`
+                                        // actually stores and that
+                                        // `registry::build_argument` passes straight
+                                        // through to clap. Without this conversion,
+                                        // two 0-based positionals (`index = 0`,
+                                        // `index = 1`) both land on clap index 1 and
+                                        // clap's debug_asserts panics at runtime --
+                                        // see
+                                        // tests/positional_args.rs::test_positional_args_use_documented_zero_based_index.
                                         if let syn::Expr::Lit(syn::ExprLit {
                                             lit: syn::Lit::Int(i),
                                             ..
                                         }) = &nv.value
                                         {
                                             if let Ok(index) = i.base10_parse::<usize>() {
-                                                config.positional = Some(index);
+                                                config.positional = Some(index.saturating_add(1));
                                             }
                                         }
                                     }
