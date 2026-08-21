@@ -1,6 +1,6 @@
 [package]
 name = "clap-noun-verb-any"
-version = "26.8.22"
+version = "26.9.1"
 edition = "2021"
 rust-version = "1.74"
 license = "MIT OR Apache-2.0"
@@ -21,8 +21,8 @@ exclude = ["playground/"]
 [workspace]
 
 [dependencies]
-clap-noun-verb = { path = "..", version = "26.8.22" }
-clap-noun-verb-deploy = { path = "../clap-noun-verb-deploy", version = "26.8.22" }
+clap-noun-verb = { path = "..", version = "26.9.1" }
+clap-noun-verb-deploy = { path = "../clap-noun-verb-deploy", version = "26.9.1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
