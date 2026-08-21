@@ -3915,6 +3915,54 @@ mod tests {
             prop_assert_eq!(trajectory.is_monotonic(), expected);
         }
 
+        /// For ANY sequence of valid scores fed through `observe`,
+        /// followed by `reset`, followed by ANY second, independently
+        /// generated sequence of valid scores fed through `observe`
+        /// again: the trajectory is genuinely emptied by `reset`
+        /// (`is_empty`, `len`, `mean`, and `latest` all agree it holds
+        /// nothing) regardless of how many observations preceded the
+        /// reset, and the sequence counter itself restarts at zero --
+        /// every post-reset `observe` call returns the sequence number
+        /// matching its own position in the post-reset sequence, never
+        /// continuing from wherever the pre-reset sequence left off. The
+        /// only existing test for `reset` (above) exercises exactly one
+        /// fixed three-observation pre-reset history and one fixed
+        /// post-reset observation; this generalizes across an arbitrary
+        /// pre-reset history length (including zero) and an arbitrary
+        /// post-reset sequence length, confirming `reset` is a real full
+        /// clear of both the observation history and the sequence
+        /// counter, not a partial clear that merely hides stale state.
+        #[test]
+        fn reset_is_a_genuine_full_clear_independent_of_pre_reset_history(
+            pre_reset_scores in prop::collection::vec(score_strategy(), 0..8),
+            post_reset_scores in prop::collection::vec(score_strategy(), 0..8)
+        ) {
+            let mut trajectory = LearningTrajectory::default();
+            for &score in &pre_reset_scores {
+                trajectory
+                    .observe(score)
+                    .expect("generated score is within the valid 0.0..=1.0 range");
+            }
+
+            trajectory.reset();
+            prop_assert!(trajectory.is_empty());
+            prop_assert_eq!(trajectory.len(), 0);
+            prop_assert_eq!(trajectory.mean(), None);
+            prop_assert_eq!(trajectory.latest(), None);
+
+            for (position, &score) in post_reset_scores.iter().enumerate() {
+                let sequence = trajectory
+                    .observe(score)
+                    .expect("generated score is within the valid 0.0..=1.0 range");
+                prop_assert_eq!(
+                    sequence,
+                    position as u64,
+                    "post-reset sequence numbers must restart at zero and track only \
+                     post-reset position, independent of the pre-reset history's length"
+                );
+            }
+        }
+
         /// For ANY set of registered `DiscoveryRecord`s (arbitrary
         /// names, tags, and routes) and ANY query tag set,
         /// `search_all_tags` returns exactly the subset of registered
