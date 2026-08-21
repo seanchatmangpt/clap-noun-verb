@@ -2,7 +2,7 @@
 
 [packs.clap-noun-verb-autonomic-pack]
 source = "path:/Users/sac/ggen-marketplace/packs/clap-noun-verb-autonomic-pack"
-content_hash = "blake3:f189c49039a0d008d004ff66d4f9aee04084a268fa02c268e7c9e25742da368e"
+content_hash = "blake3:85ba6043c2fc0608041b2d56a72753be87fd2a1376161f2c6ddaaa31718959f0"
 
 [packs.clap-noun-verb-policies-pack]
 source = "path:/Users/sac/ggen-marketplace/packs/clap-noun-verb-policies-pack"

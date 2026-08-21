@@ -763,6 +763,203 @@ pub fn read_and_verify_delegation_ledger(path: &Path) -> Result<Vec<Delegation>>
     Ok(delegations)
 }
 
+// =============================================================================
+// Governance
+// =============================================================================
+
+/// One named policy that votes on whether an invocation should be
+/// admitted. Composes with the rest of the Autonomic Layer through the
+/// same [`GuardContext`] every [`Guard`] evaluates against -- a
+/// [`GovernancePanel`] itself implements [`Guard`], so it plugs directly
+/// into `CommandRegistry::add_guard` alongside any other guard.
+pub trait GovernanceRule: Send + Sync {
+    /// A short, stable identifier for this rule (appears in the recorded
+    /// verdict and in denial output).
+    fn rule_id(&self) -> &'static str;
+    /// Whether this rule approves `ctx`. Rules never panic; a rule that
+    /// cannot form an opinion should conservatively return `false`
+    /// (fail-closed), matching every gate in this ecosystem's convention.
+    fn approve(&self, ctx: &GuardContext<'_>) -> bool;
+}
+
+/// The outcome of evaluating a [`GovernancePanel`] against one invocation:
+/// which rules approved, which denied, and whether the panel as a whole
+/// admits the invocation (every registered rule must approve -- fail
+/// closed, consistent with every ggen admission gate in this ecosystem).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceVerdict {
+    pub approved_by: Vec<String>,
+    pub denied_by: Vec<String>,
+    pub approved: bool,
+}
+
+/// An ordered collection of [`GovernanceRule`]s evaluated together as one
+/// [`Guard`]. Every registered rule must approve for the panel to admit an
+/// invocation -- there is no majority/quorum relaxation, matching the
+/// fail-closed discipline the rest of this module (and every ggen
+/// admission gate) already follows.
+#[derive(Default)]
+pub struct GovernancePanel {
+    rules: Vec<Box<dyn GovernanceRule>>,
+}
+
+impl GovernancePanel {
+    #[must_use]
+    pub fn new() -> Self {
+        Self { rules: Vec::new() }
+    }
+
+    /// Register a rule. Rules run in registration order; every rule always
+    /// runs, so a verdict names every rule that denied, not just the
+    /// first one found.
+    pub fn add_rule(&mut self, rule: Box<dyn GovernanceRule>) -> &mut Self {
+        self.rules.push(rule);
+        self
+    }
+
+    /// Evaluate every registered rule against `ctx` and return the full
+    /// verdict. An empty panel (no rules registered) approves by
+    /// definition -- an intentionally absent governance layer is not the
+    /// same as a governance layer that has denied everything.
+    #[must_use]
+    pub fn evaluate(&self, ctx: &GuardContext<'_>) -> GovernanceVerdict {
+        let mut approved_by = Vec::new();
+        let mut denied_by = Vec::new();
+        for rule in &self.rules {
+            if rule.approve(ctx) {
+                approved_by.push(rule.rule_id().to_string());
+            } else {
+                denied_by.push(rule.rule_id().to_string());
+            }
+        }
+        let approved = denied_by.is_empty();
+        GovernanceVerdict { approved_by, denied_by, approved }
+    }
+}
+
+impl Guard for GovernancePanel {
+    fn name(&self) -> &'static str {
+        "governance-panel"
+    }
+
+    fn check(&self, ctx: &GuardContext<'_>) -> std::result::Result<(), GuardDenial> {
+        let verdict = self.evaluate(ctx);
+        if verdict.approved {
+            return Ok(());
+        }
+        Err(GuardDenial::new(
+            "GOVERNANCE_DENIED",
+            format!("denied by governance rule(s): {}", verdict.denied_by.join(", ")),
+        ))
+    }
+}
+
+/// One append-only, hash-chained record of a governance evaluation --
+/// same FNV-1a/[`GENESIS_DIGEST`] scheme as [`Receipt`] and [`Delegation`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GovernanceRecord {
+    pub sequence: u64,
+    pub noun: String,
+    pub verb: String,
+    pub approved_by: Vec<String>,
+    pub denied_by: Vec<String>,
+    pub approved: bool,
+    pub time: String,
+    pub prev_digest: String,
+    pub digest: String,
+}
+
+#[allow(clippy::too_many_arguments)]
+fn compute_governance_digest(
+    sequence: u64,
+    noun: &str,
+    verb: &str,
+    approved_by: &[String],
+    denied_by: &[String],
+    approved: bool,
+    time: &str,
+    prev_digest: &str,
+) -> String {
+    let canonical = format!(
+        "{sequence}|{noun}|{verb}|{}|{}|{approved}|{time}|{prev_digest}",
+        approved_by.join(","),
+        denied_by.join(",")
+    );
+    format!("{:016x}", fnv1a_64(canonical.as_bytes()))
+}
+
+impl GovernanceRecord {
+    /// Build the next governance record in a chain from a real
+    /// [`GovernanceVerdict`].
+    #[must_use]
+    pub fn next(
+        previous: Option<&Self>,
+        noun: &str,
+        verb: &str,
+        verdict: &GovernanceVerdict,
+        time: String,
+    ) -> Self {
+        let sequence = previous.map_or(0, |r| r.sequence + 1);
+        let prev_digest = previous.map_or_else(|| GENESIS_DIGEST.to_string(), |r| r.digest.clone());
+        let digest = compute_governance_digest(
+            sequence,
+            noun,
+            verb,
+            &verdict.approved_by,
+            &verdict.denied_by,
+            verdict.approved,
+            &time,
+            &prev_digest,
+        );
+        Self {
+            sequence,
+            noun: noun.to_string(),
+            verb: verb.to_string(),
+            approved_by: verdict.approved_by.clone(),
+            denied_by: verdict.denied_by.clone(),
+            approved: verdict.approved,
+            time,
+            prev_digest,
+            digest,
+        }
+    }
+
+    #[must_use]
+    pub fn digest_is_consistent(&self) -> bool {
+        compute_governance_digest(
+            self.sequence,
+            &self.noun,
+            &self.verb,
+            &self.approved_by,
+            &self.denied_by,
+            self.approved,
+            &self.time,
+            &self.prev_digest,
+        ) == self.digest
+    }
+}
+
+/// Verify a governance-record chain forms one unbroken, internally
+/// consistent hash chain from the genesis digest.
+pub fn verify_governance_chain(
+    records: &[GovernanceRecord],
+) -> std::result::Result<(), ChainVerificationError> {
+    for (index, record) in records.iter().enumerate() {
+        if !record.digest_is_consistent() {
+            return Err(ChainVerificationError::DigestMismatch { index });
+        }
+        let expected_prev =
+            if index == 0 { GENESIS_DIGEST } else { records[index - 1].digest.as_str() };
+        if record.prev_digest != expected_prev {
+            if index == 0 {
+                return Err(ChainVerificationError::InvalidGenesis);
+            }
+            return Err(ChainVerificationError::ChainBroken { index });
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1257,5 +1454,133 @@ mod tests {
         assert_eq!(delegations[1].constraint.as_deref(), Some("staging only"));
 
         std::fs::remove_file(&path).ok();
+    }
+
+    struct AlwaysApprove;
+    impl GovernanceRule for AlwaysApprove {
+        fn rule_id(&self) -> &'static str {
+            "always-approve"
+        }
+        fn approve(&self, _ctx: &GuardContext<'_>) -> bool {
+            true
+        }
+    }
+
+    struct AlwaysDeny;
+    impl GovernanceRule for AlwaysDeny {
+        fn rule_id(&self) -> &'static str {
+            "always-deny"
+        }
+        fn approve(&self, _ctx: &GuardContext<'_>) -> bool {
+            false
+        }
+    }
+
+    struct DenyMutatingEffect;
+    impl GovernanceRule for DenyMutatingEffect {
+        fn rule_id(&self) -> &'static str {
+            "deny-mutating"
+        }
+        fn approve(&self, ctx: &GuardContext<'_>) -> bool {
+            ctx.args.get("effect").and_then(|v| v.as_str()) != Some("mutating")
+        }
+    }
+
+    #[test]
+    fn test_empty_governance_panel_approves_by_definition() {
+        let panel = GovernancePanel::new();
+        let args = serde_json::json!({});
+        let ctx = GuardContext { noun: "fleet", verb: "deploy", args: &args };
+        let verdict = panel.evaluate(&ctx);
+        assert!(verdict.approved);
+        assert!(verdict.approved_by.is_empty());
+        assert!(verdict.denied_by.is_empty());
+    }
+
+    #[test]
+    fn test_governance_panel_requires_every_registered_rule_to_approve() {
+        let mut panel = GovernancePanel::new();
+        panel.add_rule(Box::new(AlwaysApprove));
+        panel.add_rule(Box::new(AlwaysDeny));
+        let args = serde_json::json!({});
+        let ctx = GuardContext { noun: "fleet", verb: "deploy", args: &args };
+
+        let verdict = panel.evaluate(&ctx);
+        assert!(!verdict.approved);
+        assert_eq!(verdict.approved_by, vec!["always-approve".to_string()]);
+        assert_eq!(verdict.denied_by, vec!["always-deny".to_string()]);
+    }
+
+    #[test]
+    fn test_governance_panel_as_a_guard_refuses_via_the_real_guard_trait() {
+        let mut panel = GovernancePanel::new();
+        panel.add_rule(Box::new(DenyMutatingEffect));
+
+        let read_only_args = serde_json::json!({"effect": "read_only"});
+        let read_only_ctx = GuardContext { noun: "fleet", verb: "status", args: &read_only_args };
+        assert!(Guard::check(&panel, &read_only_ctx).is_ok());
+
+        let mutating_args = serde_json::json!({"effect": "mutating"});
+        let mutating_ctx = GuardContext { noun: "fleet", verb: "deploy", args: &mutating_args };
+        let denial =
+            Guard::check(&panel, &mutating_ctx).expect_err("mutating effect must be denied");
+        assert_eq!(denial.code, "GOVERNANCE_DENIED");
+        assert!(denial.reason.contains("deny-mutating"));
+    }
+
+    #[test]
+    fn test_governance_record_chain_starts_at_genesis_and_links_correctly() {
+        let mut panel = GovernancePanel::new();
+        panel.add_rule(Box::new(AlwaysApprove));
+        let args = serde_json::json!({});
+        let ctx = GuardContext { noun: "fleet", verb: "deploy", args: &args };
+        let verdict = panel.evaluate(&ctx);
+
+        let first = GovernanceRecord::next(
+            None,
+            "fleet",
+            "deploy",
+            &verdict,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        assert_eq!(first.sequence, 0);
+        assert_eq!(first.prev_digest, GENESIS_DIGEST);
+        assert!(first.digest_is_consistent());
+        assert!(first.approved);
+
+        let second = GovernanceRecord::next(
+            Some(&first),
+            "fleet",
+            "destroy",
+            &verdict,
+            "2026-01-01T00:01:00Z".to_string(),
+        );
+        assert_eq!(second.sequence, 1);
+        assert_eq!(second.prev_digest, first.digest);
+        assert!(verify_governance_chain(&[first, second]).is_ok());
+    }
+
+    #[test]
+    fn test_verify_governance_chain_rejects_a_tampered_record() {
+        let mut panel = GovernancePanel::new();
+        panel.add_rule(Box::new(AlwaysDeny));
+        let args = serde_json::json!({});
+        let ctx = GuardContext { noun: "fleet", verb: "deploy", args: &args };
+        let verdict = panel.evaluate(&ctx);
+
+        let genuine = GovernanceRecord::next(
+            None,
+            "fleet",
+            "deploy",
+            &verdict,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        let mut tampered = genuine.clone();
+        tampered.approved = true;
+        assert!(!tampered.digest_is_consistent());
+        assert!(matches!(
+            verify_governance_chain(&[tampered]),
+            Err(ChainVerificationError::DigestMismatch { index: 0 })
+        ));
     }
 }
