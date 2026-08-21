@@ -1,5 +1,6 @@
 @prefix cnv-autonomic: <https://clap-noun-verb.dev/ontology/autonomic#> .
 @prefix cnv-policies: <https://clap-noun-verb.dev/ontology/policies#> .
+@prefix cnv-telemetry: <https://clap-noun-verb.dev/ontology/telemetry#> .
 
 cnv-autonomic:ClapNounVerbAutonomicConfig
     a cnv-autonomic:Config ;
@@ -13,3 +14,8 @@ cnv-policies:ClapNounVerbPoliciesConfig
     cnv-policies:pruneAfterDays "7" ;
     cnv-policies:trybuildPath "tests/trybuild" ;
     cnv-policies:requireCleanTreeDefault "true" .
+
+cnv-telemetry:ClapNounVerbTelemetryConfig
+    a cnv-telemetry:Config ;
+    cnv-telemetry:schemaVersion "1.0.0" ;
+    cnv-telemetry:cliVersion "26.8.22" .

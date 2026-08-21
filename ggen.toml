@@ -13,6 +13,7 @@ source = "ontology.ttl"
 [ontology.prefixes]
 cnv-autonomic = "https://clap-noun-verb.dev/ontology/autonomic#"
 cnv-policies = "https://clap-noun-verb.dev/ontology/policies#"
+cnv-telemetry = "https://clap-noun-verb.dev/ontology/telemetry#"
 rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
@@ -20,6 +21,7 @@ xsd = "http://www.w3.org/2001/XMLSchema#"
 [packs]
 clap-noun-verb-autonomic-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-autonomic-pack" }
 clap-noun-verb-policies-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-policies-pack" }
+clap-noun-verb-telemetry-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-telemetry-pack" }
 
 [templates]
 # No project-local templates of our own (only the composed pack's
