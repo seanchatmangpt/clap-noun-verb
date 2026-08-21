@@ -55,6 +55,7 @@ fn two_real_dispatched_verbs_produce_a_spec_shaped_ocel_document() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("list").with_noun("ocel_it_widgets"),
     };
@@ -63,6 +64,7 @@ fn two_real_dispatched_verbs_produce_a_spec_shaped_ocel_document() {
 
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("create").with_noun("ocel_it_widgets"),
     };

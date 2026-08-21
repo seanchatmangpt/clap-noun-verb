@@ -61,6 +61,7 @@ fn a_real_guard_refuses_a_real_dispatch_before_the_handler_ever_runs() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("action").with_noun("guard_it_refused"),
     };
@@ -99,6 +100,7 @@ fn a_registered_guard_does_not_affect_dispatch_of_an_unrelated_noun() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("ping").with_noun("guard_it_unaffected"),
     };

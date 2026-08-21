@@ -100,6 +100,7 @@ fn two_thousand_concurrent_real_dispatches_keep_the_ledgers_valid_and_self_consi
                     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
                     let input = HandlerInput {
                         args: HashMap::new(),
+                        args_multi: HashMap::new(),
                         opts: HashMap::new(),
                         context: HandlerContext::new("ping").with_noun("scaled_load_probe"),
                     };

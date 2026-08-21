@@ -797,13 +797,22 @@ impl CommandRegistry {
         None
     }
 
-    /// Extract arguments from clap matches into a HashMap
+    /// Extract arguments from clap matches into a HashMap.
+    ///
+    /// Returns `(args, args_multi)`: `args` is the legacy scalar
+    /// `String`-valued map (comma-joined for `ArgAction::Append`, kept for
+    /// backward compatibility); `args_multi` carries the exact `Vec<String>`
+    /// of every occurrence for `ArgAction::Append` arguments, with no
+    /// lossy join/split round-trip. See [`crate::logic::HandlerInput`].
     fn extract_args(
         &self,
         verb_meta: &VerbMetadata,
         verb_matches: &clap::ArgMatches,
-    ) -> std::collections::HashMap<String, String> {
+    ) -> (std::collections::HashMap<String, String>, std::collections::HashMap<String, Vec<String>>)
+    {
         let mut args_map = std::collections::HashMap::new();
+        let mut args_multi_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
 
         for arg_meta in &verb_meta.args {
             let arg_name = &arg_meta.name;
@@ -833,7 +842,13 @@ impl CommandRegistry {
                     clap::ArgAction::Append => {
                         if let Some(values) = verb_matches.get_many::<String>(arg_name) {
                             let values_vec: Vec<String> = values.cloned().collect();
+                            // Legacy comma-joined view -- lossy whenever a real
+                            // occurrence contains a comma or significant
+                            // whitespace, kept only for backward compatibility
+                            // with code reading `args` directly. The lossless
+                            // values are in `args_multi_map` below.
                             args_map.insert(arg_name.clone(), values_vec.join(","));
+                            args_multi_map.insert(arg_name.clone(), values_vec);
                         }
                     }
                     _ => {
@@ -853,7 +868,7 @@ impl CommandRegistry {
             }
         }
 
-        args_map
+        (args_map, args_multi_map)
     }
 
     /// Run CLI with auto-discovered commands
@@ -1019,10 +1034,11 @@ impl CommandRegistry {
 
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
-                let args_map = self.extract_args(verb_meta, sub_matches);
+                let (args_map, args_multi_map) = self.extract_args(verb_meta, sub_matches);
 
                 let input = crate::logic::HandlerInput {
                     args: args_map,
+                    args_multi: args_multi_map,
                     opts: std::collections::HashMap::new(),
                     context: crate::logic::HandlerContext::new(subcommand_name),
                 };
@@ -1045,18 +1061,19 @@ impl CommandRegistry {
                 Ok(output)
             } else if let Some((verb_name, verb_matches)) = sub_matches.subcommand() {
                 let noun_name = subcommand_name;
-                let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
+                let (args_map, args_multi_map) = if let Some(verbs) = self.verbs.get(noun_name) {
                     if let Some(verb_meta) = verbs.get(verb_name) {
                         self.extract_args(verb_meta, verb_matches)
                     } else {
-                        std::collections::HashMap::new()
+                        (std::collections::HashMap::new(), std::collections::HashMap::new())
                     }
                 } else {
-                    std::collections::HashMap::new()
+                    (std::collections::HashMap::new(), std::collections::HashMap::new())
                 };
 
                 let input = crate::logic::HandlerInput {
                     args: args_map,
+                    args_multi: args_multi_map,
                     opts: std::collections::HashMap::new(),
                     context: crate::logic::HandlerContext::new(verb_name).with_noun(noun_name),
                 };

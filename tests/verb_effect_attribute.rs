@@ -41,6 +41,7 @@ fn verb_effect_attribute_produces_a_real_receipt_with_the_declared_effect() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("status").with_noun("verb_effect_it_fleet"),
     };
@@ -81,6 +82,7 @@ fn a_verb_with_no_declared_effect_still_records_unknown_honestly() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("ping").with_noun("verb_effect_it_no_declaration"),
     };

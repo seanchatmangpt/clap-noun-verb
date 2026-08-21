@@ -61,6 +61,7 @@ fn two_real_dispatched_verbs_produce_a_real_verifiable_receipt_chain() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("list").with_noun("autonomic_it_widgets"),
     };
@@ -69,6 +70,7 @@ fn two_real_dispatched_verbs_produce_a_real_verifiable_receipt_chain() {
 
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("explode").with_noun("autonomic_it_widgets"),
     };
@@ -120,6 +122,7 @@ fn a_root_verb_dispatch_produces_a_real_receipt_under_the_pseudo_noun() {
     let registry = registry_lock.lock().unwrap_or_else(|e| e.into_inner());
     let input = HandlerInput {
         args: HashMap::new(),
+        args_multi: HashMap::new(),
         opts: HashMap::new(),
         context: HandlerContext::new("autonomic_it_ping"),
     };

@@ -144,3 +144,61 @@ fn test_vec_param_extracts_single_occurrence() -> Result<()> {
 
     Ok(())
 }
+
+/// Adversarial round-trip repro: a real occurrence's own value contains a
+/// comma, and a real occurrence's value is pure/significant whitespace.
+///
+/// Root cause (found by adversarial verification, confirmed live in this
+/// session): `extract_args`'s `ArgAction::Append` arm
+/// (`src/cli/registry.rs`) collapsed the real, correctly-clap-parsed
+/// `Vec<String>` into ONE comma-joined `String` via `values_vec.join(",")`,
+/// stored in `HandlerInput.args`. The `#[verb]` macro's `Vec<T>` extraction
+/// then re-split that string on `,` and trimmed each piece
+/// (`value_str.split(',').map(|s| s.trim().parse(..))`). That round trip is
+/// lossy whenever a real occurrence's value itself contains a comma
+/// (spuriously splits one occurrence into two) or leading/trailing
+/// whitespace (silently stripped).
+///
+/// Before the fix: `probe tags --tags "a,b" --tags "c" --tags "  spaced  "`
+/// (3 real occurrences) incorrectly returned 4 elements
+/// (`["a", "b", "c", "spaced"]`) with whitespace stripped.
+///
+/// After the fix: `extract_args` also populates `HandlerInput.args_multi`
+/// with the exact, un-joined `Vec<String>` of every occurrence, and the
+/// macro's `Vec<T>` extraction reads from `args_multi` (verbatim for
+/// `Vec<String>`, no split/trim) instead of re-parsing the legacy
+/// comma-joined `args` string -- so this returns exactly the real 3
+/// elements, values preserved byte-for-byte.
+#[test]
+fn test_vec_param_preserves_commas_and_whitespace_in_values() -> Result<()> {
+    let registry = clap_noun_verb::cli::registry::CommandRegistry::get();
+    let registry = registry.lock().unwrap_or_else(|e| e.into_inner());
+
+    let output = registry.execute_single_step(vec![
+        "clap-noun-verb".to_string(),
+        "probe".to_string(),
+        "tags".to_string(),
+        "--tags".to_string(),
+        "a,b".to_string(),
+        "--tags".to_string(),
+        "c".to_string(),
+        "--tags".to_string(),
+        "  spaced  ".to_string(),
+    ])?;
+
+    assert_eq!(
+        output.data["count"], 3,
+        "3 real --tags occurrences must extract as 3 elements, not 4 (comma \
+         inside a value must never be treated as a separator): {:?}",
+        output.data
+    );
+    assert_eq!(
+        output.data["tags"],
+        serde_json::json!(["a,b", "c", "  spaced  "]),
+        "every occurrence's value must round-trip byte-for-byte, including \
+         an embedded comma and significant leading/trailing whitespace: {:?}",
+        output.data
+    );
+
+    Ok(())
+}

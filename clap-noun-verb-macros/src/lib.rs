@@ -1062,22 +1062,39 @@ fn generate_verb_registration(
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_vec {
-                // Vec<T> types - extract from __handler_input.args as comma-separated string, then parse
-                // The registry extracts multiple values and joins them
+                // Vec<T> types -- extract the exact repeated-flag occurrences
+                // from __handler_input.args_multi (populated losslessly by
+                // extract_args's ArgAction::Append arm in
+                // src/cli/registry.rs), never from the legacy comma-joined
+                // __handler_input.args string. Reading the joined string and
+                // re-splitting on ',' silently corrupted any real occurrence
+                // whose own value contained a comma, and always stripped
+                // leading/trailing whitespace -- both fixed by reading the
+                // real Vec<String> directly.
                 let vec_ty = &pat_type.ty;
-                arg_extractions.push(quote! {
-                    let #arg_name: #vec_ty = if let Some(value_str) = __handler_input.args.get(#arg_name_str) {
-                        // Parse comma-separated values
-                        value_str.split(',')
-                            .map(|s| s.trim().parse::<#vec_inner_type>())
-                            .collect::<::std::result::Result<Vec<_>, _>>()
-                            .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
-                                format!("Invalid value for argument '{}'", #arg_name_str)
-                            ))?
-                    } else {
-                        Vec::new()
-                    };
-                });
+                if is_string_type(&vec_inner_type) {
+                    // String's value is used verbatim -- no parse, no trim --
+                    // so whitespace-significant occurrences round-trip exactly.
+                    arg_extractions.push(quote! {
+                        let #arg_name: #vec_ty = __handler_input.args_multi
+                            .get(#arg_name_str)
+                            .cloned()
+                            .unwrap_or_default();
+                    });
+                } else {
+                    arg_extractions.push(quote! {
+                        let #arg_name: #vec_ty = if let Some(values) = __handler_input.args_multi.get(#arg_name_str) {
+                            values.iter()
+                                .map(|s| s.trim().parse::<#vec_inner_type>())
+                                .collect::<::std::result::Result<Vec<_>, _>>()
+                                .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
+                                    format!("Invalid value for argument '{}'", #arg_name_str)
+                                ))?
+                        } else {
+                            Vec::new()
+                        };
+                    });
+                }
                 arg_calls.push(quote! { #arg_name });
             } else if is_option {
                 // Optional arguments
@@ -1840,6 +1857,21 @@ fn is_vec_type(ty: &syn::Type) -> bool {
     if let syn::Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {
             segment.ident == "Vec"
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
+/// Check if type is String (used to decide whether a `Vec<T>` element type
+/// needs its exact value preserved -- no trim -- instead of trim-then-parse;
+/// see the `is_vec` extraction arm in `generate_verb_registration`).
+fn is_string_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            segment.ident == "String"
         } else {
             false
         }
