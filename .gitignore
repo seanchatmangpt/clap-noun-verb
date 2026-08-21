@@ -86,3 +86,10 @@ vendors/
 vendors/
 clap-nv.toml
 __pycache__/
+
+# Real OCEL 2.0 event log / autonomic receipt ledger, written by
+# src/ocel.rs / src/autonomic.rs at their default cwd-relative path
+# whenever CLAP_NOUN_VERB_OCEL_PATH / CLAP_NOUN_VERB_RECEIPT_PATH aren't
+# set (e.g. running the test suite or a built CLI directly in this repo).
+.clap-noun-verb/
+**/.clap-noun-verb/

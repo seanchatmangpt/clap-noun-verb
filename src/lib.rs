@@ -14,12 +14,14 @@
 // =============================================================================
 
 pub mod async_verb;
+pub mod autonomic;
 pub mod builder;
 pub mod cli;
 pub mod error;
 pub mod logic;
 pub mod macros;
 pub mod noun;
+pub mod ocel;
 #[cfg(feature = "otel")]
 pub mod otel;
 pub mod registry;
@@ -81,6 +83,7 @@ pub use builder::{build_cli, run_cli, run_cli_with_args, CliBuilder};
 pub use cli::run;
 pub use error::{ActionTemplate, ErrorKind, NounVerbError, Result, Severity, StructuredError};
 pub use noun::{CompoundNounCommand, NounCommand, NounContext};
+pub use ocel::{DriftReport, OcelDocument, OcelEvent, OcelObject};
 pub use registry::CommandRegistry;
 pub use tree::{CommandTree, CommandTreeBuilder};
 pub use verb::{VerbArgs, VerbCommand, VerbContext};

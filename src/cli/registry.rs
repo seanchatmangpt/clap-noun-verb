@@ -414,7 +414,21 @@ impl CommandRegistry {
             )
         })?;
 
-        (verb.handler_fn)(input)
+        let start = std::time::Instant::now();
+        let result = (verb.handler_fn)(input);
+        let duration_ms = start.elapsed().as_millis();
+        crate::ocel::record_invocation(noun_name, verb_name, result.is_ok(), duration_ms);
+        // Effect::Unknown: no macro-level attribute yet declares a verb's
+        // effect kind (read-only/mutating/idempotent) -- see
+        // src/autonomic.rs's module doc. Never guessed as ReadOnly/Idempotent
+        // without a real declaration to back it.
+        crate::autonomic::record_receipt(
+            noun_name,
+            verb_name,
+            crate::autonomic::Effect::Unknown,
+            result.is_ok(),
+        );
+        result
     }
 
     /// Build clap command structure from registry
@@ -1032,7 +1046,20 @@ impl CommandRegistry {
             crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
         })?;
 
-        (verb.handler_fn)(input)
+        let start = std::time::Instant::now();
+        let result = (verb.handler_fn)(input);
+        let duration_ms = start.elapsed().as_millis();
+        // Root verbs have no noun; use "_root" as the pseudo-noun so the OCEL
+        // "command" object id ("_root:<verb>") stays distinct from any real
+        // noun:verb pair and remains stable/idempotent across invocations.
+        crate::ocel::record_invocation("_root", verb_name, result.is_ok(), duration_ms);
+        crate::autonomic::record_receipt(
+            "_root",
+            verb_name,
+            crate::autonomic::Effect::Unknown,
+            result.is_ok(),
+        );
+        result
     }
 }
 
