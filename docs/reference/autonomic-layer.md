@@ -102,15 +102,35 @@ The two `crate::autonomic::record_receipt(...)` call sites inside
 declared, hand-edited exception: ggen emits whole files, not patches into
 pre-existing hand-owned framework dispatch code.
 
+## Execution contracts, guards, and delegation
+
+- `#[verb(..., effect = "read_only" | "mutating" | "idempotent")]` is a real
+  macro attribute (`clap-noun-verb-macros`) that lets a verb author declare
+  its `Effect`; declared verbs record that real effect on their `Receipt`
+  instead of the `Effect::Unknown` fallback used for undeclared ones.
+- `ExecutionContract::for_verb(noun, verb, effect)` mechanically derives an
+  `IsolationLevel` and `idempotent` flag from a verb's declared `Effect` --
+  no second, hand-authored source of truth to drift out of sync (see
+  `test_isolation_level_for_effect_never_contradicts_execution_contract_for_verb`).
+- `Guard`/`GuardSet` are real: `CommandRegistry::add_guard` registers a
+  process-wide guard, and `admit_or_refuse` runs every registered guard
+  before a verb's handler dispatches, recording a failed `Receipt` and
+  returning a `NounVerbError` on denial.
+- `Delegation` is a real, hash-chained (same FNV-1a/`GENESIS_DIGEST` scheme
+  as `Receipt`) agent-to-agent authorization chain:
+  `Delegation::next`/`digest_is_consistent`/`grants`, `verify_delegation_chain`,
+  and `is_authorized(delegations, root, agent, noun, verb)` (a bounded
+  transitive walk: root delegates to A, which delegates to B, ..., ending
+  at `agent`). Persisted the same way as receipts --
+  `record_delegation`/`read_and_verify_delegation_ledger`, with its own
+  primary/fallback path pair (`CLAP_NOUN_VERB_DELEGATION_PATH`, default
+  `.clap-noun-verb/delegations.jsonl`).
+
 ## What's not yet built
 
-- No macro-level `#[verb(effect = "read_only")]`-style attribute exists
-  yet to let a verb author declare a real `Effect` -- every receipt today
-  records `Effect::Unknown`.
-- Delegation (agent-to-agent authorization chains), formal capability
-  Contracts, and Governance -- named in this project's own archived
-  playground design (`archive/playground/PLAYGROUND_OVERVIEW.md`) as
-  further Autonomic Layer components -- are not part of this pass.
+- Governance -- named in this project's own archived playground design
+  (`archive/playground/PLAYGROUND_OVERVIEW.md`) as a further Autonomic
+  Layer component -- is not part of this pass.
 
 ## See Also
 

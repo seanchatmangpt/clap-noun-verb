@@ -1,6 +1,6 @@
 # Reference: Performance SLOs
 
-**Version**: 26.6.13
+**Version**: 26.8.22
 
 Service Level Objectives for the `clap-noun-verb` framework. These cover the **CLI
 framework** itself — build cost, binary size, dispatch overhead — not any particular
@@ -14,7 +14,7 @@ downstream application's domain logic.
 |--------|--------|----------|--------|
 | Incremental compilation | ≤ 2 s | 0.66 s | project `CLAUDE.md` |
 | Release binary size | ≤ 10 MB | 2.2 MB | project `CLAUDE.md` |
-| Full test suite (parallel) | < 1 s | ~0.16 s | `cargo make test` |
+| Full test suite (parallel) | < 1 s | ~0.16 s | `cargo make test-lib` |
 
 The minimalist default build (zero features) is what these targets assume. Enabling
 optional features (`repl` pulls in `rustyline`, etc.) increases binary size accordingly.
@@ -44,13 +44,13 @@ fixed millisecond budgets — actual numbers depend on the host and the command 
 The crate ships a Criterion benchmark suite. To reproduce numbers on your machine:
 
 ```bash
-cargo make bench                      # run all benchmarks (criterion)
-cargo make bench-baseline             # save a baseline named "main"
-cargo make bench-compare              # compare current against the saved baseline
+cargo make bench-build                # build the criterion benchmark suite
+cargo bench                           # run it (criterion writes target/criterion/ reports)
 ```
 
-Benchmark sources live in `benches/` (e.g. startup, middleware-chain, telemetry-overhead,
-hot-path). Treat the SLOs above as regression gates: a change that pushes incremental
+The only benchmark source today is `benches/dispatch.rs` (`bench_build_command`,
+`bench_route`) -- there is no separate startup/middleware-chain/telemetry-overhead
+suite yet. Treat the SLOs above as regression gates: a change that pushes incremental
 compile past 2 s, the binary past 10 MB, or the test suite past 1 s is a defect.
 
 ---

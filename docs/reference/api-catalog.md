@@ -344,134 +344,52 @@ fn status(
 
 ---
 
-## v5 Autonomic API
+## Telemetry API (`src/telemetry.rs`, ggen-generated)
 
-### TelemetryCollector
+The real telemetry surface -- `TelemetryCollector`/`SpanBuilder`/
+`TracingCollector`/`MetricsCollector`/`SpanEvent` (as previously documented
+here) do not exist anywhere in the codebase; they were an unimplemented
+design sketch. See [Telemetry](api/telemetry.md) for full docs. Summary:
+
 ```rust
-pub struct TelemetryCollector {
-    metrics: MetricsCollector,
-    tracing: TracingCollector,
-    enabled: bool,
+pub struct TelemetryManager { /* ... */ }
+impl TelemetryManager {
+    pub fn new(app_name: &str) -> Result<Self, NounVerbError>
+    pub fn start_span(&self, name: &str) -> Result<Span, NounVerbError>
+    pub fn start_child_span(&self, parent: &Span, name: &str) -> Result<Span, NounVerbError>
+    pub fn end_span(&self, span: Span) -> Result<Span, NounVerbError>
+    pub fn create_trace_context(&self) -> Result<TraceContext, NounVerbError>
+    pub fn record_event(&self, /* ... */) -> Result<(), NounVerbError>
 }
 
-impl TelemetryCollector {
-    pub fn new() -> Self
-
-    // Control
-    pub fn enable(&mut self)
-    pub fn disable(&mut self)
-    pub fn is_enabled(&self) -> bool
-
-    // Access collectors
-    pub fn metrics(&self) -> &MetricsCollector
-    pub fn metrics_mut(&mut self) -> &mut MetricsCollector
-    pub fn tracing(&self) -> &TracingCollector
-    pub fn tracing_mut(&mut self) -> &mut TracingCollector
-
-    // Recording
-    pub fn record_command(&self, command: &str, duration_ms: u64) -> Result<()>
-    pub fn record_error(&self, command: &str, error: &str) -> Result<()>
-
-    // Span creation
-    pub fn span(&self, name: impl Into<String>) -> SpanBuilder
-
-    // Export
-    pub fn export_metrics<E: MetricsExporter>(&self, exporter: &E) -> Result<String>
-}
-```
-
-### Span
-```rust
-pub struct Span {
-    name: String,
-    id: String,
-    parent_id: Option<String>,
-    trace_id: String,
-    start_time: u64,
-    end_time: Option<u64>,
-    status: SpanStatus,
-    attributes: HashMap<String, String>,
-    events: Vec<SpanEvent>,
-}
-
+pub struct Span { /* ... */ }
 impl Span {
-    pub fn new(name: impl Into<String>, trace_id: impl Into<String>) -> Self
-    pub fn with_parent(self, parent_id: impl Into<String>) -> Self
-    pub fn with_attribute(self, key: impl Into<String>, value: impl Into<String>) -> Self
-
-    pub fn end_ok(&mut self)
-    pub fn end_error(&mut self, error: impl Into<String>)
-    pub fn add_event(&mut self, name: impl Into<String>)
-
-    // Getters
-    pub fn name(&self) -> &str
-    pub fn id(&self) -> &str
-    pub fn trace_id(&self) -> &str
-    pub fn parent_id(&self) -> Option<&str>
-    pub fn status(&self) -> SpanStatus
-    pub fn duration_ms(&self) -> Option<u64>
-    pub fn attributes(&self) -> &HashMap<String, String>
-    pub fn events(&self) -> &[SpanEvent]
-}
-```
-
-### SpanBuilder
-```rust
-pub struct SpanBuilder {
-    name: String,
-    parent_id: Option<String>,
-    attributes: HashMap<String, String>,
+    pub fn new(name: &str) -> Result<Self, NounVerbError>
+    pub fn set_status(&mut self, status: &str)
+    pub fn set_error(&mut self, error: &str)
+    pub fn add_event(&mut self, name: &str, details: &str)
+    pub fn set_attribute(&mut self, key: &str, value: &str)
+    pub fn duration(&self) -> std::time::Duration
 }
 
-impl SpanBuilder {
-    pub fn new(name: impl Into<String>) -> Self
-    pub fn with_parent(self, parent_id: impl Into<String>) -> Self
-    pub fn with_attribute(self, key: impl Into<String>, value: impl Into<String>) -> Self
-    pub fn build(self, trace_id: impl Into<String>) -> Span
-}
-```
-
-### SpanStatus
-```rust
-pub enum SpanStatus {
-    Unset,   // Span is running
-    Ok,      // Span completed successfully
-    Error,   // Span encountered an error
-}
-```
-
-### TracingCollector
-```rust
-pub struct TracingCollector {
-    spans: Vec<Span>,
-    current_trace_id: String,
+pub struct Metrics { /* ... */ }
+impl Metrics {
+    pub fn new(service_name: &str) -> Result<Self, NounVerbError>
+    pub fn increment_counter(&self, name: &str)
+    pub fn set_gauge(&self, name: &str, value: f64)
+    pub fn record_histogram(&self, name: &str, value: f64)
+    pub fn get_percentile(&self, name: &str, percentile: f64) -> f64
+    pub fn export(&self) -> Result<String, NounVerbError>
 }
 
-impl TracingCollector {
-    pub fn new() -> Self
-    pub fn new_trace(&mut self)
-    pub fn current_trace_id(&self) -> &str
-    pub fn add_span(&mut self, span: Span)
-    pub fn spans(&self) -> &[Span]
-    pub fn span_count(&self) -> usize
-    pub fn clear(&mut self)
-    pub fn spans_by_status(&self, status: SpanStatus) -> Vec<&Span>
-    pub fn total_duration_ms(&self) -> u64
-}
-```
-
-### MetricsCollector
-```rust
-pub struct MetricsCollector {
-    // Internal state
+pub struct TraceContext { /* ... */ }
+impl TraceContext {
+    pub fn new() -> Result<Self, NounVerbError>
+    pub fn to_traceparent(&self) -> Result<String, NounVerbError>
+    pub fn from_traceparent(traceparent: &str) -> Result<Self, NounVerbError>
 }
 
-impl MetricsCollector {
-    pub fn new() -> Self
-    pub fn record_command_execution(&self, command: &str, duration_ms: u64) -> Result<()>
-    pub fn record_command_error(&self, command: &str, error: &str) -> Result<()>
-    pub fn command_count(&self) -> usize
-}
+pub struct AutonomicTelemetryEnvelope<T> { /* ... */ }
 ```
 
 ---
@@ -517,7 +435,7 @@ All types are:
 
 ```toml
 [dependencies.clap-noun-verb]
-version = "26.6.13"
+version = "26.8.22"
 features = [
     "repl",         # Interactive REPL (pulls in rustyline)
     "autonomic",    # Autonomic CI/CD policies
@@ -533,11 +451,17 @@ completions, `--introspect`, `--structured-errors`, **telemetry**, validators, a
 graph/capability/diagnostics modules — is available with **no features enabled**.
 Telemetry is always compiled (it is not behind any feature flag).
 
-**Feature flags (complete list — matches `Cargo.toml`):**
+**Feature flags (matches `Cargo.toml`):**
 - `repl` → pulls in `rustyline` for the interactive REPL
 - `autonomic` → autonomic CI/CD policies (implies `process-data`)
 - `contrib` → contributor helpers (implies `process-data`)
 - `process-data` → process-data pipeline hooks
+- `otel` → OpenTelemetry instrumentation of the CLI dispatch path
+- `federated-network` → federated capability network
+- `async` → async verb support (`src/async_verb.rs`)
+- frontier feature families (`meta-framework`, `rdf-composition`, `fractal-patterns`,
+  `discovery-engine`, `learning-trajectories`, `reflexive-testing`, `economic-sim`,
+  `quantum-ready`, `executable-specs`, and the `frontier-*` meta-features that group them)
 
 ---
 
@@ -599,12 +523,12 @@ fn main() -> Result<()> {
 **REPL Shell:**
 - `Repl` - Helper to launch interactive shells with autocomplete and history file persistence
 
-**Telemetry (v5):**
-- `TelemetryCollector` - Main telemetry facade
-- `Span` - Distributed tracing span
-- `SpanBuilder` - Builder for creating spans
-- `TracingCollector` - Span collection and management
-- `MetricsCollector` - Metrics collection
+**Telemetry:**
+- `TelemetryManager` - Main telemetry facade (`start_span`/`end_span`/`create_trace_context`/`record_event`)
+- `Span` - A single span (status, error, events, attributes, duration)
+- `Metrics` - Counters, gauges, histograms, percentile queries
+- `TraceContext` - W3C `traceparent` encode/decode
+- `AutonomicTelemetryEnvelope<T>` - Envelope wrapping a payload with trace context
 
 **Macros:**
 - `#[noun]` - ~~Define noun command~~ **DEPRECATED** (v5.6.0) - nouns auto-detected from filename

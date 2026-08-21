@@ -28,6 +28,8 @@ Use the reference when you:
 - **[Errors Catalog](api/errors.md)** - Complete error type hierarchy
 - **[Advanced Features](api/advanced-features.md)** - Completions, chaining, stdin, REPL, and introspection
 - **[Telemetry Reference](api/telemetry.md)** - Distributed tracing context, W3C traceparents, and manager
+- **[REPL Reference](api/repl.md)** - Interactive shell with autocomplete and history
+- **[Preprocessor Reference](api/preprocessor.md)** - Pre-dispatch argument preprocessing hooks
 - **[#[noun] Macro (DEPRECATED)](api/noun-macro.md)** - Legacy noun subcommand definition macro
 - **[Error Codes](error-codes.md)** - Common errors and solutions
 
@@ -36,7 +38,7 @@ Use the reference when you:
 **Command-line interface and configuration**
 
 - **[Performance SLOs](performance-slos.md)** - Performance targets and guarantees
-- **[Schema Validation & Introspection](schema-validation.md)** - SHACL constraints, JSON schema introspection
+- **[Schema Validation & Introspection](schema-validation.md)** - JSON schema introspection (no SHACL dependency is shipped)
 
 ### Universal Adapter & Observability
 
@@ -84,16 +86,16 @@ Each reference page provides:
 
 | Section | Files | Status |
 |---------|-------|--------|
-| **Core API** | 9 files | ✅ **Available** |
+| **Core API** | 11 files | ✅ **Available** |
 | **CLI** | 2 files | ✅ **Available** |
 | **Universal Adapter & Observability** | 5 files | ✅ **Available** |
-| **TOTAL** | **16 files** | ✅ **Available** |
+| **TOTAL** | **20 files** | ✅ **Available** |
 
 ---
 
 ## API Stability Guarantees
 
-### Stable APIs (26.8.20)
+### Stable APIs (26.8.22)
 
 These APIs are stable and follow semantic versioning:
 - ✅ **Core API**: `#[verb]`, `#[arg]`, `Result<T,E>`, `OutputFormat`
@@ -134,4 +136,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: Reference documentation follows Diataxis principles with validated 26.8.20 APIs.
+**Note**: Reference documentation follows Diataxis principles with validated 26.8.22 APIs.

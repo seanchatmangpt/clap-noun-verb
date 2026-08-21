@@ -2,7 +2,7 @@
 
 **File**: `src/telemetry.rs`
 
-> **Always available (as of 26.6.13):** the telemetry module is compiled unconditionally
+> **Always available (as of 26.8.22):** the telemetry module is compiled unconditionally
 > and re-exported from the crate root. There is **no `telemetry` feature flag** — these
 > APIs are usable with the default (zero-feature) build.
 
