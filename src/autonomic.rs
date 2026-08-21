@@ -484,6 +484,285 @@ pub fn read_and_verify_ledger(path: &Path) -> Result<Vec<Receipt>> {
     Ok(receipts)
 }
 
+// =============================================================================
+// Delegation (agent-to-agent authorization chains)
+// =============================================================================
+
+/// One link in an agent-to-agent authorization chain: `delegator` grants
+/// `delegate` the right to invoke `noun`/`verb` on its behalf, optionally
+/// narrowed by a free-form `constraint` the caller defines (e.g. a JSON
+/// predicate or a natural-language limit). Hash-chained exactly like
+/// [`Receipt`], using the same FNV-1a digest scheme and genesis constant.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Delegation {
+    pub sequence: u64,
+    pub delegator: String,
+    pub delegate: String,
+    pub noun: String,
+    pub verb: String,
+    pub constraint: Option<String>,
+    pub time: String,
+    pub prev_digest: String,
+    pub digest: String,
+}
+
+#[allow(clippy::too_many_arguments)]
+fn compute_delegation_digest(
+    sequence: u64,
+    delegator: &str,
+    delegate: &str,
+    noun: &str,
+    verb: &str,
+    constraint: Option<&str>,
+    time: &str,
+    prev_digest: &str,
+) -> String {
+    let canonical = format!(
+        "{sequence}|{delegator}|{delegate}|{noun}|{verb}|{}|{time}|{prev_digest}",
+        constraint.unwrap_or("")
+    );
+    format!("{:016x}", fnv1a_64(canonical.as_bytes()))
+}
+
+impl Delegation {
+    /// Build the next delegation in a chain given the previous delegation
+    /// (or `None` to start a fresh chain at the genesis digest).
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn next(
+        previous: Option<&Self>,
+        delegator: &str,
+        delegate: &str,
+        noun: &str,
+        verb: &str,
+        constraint: Option<String>,
+        time: String,
+    ) -> Self {
+        let sequence = previous.map_or(0, |d| d.sequence + 1);
+        let prev_digest = previous.map_or_else(|| GENESIS_DIGEST.to_string(), |d| d.digest.clone());
+        let digest = compute_delegation_digest(
+            sequence,
+            delegator,
+            delegate,
+            noun,
+            verb,
+            constraint.as_deref(),
+            &time,
+            &prev_digest,
+        );
+        Self {
+            sequence,
+            delegator: delegator.to_string(),
+            delegate: delegate.to_string(),
+            noun: noun.to_string(),
+            verb: verb.to_string(),
+            constraint,
+            time,
+            prev_digest,
+            digest,
+        }
+    }
+
+    /// Recompute this delegation's digest from its own fields and compare
+    /// against the stored `digest` -- `true` iff they match.
+    #[must_use]
+    pub fn digest_is_consistent(&self) -> bool {
+        compute_delegation_digest(
+            self.sequence,
+            &self.delegator,
+            &self.delegate,
+            &self.noun,
+            &self.verb,
+            self.constraint.as_deref(),
+            &self.time,
+            &self.prev_digest,
+        ) == self.digest
+    }
+
+    /// Whether this single delegation link, on its own, grants `agent` the
+    /// right to invoke `noun`/`verb` -- i.e. `agent` is the `delegate` on a
+    /// link naming this exact `noun`/`verb` pair. Does not walk a chain of
+    /// delegations; see [`is_authorized`] for transitive authorization.
+    #[must_use]
+    pub fn grants(&self, agent: &str, noun: &str, verb: &str) -> bool {
+        self.delegate == agent && self.noun == noun && self.verb == verb
+    }
+}
+
+/// Verify a delegation chain forms one unbroken, internally consistent hash
+/// chain from the genesis digest -- the same invariant [`verify_chain`]
+/// checks for receipts.
+pub fn verify_delegation_chain(
+    delegations: &[Delegation],
+) -> std::result::Result<(), ChainVerificationError> {
+    for (index, delegation) in delegations.iter().enumerate() {
+        if !delegation.digest_is_consistent() {
+            return Err(ChainVerificationError::DigestMismatch { index });
+        }
+        let expected_prev =
+            if index == 0 { GENESIS_DIGEST } else { delegations[index - 1].digest.as_str() };
+        if delegation.prev_digest != expected_prev {
+            if index == 0 {
+                return Err(ChainVerificationError::InvalidGenesis);
+            }
+            return Err(ChainVerificationError::ChainBroken { index });
+        }
+    }
+    Ok(())
+}
+
+/// Whether `agent` is authorized to invoke `noun`/`verb`, either directly
+/// (`agent == root`) or transitively through a chain of delegations rooted
+/// at `root` (`root` delegates to some agent A, which delegates to agent
+/// B, ..., ending at `agent`). Walks the chain up to `delegations.len()`
+/// rounds to reach a fixed point, which is always sufficient and avoids
+/// looping forever on a cyclic (malformed) input.
+#[must_use]
+pub fn is_authorized(
+    delegations: &[Delegation],
+    root: &str,
+    agent: &str,
+    noun: &str,
+    verb: &str,
+) -> bool {
+    if root == agent {
+        return true;
+    }
+    let mut authorized: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    authorized.insert(root);
+    for _ in 0..delegations.len() {
+        let mut grew = false;
+        for delegation in delegations {
+            if delegation.noun == noun
+                && delegation.verb == verb
+                && authorized.contains(delegation.delegator.as_str())
+                && !authorized.contains(delegation.delegate.as_str())
+            {
+                authorized.insert(delegation.delegate.as_str());
+                grew = true;
+            }
+        }
+        if !grew {
+            break;
+        }
+    }
+    authorized.contains(agent)
+}
+
+const DELEGATION_ENV_PATH: &str = "CLAP_NOUN_VERB_DELEGATION_PATH";
+const DELEGATION_DEFAULT_RELATIVE_PATH: &str = ".clap-noun-verb/delegations.jsonl";
+const DELEGATION_FALLBACK_FILE_NAME: &str = "clap-noun-verb-delegations.jsonl";
+
+/// Resolve the primary delegation ledger path: `CLAP_NOUN_VERB_DELEGATION_PATH`
+/// if set, else `.clap-noun-verb/delegations.jsonl` relative to the
+/// current working directory (mirroring [`primary_path`]'s scheme for receipts).
+#[must_use]
+pub fn delegation_primary_path() -> PathBuf {
+    if let Ok(path) = std::env::var(DELEGATION_ENV_PATH) {
+        return PathBuf::from(path);
+    }
+    PathBuf::from(DELEGATION_DEFAULT_RELATIVE_PATH)
+}
+
+/// A best-effort fallback path (the system temp directory) used when the
+/// primary delegation ledger path can't be written to.
+#[must_use]
+pub fn delegation_fallback_path() -> PathBuf {
+    std::env::temp_dir().join(DELEGATION_FALLBACK_FILE_NAME)
+}
+
+/// Read every delegation from a JSON-Lines ledger file at `path`.
+pub fn read_delegation_ledger(path: &Path) -> io::Result<Vec<Delegation>> {
+    let contents = match fs::read_to_string(path) {
+        Ok(contents) => contents,
+        Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(err) => return Err(err),
+    };
+    let mut delegations = Vec::new();
+    for line in contents.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let delegation: Delegation = serde_json::from_str(line)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        delegations.push(delegation);
+    }
+    Ok(delegations)
+}
+
+fn append_delegation(
+    path: &Path,
+    delegator: &str,
+    delegate: &str,
+    noun: &str,
+    verb: &str,
+    constraint: Option<String>,
+) -> io::Result<Delegation> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    let existing = read_delegation_ledger(path)?;
+    let previous = existing.last();
+    let time = chrono::Utc::now().to_rfc3339();
+    let delegation = Delegation::next(previous, delegator, delegate, noun, verb, constraint, time);
+
+    let mut line = serde_json::to_string(&delegation)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    line.push('\n');
+    use std::io::Write;
+    let mut file = fs::OpenOptions::new().create(true).append(true).open(path)?;
+    file.write_all(line.as_bytes())?;
+    Ok(delegation)
+}
+
+/// Append one delegation granting `delegate` the right to invoke
+/// `noun`/`verb` on `delegator`'s behalf, optionally narrowed by
+/// `constraint`. Best-effort: never returns an error to the caller and
+/// never panics -- any I/O failure at the primary path falls back to a
+/// temp-dir ledger, and a failure there degrades to a `log::warn!`,
+/// mirroring [`record_receipt`]'s exact fallback discipline.
+pub fn record_delegation(
+    delegator: &str,
+    delegate: &str,
+    noun: &str,
+    verb: &str,
+    constraint: Option<String>,
+) {
+    let primary = delegation_primary_path();
+    match append_delegation(&primary, delegator, delegate, noun, verb, constraint.clone()) {
+        Ok(_) => (),
+        Err(primary_err) => {
+            let fallback = delegation_fallback_path();
+            if let Err(fallback_err) =
+                append_delegation(&fallback, delegator, delegate, noun, verb, constraint)
+            {
+                log::warn!(
+                    "clap-noun-verb: delegation logging failed for both primary path \
+                     {primary:?} ({primary_err}) and fallback path {fallback:?} \
+                     ({fallback_err}); continuing without a delegation record for this grant"
+                );
+            }
+        }
+    }
+}
+
+/// Read and verify the delegation ledger at `path` in one call.
+pub fn read_and_verify_delegation_ledger(path: &Path) -> Result<Vec<Delegation>> {
+    let delegations = read_delegation_ledger(path).map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!(
+            "failed to read delegation ledger: {e}"
+        ))
+    })?;
+    verify_delegation_chain(&delegations).map_err(|e| {
+        crate::error::NounVerbError::execution_error(format!(
+            "delegation chain verification failed: {e}"
+        ))
+    })?;
+    Ok(delegations)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -823,5 +1102,160 @@ mod tests {
             let contract = ExecutionContract::for_verb("noun", "verb", effect);
             assert_eq!(contract.isolation_level, IsolationLevel::for_effect(effect));
         }
+    }
+
+    #[test]
+    fn test_delegation_chain_starts_at_genesis_and_links_correctly() {
+        let first = Delegation::next(
+            None,
+            "root-agent",
+            "worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        assert_eq!(first.sequence, 0);
+        assert_eq!(first.prev_digest, GENESIS_DIGEST);
+        assert!(first.digest_is_consistent());
+
+        let second = Delegation::next(
+            Some(&first),
+            "worker-agent",
+            "sub-worker-agent",
+            "fleet",
+            "deploy",
+            Some("only staging environment".to_string()),
+            "2026-01-01T00:01:00Z".to_string(),
+        );
+        assert_eq!(second.sequence, 1);
+        assert_eq!(second.prev_digest, first.digest);
+        assert!(second.digest_is_consistent());
+        assert!(verify_delegation_chain(&[first, second]).is_ok());
+    }
+
+    #[test]
+    fn test_delegation_digest_changes_if_any_field_is_tampered_with() {
+        let genuine = Delegation::next(
+            None,
+            "root-agent",
+            "worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        let mut tampered = genuine.clone();
+        tampered.noun = "database".to_string();
+        assert!(!tampered.digest_is_consistent());
+    }
+
+    #[test]
+    fn test_verify_delegation_chain_rejects_a_reordered_chain() {
+        let first = Delegation::next(
+            None,
+            "root-agent",
+            "worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        let second = Delegation::next(
+            Some(&first),
+            "worker-agent",
+            "sub-worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:01:00Z".to_string(),
+        );
+        let reordered = [second, first];
+        assert!(matches!(
+            verify_delegation_chain(&reordered),
+            Err(ChainVerificationError::InvalidGenesis)
+        ));
+    }
+
+    #[test]
+    fn test_delegation_grants_only_matches_its_own_delegate_noun_and_verb() {
+        let link = Delegation::next(
+            None,
+            "root-agent",
+            "worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        assert!(link.grants("worker-agent", "fleet", "deploy"));
+        assert!(!link.grants("someone-else", "fleet", "deploy"));
+        assert!(!link.grants("worker-agent", "fleet", "destroy"));
+    }
+
+    #[test]
+    fn test_is_authorized_walks_a_real_transitive_delegation_chain() {
+        let first = Delegation::next(
+            None,
+            "root-agent",
+            "worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:00:00Z".to_string(),
+        );
+        let second = Delegation::next(
+            Some(&first),
+            "worker-agent",
+            "sub-worker-agent",
+            "fleet",
+            "deploy",
+            None,
+            "2026-01-01T00:01:00Z".to_string(),
+        );
+        let chain = [first, second];
+
+        // The root itself is always authorized.
+        assert!(is_authorized(&chain, "root-agent", "root-agent", "fleet", "deploy"));
+        // Directly delegated.
+        assert!(is_authorized(&chain, "root-agent", "worker-agent", "fleet", "deploy"));
+        // Transitively delegated (root -> worker -> sub-worker).
+        assert!(is_authorized(&chain, "root-agent", "sub-worker-agent", "fleet", "deploy"));
+        // Never delegated at all.
+        assert!(!is_authorized(&chain, "root-agent", "stranger-agent", "fleet", "deploy"));
+        // Delegated for a different noun/verb -- must not authorize.
+        assert!(!is_authorized(&chain, "root-agent", "worker-agent", "fleet", "destroy"));
+    }
+
+    #[test]
+    fn test_record_delegation_persists_to_a_real_ledger_file_and_verifies() {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path = std::env::temp_dir()
+            .join(format!("cnv-autonomic-pack-delegation-ledger-test-{nanos}.jsonl"));
+        std::fs::remove_file(&path).ok();
+
+        append_delegation(&path, "root-agent", "worker-agent", "fleet", "deploy", None)
+            .expect("append first real delegation");
+        append_delegation(
+            &path,
+            "worker-agent",
+            "sub-worker-agent",
+            "fleet",
+            "deploy",
+            Some("staging only".to_string()),
+        )
+        .expect("append second real delegation");
+
+        let delegations =
+            read_and_verify_delegation_ledger(&path).expect("read and verify real ledger");
+        assert_eq!(delegations.len(), 2);
+        assert_eq!(delegations[0].delegate, "worker-agent");
+        assert_eq!(delegations[1].delegate, "sub-worker-agent");
+        assert_eq!(delegations[1].constraint.as_deref(), Some("staging only"));
+
+        std::fs::remove_file(&path).ok();
     }
 }
