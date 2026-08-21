@@ -81,9 +81,34 @@ where
     }
 
     /// Serve HTTP/1.1 until the listener is closed by the embedding process.
+    ///
+    /// A single connection's failure -- a TCP liveness probe that connects
+    /// and disconnects before sending a complete request, a request over the
+    /// size cap, a transient I/O error on that one socket -- must never take
+    /// down every other client's service. Each connection's `Result` is
+    /// therefore handled here, logged to stderr with enough detail to
+    /// correlate against external supervisor/packet-capture evidence, and
+    /// the accept loop continues. This function only returns (with `Ok(())`)
+    /// when the listener itself is closed by the embedding process.
     pub fn serve(&self, listener: TcpListener) -> Result<(), HttpError> {
         for stream in listener.incoming() {
-            self.serve_stream(stream?)?;
+            let stream = match stream {
+                Ok(stream) => stream,
+                Err(accept_error) => {
+                    eprintln!(
+                        "cnv-deploy: accept() failed on one incoming connection, \
+                         continuing to serve other clients: {accept_error}"
+                    );
+                    continue;
+                }
+            };
+            let peer = stream.peer_addr().ok();
+            if let Err(connection_error) = self.serve_stream(stream) {
+                eprintln!(
+                    "cnv-deploy: connection from {peer:?} failed, \
+                     continuing to serve other clients: {connection_error}"
+                );
+            }
         }
         Ok(())
     }
@@ -124,7 +149,18 @@ where
             Err(GatewayError::Refused(reason)) => {
                 return Ok(response(422, json!({"error": "refused", "message": reason})))
             }
-            Err(gateway_error) => return Err(HttpError::Execution(gateway_error.to_string())),
+            // A transient executor failure (e.g. `Command::output()` I/O
+            // error under fd/memory pressure -- executor.rs) is this one
+            // request's failure, not the server's. It must surface as a
+            // real HTTP response, never as an `Err` that would unwind
+            // through `serve_stream` and `serve` and end the accept loop
+            // for every other, unrelated connection.
+            Err(GatewayError::Execution(message)) => {
+                return Ok(response(
+                    500,
+                    json!({"error": "execution_failed", "message": message}),
+                ))
+            }
         };
         let status = if record.execution.success() { 200 } else { 422 };
         Ok(response(status, json!(record)))
@@ -230,6 +266,7 @@ fn write_response(stream: &mut TcpStream, response: &HttpResponse) -> Result<(),
         400 => "Bad Request",
         404 => "Not Found",
         422 => "Unprocessable Entity",
+        500 => "Internal Server Error",
         _ => "Error",
     };
     write!(

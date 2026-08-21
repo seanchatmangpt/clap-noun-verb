@@ -224,6 +224,46 @@ mod http {
         }
     }
 
+    /// DFMEA regression (RPN 630): a real `Executor` failure -- here a real
+    /// `Command::output()` I/O error from `ProcessExecutor` (executor.rs)
+    /// spawning a binary that does not exist, the same shape of failure a
+    /// real deployment sees under fd/memory pressure -- must surface as a
+    /// real HTTP 5xx response to that one caller, not as an `Err` that
+    /// unwinds through `invoke` -> `handle` -> `serve_stream` -> `serve` and
+    /// kills the accept loop for every other client.
+    #[test]
+    fn a_real_subprocess_spawn_failure_returns_http_500_instead_of_killing_the_server() {
+        let listener =
+            std::net::TcpListener::bind("127.0.0.1:0").expect("bind real ephemeral TCP port");
+        let addr = listener.local_addr().expect("real local address");
+        let executor = clap_noun_verb_deploy::ProcessExecutor::new(
+            "/nonexistent/cnv-fmea-regression-does-not-exist",
+        );
+        let server = HttpServer::new(schema(), executor);
+        std::thread::spawn(move || {
+            let _ = server.serve(listener);
+        });
+
+        let invoke_body = r#"{"tool":"user__create","arguments":{"name":"Ada"}}"#;
+        let invoke_response = raw_http_request(addr, "POST", "/invoke", invoke_body);
+        assert!(
+            invoke_response.starts_with("HTTP/1.1 500"),
+            "a real spawn failure must surface as HTTP 500 to the caller, got: {invoke_response:?}"
+        );
+        assert!(
+            invoke_response.contains("execution_failed"),
+            "response body must identify the failure: {invoke_response:?}"
+        );
+
+        // The server must still be alive: a real follow-up request on the
+        // SAME listener must still be served after the executor failure.
+        let health_response = raw_http_request(addr, "GET", "/healthz", "");
+        assert!(
+            health_response.starts_with("HTTP/1.1 200"),
+            "server must still be alive after one request's executor failure, got: {health_response:?}"
+        );
+    }
+
     #[test]
     fn invoke_uses_same_schema_admission_as_mcp() {
         let response = HttpServer::new(schema(), EchoExecutor)
@@ -309,6 +349,46 @@ mod http {
         let mut response = String::new();
         stream.read_to_string(&mut response).expect("read real HTTP response");
         response
+    }
+
+    /// DFMEA regression (RPN 630): a bare TCP probe that connects and closes
+    /// without sending a complete request (exactly what a liveness/readiness
+    /// check does) must not kill the whole accept loop. Before the fix,
+    /// `read()==0` at the top of `read_request` produced an `HttpError::Io`
+    /// that `serve_stream`'s `?` propagated straight out of `serve`'s `?`,
+    /// ending the `for stream in listener.incoming()` loop entirely -- every
+    /// other, unrelated, in-flight and future client on this listener lost
+    /// service because one probe connection closed early.
+    #[test]
+    fn a_bare_tcp_probe_that_disconnects_before_headers_does_not_kill_the_server() {
+        let listener =
+            std::net::TcpListener::bind("127.0.0.1:0").expect("bind real ephemeral TCP port");
+        let addr = listener.local_addr().expect("real local address");
+        let server = HttpServer::new(schema(), EchoExecutor);
+        let served = std::thread::spawn(move || server.serve(listener));
+
+        // Real probe: connect, send nothing, close. This is what a TCP
+        // liveness check (and plenty of load balancers) do routinely.
+        {
+            let stream =
+                std::net::TcpStream::connect(addr).expect("connect real probe TCP stream");
+            drop(stream);
+        }
+        // Give the server thread a moment to observe the close and (in the
+        // buggy version) unwind `serve()` before we send the next request.
+        std::thread::sleep(std::time::Duration::from_millis(200));
+
+        // A real, well-formed follow-up request on the SAME listener must
+        // still be served. Pre-fix this fails with a connection error
+        // because `serve()` already returned and the listener's accept loop
+        // is dead.
+        let response = raw_http_request(addr, "GET", "/healthz", "");
+        assert!(
+            response.starts_with("HTTP/1.1 200"),
+            "server must still be alive and serving after an unrelated probe disconnect, got: {response:?}"
+        );
+
+        drop(served); // server thread runs until the process exits in real deployments; we don't join it here.
     }
 
     #[test]
