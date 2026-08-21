@@ -1361,6 +1361,27 @@ mod tests {
     }
 
     #[test]
+    fn learning_trajectory_observe_admits_the_exact_upper_bound_of_one() {
+        // `observe`'s real precondition is `!(0.0..=1.0).contains(&score)`,
+        // which is `false` for exactly 1.0, so a score of 1.0 must be
+        // admitted, not refused. No existing test exercises this literal
+        // endpoint: every hand-picked `observe` call in this file uses a
+        // score strictly less than 1.0 (0.9 is the highest), and
+        // `score_strategy` (`0.0f64..=1.0f64`, used by every proptest that
+        // feeds `observe`) is a continuous-range strategy that will not
+        // reliably generate the exact endpoint over any realistic number of
+        // cases -- so this boundary has never actually been exercised.
+        let mut trajectory = LearningTrajectory::default();
+        let sequence =
+            trajectory.observe(1.0).expect("a score of exactly 1.0 is within admitted bounds");
+        assert_eq!(sequence, 0, "the first observation is always sequence 0");
+        assert_eq!(trajectory.latest(), Some(1.0), "the recorded score must be exactly 1.0");
+        assert_eq!(trajectory.len(), 1);
+        assert!(trajectory.is_monotonic());
+        assert!((trajectory.mean().expect("one real observation") - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
     fn discovery_engine_deregister_removes_a_real_record_and_refuses_an_unknown_one() {
         let mut engine = DiscoveryEngine::default();
         engine
@@ -2316,6 +2337,53 @@ mod tests {
         })
         .expect("zero task value is within admitted bounds");
         assert_eq!(sim.agent_count(), 1);
+    }
+
+    #[test]
+    fn economic_simulation_add_agent_admits_exactly_one_as_a_valid_trust_score_bound() {
+        // `agent.trust_score` is validated by
+        // `!(0.0..=1.0).contains(&agent.trust_score)`, which is `false` for
+        // exactly 1.0, so a trust score of 1.0 must be admitted, not
+        // refused. The sibling test above already locks in the *lower*
+        // bound (0.0); no existing test locks in the *upper* one -- every
+        // hand-picked `trust_score` literal in this file tops out at 0.9,
+        // and `trust_score_strategy` (`0.0f64..=1.0f64`, a continuous-range
+        // proptest strategy) will not reliably generate the exact endpoint
+        // over any realistic number of cases. This does more than check
+        // `add_agent` returns `Ok`: it drives the accepted agent through a
+        // real `step()` against a lower-trust rival for the same task, so
+        // the boundary value is confirmed genuinely stored and compared
+        // (via `trust_score.total_cmp`), not silently clamped or dropped.
+        let mut sim = EconomicSimulation::new();
+        sim.add_agent(Agent {
+            id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 1.0,
+            valuation: 0.0,
+        })
+        .expect("a trust score of exactly 1.0 is within admitted bounds");
+        sim.add_agent(Agent {
+            id: AgentId(2),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.5,
+            valuation: 0.0,
+        })
+        .expect("valid rival agent");
+        sim.add_task(Task {
+            id: TaskId(1),
+            required_capability: "compute".to_string(),
+            value: 10.0,
+        })
+        .expect("valid task");
+
+        let produced = sim.step().expect("step never fails");
+        assert_eq!(produced.len(), 1, "the single eligible task must be allocated");
+        assert_eq!(
+            produced[0].agent_id,
+            AgentId(1),
+            "the agent whose trust score is exactly 1.0 must be preferred over the 0.5 \
+             rival, confirming the boundary value was actually stored and compared"
+        );
     }
 
     #[test]
