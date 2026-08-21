@@ -195,6 +195,56 @@ impl DiscoveryEngine {
             .filter(|record| record.name == term || record.tags.contains(term))
             .collect()
     }
+
+    /// Remove a previously registered capability by name, returning the
+    /// removed record. A real gap `register`/`search` alone left open:
+    /// without this, a capability that goes away (a decommissioned
+    /// route, a withdrawn service) could never be un-discovered.
+    ///
+    /// # Errors
+    /// Returns an error if no capability is registered under `name`.
+    pub fn deregister(&mut self, name: &str) -> FrontierResult<DiscoveryRecord> {
+        self.records
+            .remove(name)
+            .ok_or_else(|| format!("no capability registered under name: {name}"))
+    }
+
+    /// All currently registered capability names, in canonical order.
+    #[must_use]
+    pub fn names(&self) -> Vec<&str> {
+        self.records.keys().map(String::as_str).collect()
+    }
+
+    /// Recommend which registered capability to try next, given each
+    /// candidate's own [`LearningTrajectory`] -- the real composition
+    /// point between static discovery and [`ExplorationPolicy`]: instead
+    /// of a caller hand-picking a capability by name, `recommend` lets
+    /// UCB1 decide which discovered capability most deserves the next
+    /// real invocation. `histories` must name every candidate exactly
+    /// once and only candidates actually registered here.
+    ///
+    /// # Errors
+    /// Returns an error if `histories` is empty, or if any name in
+    /// `histories` is not currently registered (a caller recommending
+    /// against a stale or foreign capability set is a real bug, not
+    /// something to silently ignore).
+    pub fn recommend<'a>(
+        &self,
+        histories: &'a [(String, LearningTrajectory)],
+    ) -> FrontierResult<&'a str> {
+        if histories.is_empty() {
+            return Err("recommend requires at least one candidate history".to_string());
+        }
+        for (name, _) in histories {
+            if !self.records.contains_key(name) {
+                return Err(format!("recommend candidate is not a registered capability: {name}"));
+            }
+        }
+        let trajectories: Vec<LearningTrajectory> =
+            histories.iter().map(|(_, trajectory)| trajectory.clone()).collect();
+        let index = ExplorationPolicy::select_ucb1(&trajectories)?;
+        Ok(histories[index].0.as_str())
+    }
 }
 
 /// One measured learning observation.
@@ -1012,5 +1062,88 @@ mod tests {
         assert_eq!(trajectory.len(), 3);
         assert!(!trajectory.is_empty());
         assert!((trajectory.mean().expect("real mean") - 0.4).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn discovery_engine_deregister_removes_a_real_record_and_refuses_an_unknown_one() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "billing".to_string(),
+                tags: BTreeSet::new(),
+                route: "svc://billing".to_string(),
+            })
+            .expect("valid record");
+
+        let removed = engine.deregister("billing").expect("real registered capability");
+        assert_eq!(removed.route, "svc://billing");
+        assert!(engine.search("billing").is_empty());
+
+        let error = engine.deregister("billing").expect_err("already removed");
+        assert!(error.contains("no capability registered"));
+    }
+
+    #[test]
+    fn discovery_engine_names_lists_every_registered_capability() {
+        let mut engine = DiscoveryEngine::default();
+        for name in ["alpha", "beta"] {
+            engine
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: BTreeSet::new(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
+        assert_eq!(engine.names(), vec!["alpha", "beta"]);
+    }
+
+    #[test]
+    fn discovery_engine_recommend_defers_to_ucb1_over_real_candidate_histories() {
+        let mut engine = DiscoveryEngine::default();
+        for name in ["proven", "fresh"] {
+            engine
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: BTreeSet::new(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
+
+        let mut proven_history = LearningTrajectory::default();
+        proven_history.observe(0.9).expect("valid score");
+        let fresh_history = LearningTrajectory::default();
+
+        let histories =
+            vec![("proven".to_string(), proven_history), ("fresh".to_string(), fresh_history)];
+
+        // The never-tried "fresh" capability must win first, exactly like
+        // ExplorationPolicy::select_ucb1 on its own.
+        let recommended = engine.recommend(&histories).expect("valid recommendation");
+        assert_eq!(recommended, "fresh");
+    }
+
+    #[test]
+    fn discovery_engine_recommend_refuses_a_candidate_that_was_never_registered() {
+        let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "known".to_string(),
+                tags: BTreeSet::new(),
+                route: "svc://known".to_string(),
+            })
+            .expect("valid record");
+
+        let histories = vec![("unknown-capability".to_string(), LearningTrajectory::default())];
+        let error = engine.recommend(&histories).expect_err("unregistered candidate refused");
+        assert!(error.contains("unknown-capability"));
+    }
+
+    #[test]
+    fn discovery_engine_recommend_refuses_an_empty_candidate_set() {
+        let engine = DiscoveryEngine::default();
+        let error = engine.recommend(&[]).expect_err("no candidates to recommend among");
+        assert!(error.contains("at least one candidate"));
     }
 }
