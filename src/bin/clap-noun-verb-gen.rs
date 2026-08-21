@@ -9,6 +9,7 @@
 //! - Minimal scaffolds (gen scaffold)
 
 use clap::{Parser, Subcommand};
+use clap_noun_verb_macros::verb;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -433,6 +434,38 @@ panic = "allow"
 }
 
 // =============================================================================
+// DOCTOR - Real health check, registered as a real #[verb] command
+// =============================================================================
+//
+// This mirrors the working registration pattern in
+// examples/specimen-graph-manager/src/commands/doctor_check.rs: a
+// `#[verb("check", "doctor")]`-decorated function that is linkme-registered
+// into `clap_noun_verb::cli::registry::__VERB_REGISTRY` at link time (the
+// same distributed-slice mechanism every other `#[verb]` in this workspace
+// uses -- see MACRO_DEVELOPMENT_GUIDE.md). This binary's own top-level CLI
+// (`Cli`/`Commands` above) is a hand-rolled `clap::Parser`, not
+// `clap_noun_verb::run()`, so `run_doctor_check()` below calls this function
+// directly to make it reachable from `clap-noun-verb-gen doctor check` --
+// exactly like calling any other Rust function, since `#[verb]` only adds a
+// registration side effect and never removes direct callability.
+
+/// Perform a system health check on this generator's own library dependency
+///
+/// Delegates entirely to `clap_noun_verb::diagnostics::doctor::health_check()` -- the
+/// real, tested probe in src/diagnostics/doctor.rs (real RDF graph probe via
+/// `check_graph_accessible()`, real registry validation via
+/// `check_registry_operational()`). No hardcoded/simulated results.
+///
+/// # Example
+/// ```text
+/// clap-noun-verb-gen doctor check
+/// ```
+#[verb("check", "doctor")]
+fn health_check() -> clap_noun_verb::Result<clap_noun_verb::DoctorOutput> {
+    clap_noun_verb::diagnostics::doctor::health_check()
+}
+
+// =============================================================================
 // CLI - Command-line interface
 // =============================================================================
 
@@ -451,6 +484,20 @@ enum Commands {
     Gen(GenCommand),
     /// Ontology operations: sync, generate, validate, export
     Ontology(OntologyCommand),
+    /// Health check: verify this generator's clap-noun-verb dependency is operational
+    Doctor(DoctorCommand),
+}
+
+#[derive(Parser)]
+struct DoctorCommand {
+    #[command(subcommand)]
+    subcommand: DoctorSubcommands,
+}
+
+#[derive(Subcommand)]
+enum DoctorSubcommands {
+    /// Run the real health_check() probe and print its result as JSON
+    Check,
 }
 
 #[derive(Parser)]
@@ -621,8 +668,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 run_ontology_export(source, &format, output)?;
             }
         },
+        Commands::Doctor(doctor) => match doctor.subcommand {
+            DoctorSubcommands::Check => {
+                run_doctor_check()?;
+            }
+        },
     }
 
+    Ok(())
+}
+
+fn run_doctor_check() -> Result<(), Box<dyn std::error::Error>> {
+    let output = health_check()?;
+    println!("{}", serde_json::to_string_pretty(&output)?);
+    if !output.healthy {
+        std::process::exit(1);
+    }
     Ok(())
 }
 
