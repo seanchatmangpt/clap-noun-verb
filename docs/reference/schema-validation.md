@@ -1,6 +1,6 @@
 # Schema & Introspection in clap-noun-verb
 
-**Version**: 26.8.22
+**Version**: 26.9.1
 **Source**: `src/registry.rs` (`collect_tools_from_cmd`, `ToolDefinition`)
 
 `clap-noun-verb` exposes a CLI's command tree as a machine-readable tool schema so that

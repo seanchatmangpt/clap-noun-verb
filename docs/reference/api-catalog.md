@@ -435,7 +435,7 @@ All types are:
 
 ```toml
 [dependencies.clap-noun-verb]
-version = "26.8.22"
+version = "26.9.1"
 features = [
     "repl",         # Interactive REPL (pulls in rustyline)
     "autonomic",    # Autonomic CI/CD policies

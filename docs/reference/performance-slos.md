@@ -1,6 +1,6 @@
 # Reference: Performance SLOs
 
-**Version**: 26.8.22
+**Version**: 26.9.1
 
 Service Level Objectives for the `clap-noun-verb` framework. These cover the **CLI
 framework** itself — build cost, binary size, dispatch overhead — not any particular

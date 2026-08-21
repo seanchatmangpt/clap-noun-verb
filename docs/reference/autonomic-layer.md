@@ -3,7 +3,7 @@
 **Source**: `src/autonomic.rs` -- **generated**, not hand-authored, by
 `~/ggen-marketplace/packs/clap-noun-verb-autonomic-pack` from this repo's
 own `ontology.ttl` (composed via the repo-root `ggen.toml`)
-**Version**: 26.8.22 (unreleased)
+**Version**: 26.9.1 (unreleased)
 
 Closes a real gap between claim and reality: `docs/reference/README.md`'s
 API Stability Guarantees table already claimed
@@ -125,12 +125,16 @@ pre-existing hand-owned framework dispatch code.
   `record_delegation`/`read_and_verify_delegation_ledger`, with its own
   primary/fallback path pair (`CLAP_NOUN_VERB_DELEGATION_PATH`, default
   `.clap-noun-verb/delegations.jsonl`).
-
-## What's not yet built
-
-- Governance -- named in this project's own archived playground design
-  (`archive/playground/PLAYGROUND_OVERVIEW.md`) as a further Autonomic
-  Layer component -- is not part of this pass.
+- `GovernancePanel` (Governance) is a real, rule-based admission layer:
+  `GovernanceRule` trait (`rule_id()` + `approve(&GuardContext) -> bool`,
+  fail-closed on an unopinionated rule), `GovernancePanel` (every
+  registered rule must approve; an empty panel approves by definition),
+  implementing `Guard` directly so it plugs straight into
+  `CommandRegistry::add_guard` with no new dispatch wiring, plus a
+  hash-chained `GovernanceRecord` audit trail (`verify_governance_chain`).
+  This closes every Autonomic Layer component named in this project's own
+  archived playground design (`archive/playground/PLAYGROUND_OVERVIEW.md`):
+  Effects, Guards, Receipts, ExecutionContracts, Delegation, and Governance.
 
 ## See Also
 

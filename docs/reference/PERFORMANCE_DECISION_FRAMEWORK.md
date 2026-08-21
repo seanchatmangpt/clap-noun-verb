@@ -487,5 +487,5 @@ Before proposing a performance-impacting change:
 ---
 
 **Last Updated**: 2026-06-14  
-**Version**: 26.8.22  
+**Version**: 26.9.1  
 **Maintained by**: clap-noun-verb contributors

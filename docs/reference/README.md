@@ -95,7 +95,7 @@ Each reference page provides:
 
 ## API Stability Guarantees
 
-### Stable APIs (26.8.22)
+### Stable APIs (26.9.1)
 
 These APIs are stable and follow semantic versioning:
 - ✅ **Core API**: `#[verb]`, `#[arg]`, `Result<T,E>`, `OutputFormat`
@@ -136,4 +136,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: Reference documentation follows Diataxis principles with validated 26.8.22 APIs.
+**Note**: Reference documentation follows Diataxis principles with validated 26.9.1 APIs.

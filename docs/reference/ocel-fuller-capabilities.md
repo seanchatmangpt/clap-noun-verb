@@ -1,7 +1,7 @@
 # Reference: OCEL Fuller Capabilities -- Drift, Pruning, RDF Export
 
 **Source**: `src/ocel.rs`
-**Version**: 26.8.22
+**Version**: 26.9.1
 
 Three functions extend the OCEL 2.0 event log (`docs/reference/ocel-v2.md`) from a
 passive recording mechanism into something a fleet operator or generator (ggen)

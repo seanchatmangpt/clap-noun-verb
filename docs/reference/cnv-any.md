@@ -1,7 +1,7 @@
 # Reference: cnv-any -- Wrapping Any Executable
 
 **Source**: `clap-noun-verb-any/src/lib.rs`, `clap-noun-verb-any/src/scaffold.rs`, `clap-noun-verb-deploy/src/schema.rs`
-**Version**: 26.8.22
+**Version**: 26.9.1
 
 `clap-noun-verb-any` wraps any executable -- Rust or not -- as a
 `clap-noun-verb-deploy` deployable CLI: same `Deploy`/`Gateway`/protocol-surface

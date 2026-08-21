@@ -1,7 +1,7 @@
 # Reference: Error Codes
 
 **Source**: `src/error.rs`
-**Version**: 26.8.22
+**Version**: 26.9.1
 
 `clap-noun-verb` has two complementary error representations:
 

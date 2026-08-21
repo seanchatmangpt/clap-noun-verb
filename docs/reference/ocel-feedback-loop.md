@@ -2,7 +2,7 @@
 
 **Source**: `src/ocel.rs` (`compute_signals`, `signals_to_rdf`, `write_signal_pack`),
 `~/ggen-marketplace/packs/ocel-feedback-pack`
-**Version**: 26.8.22 (unreleased)
+**Version**: 26.9.1 (unreleased)
 
 Closes the loop [`docs/reference/ocel-fuller-capabilities.md`](ocel-fuller-capabilities.md)
 left open: a real merged OCEL corpus now feeds back into a real ggen
