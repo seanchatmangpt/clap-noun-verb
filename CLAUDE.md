@@ -65,7 +65,6 @@ Two crates in a workspace:
 ### Macro Crate (`clap-noun-verb-macros/src/`)
 - **`lib.rs`** — `#[noun]` (deprecated no-op), `#[verb]` (main macro), `#[arg]` (parameter attributes)
 - **`validation.rs`** — Compile-time validation (return type Serialize, duplicate detection, complexity checks)
-- **`io_detection.rs`** — Auto-detection of `clio::Input`/`clio::Output` types
 - **`macros/`** — Frontier feature macros (fractal patterns, federated network, semantic composition, executable specs, learning trajectories, reflexive testing)
 
 ### Feature System

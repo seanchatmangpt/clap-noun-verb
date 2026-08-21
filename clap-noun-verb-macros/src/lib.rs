@@ -22,7 +22,6 @@
 //! - Gap 3: Return type must implement Serialize
 //! - Gap 4: Enhanced attribute syntax validation
 
-mod io_detection;
 mod rdf_generation;
 mod telemetry_validation;
 mod validation;
