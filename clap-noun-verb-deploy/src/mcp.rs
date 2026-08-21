@@ -15,6 +15,7 @@ const PROTOCOL_VERSION_META: &str = "io.modelcontextprotocol/protocolVersion";
 const CLIENT_INFO_META: &str = "io.modelcontextprotocol/clientInfo";
 const CLIENT_CAPABILITIES_META: &str = "io.modelcontextprotocol/clientCapabilities";
 const SERVER_INFO_META: &str = "io.modelcontextprotocol/serverInfo";
+const OCEL_RESOURCE_URI: &str = "clap-noun-verb://ocel";
 
 pub struct McpServer<E, P = AdmitValidated> {
     name: String,
@@ -139,6 +140,17 @@ where
                 })
             }
             "tools/call" => return self.call_tool(id, request),
+            "resources/list" => json!({
+                "resources": [{
+                    "uri": OCEL_RESOURCE_URI,
+                    "name": "OCEL 2.0 event log",
+                    "description": "The clap-noun-verb OCEL 2.0 event log for this deployment's invocations.",
+                    "mimeType": "application/json"
+                }],
+                "ttlMs": 60_000,
+                "cacheScope": "public"
+            }),
+            "resources/read" => return self.read_resource(id, request),
             _ => return Ok(Some(self.error(id, -32601, "Method not found"))),
         };
 
@@ -186,6 +198,30 @@ where
         Ok(Some(self.success(id, result)))
     }
 
+    /// Read the OCEL 2.0 event log via the `resources/read` method, using the
+    /// same primary/fallback path resolution as phase 1's
+    /// `clap_noun_verb::ocel::record_invocation`. A server with zero admitted
+    /// invocations, or an unreadable OCEL file, still returns a spec-valid
+    /// empty OCEL 2.0 document rather than an error.
+    fn read_resource(&self, id: Value, request: &Value) -> Result<Option<Value>, McpError> {
+        let params = request.get("params").and_then(Value::as_object);
+        let Some(uri) = params.and_then(|params| params.get("uri")).and_then(Value::as_str) else {
+            return Ok(Some(self.error(id, -32602, "Missing resource uri")));
+        };
+        if uri != OCEL_RESOURCE_URI {
+            return Ok(Some(self.error(id, -32602, "Unknown resource uri")));
+        }
+        let document = ocel_document_json();
+        let result = json!({
+            "contents": [{
+                "uri": OCEL_RESOURCE_URI,
+                "mimeType": "application/json",
+                "text": document.to_string()
+            }]
+        });
+        Ok(Some(self.success(id, result)))
+    }
+
     fn success(&self, id: Value, mut result: Value) -> Value {
         if let Some(result_object) = result.as_object_mut() {
             result_object.insert("resultType".to_owned(), Value::String("complete".to_owned()));
@@ -227,6 +263,26 @@ fn validate_request_meta(request: &Value) -> Result<(), &'static str> {
         }
     }
     Ok(())
+}
+
+/// Read the OCEL 2.0 document written by the underlying `clap-noun-verb`
+/// binary this process (or a self-exec'd child, e.g. `ProcessExecutor`)
+/// invoked, using the same primary/fallback path resolution as phase 1's
+/// `clap_noun_verb::ocel::record_invocation`.
+fn ocel_document_json() -> Value {
+    let primary = clap_noun_verb::ocel::primary_path();
+    if primary.exists() {
+        if let Ok(doc) = clap_noun_verb::ocel::read_document(&primary) {
+            return json!(doc);
+        }
+    }
+    let fallback = clap_noun_verb::ocel::fallback_path();
+    if fallback.exists() {
+        if let Ok(doc) = clap_noun_verb::ocel::read_document(&fallback) {
+            return json!(doc);
+        }
+    }
+    json!(clap_noun_verb::OcelDocument::empty())
 }
 
 fn stamp_server_info(result: &mut Value, name: &str, version: &str) {

@@ -3,7 +3,19 @@ use clap_noun_verb::{Arg, ArgAction, Command};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
+use std::fs;
+use std::io::Read;
+use std::path::Path;
 use thiserror::Error;
+
+/// Failure reading or parsing a `CliSchema` manifest from disk.
+#[derive(Debug, Error)]
+pub enum ManifestError {
+    #[error("failed to read manifest: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("failed to parse manifest JSON: {0}")]
+    Json(#[from] serde_json::Error),
+}
 
 /// JSON-facing argument shape inferred from Clap metadata.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -115,6 +127,21 @@ impl CliSchema {
         }
 
         command.build_invocation(arguments)
+    }
+
+    /// Deserialize a `CliSchema` manifest from any `Read` source (e.g. an
+    /// open file or an in-memory buffer). The manifest is exactly this
+    /// struct's existing JSON shape -- no new format is introduced.
+    pub fn from_manifest_reader<R: Read>(mut reader: R) -> Result<Self, ManifestError> {
+        let mut contents = String::new();
+        reader.read_to_string(&mut contents)?;
+        Ok(serde_json::from_str(&contents)?)
+    }
+
+    /// Deserialize a `CliSchema` manifest from a JSON file on disk.
+    pub fn from_manifest_path(path: &Path) -> Result<Self, ManifestError> {
+        let contents = fs::read_to_string(path)?;
+        Ok(serde_json::from_str(&contents)?)
     }
 }
 
@@ -332,5 +359,94 @@ fn argument_schema(argument: &Arg) -> ArgumentSchema {
         positional: argument.get_long().is_none() && argument.get_short().is_none(),
         kind,
         behavior,
+    }
+}
+
+#[cfg(test)]
+mod manifest_tests {
+    use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_path(label: &str) -> std::path::PathBuf {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+        std::env::temp_dir().join(format!("cnv-deploy-manifest-{label}-{nanos}.json"))
+    }
+
+    fn manifest_json() -> &'static str {
+        r#"{
+            "name": "greet",
+            "about": "Greets a person by name",
+            "commands": [
+                {
+                    "path": ["greet"],
+                    "about": "Print a greeting",
+                    "arguments": [
+                        {
+                            "id": "name",
+                            "long": null,
+                            "short": null,
+                            "required": true,
+                            "positional": true,
+                            "kind": "string",
+                            "behavior": "value"
+                        }
+                    ],
+                    "callable": true
+                }
+            ]
+        }"#
+    }
+
+    #[test]
+    fn from_manifest_path_reads_hand_authored_json_from_disk() {
+        // Arrange
+        let path = unique_temp_path("path");
+        fs::write(&path, manifest_json()).expect("write real manifest file");
+
+        // Act
+        let schema = CliSchema::from_manifest_path(&path).expect("parse real manifest file");
+
+        // Assert
+        assert_eq!(schema.name, "greet");
+        assert_eq!(schema.about.as_deref(), Some("Greets a person by name"));
+        assert_eq!(schema.commands.len(), 1);
+        assert!(schema.commands[0].callable);
+        assert_eq!(schema.commands[0].path, vec!["greet".to_string()]);
+        assert_eq!(schema.commands[0].arguments[0].id, "name");
+        assert!(schema.commands[0].arguments[0].positional);
+        assert!(schema.commands[0].arguments[0].required);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn from_manifest_reader_reads_from_an_arbitrary_read_source() {
+        // Arrange
+        let bytes = manifest_json().as_bytes();
+
+        // Act
+        let schema = CliSchema::from_manifest_reader(bytes).expect("parse real manifest bytes");
+
+        // Assert
+        assert_eq!(schema.name, "greet");
+        assert_eq!(schema.commands.len(), 1);
+        assert_eq!(schema.commands[0].tool_name(), "greet");
+    }
+
+    #[test]
+    fn from_manifest_path_reports_io_error_for_missing_file() {
+        let path = unique_temp_path("missing");
+        let error = CliSchema::from_manifest_path(&path).expect_err("missing file must error");
+        assert!(matches!(error, ManifestError::Io(_)));
+    }
+
+    #[test]
+    fn from_manifest_path_reports_json_error_for_malformed_manifest() {
+        let path = unique_temp_path("malformed");
+        fs::write(&path, "{ not valid json").expect("write malformed manifest file");
+        let error = CliSchema::from_manifest_path(&path).expect_err("malformed JSON must error");
+        assert!(matches!(error, ManifestError::Json(_)));
+        fs::remove_file(&path).ok();
     }
 }

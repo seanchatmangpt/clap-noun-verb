@@ -73,6 +73,7 @@ where
             ("GET", "/healthz") | ("GET", "/readyz") => response(200, json!({"status": "ok"})),
             ("GET", "/schema") => response(200, json!(self.schema)),
             ("GET", "/tools") => response(200, json!({"tools": self.schema.tools()})),
+            ("GET", "/ocel") => response(200, ocel_document_json()),
             ("POST", "/invoke") => self.invoke(body)?,
             _ => response(404, json!({"error": "not_found"})),
         };
@@ -199,6 +200,28 @@ fn find_header_end(bytes: &[u8]) -> Option<usize> {
 
 fn response(status: u16, body: Value) -> HttpResponse {
     HttpResponse { status, content_type: "application/json", body: body.to_string() }
+}
+
+/// Read the OCEL 2.0 document written by the underlying `clap-noun-verb`
+/// binary this process (or a self-exec'd child, e.g. `ProcessExecutor`)
+/// invoked -- using the same primary/fallback path resolution as phase 1's
+/// `clap_noun_verb::ocel::record_invocation`. A freshly-started server with
+/// zero admitted invocations, or one whose OCEL file cannot be read, still
+/// returns a spec-valid empty OCEL 2.0 document rather than an error.
+fn ocel_document_json() -> Value {
+    let primary = clap_noun_verb::ocel::primary_path();
+    if primary.exists() {
+        if let Ok(doc) = clap_noun_verb::ocel::read_document(&primary) {
+            return json!(doc);
+        }
+    }
+    let fallback = clap_noun_verb::ocel::fallback_path();
+    if fallback.exists() {
+        if let Ok(doc) = clap_noun_verb::ocel::read_document(&fallback) {
+            return json!(doc);
+        }
+    }
+    json!(clap_noun_verb::OcelDocument::empty())
 }
 
 fn write_response(stream: &mut TcpStream, response: &HttpResponse) -> Result<(), std::io::Error> {
