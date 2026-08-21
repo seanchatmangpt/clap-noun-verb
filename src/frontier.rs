@@ -1380,9 +1380,16 @@ mod tests {
     }
 
     #[test]
-    fn discovery_engine_names_lists_every_registered_capability() {
+    fn discovery_engine_names_lists_every_registered_capability_in_canonical_order() {
+        // Registered in scrambled (non-alphabetical) order so this test
+        // cannot pass by coincidence: with registration already in
+        // alphabetical order (as this test used to do), insertion order
+        // and the documented "canonical order" are the same vector and a
+        // regression from the current BTreeMap-backed sorted behavior to
+        // a plain insertion-order-preserving structure (e.g. a `Vec` or
+        // `IndexMap` swapped in for performance) would go undetected.
         let mut engine = DiscoveryEngine::default();
-        for name in ["alpha", "beta"] {
+        for name in ["zeta", "alpha", "mango"] {
             engine
                 .register(DiscoveryRecord {
                     name: name.to_string(),
@@ -1391,7 +1398,11 @@ mod tests {
                 })
                 .expect("valid record");
         }
-        assert_eq!(engine.names(), vec!["alpha", "beta"]);
+        assert_eq!(
+            engine.names(),
+            vec!["alpha", "mango", "zeta"],
+            "names() must be in canonical (sorted) order regardless of registration order"
+        );
     }
 
     #[test]
@@ -1562,8 +1573,15 @@ mod tests {
     #[test]
     fn meta_framework_layers_and_invariant_accessors_report_real_registered_state() {
         let mut framework = MetaFramework::new();
-        framework.register_layer("admission").expect("unique layer");
+        // Registered in reverse-of-canonical order ("execution" before
+        // "admission") so the sorted-order assertion below is actually
+        // exercised: registering "admission" first (as this test used to
+        // do) makes insertion order and canonical (sorted) order the same
+        // vector, so a regression from the current BTreeSet-backed sorted
+        // behavior to a plain insertion-order-preserving structure would
+        // go undetected.
         framework.register_layer("execution").expect("unique layer");
+        framework.register_layer("admission").expect("unique layer");
         framework
             .admit_invariant(Invariant {
                 id: "zero-unreceipted-actuation".to_string(),
@@ -1572,7 +1590,11 @@ mod tests {
             })
             .expect("valid invariant");
 
-        assert_eq!(framework.layers(), vec!["admission", "execution"]);
+        assert_eq!(
+            framework.layers(),
+            vec!["admission", "execution"],
+            "layers() must be in canonical (sorted) order, not registration order"
+        );
         assert_eq!(framework.invariants().len(), 1);
         let invariant =
             framework.invariant("zero-unreceipted-actuation").expect("registered invariant");
@@ -1872,6 +1894,44 @@ mod tests {
 
         let empty = ReflexiveReport { passed: 0, failed: 0, replay_verified: false };
         assert_eq!(empty.pass_rate(), 0.0);
+    }
+
+    #[test]
+    fn reflexive_report_merge_is_associative_and_order_independent_across_three_reports() {
+        // Three independent runs, as a CI matrix would produce (e.g. three
+        // shards, or an initial run plus two replay runs): two verified,
+        // one not, so the AND-reduction is actually exercised rather than
+        // trivially staying `true` throughout.
+        let a = ReflexiveReport { passed: 10, failed: 1, replay_verified: true };
+        let b = ReflexiveReport { passed: 20, failed: 0, replay_verified: true };
+        let c = ReflexiveReport { passed: 7, failed: 3, replay_verified: false };
+
+        // `merge` is field-wise `+` on `passed`/`failed` (associative and
+        // commutative on `u64`, no overflow at these magnitudes) and `&&`
+        // on `replay_verified` (associative and commutative on `bool`), so
+        // every grouping and every order of combination must fold to the
+        // same result when three or more reports are merged.
+        let left_fold = a.merge(&b).merge(&c);
+        let right_fold = a.merge(&b.merge(&c));
+        let reordered = b.merge(&c).merge(&a);
+        let reordered_again = c.merge(&a).merge(&b);
+
+        let expected = ReflexiveReport { passed: 37, failed: 4, replay_verified: false };
+        assert_eq!(left_fold, expected);
+        assert_eq!(right_fold, expected, "left-fold and right-fold must agree (associativity)");
+        assert_eq!(reordered, expected, "merge order must not change the folded result");
+        assert_eq!(reordered_again, expected, "merge order must not change the folded result");
+
+        // `pass_rate` is a pure function of the final (passed, failed)
+        // totals -- it is not itself merged or averaged incrementally --
+        // so it is order-independent for the same reason the totals
+        // themselves are: computed after any valid merge chain, it agrees
+        // with the rate computed on the same totals built any other way.
+        let expected_rate = expected.pass_rate();
+        assert!((left_fold.pass_rate() - expected_rate).abs() < 1e-9);
+        assert!((right_fold.pass_rate() - expected_rate).abs() < 1e-9);
+        assert!((reordered.pass_rate() - expected_rate).abs() < 1e-9);
+        assert!((reordered_again.pass_rate() - expected_rate).abs() < 1e-9);
     }
 
     // -------------------------------------------------------------------
@@ -2561,11 +2621,22 @@ mod tests {
     #[test]
     fn specification_suite_enumeration_and_removal_reflect_real_state() {
         let mut suite = SpecificationSuite::default();
-        suite.add_spec(ExecutableSpec::new("Spec 1", "First"));
+        // Added in reverse-of-canonical order ("Spec 2" before "Spec 1")
+        // so the sorted-order assertion below is actually exercised:
+        // adding "Spec 1" first (as this test used to do) makes insertion
+        // order and canonical (sorted) order the same vector, so a
+        // regression from the current BTreeMap-backed sorted behavior to
+        // a plain insertion-order-preserving structure would go
+        // undetected.
         suite.add_spec(ExecutableSpec::new("Spec 2", "Second"));
+        suite.add_spec(ExecutableSpec::new("Spec 1", "First"));
 
         let names: Vec<&str> = suite.names().collect();
-        assert_eq!(names, vec!["Spec 1", "Spec 2"]);
+        assert_eq!(
+            names,
+            vec!["Spec 1", "Spec 2"],
+            "names() must be in sorted order regardless of add_spec order"
+        );
         assert_eq!(suite.len(), 2);
         assert!(!suite.is_empty());
 
@@ -3098,6 +3169,41 @@ mod tests {
             })
     }
 
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): RdfFragment::compose and
+    // CompositionChain::push. Both are covered above only by hand-picked
+    // examples; these generalize the real invariants that follow from
+    // each function's actual implementation (confirmed from source
+    // above, not assumed) across a randomized input space.
+    // -------------------------------------------------------------------
+
+    fn triple_field_strategy() -> impl Strategy<Value = String> {
+        "[a-zA-Z0-9]{1,8}"
+    }
+
+    fn semantic_triple_strategy() -> impl Strategy<Value = SemanticTriple> {
+        (triple_field_strategy(), triple_field_strategy(), triple_field_strategy())
+            .prop_map(|(subject, predicate, object)| SemanticTriple { subject, predicate, object })
+    }
+
+    fn triple_list_strategy() -> impl Strategy<Value = Vec<SemanticTriple>> {
+        prop::collection::vec(semantic_triple_strategy(), 0..12)
+    }
+
+    fn fragment_from(triples: &[SemanticTriple]) -> RdfFragment {
+        let mut fragment = RdfFragment::new();
+        for triple in triples {
+            fragment
+                .insert(triple.clone())
+                .expect("generated triple satisfies insert's own real precondition");
+        }
+        fragment
+    }
+
+    fn push_candidate_strategy() -> impl Strategy<Value = String> {
+        prop_oneof![Just(String::new()), "[ \t\n]{0,4}", "[ \t]{0,2}[a-zA-Z0-9]{1,6}[ \t]{0,2}",]
+    }
+
     proptest! {
         /// For ANY valid Vickrey auction input (2+ bids, one real common
         /// task, each bid finite/non-negative, one bid per agent): the
@@ -3175,5 +3281,242 @@ mod tests {
                 .expect("a non-empty trajectory slice always yields a real selection");
             prop_assert_eq!(selected, first_empty);
         }
+
+        #[test]
+        fn rdf_fragment_construction_is_insertion_order_independent(
+            triples in triple_list_strategy()
+        ) {
+            let forward = fragment_from(&triples);
+            let mut reversed_triples = triples.clone();
+            reversed_triples.reverse();
+            let reversed = fragment_from(&reversed_triples);
+            prop_assert_eq!(forward, reversed);
+        }
+
+        #[test]
+        fn rdf_fragment_compose_is_commutative(
+            left_triples in triple_list_strategy(),
+            right_triples in triple_list_strategy()
+        ) {
+            let left = fragment_from(&left_triples);
+            let right = fragment_from(&right_triples);
+            prop_assert_eq!(left.compose(&right), right.compose(&left));
+        }
+
+        #[test]
+        fn rdf_fragment_compose_with_itself_is_idempotent(
+            triples in triple_list_strategy()
+        ) {
+            let fragment = fragment_from(&triples);
+            let composed = fragment.compose(&fragment);
+            prop_assert_eq!(composed, fragment);
+        }
+
+        #[test]
+        fn rdf_fragment_compose_triple_count_never_exceeds_the_sum_of_both_inputs(
+            left_triples in triple_list_strategy(),
+            right_triples in triple_list_strategy()
+        ) {
+            let left = fragment_from(&left_triples);
+            let right = fragment_from(&right_triples);
+            let composed = left.compose(&right);
+            prop_assert!(composed.triples().len() <= left.triples().len() + right.triples().len());
+        }
+
+        #[test]
+        fn rdf_fragment_compose_is_associative(
+            a_triples in triple_list_strategy(),
+            b_triples in triple_list_strategy(),
+            c_triples in triple_list_strategy()
+        ) {
+            let a = fragment_from(&a_triples);
+            let b = fragment_from(&b_triples);
+            let c = fragment_from(&c_triples);
+            prop_assert_eq!(a.compose(&b).compose(&c), a.compose(&b.compose(&c)));
+        }
+
+        #[test]
+        fn composition_chain_len_equals_the_real_count_of_trim_non_empty_pushes(
+            candidates in prop::collection::vec(push_candidate_strategy(), 0..20)
+        ) {
+            let mut chain = CompositionChain::new();
+            for candidate in &candidates {
+                chain.push(candidate.clone());
+            }
+            let expected_len = candidates.iter().filter(|c| !c.trim().is_empty()).count();
+            prop_assert_eq!(chain.len(), expected_len);
+            prop_assert_eq!(chain.is_empty(), expected_len == 0);
+        }
+
+        #[test]
+        fn composition_chain_entries_are_the_real_untrimmed_non_blank_inputs_in_order(
+            candidates in prop::collection::vec(push_candidate_strategy(), 0..20)
+        ) {
+            let mut chain = CompositionChain::new();
+            for candidate in &candidates {
+                chain.push(candidate.clone());
+            }
+            let expected: Vec<String> =
+                candidates.into_iter().filter(|c| !c.trim().is_empty()).collect();
+            prop_assert_eq!(chain.entries(), expected.as_slice());
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Cross-capability integration (frontier-gap-sweep): DiscoveryEngine +
+    // MetaFramework + EconomicSimulation + LearningTrajectory +
+    // ReflexiveReport wired together with real data flowing between them.
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn discovery_meta_framework_economic_simulation_learning_trajectory_and_reflexive_report_compose_end_to_end(
+    ) {
+        fn run_allocation_round(
+            agent_trust: &BTreeMap<AgentId, f64>,
+            task_capability: &BTreeMap<TaskId, &str>,
+        ) -> FrontierResult<Vec<Allocation>> {
+            let agent_capabilities: BTreeMap<AgentId, Vec<&str>> = BTreeMap::from([
+                (AgentId(1), vec!["alpha-capability"]),
+                (AgentId(2), vec!["alpha-capability", "beta-capability"]),
+                (AgentId(3), vec!["beta-capability"]),
+            ]);
+            let mut sim = EconomicSimulation::new();
+            for (&agent_id, &trust) in agent_trust {
+                let capabilities: Vec<String> = agent_capabilities
+                    .get(&agent_id)
+                    .expect("every agent id in this fixed scenario has a capability list")
+                    .iter()
+                    .map(|name| (*name).to_string())
+                    .collect();
+                sim.add_agent(Agent {
+                    id: agent_id,
+                    capabilities,
+                    trust_score: trust,
+                    valuation: 100.0,
+                })?;
+            }
+            for (&task_id, &capability) in task_capability {
+                sim.add_task(Task {
+                    id: task_id,
+                    required_capability: capability.to_string(),
+                    value: 100.0,
+                })?;
+            }
+            sim.step()
+        }
+
+        let mut discovery = DiscoveryEngine::default();
+        for name in ["alpha-capability", "beta-capability", "gamma-capability"] {
+            discovery
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: BTreeSet::new(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
+
+        let mut framework = MetaFramework::new();
+        framework.register_layer("capability-admission").expect("unique layer");
+        framework
+            .admit_invariant(Invariant {
+                id: "sufficient-capacity".to_string(),
+                description: "at least one trust-scored agent exists for the capability set"
+                    .to_string(),
+                satisfied: true,
+            })
+            .expect("valid invariant");
+        assert_eq!(
+            framework.state(false),
+            AdmissionState::Admitted,
+            "invariants hold but no execution receipt exists yet"
+        );
+
+        let agent_trust: BTreeMap<AgentId, f64> =
+            BTreeMap::from([(AgentId(1), 0.9), (AgentId(2), 0.3), (AgentId(3), 0.7)]);
+        let task_capability: BTreeMap<TaskId, &str> = BTreeMap::from([
+            (TaskId(1), "alpha-capability"),
+            (TaskId(2), "beta-capability"),
+            (TaskId(3), "gamma-capability"),
+        ]);
+
+        let first_run = run_allocation_round(&agent_trust, &task_capability)
+            .expect("a deterministic, valid pipeline always succeeds");
+        let second_run = run_allocation_round(&agent_trust, &task_capability)
+            .expect("a deterministic, valid pipeline always succeeds");
+        let replay_verified = first_run == second_run;
+        assert!(
+            replay_verified,
+            "two independent runs of the identical deterministic pipeline must agree"
+        );
+
+        assert_eq!(
+            first_run.len(),
+            2,
+            "gamma-capability's task has no eligible agent and stays unallocated"
+        );
+        let alpha_allocation =
+            first_run.iter().find(|a| a.task_id == TaskId(1)).expect("alpha task was allocated");
+        let beta_allocation =
+            first_run.iter().find(|a| a.task_id == TaskId(2)).expect("beta task was allocated");
+        assert_eq!(
+            alpha_allocation.agent_id,
+            AgentId(1),
+            "the higher-trust eligible agent (0.9 over 0.3) must win alpha-capability"
+        );
+        assert_eq!(
+            beta_allocation.agent_id,
+            AgentId(3),
+            "the higher-trust eligible agent (0.7 over 0.3) must win beta-capability"
+        );
+
+        let mut alpha_trajectory = LearningTrajectory::default();
+        let alpha_score = *agent_trust
+            .get(&alpha_allocation.agent_id)
+            .expect("the winning agent has a known trust score");
+        alpha_trajectory.observe(alpha_score).expect("trust scores already lie within 0.0..=1.0");
+
+        let mut beta_trajectory = LearningTrajectory::default();
+        let beta_score = *agent_trust
+            .get(&beta_allocation.agent_id)
+            .expect("the winning agent has a known trust score");
+        beta_trajectory.observe(beta_score).expect("trust scores already lie within 0.0..=1.0");
+
+        let gamma_trajectory = LearningTrajectory::default();
+        assert!(gamma_trajectory.is_empty(), "gamma-capability was never executed this round");
+
+        let histories = vec![
+            ("alpha-capability".to_string(), alpha_trajectory.clone()),
+            ("beta-capability".to_string(), beta_trajectory.clone()),
+            ("gamma-capability".to_string(), gamma_trajectory.clone()),
+        ];
+        let recommended =
+            discovery.recommend(&histories).expect("every history names a registered capability");
+        assert_eq!(
+            recommended, "gamma-capability",
+            "the never-executed capability must be recommended ahead of the two \
+             already-observed ones"
+        );
+
+        let passed = first_run.len() as u64;
+        let failed = discovery.names().len() as u64 - passed;
+        let report = ReflexiveReport { passed, failed, replay_verified };
+        assert_eq!(report.passed, 2);
+        assert_eq!(report.failed, 1);
+        assert!(
+            !report.is_alive(),
+            "one real unallocated capability keeps this round from being alive"
+        );
+        assert!(
+            (report.pass_rate() - (2.0 / 3.0)).abs() < 1e-9,
+            "pass_rate must equal the real fraction of capabilities executed this round"
+        );
+
+        let receipt_observed = !first_run.is_empty();
+        assert_eq!(
+            framework.state(receipt_observed),
+            AdmissionState::Alive,
+            "once a real allocation exists as a receipt, admission advances to Alive"
+        );
     }
 }
