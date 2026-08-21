@@ -2351,24 +2351,37 @@ mod tests {
         // proptest strategy) will not reliably generate the exact endpoint
         // over any realistic number of cases. This does more than check
         // `add_agent` returns `Ok`: it drives the accepted agent through a
-        // real `step()` against a lower-trust rival for the same task, so
-        // the boundary value is confirmed genuinely stored and compared
-        // (via `trust_score.total_cmp`), not silently clamped or dropped.
+        // real `step()` against a rival for the same task, so the boundary
+        // value is confirmed genuinely stored and compared (via
+        // `trust_score.total_cmp`), not silently clamped or dropped.
+        //
+        // The rival is deliberately 0.999_999 (a hair below the 1.0
+        // boundary), not some far-away value like 0.5: a real mutation
+        // test proved a rival that far away gives this assertion zero
+        // power to catch a plausible real-world comparator bug -- treating
+        // near-equal-but-genuinely-different trust scores as tied (an
+        // "avoid float noise" mistake) -- because any such near-tie
+        // fallback only misfires when the two scores are actually close.
+        // The rival also deliberately holds the *lower* AgentId while the
+        // 1.0-trust agent holds the *higher* one, so the id-based
+        // tie-break (which favors the lower id) would select the *wrong*
+        // agent if that bug were ever introduced, rather than coincide
+        // with the correct answer and mask it.
         let mut sim = EconomicSimulation::new();
         sim.add_agent(Agent {
             id: AgentId(1),
+            capabilities: vec!["compute".to_string()],
+            trust_score: 0.999_999,
+            valuation: 0.0,
+        })
+        .expect("valid rival agent");
+        sim.add_agent(Agent {
+            id: AgentId(2),
             capabilities: vec!["compute".to_string()],
             trust_score: 1.0,
             valuation: 0.0,
         })
         .expect("a trust score of exactly 1.0 is within admitted bounds");
-        sim.add_agent(Agent {
-            id: AgentId(2),
-            capabilities: vec!["compute".to_string()],
-            trust_score: 0.5,
-            valuation: 0.0,
-        })
-        .expect("valid rival agent");
         sim.add_task(Task {
             id: TaskId(1),
             required_capability: "compute".to_string(),
@@ -2380,9 +2393,10 @@ mod tests {
         assert_eq!(produced.len(), 1, "the single eligible task must be allocated");
         assert_eq!(
             produced[0].agent_id,
-            AgentId(1),
-            "the agent whose trust score is exactly 1.0 must be preferred over the 0.5 \
-             rival, confirming the boundary value was actually stored and compared"
+            AgentId(2),
+            "the agent whose trust score is exactly 1.0 must be preferred over the 0.999999 \
+             rival even though it has the higher AgentId, confirming the boundary value was \
+             actually stored and compared rather than falling back to the id tie-break"
         );
     }
 
@@ -4186,6 +4200,74 @@ mod tests {
             let b = fragment_from(&b_triples);
             let c = fragment_from(&c_triples);
             prop_assert_eq!(a.compose(&b).compose(&c), a.compose(&b.compose(&c)));
+        }
+
+        /// For ANY real set of triples and ANY query pattern (each of
+        /// subject, predicate, object independently `None`, a real value
+        /// drawn from an actual triple already in the fragment, or a fresh
+        /// probe value drawn from the same free-form pool
+        /// `triple_field_strategy` already uses for triple construction
+        /// above -- so a virtually-guaranteed-absent value occurs too),
+        /// `matching` returns exactly what an independently written filter
+        /// (the same three conditions, re-derived here against
+        /// `triples()`, not copied from `matching`'s own body above)
+        /// selects -- confirmed from `matching`'s real body above
+        /// (`subject.map_or(true, |s| t.subject == s)`, and the same
+        /// independent condition for predicate and object). The one
+        /// existing hand-picked test,
+        /// `rdf_fragment_matching_filters_by_subject_pattern`, exercises
+        /// exactly one pattern shape (`Some` subject, `None` predicate and
+        /// object) against three hand-inserted triples; it never exercises
+        /// a predicate-only or object-only pattern, the fully-vacuous
+        /// `(None, None, None)` pattern (which must return every triple in
+        /// the fragment), or a fully-specified `(Some, Some, Some)`
+        /// pattern (which -- because triples are deduplicated by full
+        /// equality in the underlying `BTreeSet` -- can match at most the
+        /// one triple sharing that exact subject/predicate/object
+        /// combination). None of the five `RdfFragment` proptests above
+        /// (construction order-independence, compose
+        /// commutativity/idempotence/associativity/triple-count-bound)
+        /// ever call `matching` either.
+        #[test]
+        fn rdf_fragment_matching_equals_an_independently_recomputed_filter(
+            (triples, subject, predicate, object) in triple_list_strategy().prop_flat_map(
+                |triples| {
+                    let present = |field: fn(&SemanticTriple) -> &str|
+                        -> BoxedStrategy<Option<String>> {
+                        if triples.is_empty() {
+                            Just(None).boxed()
+                        } else {
+                            let values: Vec<String> =
+                                triples.iter().map(|t| field(t).to_string()).collect();
+                            prop_oneof![
+                                1 => Just(None),
+                                2 => prop::sample::select(values).prop_map(Some),
+                                1 => triple_field_strategy().prop_map(Some),
+                            ]
+                            .boxed()
+                        }
+                    };
+                    let subject_pattern = present(|t| t.subject.as_str());
+                    let predicate_pattern = present(|t| t.predicate.as_str());
+                    let object_pattern = present(|t| t.object.as_str());
+                    (Just(triples), subject_pattern, predicate_pattern, object_pattern)
+                },
+            )
+        ) {
+            let fragment = fragment_from(&triples);
+
+            let expected: Vec<&SemanticTriple> = fragment
+                .triples()
+                .into_iter()
+                .filter(|t| subject.as_deref().map_or(true, |s| t.subject == s))
+                .filter(|t| predicate.as_deref().map_or(true, |p| t.predicate == p))
+                .filter(|t| object.as_deref().map_or(true, |o| t.object == o))
+                .collect();
+
+            let actual =
+                fragment.matching(subject.as_deref(), predicate.as_deref(), object.as_deref());
+
+            prop_assert_eq!(actual, expected);
         }
 
         #[test]
