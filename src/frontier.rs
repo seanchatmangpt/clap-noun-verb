@@ -3661,6 +3661,61 @@ mod tests {
         })
     }
 
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): FederatedNetwork::consensus_vote's
+    // Byzantine-quorum threshold. Every existing hand-picked test in
+    // tests/frontier/phase4_integration_test.rs (test_byzantine_consensus_
+    // with_majority, test_byzantine_consensus_insufficient_votes,
+    // test_byzantine_tolerance_30_percent) exercises exactly one fixed
+    // peer count (4 or 10) and one fixed vote pattern. This generalizes
+    // the real invariant confirmed from `consensus_vote`'s own body above
+    // (`tolerated_faults = (peers.len() - 1) / 3`, `threshold = 2 *
+    // tolerated_faults + 1`, `Ok(true)` iff the real counted approvals
+    // meet that threshold, else a typed `Err` reporting the same
+    // threshold) across an arbitrary peer count and an arbitrary real
+    // subset of "yes" votes, checked against an independently re-derived
+    // textbook classical-BFT formula computed fresh in this test -- never
+    // copied from the production body.
+    // -------------------------------------------------------------------
+
+    /// A real peer count in `1..50` paired with one independent, real
+    /// yes/no vote per peer -- generates every possible approval count
+    /// from `0` to `peer_count` by construction (the number of `true`
+    /// entries), rather than only a few hand-picked totals.
+    fn consensus_peer_count_and_votes_strategy() -> impl Strategy<Value = (usize, Vec<bool>)> {
+        (1usize..50usize).prop_flat_map(|peer_count| {
+            prop::collection::vec(any::<bool>(), peer_count)
+                .prop_map(move |votes| (peer_count, votes))
+        })
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): ReflexiveReport::merge across an
+    // arbitrary sequence of reports. A prior round already added
+    // reflexive_report_merge_is_associative_and_order_independent_across_three_reports,
+    // a hand-picked example checking exactly three fixed reports folded
+    // in four fixed orderings. This generalizes the same real invariant
+    // (merge is field-wise `+`/`&&`, so folding any sequence of reports
+    // in any order always sums to the same passed/failed totals and ANDs
+    // to the same replay_verified) across an arbitrary count (1 to 8) and
+    // arbitrary values, checked against independently recomputed totals
+    // rather than a single hand-computed expected value.
+    // -------------------------------------------------------------------
+
+    /// A real `ReflexiveReport` with counts bounded to a realistic CI
+    /// magnitude and an arbitrary `replay_verified`.
+    fn reflexive_report_strategy() -> impl Strategy<Value = ReflexiveReport> {
+        (0u64..10_000u64, 0u64..10_000u64, any::<bool>()).prop_map(
+            |(passed, failed, replay_verified)| ReflexiveReport { passed, failed, replay_verified },
+        )
+    }
+
+    /// One to eight real reports, as a sharded CI run or a run plus
+    /// several replays might produce.
+    fn reflexive_reports_strategy() -> impl Strategy<Value = Vec<ReflexiveReport>> {
+        prop::collection::vec(reflexive_report_strategy(), 1..9usize)
+    }
+
     proptest! {
         /// For ANY valid Vickrey auction input (2+ bids, one real common
         /// task, each bid finite/non-negative, one bid per agent): the
@@ -4211,27 +4266,42 @@ mod tests {
         /// file already property-tests for `MetaFramework::layers`
         /// above); `len()`/`is_empty()` always reflect the real current
         /// count; `get_spec(name)` returns `Ok` for exactly the names
-        /// currently present and `Err` for every other pool name; and a
-        /// name removed and then re-added is genuinely present again, not
-        /// permanently gone. No existing test drives more than one fixed
-        /// add-add-remove sequence over two hand-picked names before
-        /// checking any of this.
+        /// currently present and `Err` for every other pool name; a name
+        /// removed and then re-added is genuinely present again, not
+        /// permanently gone; and -- the part a presence-only check cannot
+        /// tell apart from a silent keep-first bug -- re-adding an
+        /// already-present name genuinely REPLACES the stored spec rather
+        /// than leaving the earlier one in place. Each generated `Add`
+        /// carries a distinct per-operation marker in its description
+        /// (this loop's own index, not a value copied from `add_spec`'s
+        /// body) specifically so the last-write-wins content check below
+        /// has something real to distinguish; a suite that quietly kept
+        /// the first spec added under a repeated name (e.g.
+        /// `self.specs.entry(name).or_insert(spec)` instead of the
+        /// documented "add or replace") would satisfy every presence-only
+        /// assertion here yet still fail the content check. No existing
+        /// test drives more than one fixed add-add-remove sequence over
+        /// two hand-picked names before checking any of this.
         #[test]
         fn specification_suite_names_len_is_empty_and_get_spec_always_reflect_the_real_current_state(
             ops in spec_ops_strategy()
         ) {
             let mut suite = SpecificationSuite::default();
             let mut expected: BTreeSet<String> = BTreeSet::new();
+            let mut expected_description: BTreeMap<String, String> = BTreeMap::new();
 
-            for op in &ops {
+            for (index, op) in ops.iter().enumerate() {
                 match op {
                     SpecOp::Add(name) => {
-                        suite.add_spec(ExecutableSpec::new(name.clone(), "generated"));
+                        let description = format!("generated-{index}");
+                        suite.add_spec(ExecutableSpec::new(name.clone(), description.clone()));
                         expected.insert(name.clone());
+                        expected_description.insert(name.clone(), description);
                     }
                     SpecOp::Remove(name) => {
                         suite.remove_spec(name);
                         expected.remove(name);
+                        expected_description.remove(name);
                     }
                 }
             }
@@ -4252,12 +4322,25 @@ mod tests {
             // check of get_spec's behavior for this suite -- no name
             // outside the pool could ever have been inserted.
             for name in SPEC_NAME_POOL {
+                let actual = suite.get_spec(name);
                 prop_assert_eq!(
-                    suite.get_spec(name).is_ok(),
+                    actual.is_ok(),
                     expected.contains(name),
                     "get_spec(\"{}\") must be Ok iff the name is currently present",
                     name
                 );
+                if let Ok(spec) = actual {
+                    prop_assert_eq!(
+                        spec.description.as_str(),
+                        expected_description.get(name).map(String::as_str).expect(
+                            "get_spec returned Ok, so this test's own tracking map must have \
+                             recorded a last-added description for this name too"
+                        ),
+                        "get_spec(\"{}\") must return the LAST spec added for a repeated name, \
+                         not an earlier one silently kept",
+                        name
+                    );
+                }
             }
         }
 
@@ -4341,6 +4424,99 @@ mod tests {
                 "total allocations across repeated step() calls must never exceed the total \
                  tasks added"
             );
+        }
+
+        #[test]
+        fn consensus_vote_outcome_and_reported_threshold_always_match_the_independent_bft_formula(
+            (peer_count, votes) in consensus_peer_count_and_votes_strategy()
+        ) {
+            let peers: Vec<PeerId> =
+                (0..peer_count).map(|i| PeerId(format!("consensus-peer-{i}"))).collect();
+            let vote_map: BTreeMap<PeerId, bool> =
+                peers.iter().cloned().zip(votes.iter().copied()).collect();
+
+            let network = FederatedNetwork::new("consensus-formula-node")
+                .expect("non-empty node id satisfies FederatedNetwork::new's precondition");
+
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("building a current-thread tokio runtime never fails");
+            let result = runtime.block_on(
+                network.consensus_vote(&peers, |peer| vote_map.get(peer).copied().unwrap_or(false)),
+            );
+
+            // Independently re-derived textbook classical-BFT formula --
+            // written fresh here, never copied from consensus_vote's own
+            // body above.
+            let tolerated_faults = (peer_count - 1) / 3;
+            let threshold = 2 * tolerated_faults + 1;
+            let approvals = votes.iter().filter(|approved| **approved).count();
+
+            match result {
+                Ok(accepted) => {
+                    prop_assert!(
+                        accepted,
+                        "consensus_vote's own body only ever returns Ok(true), never Ok(false)"
+                    );
+                    prop_assert!(
+                        approvals >= threshold,
+                        "a real Ok(true) outcome must mean the real approvals ({approvals}) \
+                         already met the independent textbook threshold ({threshold}) for \
+                         {peer_count} peers"
+                    );
+                }
+                Err(message) => {
+                    prop_assert!(
+                        approvals < threshold,
+                        "a real Err outcome must mean the real approvals ({approvals}) fell \
+                         short of the independent textbook threshold ({threshold}) for \
+                         {peer_count} peers"
+                    );
+                    let expected_threshold_fragment = format!("threshold={threshold}");
+                    prop_assert!(
+                        message.contains(expected_threshold_fragment.as_str()),
+                        "the real refusal message must report the same threshold the \
+                         independent textbook BFT formula computes ({threshold}): {message}"
+                    );
+                }
+            }
+        }
+
+        /// For ANY sequence of 1 to 8 real reports with arbitrary counts
+        /// and arbitrary `replay_verified` values, folding them via
+        /// repeated `.merge()` calls left-to-right and right-to-left
+        /// always produces the same final `passed`/`failed` totals and
+        /// the same `replay_verified` -- generalizes the existing fixed
+        /// three-report test above across an arbitrary count and
+        /// arbitrary values.
+        #[test]
+        fn reflexive_report_merge_folds_to_the_same_result_regardless_of_order(
+            reports in reflexive_reports_strategy()
+        ) {
+            let first = reports[0].clone();
+
+            let left_fold = reports[1..]
+                .iter()
+                .fold(first.clone(), |acc, report| acc.merge(report));
+            let right_fold = reports[1..]
+                .iter()
+                .rev()
+                .fold(first.clone(), |acc, report| acc.merge(report));
+
+            let expected_passed: u64 = reports.iter().map(|report| report.passed).sum();
+            let expected_failed: u64 = reports.iter().map(|report| report.failed).sum();
+            let expected_replay_verified = reports.iter().all(|report| report.replay_verified);
+
+            prop_assert_eq!(left_fold.passed, expected_passed);
+            prop_assert_eq!(left_fold.failed, expected_failed);
+            prop_assert_eq!(left_fold.replay_verified, expected_replay_verified);
+
+            prop_assert_eq!(right_fold.passed, expected_passed);
+            prop_assert_eq!(right_fold.failed, expected_failed);
+            prop_assert_eq!(right_fold.replay_verified, expected_replay_verified);
+
+            prop_assert_eq!(left_fold, right_fold);
         }
     }
 
