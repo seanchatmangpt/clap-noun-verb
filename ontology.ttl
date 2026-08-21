@@ -1,0 +1,7 @@
+@prefix cnv-autonomic: <https://clap-noun-verb.dev/ontology/autonomic#> .
+
+cnv-autonomic:ClapNounVerbAutonomicConfig
+    a cnv-autonomic:Config ;
+    cnv-autonomic:envPathVar "CLAP_NOUN_VERB_RECEIPT_PATH" ;
+    cnv-autonomic:defaultRelativePath ".clap-noun-verb/receipts.jsonl" ;
+    cnv-autonomic:fallbackFileName "clap-noun-verb-receipts.jsonl" .
