@@ -294,40 +294,6 @@ fn test_services_start_stop_workflow() -> Result<()> {
 }
 ```
 
-### Pattern 5: Using the Test Prelude
-
-Use lint-compliant assertion helpers:
-
-```rust
-use clap_noun_verb::common::test_prelude::*;
-
-#[test]
-fn test_complex_parsing() -> Result<()> {
-    // Arrange
-    let input = r#"{"key": "value"}"#;
-    
-    // Act - Parse with custom error handling
-    let config = parse_config(input)
-        .test_expect("Config parsing should succeed");
-    
-    // Assert
-    assert_eq!(config.get("key").test_some("Key should exist"), "value");
-
-    Ok(())
-}
-```
-
-The test prelude provides:
-- `TestResultExt::test_unwrap()` — Unwrap with clear panic message
-- `TestResultExt::test_expect(msg)` — Unwrap with context
-- `TestOptionExt::test_some(msg)` — Assert Some and unwrap
-- `TestOptionExt::test_none(msg)` — Assert None
-- `test_ok!(expr)` — Macro form of test_unwrap
-- `test_some!(expr)` — Macro form of test_some
-- `test_none!(expr)` — Macro form of test_none
-
-All of these pass clippy lints without suppressions.
-
 ---
 
 ## Testing Feature-Gated Commands
@@ -1173,42 +1139,30 @@ async fn test_async_command_execution() -> Result<()> {
 }
 ```
 
-### Pattern 3: Testing Custom Middleware
+### Pattern 3: Testing Handler Logic Directly
 
-Validate middleware integration:
+Test the `HandlerInput`/`HandlerOutput` bridge without going through the CLI parser:
 
 ```rust
-use clap_noun_verb::middleware::{Middleware, MiddlewareChain};
-use clap_noun_verb::logic::HandlerInput;
-
-struct TestMiddleware {
-    called: Arc<Mutex<bool>>,
-}
-
-impl Middleware for TestMiddleware {
-    fn name(&self) -> &str { "test" }
-    fn execute(&self, _input: &mut HandlerInput) -> Result<()> {
-        *self.called.lock().unwrap() = true;
-        Ok(())
-    }
-}
+use clap_noun_verb::logic::{HandlerContext, HandlerInput, HandlerOutput};
 
 #[test]
-fn test_middleware_integration() -> Result<()> {
+fn test_handler_output_serializes_data() -> Result<()> {
     // Arrange
-    let called = Arc::new(Mutex::new(false));
-    let middleware = TestMiddleware {
-        called: called.clone(),
+    let context = HandlerContext::new("status").with_noun("services");
+    let input = HandlerInput {
+        args: Default::default(),
+        opts: Default::default(),
+        context,
     };
-    let mut chain = MiddlewareChain::new();
-    chain.add(Box::new(middleware));
 
     // Act
-    let mut input = HandlerInput::new("test", "cmd");
-    chain.execute(&mut input)?;
+    let output = HandlerOutput::from_data(serde_json::json!({ "status": "ok" }))?;
 
-    // Assert - Middleware should have been called
-    assert!(*called.lock().unwrap());
+    // Assert
+    assert_eq!(input.context.verb, "status");
+    assert_eq!(input.context.noun.as_deref(), Some("services"));
+    assert_eq!(output.data["status"], "ok");
     Ok(())
 }
 ```
@@ -1414,5 +1368,5 @@ cargo llvm-cov
 
 - [How-to: Test Generated CLIs](../howto/testing.md)
 - [Tutorial 03: Testing Basics](../tutorial/03-testing-basics.md)
-- [Error Handling Guide](../howto/error-handling.md)
+- [Error Handling Tutorial](../tutorial/06-error-handling.md)
 - [CLAUDE.md - Build Commands](../../CLAUDE.md)

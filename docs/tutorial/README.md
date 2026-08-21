@@ -10,7 +10,6 @@ By the end of this tutorial series, you'll be able to:
 - ✅ Build production-ready CLIs with noun-verb patterns
 - ✅ Separate domain logic from CLI layer (architecture principle)
 - ✅ Test CLIs with Chicago TDD methodology
-- ✅ Handle errors professionally with thiserror
 - ✅ Handle errors professionally with structured error types
 
 ---
@@ -63,6 +62,16 @@ By the end of this tutorial series, you'll be able to:
  - Custom error types
  - Structured error output
  - **Time**: 30-45 minutes
+
+### 🔌 Universal Adapter (30 minutes)
+
+**For**: Developers wrapping a non-Rust executable as a deployable CLI
+
+6. **[Wrapping Any Executable with cnv-any](07-wrapping-any-executable.md)**
+ - Manifest = `CliSchema`'s existing JSON shape
+ - ggen-generating a manifest from an ontology
+ - OCEL parity for wrapped foreign binaries
+ - **Time**: 15-20 minutes
 
 ---
 
@@ -121,8 +130,9 @@ This tutorial series follows **learning-oriented** principles:
 | [03. Testing Basics](03-testing-basics.md) | ✅ **Available** | 20-30 min |
 | [04. Output Formats](04-output-formats.md) | ✅ **Available** | 15-20 min |
 | [05. Error Handling](06-error-handling.md) | ✅ **Available** | 30-45 min |
+| [07. Wrapping Any Executable](07-wrapping-any-executable.md) | ✅ **Available** | 15-20 min |
 
-**Total Estimated Time**: 1.5-2 hours for complete series
+**Total Estimated Time**: ~2 hours for complete series
 
 ---
 
@@ -132,4 +142,4 @@ This tutorial series follows **learning-oriented** principles:
 
 ---
 
-**Note**: Tutorials follow Diataxis principles with validated 26.6.13 code examples.
+**Note**: Tutorials follow Diataxis principles with validated 26.9.1 code examples.

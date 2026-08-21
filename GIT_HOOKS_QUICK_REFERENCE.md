@@ -450,4 +450,4 @@ Having hook issues? Check these in order:
 ---
 
 **Last updated**: 2026-06-14  
-**For repo**: clap-noun-verb (v26.6.1)
+**For repo**: clap-noun-verb (v26.9.1)

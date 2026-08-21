@@ -1,6 +1,6 @@
 # Executable Documentation Coverage Ledger
 
-**Project:** clap-noun-verb 26.7.62  
+**Project:** clap-noun-verb 26.9.1  
 **Authority:** executable examples plus exact-head CI receipts  
 **Standing:** `PARTIAL_ALIVE` until the GitHub execution ladder completes
 
