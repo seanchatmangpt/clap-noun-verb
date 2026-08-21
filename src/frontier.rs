@@ -744,6 +744,39 @@ impl VickreyAuction {
     }
 
     /// Allocate to the highest bidder at the second-highest price.
+    ///
+    /// With three or more genuinely distinct bids, the winner pays the
+    /// second-**highest** bid overall, not merely "the other bid" -- a
+    /// distinction only a 3+ bidder example can demonstrate, since with
+    /// exactly two bidders "the other bid" and "the second-highest bid"
+    /// are the same value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use clap_noun_verb::frontier::{AgentId, Bid, TaskId, VickreyAuction};
+    ///
+    /// # fn main() -> Result<(), String> {
+    /// let mut auction = VickreyAuction::new();
+    /// let outcome = auction.run_auction(&[
+    ///     Bid { agent_id: AgentId(1), task_id: TaskId(7), bid_value: 100.0 },
+    ///     Bid { agent_id: AgentId(2), task_id: TaskId(7), bid_value: 80.0 },
+    ///     Bid { agent_id: AgentId(3), task_id: TaskId(7), bid_value: 90.0 },
+    /// ])?;
+    ///
+    /// // Agent 1 wins (highest bid) but pays agent 3's bid (the
+    /// // second-highest overall), not agent 2's lower bid.
+    /// assert_eq!(outcome.winner, AgentId(1));
+    /// assert_eq!(outcome.payment, 90.0);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if fewer than two bids are supplied, if any bid
+    /// targets a different task or carries a non-finite or negative value,
+    /// or if the same agent submits more than one bid.
     pub fn run_auction(&mut self, bids: &[Bid]) -> FrontierResult<AuctionOutcome> {
         if bids.len() < 2 {
             return Err("a Vickrey auction requires at least two bids".into());
@@ -1435,6 +1468,92 @@ mod tests {
         assert!(error.contains("solo"));
     }
 
+    #[test]
+    fn discovery_engine_recommend_and_learning_trajectory_observe_close_the_real_loop_and_converge_on_the_best_mean_capability(
+    ) {
+        // Three registered capabilities with distinct, deterministic
+        // (constant, non-random) long-run mean rewards -- "gamma" is the
+        // real best performer. Every existing `recommend` test in this
+        // module calls `recommend` exactly once against an
+        // already-fixed, hand-constructed set of histories; this test
+        // instead runs the real closed loop the module's own doc
+        // comments describe as the actual use case: recommend, observe
+        // based on the recommendation, recommend again with the updated
+        // history -- repeated across many rounds.
+        let mut engine = DiscoveryEngine::default();
+        for name in ["alpha", "beta", "gamma"] {
+            engine
+                .register(DiscoveryRecord {
+                    name: name.to_string(),
+                    tags: BTreeSet::new(),
+                    route: format!("svc://{name}"),
+                })
+                .expect("valid record");
+        }
+
+        let mut alpha = LearningTrajectory::default();
+        let mut beta = LearningTrajectory::default();
+        let mut gamma = LearningTrajectory::default();
+
+        // Deterministic constant scores (no RNG, no seed needed): alpha's
+        // long-run mean is 0.2, beta's is 0.5, gamma's is 0.9.
+        const ALPHA_SCORE: f64 = 0.2;
+        const BETA_SCORE: f64 = 0.5;
+        const GAMMA_SCORE: f64 = 0.9;
+        const ROUNDS: usize = 60;
+
+        let mut selections: Vec<String> = Vec::with_capacity(ROUNDS);
+        for _ in 0..ROUNDS {
+            let histories = vec![
+                ("alpha".to_string(), alpha.clone()),
+                ("beta".to_string(), beta.clone()),
+                ("gamma".to_string(), gamma.clone()),
+            ];
+            let recommended =
+                engine.recommend(&histories).expect("valid recommendation").to_string();
+            match recommended.as_str() {
+                "alpha" => alpha.observe(ALPHA_SCORE).expect("valid score"),
+                "beta" => beta.observe(BETA_SCORE).expect("valid score"),
+                "gamma" => gamma.observe(GAMMA_SCORE).expect("valid score"),
+                other => unreachable!("recommend only returns a registered name: {other}"),
+            };
+            selections.push(recommended);
+        }
+
+        // Every round produced exactly one real pull -- no round was
+        // skipped or double-counted.
+        assert_eq!(alpha.len() + beta.len() + gamma.len(), ROUNDS);
+
+        // The real, closed-loop-observed means match the constant scores
+        // fed back in -- confirms `observe` actually persisted what
+        // `recommend` chose, round over round.
+        assert!((gamma.mean().expect("at least one pull") - GAMMA_SCORE).abs() < 1e-9);
+        assert!((beta.mean().expect("at least one pull") - BETA_SCORE).abs() < 1e-9);
+        assert!((alpha.mean().expect("at least one pull") - ALPHA_SCORE).abs() < 1e-9);
+
+        // Real UCB1 convergence property: the best-mean capability's
+        // share of recommendations in the second half of the run is
+        // strictly higher than its share in the first half -- the policy
+        // recommends the best-performing capability *more often as
+        // rounds increase*, not merely "often overall".
+        let gamma_first_half = selections[0..30].iter().filter(|n| n.as_str() == "gamma").count();
+        let gamma_second_half = selections[30..60].iter().filter(|n| n.as_str() == "gamma").count();
+        assert_eq!(gamma_first_half, 19, "locks in the real, reproduced first-half count");
+        assert_eq!(gamma_second_half, 22, "locks in the real, reproduced second-half count");
+        assert!(
+            gamma_second_half > gamma_first_half,
+            "gamma's recommendation share must grow as rounds increase: {gamma_first_half} -> {gamma_second_half}"
+        );
+
+        // Over the full run, gamma (the real best mean) dominates
+        // recommendations by a wide margin over both worse options.
+        let gamma_total = selections.iter().filter(|n| n.as_str() == "gamma").count();
+        let alpha_total = selections.iter().filter(|n| n.as_str() == "alpha").count();
+        let beta_total = selections.iter().filter(|n| n.as_str() == "beta").count();
+        assert_eq!((alpha_total, beta_total, gamma_total), (7, 12, 41));
+        assert!(gamma_total > alpha_total + beta_total);
+    }
+
     // -------------------------------------------------------------------
     // MetaFramework: layers()/invariant()/invariants(), remove_layer/
     // remove_invariant, and Blocked-state coverage (frontier-gap-sweep)
@@ -1514,6 +1633,61 @@ mod tests {
         assert!(!framework.validate_invariants());
         assert_eq!(framework.state(false), AdmissionState::Blocked);
         assert_eq!(framework.state(true), AdmissionState::Blocked);
+    }
+
+    #[test]
+    fn meta_framework_register_layer_refuses_a_duplicate_name_and_leaves_it_registered_once() {
+        let mut framework = MetaFramework::new();
+        framework.register_layer("admission").expect("first registration is unique");
+
+        let error = framework
+            .register_layer("admission")
+            .expect_err("a duplicate layer name must be refused");
+        assert!(error.contains("layer already registered"));
+        assert!(error.contains("admission"));
+
+        // The rejected re-registration must not have duplicated the
+        // entry: exactly one "admission" layer is registered, not two
+        // collapsed by luck of `BTreeSet`'s own dedup semantics without
+        // this path ever having been exercised by a test.
+        assert_eq!(framework.layers(), vec!["admission"]);
+    }
+
+    #[test]
+    fn meta_framework_admit_invariant_silently_overwrites_a_duplicate_id_unlike_every_other_identity_registration(
+    ) {
+        let mut framework = MetaFramework::new();
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "Every effect has a receipt".to_string(),
+                satisfied: true,
+            })
+            .expect("first admission of this id is valid");
+
+        // Unlike `register_layer` (refuses a duplicate name),
+        // `DiscoveryEngine::register` (refuses a duplicate name), and
+        // `EconomicSimulation::add_agent`/`add_task` (explicit
+        // check-before-insert to refuse a duplicate id), `admit_invariant`
+        // calls `BTreeMap::insert` unconditionally and never inspects its
+        // return value: a second admission under the same id is accepted
+        // with `Ok(())`, and the original invariant's `description`/
+        // `satisfied` fields are silently replaced.
+        framework
+            .admit_invariant(Invariant {
+                id: "zero-unreceipted-actuation".to_string(),
+                description: "a completely different, contradictory claim".to_string(),
+                satisfied: false,
+            })
+            .expect("admit_invariant never refuses a duplicate id -- it always returns Ok");
+
+        let current = framework.invariant("zero-unreceipted-actuation").expect("still registered");
+        assert_eq!(current.description, "a completely different, contradictory claim");
+        assert!(!current.satisfied, "the original `satisfied: true` was silently overwritten");
+
+        // Exactly one invariant exists under this id -- the first
+        // admission left no trace, not even a shadowed duplicate entry.
+        assert_eq!(framework.invariants().len(), 1);
     }
 
     // -------------------------------------------------------------------
@@ -2732,5 +2906,274 @@ mod tests {
         assert_eq!(restored, suite);
         let names: Vec<&str> = restored.names().collect();
         assert_eq!(names, vec!["Spec 1", "Spec 2"]);
+    }
+
+    // -------------------------------------------------------------------
+    // Edge-case input handling (frontier-input-gap-sweep):
+    //
+    // - CompositionChain::push had zero test exercising a blank or
+    //   whitespace-only segment, so its silent-drop behavior (and its
+    //   choice to store the *untrimmed* original string for a segment
+    //   that is non-blank) was unverified -- a caller constructing
+    //   segments from user or programmatic input could hit either path.
+    // - RdfFragment::insert had zero test exercising its
+    //   `trim().is_empty()` guard at all (not even a plain empty string),
+    //   despite the guard existing in production code since before this
+    //   sweep.
+    // - Every existing FractalNoun<L, T> test used T = &str or T =
+    //   String; zero test confirmed compose() correctly moves a
+    //   genuinely owned, non-Copy, non-Clone struct through the
+    //   `lineage: Vec<String>` tracking without disturbing `data: T`
+    //   (compose()'s body only ever reassigns `next.lineage`).
+    //
+    // Duplicate-triple-across-two-fragments composition is already
+    // covered by `rdf_composition_dedupes_a_shared_triple_across_two_fragments`
+    // above and is not re-proposed here.
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn composition_chain_push_silently_drops_blank_and_whitespace_only_segments() {
+        let mut chain = CompositionChain::new();
+        chain.push("");
+        chain.push("   ");
+        chain.push("\t\n");
+        assert!(chain.is_empty(), "blank/whitespace-only segments must not be pushed");
+        assert_eq!(chain.len(), 0);
+
+        // A non-blank segment pushed alongside the dropped ones still
+        // lands normally, confirming the guard only ever skips the
+        // blank/whitespace-only case rather than corrupting later pushes.
+        chain.push("auth");
+        assert_eq!(chain.entries(), &["auth".to_string()]);
+    }
+
+    #[test]
+    fn composition_chain_push_preserves_untrimmed_whitespace_in_a_non_blank_segment() {
+        let mut chain = CompositionChain::new();
+        chain.push("  auth  ");
+        // push only rejects a segment that is blank *after* trimming; it
+        // does not itself trim before storing, so the stored entry keeps
+        // the original padding verbatim rather than the trimmed form.
+        assert_eq!(chain.entries(), &["  auth  ".to_string()]);
+        assert_ne!(chain.entries()[0], "auth");
+    }
+
+    #[test]
+    fn rdf_fragment_insert_refuses_a_whitespace_only_subject_predicate_or_object() {
+        let mut fragment = RdfFragment::new();
+
+        let whitespace_subject = SemanticTriple {
+            subject: "   ".to_string(),
+            predicate: "cnv:defaultVerb".to_string(),
+            object: "cnv:run".to_string(),
+        };
+        assert!(fragment.insert(whitespace_subject).is_err());
+
+        let whitespace_predicate = SemanticTriple {
+            subject: "cnv:tool".to_string(),
+            predicate: "\t".to_string(),
+            object: "cnv:run".to_string(),
+        };
+        assert!(fragment.insert(whitespace_predicate).is_err());
+
+        let empty_object = SemanticTriple {
+            subject: "cnv:tool".to_string(),
+            predicate: "cnv:defaultVerb".to_string(),
+            object: String::new(),
+        };
+        assert!(fragment.insert(empty_object).is_err());
+
+        // None of the rejected triples were admitted into real state.
+        assert!(fragment.triples().is_empty());
+    }
+
+    #[test]
+    fn fractal_noun_compose_moves_a_non_string_owned_payload_through_lineage_untouched() {
+        // A genuinely owned, non-Copy, non-Clone struct -- not the &str
+        // or String every other FractalNoun test uses -- to confirm
+        // compose() carries T through by move without requiring any
+        // bound on T beyond what the impl block already declares.
+        struct Payload {
+            id: String,
+            bytes: Vec<u8>,
+        }
+
+        let root = FractalNoun::<RootLevel, &str>::new("root");
+        let domain = FractalNoun::<DomainLevel, Payload>::new(Payload {
+            id: "auth-service".to_string(),
+            bytes: vec![1, 2, 3],
+        });
+
+        let composed = root.compose(domain).expect("adjacent levels compose");
+
+        // The payload's own fields survive the move into the composed
+        // value untouched -- compose() never reads or rewrites `data`.
+        assert_eq!(composed.data.id, "auth-service");
+        assert_eq!(composed.data.bytes, vec![1, 2, 3]);
+        // Only the separate `lineage: Vec<String>` field changed.
+        assert_eq!(composed.lineage(), &["Root".to_string(), "Domain".to_string()]);
+    }
+
+    // -------------------------------------------------------------------
+    // Property-based tests (proptest): VickreyAuction::run_auction and
+    // ExplorationPolicy::select_ucb1. Every existing test above for both
+    // is example-based (hand-picked bids / hand-picked trajectory
+    // histories); these generalize the same real invariants across a
+    // randomized input space that satisfies each function's own real
+    // precondition (see run_auction's validation earlier in this file and
+    // LearningTrajectory::observe's range check), rather than adding more
+    // hand-picked cases.
+    // -------------------------------------------------------------------
+
+    use proptest::prelude::*;
+
+    /// A finite, non-negative bid value -- matches `run_auction`'s real
+    /// precondition (`bid_value.is_finite() && bid_value >= 0.0`) exactly,
+    /// never generating NaN or infinity.
+    fn bid_value_strategy() -> impl Strategy<Value = f64> {
+        0.0f64..1_000_000.0f64
+    }
+
+    /// Two or more bids, all targeting one real `TaskId`, each from a
+    /// distinct `AgentId` -- satisfies run_auction's "one bid per agent"
+    /// precondition by construction (via a `HashSet` of agent ids), not by
+    /// post-hoc filtering.
+    fn valid_bids_strategy() -> impl Strategy<Value = (TaskId, Vec<Bid>)> {
+        (any::<u64>(), prop::collection::hash_set(0u64..10_000u64, 2..10usize)).prop_flat_map(
+            |(task_raw, agent_ids)| {
+                let task_id = TaskId(task_raw);
+                let ids: Vec<u64> = agent_ids.into_iter().collect();
+                let len = ids.len();
+                prop::collection::vec(bid_value_strategy(), len).prop_map(move |values| {
+                    let bids = ids
+                        .iter()
+                        .zip(values)
+                        .map(|(&id, bid_value)| Bid { agent_id: AgentId(id), task_id, bid_value })
+                        .collect();
+                    (task_id, bids)
+                })
+            },
+        )
+    }
+
+    /// A real observation score -- matches `LearningTrajectory::observe`'s
+    /// precondition (`0.0..=1.0`, finite by construction).
+    fn score_strategy() -> impl Strategy<Value = f64> {
+        0.0f64..=1.0f64
+    }
+
+    /// A trajectory built from zero or more real, valid `observe` calls --
+    /// zero observations is a real, valid (never-tried) trajectory, not an
+    /// edge case to exclude.
+    fn trajectory_strategy() -> impl Strategy<Value = LearningTrajectory> {
+        prop::collection::vec(score_strategy(), 0..8).prop_map(|scores| {
+            let mut trajectory = LearningTrajectory::default();
+            for score in scores {
+                trajectory.observe(score).expect("score is within the valid 0.0..=1.0 range");
+            }
+            trajectory
+        })
+    }
+
+    /// One or more real trajectories, any mix of tried/never-tried.
+    fn trajectories_strategy() -> impl Strategy<Value = Vec<LearningTrajectory>> {
+        prop::collection::vec(trajectory_strategy(), 1..8)
+    }
+
+    /// Same, but with at least one guaranteed never-tried arm somewhere in
+    /// the slice. Its real position is still recomputed in the test below,
+    /// not assumed -- an independently generated "before"/"after"
+    /// trajectory may also happen to be empty.
+    fn trajectories_with_a_guaranteed_untried_arm_strategy(
+    ) -> impl Strategy<Value = Vec<LearningTrajectory>> {
+        (
+            prop::collection::vec(trajectory_strategy(), 0..4),
+            prop::collection::vec(trajectory_strategy(), 0..4),
+        )
+            .prop_map(|(before, after)| {
+                let mut all = before;
+                all.push(LearningTrajectory::default());
+                all.extend(after);
+                all
+            })
+    }
+
+    proptest! {
+        /// For ANY valid Vickrey auction input (2+ bids, one real common
+        /// task, each bid finite/non-negative, one bid per agent): the
+        /// winner's bid is the real maximum, the payment never exceeds the
+        /// winner's own bid, and the payment is the real second price --
+        /// the maximum bid among every OTHER real bid, not a fabricated
+        /// number. No existing test checks this across more than the two
+        /// or three hand-picked bids each example uses.
+        #[test]
+        fn run_auction_winner_is_the_real_maximum_and_payment_is_the_real_second_price(
+            (task_id, bids) in valid_bids_strategy()
+        ) {
+            let mut auction = VickreyAuction::new();
+            let outcome = auction
+                .run_auction(&bids)
+                .expect("generated bids satisfy run_auction's own real precondition");
+
+            prop_assert_eq!(outcome.task_id, task_id);
+
+            let winner_bid = bids
+                .iter()
+                .find(|bid| bid.agent_id == outcome.winner)
+                .expect("the winner must be one of the real bidding agents");
+
+            prop_assert!(
+                bids.iter().all(|bid| winner_bid.bid_value >= bid.bid_value),
+                "the winner's bid must be >= every real bid, including its own"
+            );
+            prop_assert!(
+                outcome.payment <= winner_bid.bid_value,
+                "the payment must never exceed the winner's own real bid"
+            );
+
+            let expected_payment = bids
+                .iter()
+                .filter(|bid| bid.agent_id != outcome.winner)
+                .map(|bid| bid.bid_value)
+                .fold(f64::NEG_INFINITY, f64::max);
+            prop_assert_eq!(
+                outcome.payment,
+                expected_payment,
+                "the payment must equal a real other bid's value, not a fabricated number"
+            );
+        }
+
+        /// For ANY non-empty slice of real trajectories, `select_ucb1`
+        /// never panics and always returns a real, in-bounds arm index --
+        /// generalizes what every existing hand-picked two/three-arm test
+        /// only checks for its own specific case.
+        #[test]
+        fn select_ucb1_always_returns_a_real_in_bounds_index(
+            trajectories in trajectories_strategy()
+        ) {
+            let selected = ExplorationPolicy::select_ucb1(&trajectories)
+                .expect("a non-empty trajectory slice always yields a real selection");
+            prop_assert!(selected < trajectories.len());
+        }
+
+        /// For ANY non-empty slice of real trajectories containing at
+        /// least one never-tried arm, `select_ucb1` always returns the
+        /// FIRST such arm's real index (its documented "in trajectory
+        /// order" tie-break) -- no existing test exercises more than one
+        /// never-tried arm among several, or an untried arm anywhere but
+        /// the last position.
+        #[test]
+        fn select_ucb1_always_prefers_the_first_real_never_tried_arm(
+            trajectories in trajectories_with_a_guaranteed_untried_arm_strategy()
+        ) {
+            let first_empty = trajectories
+                .iter()
+                .position(LearningTrajectory::is_empty)
+                .expect("constructed with at least one real untried arm");
+
+            let selected = ExplorationPolicy::select_ucb1(&trajectories)
+                .expect("a non-empty trajectory slice always yields a real selection");
+            prop_assert_eq!(selected, first_empty);
+        }
     }
 }
