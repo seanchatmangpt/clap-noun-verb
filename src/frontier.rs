@@ -1507,16 +1507,36 @@ mod tests {
 
     #[test]
     fn discovery_engine_register_refuses_a_duplicate_name_and_names_the_real_duplicate() {
-        // A distinct, already-registered decoy capability with a route
-        // that shares no substring with either capability's name, so a
-        // bug that interpolated the wrong field into register()'s own
-        // "capability already registered: {}" message (the decoy's name,
-        // or the rejected record's own route instead of its name) would
-        // produce a string this test can actually tell apart from the
-        // correct one. Every existing test that reaches this error path
-        // (none do directly today) would otherwise only need
-        // `is_err()`/`expect_err()` to pass.
+        // Two distinct, already-registered decoy capabilities -- one
+        // sorting before "billing" and one sorting after it -- so the
+        // real duplicate is provably neither the alphabetically-smallest
+        // nor the alphabetically-largest registered name. A single
+        // one-sided decoy is not enough: with only "invoicing" (which
+        // sorts after "billing") registered alongside it, a bug that
+        // interpolated `self.records.keys().min()` instead of the
+        // rejected record's own name would coincidentally still print
+        // "billing" (it IS the min of {billing, invoicing}) and pass this
+        // test for the wrong reason. Bracketing "billing" between
+        // "acme-service" (sorts before) and "invoicing" (sorts after)
+        // means neither a `.min()`-style nor a `.max()`-style
+        // self.records substitution bug can coincide with the correct
+        // answer. None of the three names share a substring with each
+        // other or with "endpoint", so a bug that interpolated the wrong
+        // field into register()'s own "capability already registered: {}"
+        // message (a decoy's name, any registered-map extremum instead of
+        // the rejected record's own name, or the rejected record's own
+        // route instead of its name) would produce a string this test can
+        // actually tell apart from the correct one. Every existing test
+        // that reaches this error path (none do directly today) would
+        // otherwise only need `is_err()`/`expect_err()` to pass.
         let mut engine = DiscoveryEngine::default();
+        engine
+            .register(DiscoveryRecord {
+                name: "acme-service".to_string(),
+                tags: BTreeSet::new(),
+                route: "endpoint-11".to_string(),
+            })
+            .expect("valid record");
         engine
             .register(DiscoveryRecord {
                 name: "invoicing".to_string(),
@@ -1543,7 +1563,13 @@ mod tests {
         assert!(error.contains("billing"), "error must name the real duplicate: {error}");
         assert!(
             !error.contains("invoicing"),
-            "error must not name an unrelated registered capability: {error}"
+            "error must not name an unrelated registered capability that sorts after the \
+             real duplicate: {error}"
+        );
+        assert!(
+            !error.contains("acme-service"),
+            "error must not name an unrelated registered capability that sorts before the \
+             real duplicate: {error}"
         );
         assert!(
             !error.contains("endpoint"),
@@ -1628,14 +1654,25 @@ mod tests {
             })
             .expect("valid record");
 
+        // A trailing third entry, never actually reached (`recommend`
+        // returns as soon as "phantom-capability" is found unregistered,
+        // at index 1), rules out a bug that reported `histories.last()`
+        // unconditionally instead of the loop's current name: with
+        // "phantom-capability" previously the last entry in the vector, such
+        // a bug would have coincidentally still printed the correct name.
         let histories = vec![
             ("billing".to_string(), LearningTrajectory::default()),
             ("phantom-capability".to_string(), LearningTrajectory::default()),
+            ("never-reached-trailing-candidate".to_string(), LearningTrajectory::default()),
         ];
         let error = engine.recommend(&histories).expect_err("unregistered candidate refused");
         assert!(
             error.contains("phantom-capability"),
             "error must name the real unregistered candidate: {error}"
+        );
+        assert!(
+            !error.contains("never-reached-trailing-candidate"),
+            "error must not name the never-reached trailing candidate instead: {error}"
         );
         assert!(
             !error.contains("billing"),
@@ -1653,7 +1690,16 @@ mod tests {
     #[test]
     fn discovery_engine_recommend_refuses_a_duplicate_candidate_name() {
         let mut engine = DiscoveryEngine::default();
-        for name in ["alpha", "beta"] {
+        // "gamma" is registered but never appears in `histories` below --
+        // it exists purely so "beta" (the real duplicate) is provably
+        // neither the alphabetically-smallest nor alphabetically-largest
+        // *registered* capability. With only {"alpha", "beta"} registered
+        // (the shape this test used before this fix), a bug that
+        // interpolated `self.records.keys().max()` instead of the current
+        // loop iterate's name would coincidentally still print "beta" (it
+        // IS the max of {alpha, beta}) and pass this test for the wrong
+        // reason.
+        for name in ["alpha", "beta", "gamma"] {
             engine
                 .register(DiscoveryRecord {
                     name: name.to_string(),
@@ -1680,16 +1726,31 @@ mod tests {
         // indistinguishable from correct behavior, since there was only
         // ever one possible name to print. A distinct, non-duplicated
         // "alpha" candidate makes the check discriminating.
+        //
+        // Placement matters too, independent of the registered-capability
+        // bracketing above: "beta" (the duplicate) is deliberately
+        // neither the first nor the last entry of `histories`. A trailing
+        // "gamma" entry (registered above, but never actually reached --
+        // `recommend` returns as soon as the second "beta" is seen) rules
+        // out a bug that reported `histories[0].0` or `histories.last()`
+        // unconditionally instead of the loop's current name: with the
+        // duplicate pair previously placed last in the vector, either
+        // bug would have coincidentally still printed "beta" too.
         let histories = vec![
             ("alpha".to_string(), first),
             ("beta".to_string(), second.clone()),
-            ("beta".to_string(), second),
+            ("beta".to_string(), second.clone()),
+            ("gamma".to_string(), second),
         ];
         let error = engine.recommend(&histories).expect_err("duplicate candidate name refused");
         assert!(error.contains("beta"), "error must name the real duplicate: {error}");
         assert!(
             !error.contains("alpha"),
             "error must not name the unique, non-duplicated candidate instead: {error}"
+        );
+        assert!(
+            !error.contains("gamma"),
+            "error must not name the never-reached trailing candidate instead: {error}"
         );
     }
 
@@ -1874,14 +1935,25 @@ mod tests {
     #[test]
     fn meta_framework_register_layer_refuses_a_duplicate_name_and_leaves_it_registered_once() {
         let mut framework = MetaFramework::new();
-        // A second, distinct layer is registered alongside the one under
-        // test so the "layer already registered: {name}" message actually
-        // has to name the *real* duplicate ("admission") rather than any
-        // already-registered layer. With only one registered layer name
-        // (the shape this test used before), a bug that interpolated any
-        // other already-registered layer instead of the attempted one
+        // Two other distinct layers are registered alongside the one
+        // under test -- one sorting before "admission" and one sorting
+        // after it -- so "admission" is provably neither the
+        // alphabetically-smallest nor the alphabetically-largest
+        // registered layer. A single one-sided decoy is not enough: with
+        // only "audit" (which sorts after "admission") registered
+        // alongside it, a bug that interpolated
+        // `self.layers.iter().min()` instead of the attempted `name`
+        // would coincidentally still print "admission" (it IS the min of
+        // {admission, audit}) and pass this test for the wrong reason.
+        // Bracketing "admission" between "aardvark-layer" (sorts before)
+        // and "audit" (sorts after) means neither a `.min()`-style nor a
+        // `.max()`-style `self.layers` substitution bug can coincide with
+        // the correct answer. With only one registered layer name (the
+        // shape this test used before round 17), a bug that interpolated
+        // any other already-registered layer instead of the attempted one
         // could never be distinguished from correct behavior, because
         // there was only ever one name the message could contain.
+        framework.register_layer("aardvark-layer").expect("a distinct layer registers cleanly");
         framework.register_layer("admission").expect("first registration is unique");
         framework.register_layer("audit").expect("a second, distinct layer registers cleanly");
 
@@ -1892,14 +1964,20 @@ mod tests {
         assert!(error.contains("admission"), "error must name the real duplicate: {error}");
         assert!(
             !error.contains("audit"),
-            "error must not name an unrelated registered layer instead: {error}"
+            "error must not name an unrelated registered layer that sorts after the real \
+             duplicate: {error}"
+        );
+        assert!(
+            !error.contains("aardvark"),
+            "error must not name an unrelated registered layer that sorts before the real \
+             duplicate: {error}"
         );
 
         // The rejected re-registration must not have duplicated the
         // entry: exactly one "admission" layer is registered, not two
         // collapsed by luck of `BTreeSet`'s own dedup semantics without
         // this path ever having been exercised by a test.
-        assert_eq!(framework.layers(), vec!["admission", "audit"]);
+        assert_eq!(framework.layers(), vec!["aardvark-layer", "admission", "audit"]);
     }
 
     #[test]
@@ -3486,6 +3564,27 @@ mod tests {
 
         // None of the rejected triples were admitted into real state.
         assert!(fragment.triples().is_empty());
+    }
+
+    #[test]
+    fn rdf_fragment_insert_returns_true_for_a_new_triple_and_false_for_a_literal_duplicate() {
+        let triple = SemanticTriple {
+            subject: "cnv:tool".to_string(),
+            predicate: "cnv:defaultVerb".to_string(),
+            object: "cnv:run".to_string(),
+        };
+        let mut fragment = RdfFragment::new();
+
+        // A genuinely new triple is admitted and reported as newly inserted.
+        assert_eq!(fragment.insert(triple.clone()), Ok(true));
+
+        // Inserting the exact same triple again is accepted (it is not a
+        // validation error) but reports `false`: the underlying BTreeSet
+        // already held it, so no second entry was created.
+        assert_eq!(fragment.insert(triple), Ok(false));
+
+        // The duplicate attempt left the set at exactly one triple, not two.
+        assert_eq!(fragment.triples().len(), 1);
     }
 
     #[test]
