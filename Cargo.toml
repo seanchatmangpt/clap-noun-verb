@@ -242,6 +242,10 @@ name = "howto_arg_actions"
 path = "examples/howto/arg_actions.rs"
 
 [[example]]
+name = "vec_multi_value_probe"
+path = "examples/vec_multi_value_probe.rs"
+
+[[example]]
 name = "howto_deprecation"
 path = "examples/howto/deprecation.rs"
 

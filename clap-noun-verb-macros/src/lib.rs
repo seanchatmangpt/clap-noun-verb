@@ -1168,12 +1168,29 @@ fn generate_verb_registration(
                 arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
 
             // Auto-infer action: usize type → Count (for flags like -v, -vv, -vvv),
-            // bool flags → SetTrue (unless overridden)
+            // bool flags → SetTrue (unless overridden), Vec<T>/#[arg(multiple)] → Append.
+            //
+            // The Append arm below is the fix for FMEA RPN=648 (Severity=9 x
+            // Occurrence=8 x Detection=9): a bare `Vec<T>` #[verb] parameter, with
+            // no `#[arg(action = "append")]` override, used to leave `action` as
+            // `None` here even though `multiple_values` (just above) was already
+            // `true`. `build_argument` in `src/cli/registry.rs` builds the real
+            // clap::Arg with `ArgAction::Append` from the separate `multiple` field
+            // regardless, so clap itself parsed repeated occurrences fine -- but
+            // `extract_args` (same file) branches on `arg_meta.action`, not
+            // `multiple`, so its Append extraction arm was unreachable and it fell
+            // through to single-value extraction, silently keeping only the first
+            // occurrence. Inferring Append here keeps `action` and `multiple` in
+            // agreement by construction, so extract_args's existing Append arm is
+            // reached and every occurrence is extracted, matching what clap itself
+            // already parses.
             let inferred_action = if (is_usize_type && !is_option) || has_count_action {
                 // usize type without Option is inferred as Count (for -v, -vv, -vvv patterns)
                 Some("count".to_string())
             } else if is_flag && arg_config.as_ref().and_then(|c| c.action.as_ref()).is_none() {
                 Some("set_true".to_string()) // Default for bool flags
+            } else if multiple_values {
+                Some("append".to_string()) // Default for Vec<T> / #[arg(multiple)]
             } else {
                 None
             };
@@ -1317,6 +1334,7 @@ fn generate_verb_registration(
                     match inferred.as_str() {
                         "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
                         "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
+                        "append" => quote! { Some(::clap_noun_verb::ArgAction::Append) },
                         _ => quote! { None },
                     }
                 } else {
@@ -1326,6 +1344,7 @@ fn generate_verb_registration(
                 match inferred.as_str() {
                     "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
                     "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
+                    "append" => quote! { Some(::clap_noun_verb::ArgAction::Append) },
                     _ => quote! { None },
                 }
             } else {
