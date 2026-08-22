@@ -2,9 +2,14 @@
 name = "clap-noun-verb-macros"
 version = "26.9.1"
 edition = "2021"
-license = "MIT"
-description = "Procedural macros for clap-noun-verb"
+rust-version = "1.70"
+license = "MIT OR Apache-2.0"
+description = "Procedural macros for clap-noun-verb - attribute macros for zero-boilerplate CLI command registration"
 repository = "https://github.com/seanchatmangpt/clap-noun-verb"
+documentation = "https://docs.rs/clap-noun-verb"
+homepage = "https://github.com/seanchatmangpt/clap-noun-verb"
+keywords = ["cli", "clap", "noun-verb", "command-line", "proc-macro"]
+categories = ["command-line-utilities", "development-tools"]
 
 [lib]
 proc-macro = true
