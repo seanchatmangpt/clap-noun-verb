@@ -549,7 +549,6 @@ enum GenSubcommands {
     /// Create minimal CLI scaffold
     Scaffold {
         /// CLI name (becomes module/project name)
-        #[arg(value_name = "NAME")]
         name: String,
 
         /// Output directory
@@ -678,12 +677,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn require_healthy(healthy: bool) -> std::io::Result<()> {
+    if healthy {
+        Ok(())
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "doctor health check reported an unhealthy runtime",
+        ))
+    }
+}
+
 fn run_doctor_check() -> Result<(), Box<dyn std::error::Error>> {
     let output = health_check()?;
     println!("{}", serde_json::to_string_pretty(&output)?);
-    if !output.healthy {
-        std::process::exit(1);
-    }
+    require_healthy(output.healthy)?;
     Ok(())
 }
 
@@ -1000,6 +1008,26 @@ fn run_ontology_export(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_healthy;
+
+    #[test]
+    fn healthy_doctor_result_is_admitted() {
+        assert!(require_healthy(true).is_ok());
+    }
+
+    #[test]
+    fn unhealthy_doctor_result_is_refused_without_process_exit() {
+        let error = require_healthy(false).expect_err("unhealthy doctor result must be refused");
+        assert_eq!(error.kind(), std::io::ErrorKind::Other);
+        assert_eq!(
+            error.to_string(),
+            "doctor health check reported an unhealthy runtime"
+        );
+    }
 }
 
 mod walkdir {
