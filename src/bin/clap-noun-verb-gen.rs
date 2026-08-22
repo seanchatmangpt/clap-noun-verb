@@ -549,6 +549,7 @@ enum GenSubcommands {
     /// Create minimal CLI scaffold
     Scaffold {
         /// CLI name (becomes module/project name)
+        #[arg(value_name = "NAME")]
         name: String,
 
         /// Output directory
