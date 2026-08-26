@@ -1,14 +1,14 @@
 {
-  "schema": "ggen.tcps-ready-set-consumer/v2",
-  "consumer_repo": "seanchatmangpt/clap-noun-verb",
-  "consumer_base": "29f61a9c259db516cc3433e6b02fd2500011fd3a",
-  "consumer_ggen_contract": "OBSERVED",
-  "producer_repo": "seanchatmangpt/ggen-marketplace",
-  "producer_head": "aef231ceb3e27150366a11b547dd115720230880",
-  "producer_pack": "portfolio-epistemic-observability-pack",
-  "producer_capability": "R78_TCPS_READY_SET_CAPITAL",
-  "allocation_law": "legality-before-priority",
-  "authority": "VERIFY|CONSTRUCT",
-  "consequential_do": false,
-  "standing": "ADMITTED"
+  "schema":"ggen.tcps-ready-set-consumer/v3",
+  "consumer_repo":"seanchatmangpt/clap-noun-verb",
+  "consumer_base":"29f61a9c259db516cc3433e6b02fd2500011fd3a",
+  "consumer_ggen_contract":"OBSERVED",
+  "producer_repo":"seanchatmangpt/ggen-marketplace",
+  "producer_head":"a658cda7066bba344e481173b5b52a0dc18c5c75",
+  "producer_pack":"portfolio-epistemic-observability-pack",
+  "producer_capability":"R78_TCPS_READY_SET_CAPITAL",
+  "allocation_law":"legality-before-priority",
+  "authority":"VERIFY|CONSTRUCT",
+  "consequential_do":false,
+  "standing":"ADMITTED"
 }
