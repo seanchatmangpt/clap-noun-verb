@@ -69,7 +69,7 @@ Docs are automatically published to [docs.rs](https://docs.rs/clap-noun-verb/) o
 # 2. Update CHANGELOG.md with changes
 # 3. Commit and tag
 
-git tag v26.6.13
+git tag v26.9.1
 git push origin main --tags
 
 # 4. Publish (via CI/CD or manually)
@@ -80,7 +80,7 @@ cargo make publish         # Main crate second
 ### Viewing Published Docs
 
 - **Latest release**: https://docs.rs/clap-noun-verb/
-- **Specific version**: https://docs.rs/clap-noun-verb/26.6.13/
+- **Specific version**: https://docs.rs/clap-noun-verb/26.9.1/
 
 ### CI/CD Documentation Check
 
@@ -943,7 +943,7 @@ Update these sections when appropriate:
 Keep this updated with each release:
 
 ```markdown
-## What's New in 26.6.13
+## What's New in 26.9.1
 
 - **Feature 1** - Brief one-liner
 - **Feature 2** - Brief one-liner
@@ -961,8 +961,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "26.6.13"
-clap-noun-verb-macros = "26.6.13"
+clap-noun-verb = "26.9.1"
+clap-noun-verb-macros = "26.9.1"
 ```
 ```
 
@@ -998,7 +998,7 @@ When adding a new feature:
 Example:
 
 ```markdown
-## What's New in 26.7.0
+## What's New in 26.9.1
 
 - **New `#[query]` macro** - Simplified database query integration
 - **Improved error messages** - Better feedback for argument validation
@@ -1188,7 +1188,7 @@ Fixes #456
 
 ---
 
-docs: reference - update verb macro to 26.6.13
+docs: reference - update verb macro to 26.9.1
 
 Updated #[verb] macro reference to reflect latest attributes
 and error handling behavior.
@@ -1385,13 +1385,13 @@ pub enum MyError {
 
 ## Version Compatibility
 
-This documentation guide applies to **clap-noun-verb 26.6.13+**.
+This documentation guide applies to **clap-noun-verb 26.9.1+**.
 
 For older versions, documentation patterns may differ. Always consult the CLAUDE.md
 for version-specific guidance.
 
 ---
 
-**Last Updated:** 2026-06-14
+**Last Updated:** 2026-08-20
 
 See also: [CONTRIBUTING.md](../../CONTRIBUTING.md) for code contribution guidelines.

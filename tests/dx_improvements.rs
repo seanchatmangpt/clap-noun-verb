@@ -22,12 +22,6 @@ struct TestOutput {
     value: String,
 }
 
-#[derive(Serialize, Debug, PartialEq)]
-struct UserOutput {
-    id: String,
-    name: String,
-}
-
 // DX Improvement 1: Verb name auto-inference when #[verb] has no args
 // Expected: #[verb] + fn show_status() → verb name "status" inferred
 

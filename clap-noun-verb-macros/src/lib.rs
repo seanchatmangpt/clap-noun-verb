@@ -22,7 +22,6 @@
 //! - Gap 3: Return type must implement Serialize
 //! - Gap 4: Enhanced attribute syntax validation
 
-mod io_detection;
 mod rdf_generation;
 mod telemetry_validation;
 mod validation;
@@ -379,6 +378,7 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
                     None,
                     None,
                     arg_relationships,
+                    None,
                 );
             }
         };
@@ -445,7 +445,49 @@ pub fn verb(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // Clean docstring for about - remove # Arguments section and relationship tags
     let clean_about = clean_docstring_for_about(&docstring);
-    generate_verb_registration(input_fn, verb_name, noun_name, Some(clean_about), arg_relationships)
+    let effect = extract_verb_effect(&args_vec);
+    generate_verb_registration(
+        input_fn,
+        verb_name,
+        noun_name,
+        Some(clean_about),
+        arg_relationships,
+        effect,
+    )
+}
+
+/// Scan `#[verb(...)]`'s argument list for a real, optional
+/// `effect = "read_only" | "mutating" | "idempotent"` declaration,
+/// independent of the fixed-position verb-name/noun-name arguments (an
+/// `effect = "..."` entry parses as `syn::Expr::Assign`, never matching
+/// the `Expr::Lit` positional checks, so scanning for it separately never
+/// disturbs that existing positional parsing).
+fn extract_verb_effect(
+    args_vec: &syn::punctuated::Punctuated<syn::Expr, syn::Token![,]>,
+) -> Option<proc_macro2::TokenStream> {
+    for expr in args_vec {
+        if let syn::Expr::Assign(assign) = expr {
+            let is_effect_key = matches!(
+                &*assign.left,
+                syn::Expr::Path(path) if path.path.is_ident("effect")
+            );
+            if !is_effect_key {
+                continue;
+            }
+            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) = &*assign.right {
+                let value = s.value();
+                return match value.as_str() {
+                    "read_only" => Some(quote! { ::clap_noun_verb::autonomic::Effect::ReadOnly }),
+                    "mutating" => Some(quote! { ::clap_noun_verb::autonomic::Effect::Mutating }),
+                    "idempotent" => {
+                        Some(quote! { ::clap_noun_verb::autonomic::Effect::Idempotent })
+                    }
+                    _ => None,
+                };
+            }
+        }
+    }
+    None
 }
 
 /// Extract verb name from function name (remove common prefixes)
@@ -940,6 +982,7 @@ fn generate_verb_registration(
     noun_name: Option<String>,
     about: Option<String>,
     arg_relationships: std::collections::HashMap<String, DocArgRelationships>,
+    effect: Option<proc_macro2::TokenStream>,
 ) -> TokenStream {
     let fn_name = &input_fn.sig.ident;
     let wrapper_name = quote::format_ident!("__{}_wrapper", fn_name);
@@ -1019,22 +1062,39 @@ fn generate_verb_registration(
                 });
                 arg_calls.push(quote! { #arg_name });
             } else if is_vec {
-                // Vec<T> types - extract from __handler_input.args as comma-separated string, then parse
-                // The registry extracts multiple values and joins them
+                // Vec<T> types -- extract the exact repeated-flag occurrences
+                // from __handler_input.args_multi (populated losslessly by
+                // extract_args's ArgAction::Append arm in
+                // src/cli/registry.rs), never from the legacy comma-joined
+                // __handler_input.args string. Reading the joined string and
+                // re-splitting on ',' silently corrupted any real occurrence
+                // whose own value contained a comma, and always stripped
+                // leading/trailing whitespace -- both fixed by reading the
+                // real Vec<String> directly.
                 let vec_ty = &pat_type.ty;
-                arg_extractions.push(quote! {
-                    let #arg_name: #vec_ty = if let Some(value_str) = __handler_input.args.get(#arg_name_str) {
-                        // Parse comma-separated values
-                        value_str.split(',')
-                            .map(|s| s.trim().parse::<#vec_inner_type>())
-                            .collect::<::std::result::Result<Vec<_>, _>>()
-                            .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
-                                format!("Invalid value for argument '{}'", #arg_name_str)
-                            ))?
-                    } else {
-                        Vec::new()
-                    };
-                });
+                if is_string_type(&vec_inner_type) {
+                    // String's value is used verbatim -- no parse, no trim --
+                    // so whitespace-significant occurrences round-trip exactly.
+                    arg_extractions.push(quote! {
+                        let #arg_name: #vec_ty = __handler_input.args_multi
+                            .get(#arg_name_str)
+                            .cloned()
+                            .unwrap_or_default();
+                    });
+                } else {
+                    arg_extractions.push(quote! {
+                        let #arg_name: #vec_ty = if let Some(values) = __handler_input.args_multi.get(#arg_name_str) {
+                            values.iter()
+                                .map(|s| s.trim().parse::<#vec_inner_type>())
+                                .collect::<::std::result::Result<Vec<_>, _>>()
+                                .map_err(|_| ::clap_noun_verb::error::NounVerbError::argument_error(
+                                    format!("Invalid value for argument '{}'", #arg_name_str)
+                                ))?
+                        } else {
+                            Vec::new()
+                        };
+                    });
+                }
                 arg_calls.push(quote! { #arg_name });
             } else if is_option {
                 // Optional arguments
@@ -1125,12 +1185,29 @@ fn generate_verb_registration(
                 arg_config.as_ref().map(|c| c.multiple).unwrap_or(false) || is_vec_type;
 
             // Auto-infer action: usize type → Count (for flags like -v, -vv, -vvv),
-            // bool flags → SetTrue (unless overridden)
+            // bool flags → SetTrue (unless overridden), Vec<T>/#[arg(multiple)] → Append.
+            //
+            // The Append arm below is the fix for FMEA RPN=648 (Severity=9 x
+            // Occurrence=8 x Detection=9): a bare `Vec<T>` #[verb] parameter, with
+            // no `#[arg(action = "append")]` override, used to leave `action` as
+            // `None` here even though `multiple_values` (just above) was already
+            // `true`. `build_argument` in `src/cli/registry.rs` builds the real
+            // clap::Arg with `ArgAction::Append` from the separate `multiple` field
+            // regardless, so clap itself parsed repeated occurrences fine -- but
+            // `extract_args` (same file) branches on `arg_meta.action`, not
+            // `multiple`, so its Append extraction arm was unreachable and it fell
+            // through to single-value extraction, silently keeping only the first
+            // occurrence. Inferring Append here keeps `action` and `multiple` in
+            // agreement by construction, so extract_args's existing Append arm is
+            // reached and every occurrence is extracted, matching what clap itself
+            // already parses.
             let inferred_action = if (is_usize_type && !is_option) || has_count_action {
                 // usize type without Option is inferred as Count (for -v, -vv, -vvv patterns)
                 Some("count".to_string())
             } else if is_flag && arg_config.as_ref().and_then(|c| c.action.as_ref()).is_none() {
                 Some("set_true".to_string()) // Default for bool flags
+            } else if multiple_values {
+                Some("append".to_string()) // Default for Vec<T> / #[arg(multiple)]
             } else {
                 None
             };
@@ -1274,6 +1351,7 @@ fn generate_verb_registration(
                     match inferred.as_str() {
                         "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
                         "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
+                        "append" => quote! { Some(::clap_noun_verb::ArgAction::Append) },
                         _ => quote! { None },
                     }
                 } else {
@@ -1283,6 +1361,7 @@ fn generate_verb_registration(
                 match inferred.as_str() {
                     "count" => quote! { Some(::clap_noun_verb::ArgAction::Count) },
                     "set_true" => quote! { Some(::clap_noun_verb::ArgAction::SetTrue) },
+                    "append" => quote! { Some(::clap_noun_verb::ArgAction::Append) },
                     _ => quote! { None },
                 }
             } else {
@@ -1619,6 +1698,32 @@ fn generate_verb_registration(
         }
     }
 
+    // Emit the effect-aware registration call only when a real
+    // `effect = "..."` was declared -- every other verb keeps the exact
+    // registration call it always has, so this is purely additive.
+    let registration_call = if let Some(effect_tokens) = &effect {
+        quote! {
+            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args_and_effect::<_>(
+                noun_name_static,
+                verb_name_final,
+                #about_str,
+                args,
+                #effect_tokens,
+                #wrapper_name,
+            );
+        }
+    } else {
+        quote! {
+            ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
+                noun_name_static,
+                verb_name_final,
+                #about_str,
+                args,
+                #wrapper_name,
+            );
+        }
+    };
+
     let expanded = quote! {
         #output_fn
 
@@ -1712,13 +1817,7 @@ fn generate_verb_registration(
                 };
 
                 let args = vec![#(#arg_metadata),*];
-                ::clap_noun_verb::cli::registry::CommandRegistry::register_verb_with_args::<_>(
-                    noun_name_static,
-                    verb_name_final,
-                    #about_str,
-                    args,
-                    #wrapper_name,
-                );
+                #registration_call
             }
             __register_impl  // Return function pointer (not a call!)
         };
@@ -1758,6 +1857,21 @@ fn is_vec_type(ty: &syn::Type) -> bool {
     if let syn::Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {
             segment.ident == "Vec"
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
+/// Check if type is String (used to decide whether a `Vec<T>` element type
+/// needs its exact value preserved -- no trim -- instead of trim-then-parse;
+/// see the `is_vec` extraction arm in `generate_verb_registration`).
+fn is_string_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+            segment.ident == "String"
         } else {
             false
         }
@@ -1907,14 +2021,32 @@ fn parse_arg_attributes(attrs: &[syn::Attribute]) -> Option<ArgConfig> {
                                         }
                                     }
                                     "index" => {
-                                        // Parse index = 0 (positional argument index)
+                                        // Parse index = 0 (positional argument index).
+                                        //
+                                        // The public, documented `#[arg(index = N)]`
+                                        // syntax is 0-based: `index = 0` is the first
+                                        // positional, `index = 1` the second, etc. --
+                                        // see examples/tutorial/positional.rs and
+                                        // CHANGELOG.md. clap's own `Arg::index()` is
+                                        // 1-based (`.index(1)` == "first positional"),
+                                        // so convert here, at the one place the
+                                        // public 0-based literal is parsed, to the
+                                        // 1-based value `ArgMetadata::positional`
+                                        // actually stores and that
+                                        // `registry::build_argument` passes straight
+                                        // through to clap. Without this conversion,
+                                        // two 0-based positionals (`index = 0`,
+                                        // `index = 1`) both land on clap index 1 and
+                                        // clap's debug_asserts panics at runtime --
+                                        // see
+                                        // tests/positional_args.rs::test_positional_args_use_documented_zero_based_index.
                                         if let syn::Expr::Lit(syn::ExprLit {
                                             lit: syn::Lit::Int(i),
                                             ..
                                         }) = &nv.value
                                         {
                                             if let Ok(index) = i.base10_parse::<usize>() {
-                                                config.positional = Some(index);
+                                                config.positional = Some(index.saturating_add(1));
                                             }
                                         }
                                     }

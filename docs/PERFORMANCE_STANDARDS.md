@@ -1,10 +1,10 @@
 # Performance Standards & Optimization Guide
 
-**clap-noun-verb v26.6.14** — Comprehensive performance budgets, measurement methods, and optimization frameworks.
+**clap-noun-verb v26.9.1** — Comprehensive performance budgets, measurement methods, and optimization frameworks.
 
 **Audience**: Maintainers, contributors, and power users ensuring the framework meets performance commitments.
 
-**Last Updated**: 2026-06-14  
+**Last Updated**: 2026-08-20  
 **Maintained by**: clap-noun-verb contributors
 
 ---
@@ -985,7 +985,7 @@ cargo tree --all-features | wc -l
 | `repl` | +200ms | +600KB | rustyline (14.0) |
 | `otel` | +400ms | +1.2MB | tracing, opentelemetry_sdk |
 | `federated-network` | +50ms | +200KB | (codegen only) |
-| `async` (removed) | N/A | N/A | tokio is workspace dep |
+| `async` | N/A | N/A | tokio is workspace dep |
 | `process-data` | +10ms | +50KB | (feature flag only) |
 | `autonomic` | +10ms | +50KB | (feature flag only) |
 | `contrib` | +10ms | +50KB | (feature flag only) |
@@ -1788,5 +1788,5 @@ cargo make slo-check
 ---
 
 **Maintained by**: clap-noun-verb contributors  
-**Last Updated**: 2026-06-14  
-**Version**: 26.6.14
+**Last Updated**: 2026-08-20  
+**Version**: 26.9.1

@@ -12,18 +12,18 @@
 
 ```bash
 # 1. Create a release branch for final polishing
-git checkout -b release/v26.6.15
+git checkout -b release/v26.9.1
 git pull origin main
 
 # 2. List all changes since last release
-git log v26.6.13..HEAD --oneline --graph
+git log v26.9.1..HEAD --oneline --graph
 
 # 3. Draft CHANGELOG.md entries
 # Group commits by category and write user-facing descriptions
 
 # 4. Review each commit for quality
 # Look for: stubs, TODOs, unwrap(), panic(), print!()
-git log v26.6.13..HEAD -p | less
+git log v26.9.1..HEAD -p | less
 
 # 5. Create migration guide (if MAJOR version)
 # Document breaking changes with before/after examples
@@ -41,7 +41,7 @@ EOF
 
 ```bash
 # 1. Final quality check
-./scripts/pre-release-check.sh 26.6.15
+./scripts/pre-release-check.sh 26.9.1
 
 # 2. Dry-run publishing
 cargo make publish-dry-run-macros
@@ -71,7 +71,7 @@ git status
 git log origin/main..HEAD  # Should be empty or clean
 
 # 2. Use automated helper for guided workflow
-./scripts/release-automation.sh 26.6.15
+./scripts/release-automation.sh 26.9.1
 
 # Or manual step-by-step if preferred
 ```
@@ -113,7 +113,7 @@ git log origin/main..HEAD  # Should be empty or clean
 5. Adding frontier features: `frontier-new-feature`
 
 **Example MINOR Releases**:
-- v26.6.1 (June 2026): Graph module, capability packing
+- v26.9.1 (June 2026): Graph module, capability packing
 - v5.5.0 (Jan 2026): Agent CLI Builder
 - v5.4.0 (Jan 2026): ggen integration
 
@@ -138,8 +138,8 @@ git log origin/main..HEAD  # Should be empty or clean
 6. Adding new trait implementations
 
 **Example PATCH Releases**:
-- v26.6.14 → v26.6.15: Critical bug fix
-- v26.6.13 → v26.6.14: Documentation refresh + minor fixes
+- v26.9.1 → v26.9.1: Critical bug fix
+- v26.9.1 → v26.9.1: Documentation refresh + minor fixes
 
 **PATCH Release Checklist**:
 ```
@@ -157,7 +157,7 @@ git log origin/main..HEAD  # Should be empty or clean
 ### Structure Template
 
 ```markdown
-## [26.6.15] - 2026-06-15
+## [26.9.1] - 2026-06-15
 
 ### Added
 - **New Feature**: Detailed description with context
@@ -188,8 +188,8 @@ git log origin/main..HEAD  # Should be empty or clean
 ### Security
 - **CVE-2026-12345**: Fixed potential DoS with malformed input
   - Impact: High (could cause application crash)
-  - Affected versions: v26.6.13 and earlier
-  - Mitigation: Update to v26.6.14+
+  - Affected versions: v26.9.1 and earlier
+  - Mitigation: Update to v26.9.1+
 
 ### Technical Details
 - Updated to Rust 1.74 MSRV
@@ -295,7 +295,7 @@ cargo make test-all       # All features
 
 ```
 1. ✓ Pre-release checks pass
-2. ✓ Cargo.toml versions match (26.6.15)
+2. ✓ Cargo.toml versions match (26.9.1)
 3. ✓ Dry-run macros publish
 4. ✓ Publish macros to crates.io
 5. ⏳ Wait for macros indexing (2-60 seconds)
@@ -356,14 +356,14 @@ cargo make publish-dry-run  # Get detailed error
 **If something published wrong**:
 ```bash
 # 1. Immediately yank the broken version
-cargo yank --vers 26.6.15 -p clap-noun-verb
-cargo yank --vers 26.6.15 -p clap-noun-verb-macros
+cargo yank --vers 26.9.1 -p clap-noun-verb
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 
 # 2. Fix the issue
 # ... make changes ...
 
-# 3. Bump version (don't reuse 26.6.15)
-./scripts/bump-version.sh 26.6.16
+# 3. Bump version (don't reuse 26.9.1)
+./scripts/bump-version.sh 26.9.1
 
 # 4. Republish
 cargo make publish
@@ -521,7 +521,7 @@ RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps
 **Minimal announcement** (bug fixes are common):
 
 ```markdown
-v26.6.15 released - bug fixes
+v26.9.1 released - bug fixes
 
 - Fixed panic in registry handling (#456)
 - Improved error messages
@@ -534,7 +534,7 @@ Update with: `cargo update`
 **Feature announcement** (highlight new capabilities):
 
 ```markdown
-v26.7.0 released - new features
+v26.9.1 released - new features
 
 ## What's New
 - New `#[arg(validate)]` macro for custom validation
@@ -582,14 +582,14 @@ These changes improve type safety and prevent common mistakes.
 ```bash
 # 1. Verify crates.io
 curl -s https://crates.io/api/v1/crates/clap-noun-verb | jq '.crate.max_version'
-# Should output: "26.6.15"
+# Should output: "26.9.1"
 
 # 2. Verify docs.rs
-# Visit: https://docs.rs/clap-noun-verb/26.6.15/
+# Visit: https://docs.rs/clap-noun-verb/26.9.1/
 # Should load without errors
 
 # 3. Check GitHub Release
-# Visit: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.6.15
+# Visit: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.9.1
 # Should have auto-generated release notes
 
 # 4. Monitor Issues
@@ -620,7 +620,7 @@ curl -s https://crates.io/api/v1/crates/clap-noun-verb | jq '.crate.max_version'
 After each release (especially MAJOR), conduct a retrospective:
 
 ```markdown
-# v26.6.15 Release Retrospective
+# v26.9.1 Release Retrospective
 
 ## What Went Well
 - All quality gates passed on first try
@@ -653,5 +653,5 @@ After each release (especially MAJOR), conduct a retrospective:
 - **Pre-Release Check**: `scripts/pre-release-check.sh`
 
 **Document Version**: 1.0  
-**Last Updated**: 2026-06-14  
+**Last Updated**: 2026-08-20  
 **Authored by**: Sean Chatman

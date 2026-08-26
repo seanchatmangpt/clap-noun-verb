@@ -316,7 +316,7 @@ Headroom < 20%  (Red Zone)
 ### Monitoring Plan
 
 **Quarterly review**:
-1. Run `cargo make release-validate`
+1. Run `cargo make release-admission`
 2. Update metrics table in PERFORMANCE_STANDARDS.md
 3. If any yellow, create optimization issue
 4. If any red, immediate action required
@@ -487,5 +487,5 @@ Before proposing a performance-impacting change:
 ---
 
 **Last Updated**: 2026-06-14  
-**Version**: 26.6.14  
+**Version**: 26.9.1  
 **Maintained by**: clap-noun-verb contributors

@@ -506,7 +506,7 @@ Already in `Makefile.toml`, but create a convenience script:
 
 set -e
 
-VERSION=${1:-"26.6.14"}
+VERSION=${1:-"26.9.1"}
 
 echo "🚀 Releasing clap-noun-verb v$VERSION"
 echo ""

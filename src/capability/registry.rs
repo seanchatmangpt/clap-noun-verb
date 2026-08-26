@@ -267,9 +267,8 @@ impl CapabilityRegistry {
             if temporary.iter().any(|item| item == id) {
                 return Err(format!("Capability dependency cycle detected at: {id}"));
             }
-            let package = packages
-                .get(id)
-                .ok_or_else(|| format!("Capability dependency not found: {id}"))?;
+            let package =
+                packages.get(id).ok_or_else(|| format!("Capability dependency not found: {id}"))?;
             temporary.push(id.to_string());
             for dependency in &package.dependencies {
                 visit(dependency, packages, temporary, permanent, ordered)?;
@@ -336,13 +335,9 @@ mod tests {
     #[test]
     fn dependency_order_is_closed_and_stable() {
         let mut registry = CapabilityRegistry::new();
+        registry.add_package(CapabilityPackage::new("core", "Core", "1", "Core")).expect("core");
         registry
-            .add_package(CapabilityPackage::new("core", "Core", "1", "Core"))
-            .expect("core");
-        registry
-            .add_package(
-                CapabilityPackage::new("cli", "CLI", "1", "CLI").with_dependency("core"),
-            )
+            .add_package(CapabilityPackage::new("cli", "CLI", "1", "CLI").with_dependency("core"))
             .expect("cli");
         assert_eq!(registry.dependency_order().expect("closed"), vec!["core", "cli"]);
     }

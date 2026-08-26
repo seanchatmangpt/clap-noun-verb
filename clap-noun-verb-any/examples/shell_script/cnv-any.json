@@ -1,0 +1,22 @@
+{
+  "name": "greet-fixture",
+  "about": "Trivial shell-script cnv-any example.",
+  "commands": [
+    {
+      "path": ["cli", "greet"],
+      "about": "Greet someone.",
+      "arguments": [
+        {
+          "id": "name",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "string",
+          "behavior": "value"
+        }
+      ],
+      "callable": true
+    }
+  ]
+}

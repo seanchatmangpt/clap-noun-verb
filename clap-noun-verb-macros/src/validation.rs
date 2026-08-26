@@ -163,30 +163,66 @@ pub fn validate_verb_attribute_syntax(args: &TokenStream, input_fn: &ItemFn) -> 
         }
     };
 
-    // Validate number of arguments (0, 1, or 2)
-    if args_vec.len() > 2 {
+    // The optional `effect = "read_only"|"mutating"|"idempotent"` key-value
+    // argument is validated separately (it's an Expr::Assign, never a bare
+    // positional string literal) and doesn't count against the 0/1/2
+    // positional-argument limit below.
+    let positional_count = args_vec.iter().filter(|arg| !is_effect_assign(arg)).count();
+
+    // Validate number of positional arguments (0, 1, or 2)
+    if positional_count > 2 {
         return Err(syn::Error::new(
             args.span(),
             format!(
                 "Too many arguments in #[verb] attribute for function '{}'\n\
                  \n\
-                 Expected: 0, 1, or 2 arguments\n\
-                 Found: {} arguments\n\
+                 Expected: 0, 1, or 2 positional arguments (plus an optional effect = \"...\")\n\
+                 Found: {} positional arguments\n\
                  \n\
                  Valid patterns:\n\
                  - #[verb]                    (0 args - auto-infer)\n\
                  - #[verb(\"status\")]          (1 arg - verb name)\n\
                  - #[verb(\"status\", \"noun\")] (2 args - verb + noun)\n\
+                 - #[verb(\"status\", \"noun\", effect = \"read_only\")] (+ optional effect)\n\
                  \n\
                  Hint: Remove extra arguments",
-                fn_name,
-                args_vec.len()
+                fn_name, positional_count
             ),
         ));
     }
 
-    // Validate that all arguments are string literals
-    for (idx, arg) in args_vec.iter().enumerate() {
+    // Validate that every non-effect argument is a string literal, and that
+    // an effect = "..." argument (if present) names a real Effect variant.
+    let mut positional_idx = 0;
+    for arg in args_vec.iter() {
+        if let syn::Expr::Assign(assign) = arg {
+            if is_effect_assign(arg) {
+                match &*assign.right {
+                    syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. })
+                        if matches!(
+                            s.value().as_str(),
+                            "read_only" | "mutating" | "idempotent"
+                        ) => {}
+                    _ => {
+                        return Err(syn::Error::new(
+                            arg.span(),
+                            format!(
+                                "Invalid effect value in #[verb] attribute for function '{}'\n\
+                                 \n\
+                                 Expected: effect = \"read_only\" | \"mutating\" | \"idempotent\"\n\
+                                 \n\
+                                 Hint: effect is optional; omit it if the verb's consequence \
+                                 kind isn't yet known.",
+                                fn_name
+                            ),
+                        ));
+                    }
+                }
+                continue;
+            }
+        }
+
+        positional_idx += 1;
         match arg {
             syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(_), .. }) => {
                 // Valid string literal
@@ -207,10 +243,7 @@ pub fn validate_verb_attribute_syntax(args: &TokenStream, input_fn: &ItemFn) -> 
                          Expected: \"{}\"\n\
                          \n\
                          Hint: Add double quotes around the identifier",
-                        idx + 1,
-                        fn_name,
-                        ident,
-                        ident
+                        positional_idx, fn_name, ident, ident
                     ),
                 ));
             }
@@ -221,11 +254,11 @@ pub fn validate_verb_attribute_syntax(args: &TokenStream, input_fn: &ItemFn) -> 
                         "Argument {} in #[verb] must be a string literal for function '{}'\n\
                          \n\
                          Found: complex expression\n\
-                         Expected: a string literal like \"status\" or \"services\"\n\
+                         Expected: a string literal like \"status\" or \"services\", or \
+                         effect = \"read_only\"|\"mutating\"|\"idempotent\"\n\
                          \n\
                          Hint: Use double-quoted string literals only",
-                        idx + 1,
-                        fn_name
+                        positional_idx, fn_name
                     ),
                 ));
             }
@@ -233,6 +266,17 @@ pub fn validate_verb_attribute_syntax(args: &TokenStream, input_fn: &ItemFn) -> 
     }
 
     Ok(())
+}
+
+/// Whether `expr` is a real `effect = "..."` key-value argument to
+/// `#[verb(...)]` (a `syn::Expr::Assign` whose left side is the bare
+/// identifier `effect`).
+fn is_effect_assign(expr: &syn::Expr) -> bool {
+    matches!(
+        expr,
+        syn::Expr::Assign(assign)
+            if matches!(&*assign.left, syn::Expr::Path(path) if path.path.is_ident("effect"))
+    )
 }
 
 /// Gap 1: Generate compile-time warning for functions that might need #[verb]

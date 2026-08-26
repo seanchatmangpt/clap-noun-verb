@@ -191,7 +191,7 @@ The following diagram shows the major components and their relationships:
           /     |     \
           /      |      \
       Graph Module  Capability   Diagnostics
-      (v26.6.13)   Module    Module
+      (v26.9.1)   Module    Module
         |       |       |
         |       |       |
      ┌─────┴─────┐  ┌───┴───┐  ┌───┴────┐
@@ -340,5 +340,3 @@ Design for scale:
 ## Further Reading
 
 - [Domain Separation Patterns](../tutorial/01-domain-separation.md)
-- [AUTONOMIC.md](../../AUTONOMIC.md) - Machine-grade interface
-- [Agent2028 Whitepaper](../../PhD_THESIS.md)

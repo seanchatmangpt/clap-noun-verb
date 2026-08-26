@@ -5,6 +5,181 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [26.9.1] - 2026-08-21
+
+First announced release. Closes out the Autonomic Layer and OCEL feedback-loop
+work started in 26.8.x, and extends `clap-noun-verb-deploy`/`clap-noun-verb-any`
+with real deployment and multi-CLI-serving capabilities.
+
+### Added
+- **Autonomic Layer: Delegation** (`src/autonomic::Delegation`) - hash-chained
+  (same FNV-1a/genesis-digest scheme as `Receipt`) agent-to-agent authorization
+  chains: `Delegation::next`/`digest_is_consistent`/`grants`,
+  `verify_delegation_chain`, and a bounded transitive `is_authorized` walk.
+  Persisted the same way as receipts, with its own primary/fallback ledger path.
+- **Autonomic Layer: Governance** (`src/autonomic::GovernancePanel`) - a
+  rule-based admission layer (`GovernanceRule` trait) that plugs directly into
+  the existing `Guard`/`GuardSet` machinery (`GovernancePanel` implements
+  `Guard`), plus a hash-chained `GovernanceRecord` audit trail. Every registered
+  rule must approve for the panel to admit an invocation (fail-closed; an empty
+  panel approves by definition).
+- **`clap-noun-verb-any::doctor`** - `diagnose`/`schema_shape_errors` preflight a
+  manifest + executable pairing (executable existence/executable-bit, manifest
+  parse, duplicate argument ids/flags, positional-with-flag warnings, duplicate
+  command paths) before deployment; `wrap()` now hard-refuses
+  (`WrapError::InvalidShape`) a shape-invalid manifest before ever spawning a
+  process. New `cnv-any doctor <binary> <manifest>` subcommand.
+- **`clap-noun-verb-any::MultiExecutor`/`merge_schemas`** - serve several
+  distinct `cnv-any`-wrapped executables from one `Executor`/`CliSchema` pair,
+  so a single `McpServer` (or any other protocol surface) can admit tools from
+  N wrapped foreign binaries at once. New `examples/mcp_multi_cli.rs`.
+- **5 more real wrapped fixture CLIs** in `clap-noun-verb-any` (`word-count.sh`,
+  `calc.sh`, `list-fruits.sh`, `status-check.sh`, `repeat.sh`), covering string/
+  integer/array arguments, boolean flags, short flags, and real non-zero exit
+  failure paths.
+- **`clap-noun-verb-deploy::kubernetes::CronJobConfig`** - deterministic,
+  CONSTRUCT-only `CronJob` YAML projection for scheduled/batch verbs, following
+  the existing `KubernetesConfig`/`Deployment` hardening defaults exactly
+  (read-only root filesystem with an automatic `/tmp` `emptyDir`, non-root,
+  dropped capabilities, `RuntimeDefault` seccomp profile).
+- **`clap-noun-verb-deploy::oci_builder`** - a real, explicitly-effectful OCI
+  image builder (distinct from `container.rs`'s pure Dockerfile projection):
+  shells out to a real, already-installed `docker`/`podman`/custom OCI CLI to
+  actually build an image, with pure/testable argv construction and a real
+  `is_tool_available` probe.
+- **`ocel::from_rdf`** - the real, narrow inverse of `to_rdf`'s own emission
+  grammar (not a general Turtle parser; documented lossy points: numeric
+  literals always round-trip as `f64`, no nested blank-node support).
+- **`ocel::drift_report_to_rdf`/`write_drift_pack`** - closes `drift_report`'s
+  coverage ratio into a real, composable `ggen-marketplace` gate
+  (`ocel-drift-pack`), proven via a real `ggen sync run` subprocess test.
+- **`#[verb(..., effect = "read_only" | "mutating" | "idempotent")]`** - a real
+  macro attribute letting a verb author declare its `Effect`, which flows
+  mechanically into `ExecutionContract`'s `IsolationLevel`/`idempotent` fields
+  and the recorded `Receipt`.
+- Criterion benchmarks for `compute_signals`/`drift_report`/`to_rdf` at
+  10k/100k/1M OCEL event scale (`benches/ocel_scale.rs`).
+- Property-based tests (`proptest`) for `merge_documents`/`compute_signals`;
+  real concurrent-writer and permission-denied fault-injection tests for
+  `record_receipt`/`record_invocation`; a real, honestly-scoped scaled
+  concurrent-dispatch load test (with measured evidence for why a literal
+  100k-invocation scale is not yet feasible against the current O(n)-per-append
+  ledger design).
+
+### Changed
+- `src/policies.rs` and `src/telemetry.rs` are now ggen-generated from
+  dedicated `clap-noun-verb-*-pack`s (previously hand-written), matching
+  `src/autonomic.rs`'s existing generation discipline. Fixed a real stale
+  `cli_version` literal (`"3.8.0"`) caught during the `telemetry.rs` migration.
+- `CommandRegistry::add_guard`/`GuardSet` are now actually wired into
+  `execute_verb`/`execute_root_verb` dispatch (previously available but unused).
+- Removed genuinely dead fields (`NounMetadata.name`, `VerbMetadata.noun_name`/
+  `verb_name`, `SimpleNoun.verbs`) per ADL-005.
+
+### Fixed
+- Corrected multiple overclaiming/fabrication gaps across `docs/reference/`
+  found by a live-code audit: fabricated `HandlerInput`/`HandlerOutput`/
+  `AppContext`/`ArgMetadata` signatures, a fabricated "v5 Autonomic API"
+  telemetry section, a false claim that `#[verb]` supports `async fn` handlers
+  directly, a false claim that `check_verb_registration!()` performs a real
+  compile-time check (it is a documented no-op), and a README claim that
+  `schema-validation.md` covers SHACL (it explicitly does not ship one).
+
+## [26.8.22] - 2026-08-20
+
+### Added
+- **OCEL drift detection** (`src/ocel::drift_report`) - compares an admitted
+  `(noun, verb)` command surface (e.g. a deployment manifest's declared commands)
+  against an observed `OcelDocument`'s real recorded events, reporting which admitted
+  commands were never exercised, which were exercised, and a `coverage_ratio`. Solves
+  the coverage-gap problem in a generated or wrapped CLI fleet (ggen packs, `cnv-any`
+  wrapped executables): a command can be declared without ever having been used.
+- **OCEL prune candidates** (`src/ocel::prune_candidates`) - names commands whose most
+  recent associated event is older than a caller-supplied `min_age` threshold, for
+  removing stale commands from an admitted surface. Distinct from drift detection: a
+  command with zero events is never a prune candidate (that's "never exercised," a
+  `drift_report` concern), and a command with both an old and a recent event is judged
+  by its most recent event, not its first.
+- **OCEL RDF (Turtle) export** (`src/ocel::to_rdf`) - serializes an `OcelDocument` as
+  Turtle RDF using a small inline `cnv-ocel:` vocabulary, hand-emitted with no new RDF
+  library dependency. This is export-mechanism only: it produces Turtle text so that
+  ggen's existing SPARQL/inference layer *could* query real invocation evidence
+  alongside its ontology graph. No live ggen integration is included in this release --
+  nothing here loads the output into a triple store or wires it into ggen's SPARQL
+  layer.
+
+## [26.8.21] - 2026-08-20
+
+### Added
+- **OCEL 2.0 event logging** (`src/ocel.rs`) - always-on, zero-configuration OCEL 2.0
+  (Object-Centric Event Log) recording for every CLI invocation dispatched through
+  `CommandRegistry::execute_verb`/`execute_root_verb`, mirroring this crate's existing
+  "telemetry is always compiled, never feature-gated" precedent. Each invocation appends
+  one `cli_invocation` event (with `noun`/`verb`/`success`/`duration_ms` attributes) linked
+  to a `command` object and a process-lifetime-stable `process` object, into a real OCEL
+  2.0 JSON document (spec-exact `objectTypes`/`eventTypes`/`objects`/`events` shape).
+  Defaults to `.clap-noun-verb/ocel.json`, overridable via `CLAP_NOUN_VERB_OCEL_PATH`, with
+  an automatic fallback to `$TMPDIR/clap-noun-verb-ocel.json` when the primary path is
+  unwritable. Logging is best-effort and never fails or panics the invocation it describes.
+  The reading API (`OcelDocument`, `OcelEvent`, `OcelObject`, `read_document`,
+  `primary_path`, `fallback_path`) is re-exported from the crate root.
+- **`clap-noun-verb-deploy` `/ocel` surface** - the HTTP serving adapter exposes `GET /ocel`
+  and the MCP stdio adapter exposes the same document as a resource at
+  `clap-noun-verb://ocel`, both returning a spec-shaped OCEL 2.0 document (empty arrays if
+  no invocation has been admitted yet).
+- **Kubernetes `emptyDir` hardening companion** - when
+  `KubernetesConfig::read_only_root_filesystem` is `true` (the default), the generated
+  manifest now automatically mounts an `emptyDir` volume at `/tmp`, keeping the OCEL
+  fallback path (and other scratch-space needs) writable without weakening the read-only
+  root filesystem hardening.
+
+## [26.8.20] - 2026-08-20
+
+### Added
+- **`clap-noun-verb-deploy` crate** - serves clap-noun-verb CLIs through transport-neutral
+  deployment surfaces: an MCP adapter implementing the stateless 2026-07-28 protocol
+  (including the required result discriminator), an HTTP serving adapter, hardened
+  Kubernetes manifest projection, and OCI/Dockerfile projection. Built around a
+  least-authority admission policy, an explicit executor boundary that fences child-process
+  environment by default, and execution records with replay verification.
+
+### Fixed
+- Refused ambient invocation environment by default at the deploy executor boundary
+  (`fix(deploy): refuse ambient invocation environment by default`)
+- Fenced child-process environment at the executor boundary
+  (`fix(deploy): fence child-process environment at executor boundary`)
+- Preserved clap flag and counter semantics when deriving transport-neutral schemas
+  (`fix(schema): preserve clap flag and counter semantics`)
+- Failed closed on truncated HTTP requests and normalized format handling
+  (`fix(http): fail closed on truncated requests and normalize format`)
+- Fenced Dockerfile projection inputs against injection
+  (`fix(container): fence Dockerfile projection inputs`)
+- Validated Kubernetes projection grammar inputs
+  (`fix(kubernetes): validate projection grammar inputs`)
+- Emitted the required 2026 MCP result discriminator
+  (`fix(mcp): emit required 2026 result discriminator`)
+- Removed an infallible `expect()` from the Kubernetes projection path
+  (`fix(kubernetes): remove infallible expect from projection path`)
+- Table/TSV formatter now renders objects with array fields as real tables; fixed YAML
+  sequence indentation (`fix(format): table/tsv render objects with array fields as real
+  tables; fix YAML sequence indentation`)
+- Resolved a rustdoc link lint and rustfmt drift in the deploy crate
+  (`fix(deploy): resolve rustdoc link lint and rustfmt drift`)
+
+### Docs
+- Completed a full docs sweep across 86 files: 8 archived, 55 rewritten (version bumps,
+  dead-link fixes, and corrections of stale/fabricated API descriptions), 23 kept as-is.
+  Examples: `AGENT_DECISION_TREES.md`, `AGENT_SPECIFICATIONS.md`, and three related files
+  were archived as an unimplemented 6-agent subagent-system design cluster never wired
+  into `.claude/agents/`; `docs/ggen-manufacturing-system.md` and `docs/ggen-quickstart.md`
+  were archived for describing an aspirational ggen pipeline (`ggen.toml [ggen.*]`,
+  `src/generated/`, `receipts/ggen/`) that contradicts the real `ggen.toml` schema and
+  `docs/GGEN_AUTHORITY.md`. Rewrites also corrected `docs/reference/api/types.md`, which
+  described a `CommandRegistry`/`CommandDefinition` API shape that doesn't match
+  `src/registry.rs`, and replaced a removed-`middleware`-module example plus a fabricated
+  `test_prelude` reference in `docs/howto/cli-testing-guide.md` with a real
+  `HandlerInput`/`HandlerOutput` pattern.
+
 ## [26.6.13] - 2026-06-13
 
 ### Changed

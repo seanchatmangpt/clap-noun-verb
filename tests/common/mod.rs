@@ -2,6 +2,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+// This module is compiled independently into every integration-test binary that
+// includes it via `mod common;`. Each binary only exercises the subset of helpers
+// its own tests call, so per-binary dead-code analysis flags helpers used by
+// *other* binaries as unused. That is a structural artifact of Rust's per-test-
+// binary compilation model for shared test utilities, not real production dead
+// code -- the standard fix is to allow dead_code for the whole shared module.
+#![allow(dead_code)]
 
 //! Common test utilities for clap-noun-verb tests
 pub mod test_prelude;

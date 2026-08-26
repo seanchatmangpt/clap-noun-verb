@@ -395,15 +395,15 @@ cargo make lint          # Linting
 
 ## Version Compatibility
 
-This documentation ecosystem applies to **clap-noun-verb 26.6.13+**.
+This documentation ecosystem applies to **clap-noun-verb 26.9.1+**.
 
 For older versions, check the specific version's documentation.
 
 ---
 
-**Last Updated:** 2026-06-14
+**Last Updated:** 2026-08-20
 
-**Scope:** clap-noun-verb 26.6.13+
+**Scope:** clap-noun-verb 26.9.1+
 
 See also:
 - [DOCUMENTATION_GUIDE.md](DOCUMENTATION_GUIDE.md) — Comprehensive reference

@@ -504,7 +504,7 @@ pub fn validate_password(
 ## Next Steps
 
 - **[Tutorial 04: Output Formats](04-output-formats.md)** - JSON, YAML, custom serialization
-- **[Tutorial 05: Async Operations](05-async-operations.md)** - Async command handlers
+- **[Tutorial 06: Error Handling](06-error-handling.md)** - Result types and structured errors
 - **[How-To: Testing](../howto/testing.md)** - Advanced testing patterns
 
 **Estimated time to next tutorial:** 20 minutes
