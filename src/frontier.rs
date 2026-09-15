@@ -2740,6 +2740,28 @@ mod tests {
     }
 
     // -------------------------------------------------------------------
+    // FederatedNetwork::new -- node id validation (frontier-gap-sweep):
+    // every existing FederatedNetwork::new(...) call site in this file
+    // passes a real, non-empty node id and unwraps with `.expect(...)`,
+    // so the empty/whitespace-only rejection branch was never actually
+    // exercised. Assert on the real error message content, not just
+    // `is_err()`, per this session's error-message-content discipline.
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn federated_network_new_rejects_empty_node_id() {
+        let error = FederatedNetwork::new("").expect_err("empty node id must be refused");
+        assert_eq!(error.to_string(), "federation node id cannot be empty");
+    }
+
+    #[test]
+    fn federated_network_new_rejects_whitespace_only_node_id() {
+        let error =
+            FederatedNetwork::new("   ").expect_err("whitespace-only node id must be refused");
+        assert_eq!(error.to_string(), "federation node id cannot be empty");
+    }
+
+    // -------------------------------------------------------------------
     // FederatedNetwork::add_peer/remove_peer
     // -------------------------------------------------------------------
 
