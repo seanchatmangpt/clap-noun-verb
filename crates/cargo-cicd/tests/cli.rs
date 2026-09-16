@@ -399,16 +399,26 @@ fn test_trybuild_changed_output_includes_all_required_fields() {
 // =============================================================================
 
 #[test]
-fn test_target_scanning_handles_permission_errors() {
-    // Arrange: Target scanning with potential permission issue
-    let target_path = PathBuf::from("target");
+fn test_target_scanning_missing_dir_degrades_gracefully() {
+    // Arrange: a target directory that does not exist on this filesystem
+    let target_path = PathBuf::from("target/does-not-exist-for-this-test");
 
-    // Act: Attempt scan (may fail with permission error)
-    let result = cargo_cicd::adapters::TargetScanning::scan(target_path);
+    // Act: scan a missing target directory
+    let info = cargo_cicd::adapters::TargetScanning::scan(target_path.clone())
+        .expect("missing target dir must degrade to Ok(TargetInfo), not Err");
 
-    // Assert: Result is either Ok or Err (graceful handling)
-    let is_handled = result.is_ok() || result.is_err();
-    assert!(is_handled, "Permission errors should be handled gracefully");
+    // Assert: the graceful-degradation contract of
+    // adapters/target_scanning.rs -- zeroed size, no profile breakdown,
+    // and the scanned path echoed back.
+    assert_eq!(info.path, target_path, "scanned path is echoed back");
+    assert_eq!(
+        info.total_size_gb, 0.0,
+        "missing target dir contributes zero size"
+    );
+    assert!(
+        info.profiles.is_empty(),
+        "missing target dir has no profile breakdown"
+    );
 }
 
 #[test]
