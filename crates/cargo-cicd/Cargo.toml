@@ -36,3 +36,9 @@ git2 = { version = "0.21", optional = true }
 [features]
 default = []
 git = ["git2"]
+
+# Standalone crate: this is a cargo subcommand that path-depends on the root
+# package but is not a workspace member. The empty [workspace] table keeps
+# cargo from walking up to the repo-root workspace, so
+# `cargo test --manifest-path crates/cargo-cicd/Cargo.toml` resolves standalone.
+[workspace]
