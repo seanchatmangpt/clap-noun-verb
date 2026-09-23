@@ -96,6 +96,10 @@ pub fn apply_branchless_mask<T>(
 /// Does not short-circuit; validates all deltas regardless of prior failures.
 pub fn batch_validate_construct8(deltas: &[Construct8Delta]) -> Vec<bool> {
     let mut results = Vec::with_capacity(deltas.len());
+    // Slot indices are bounded by CONSTRUCT8_SLOTS (8), so u8::MAX is an
+    // unambiguous "no predecessor yet" sentinel: the first delta is always
+    // order-valid. (Was compared with `>` directly, which made the first
+    // delta permanently invalid — caught by test_hotpath_has_zero_panic_paths.)
     let mut last_slot = u8::MAX;
 
     for delta in deltas {
@@ -104,8 +108,8 @@ pub fn batch_validate_construct8(deltas: &[Construct8Delta]) -> Vec<bool> {
         let slot_valid = delta.slot < CONSTRUCT8_SLOTS as u8;
         // 2. Value non-zero
         let value_valid = delta.value != 0;
-        // 3. Ascending slot order (no duplicates)
-        let order_valid = delta.slot > last_slot;
+        // 3. Ascending slot order (no duplicates); first delta has no predecessor
+        let order_valid = last_slot == u8::MAX || delta.slot > last_slot;
 
         let is_valid = slot_valid && value_valid && order_valid;
         results.push(is_valid);
@@ -272,17 +276,37 @@ mod tests {
     #[test]
     fn test_hotpath_has_zero_panic_paths() {
         // Verify that apply_branchless_mask never panics on valid inputs
-        let slots: [Option<u64>; CONSTRUCT8_SLOTS] = [None; CONSTRUCT8_SLOTS];
+        // AND that it selects exactly the populated slots whose mask bit
+        // is set, in ascending slot order. Falsifiable three ways: a panic
+        // on any mask, a wrong selection length, or wrong slot contents.
+        let slots: [Option<u64>; CONSTRUCT8_SLOTS] =
+            [Some(10), Some(21), None, Some(43), None, None, Some(76), None];
         for mask in 0..=255u8 {
-            let _result: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
-            // No panic should occur
+            let selected: Vec<u64> = apply_branchless_mask(mask, &slots).copied().collect();
+            // Exactly the populated-and-masked slots are yielded, in slot order.
+            let expected: Vec<u64> = (0..CONSTRUCT8_SLOTS as u8)
+                .filter(|&i| mask & (1 << i) != 0 && slots[i as usize].is_some())
+                .map(|i| slots[i as usize].unwrap())
+                .collect();
+            assert_eq!(selected, expected, "wrong selection for mask {mask:#010b}");
         }
 
-        // Verify batch_validate_construct8 never panics
+        // All-None slots: every mask selects nothing, never panics.
+        let empty: [Option<u64>; CONSTRUCT8_SLOTS] = [None; CONSTRUCT8_SLOTS];
+        for mask in 0..=255u8 {
+            let selected: Vec<u64> = apply_branchless_mask(mask, &empty).copied().collect();
+            assert!(
+                selected.is_empty(),
+                "all-None slots yielded {selected:?} for mask {mask:#010b}"
+            );
+        }
+
+        // Verify batch_validate_construct8 never panics on valid input
+        // and returns all-valid for ascending in-bounds non-zero deltas.
         let deltas =
             vec![Construct8Delta::new(0, 1).unwrap(), Construct8Delta::new(7, 255).unwrap()];
-        let _results = batch_validate_construct8(&deltas);
-        // No panic should occur
+        let results = batch_validate_construct8(&deltas);
+        assert_eq!(results, vec![true, true], "ascending valid deltas must all validate");
     }
 
     #[test]

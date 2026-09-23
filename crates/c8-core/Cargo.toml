@@ -13,3 +13,7 @@ serde_json = "1.0"
 thiserror = "1.0"
 
 [dev-dependencies]
+
+# Standalone workspace so this non-member crate resolves its own tests
+# (same repair as f39d7fb for cargo-cicd).
+[workspace]
