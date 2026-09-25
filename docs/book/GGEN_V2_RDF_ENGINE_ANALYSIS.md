@@ -5,7 +5,7 @@
 Comprehensive analysis of the RDF, OWL, SPARQL, and SHACL engines in ggen-core, including current implementation, LOC statistics, and v2.0 migration requirements.
 
 **Total LOC in RDF Stack**: ~2,081 lines (excluding tests)  
-**Dependencies**: Oxigraph 0.5.1 (SPARQL engine), custom SHACL validator
+**Dependencies**: Oxigraph 0.5.6 (SPARQL 1.2 engine with `rdf-12` feature), custom SHACL validator
 
 ---
 
@@ -373,9 +373,9 @@ SELECT ?property WHERE {
 
 ### External Crates
 
-1. **oxigraph** (0.5.1)
-   - SPARQL engine
-   - RDF store
+1. **oxigraph** (0.5.6)
+   - SPARQL 1.2 engine (with `rdf-12` feature)
+   - RDF 1.2 store
    - Turtle/N-Triples/RDF/XML parsing
 
 2. **shacl_validation** (0.1) ⚠️
