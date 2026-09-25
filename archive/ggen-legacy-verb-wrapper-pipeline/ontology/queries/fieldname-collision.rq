@@ -1,5 +1,0 @@
-# MOVED: ../../gates/fieldname-collision.rq
-#
-# Automatic sync validation now uses external SPARQL gates under gates/*.rq.
-# This compatibility marker intentionally contains no executable query so the
-# collision law has one canonical authored source.
