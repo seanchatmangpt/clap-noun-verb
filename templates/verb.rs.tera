@@ -14,23 +14,28 @@
 use clap_noun_verb::Result;
 use clap_noun_verb_macros::verb;
 
-{# Rust reserved set (strict + reserved-for-future) for raw-identifier escaping. #}
+{#- Rust reserved set (strict + reserved-for-future) for raw-identifier escaping. -#}
 {%- set reserved = ["as","break","const","continue","crate","dyn","else","enum","extern","false","fn","for","if","impl","in","let","loop","match","mod","move","mut","pub","ref","return","self","Self","static","struct","super","trait","true","try","type","unsafe","use","where","while","async","await","abstract","become","box","do","final","macro","override","priv","typeof","unsized","virtual","yield"] -%}
 {%- if verb_about %}
 /// {{ verb_about }}
 {%- endif %}
+#[rustfmt::skip]
 #[verb("{{ verb_name }}", "{{ noun_name }}")]
 pub fn {{ handler_name }}(
 {%- if args %}
-{%- for spec in args | split(pat="@@") %}
+{%- for spec in args | split(pat="@@") | sort %}
 {%- set parts = spec | split(pat="|") %}
-{%- set field = parts[0] %}
-{%- set rust_type = parts[1] %}
-{%- set required = parts[2] %}
-{%- set positional = parts[4] | default(value="") %}
+{%- set field = parts[1] %}
+{%- set rust_type = parts[2] %}
+{%- set required = parts[3] %}
+{%- set positional = parts[5] | default(value="") %}
+{%- set alias = parts[6] | default(value="") %}
 {%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
 {%- if positional %}
     #[arg(index = {{ positional }})]
+{%- endif %}
+{%- if alias %}
+    #[arg(alias = "{{ alias }}")]
 {%- endif %}
 {%- if required == "true" %}
     {{ ident }}: {{ rust_type }},
@@ -42,9 +47,9 @@ pub fn {{ handler_name }}(
 ) -> Result<{{ return_type }}> {
     crate::handlers::{{ handler_name }}(
 {%- if args %}
-{%- for spec in args | split(pat="@@") %}
+{%- for spec in args | split(pat="@@") | sort %}
 {%- set parts = spec | split(pat="|") %}
-{%- set field = parts[0] %}
+{%- set field = parts[1] %}
 {%- if field in reserved %}{% set_global ident = "r#" ~ field %}{% else %}{% set_global ident = field %}{% endif %}
         {{ ident }},
 {%- endfor %}

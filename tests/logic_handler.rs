@@ -50,7 +50,8 @@ fn test_handler_input_creation() {
     let args = HashMap::new();
     let opts = HashMap::new();
 
-    let input = HandlerInput { args, opts, context };
+    let args_multi = HashMap::new();
+    let input = HandlerInput { args, args_multi, opts, context };
 
     assert_eq!(input.context.verb, "status");
     assert_eq!(input.context.noun, Some("services".to_string()));
@@ -109,7 +110,12 @@ fn test_handler_input_with_args_and_opts() {
 
     let context = HandlerContext::new("status");
 
-    let input = HandlerInput { args: args.clone(), opts: opts.clone(), context };
+    let input = HandlerInput {
+        args: args.clone(),
+        args_multi: HashMap::new(),
+        opts: opts.clone(),
+        context,
+    };
 
     assert_eq!(input.args.get("service"), Some(&"api".to_string()));
     assert_eq!(input.opts.get("verbose"), Some(&"true".to_string()));

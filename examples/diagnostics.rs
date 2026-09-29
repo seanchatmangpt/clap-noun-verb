@@ -18,10 +18,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(report.status, "unhealthy");
     assert_eq!(report.issues.len(), 2);
 
-    let explicit = HealthIssue {
-        level: "info".to_string(),
-        message: "Static contract admitted".to_string(),
-    };
+    let explicit =
+        HealthIssue { level: "info".to_string(), message: "Static contract admitted".to_string() };
     report.issues.push(explicit);
 
     let json = serde_json::to_string(&report)?;

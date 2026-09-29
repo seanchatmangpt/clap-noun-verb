@@ -161,8 +161,8 @@ cargo make test-lib-deterministic
 
 **Expected output:**
 ```
-Compiling clap-noun-verb-macros v26.6.14
-Compiling clap-noun-verb v26.6.14
+Compiling clap-noun-verb-macros v26.9.1
+Compiling clap-noun-verb v26.9.1
 Finished dev [unoptimized + debuginfo] in X.XXs
 ```
 
@@ -1078,7 +1078,7 @@ fn test_port_boundary() {
 **Environment:**
 - Rust 1.74
 - Ubuntu 22.04
-- clap-noun-verb v26.6.14
+- clap-noun-verb v26.9.1
 
 **Code:**
 #[verb(name = "test")]
@@ -1251,7 +1251,7 @@ git commit -m "fix: address code review feedback"
 - **Clean build:** ≤30 seconds
 - **Full test suite:** ≤15 seconds
 
-**Current performance (v26.6.14):**
+**Current performance (v26.9.1):**
 - Incremental: 0.66s ✅
 - Clean: 8s ✅
 - Tests: 5-10s ✅
@@ -1504,4 +1504,4 @@ tests/                        # Test patterns
 
 **Welcome to the team! 🚀 Happy coding!**
 
-Last updated: June 14, 2026
+Last updated: August 20, 2026

@@ -212,7 +212,12 @@ def verify(root: Path) -> VerificationReport:
     if "rendered from O* by ggen" not in generated.read_text(encoding="utf-8"):
         raise ContractError("HAND_CODED_GENERATED_OUTPUT_REFUSED", str(generated.relative_to(root)))
 
-    workflow = require_file(root, ".github/workflows/ggen-authority.yml").read_text(
+    # fc7cdca ("ci: eliminate legacy ggen authority workflow") consolidated
+    # this repo's ggen-authority.yml into verify.yml's own "Semantic
+    # manufacture, replay, and falsifiers" step -- the pinned SHA and the
+    # `sync run`/`receipt verify` commands this gate checks for now live
+    # there, not in a dedicated file. Point at the actual current authority.
+    workflow = require_file(root, ".github/workflows/verify.yml").read_text(
         encoding="utf-8"
     )
     if PINNED_GGEN_SHA not in workflow:

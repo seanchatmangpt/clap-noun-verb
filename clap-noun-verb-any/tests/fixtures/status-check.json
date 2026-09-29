@@ -1,0 +1,14 @@
+{
+    "name": "status-check-fixture",
+    "about": "Exits non-zero on demand -- exercises the real failure path",
+    "commands": [
+        {
+            "path": ["check"],
+            "about": "Check status, optionally simulating failure",
+            "arguments": [
+                {"id": "fail", "long": "fail", "short": null, "required": false, "positional": false, "kind": "boolean", "behavior": "set_true"}
+            ],
+            "callable": true
+        }
+    ]
+}

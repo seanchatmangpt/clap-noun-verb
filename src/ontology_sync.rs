@@ -96,12 +96,7 @@ impl OntologySync {
         let rdf_verbs = self.load_verbs_from_ontology().await?;
         let changes = compute_diff(&code_verbs, &rdf_verbs)?;
         let summary = summarize_changes(&changes);
-        Ok(SyncResult {
-            timestamp: observation_id(),
-            total_verbs: changes.len(),
-            changes,
-            summary,
-        })
+        Ok(SyncResult { timestamp: observation_id(), total_verbs: changes.len(), changes, summary })
     }
 
     async fn load_verbs_from_code(&self) -> Result<Vec<RdfVerbDefinition>, SyncError> {
@@ -124,10 +119,8 @@ impl OntologySync {
             .await
             .map_err(|error| SyncError::IoError(error.to_string()))?;
         let mut paths = Vec::new();
-        while let Some(entry) = reader
-            .next_entry()
-            .await
-            .map_err(|error| SyncError::IoError(error.to_string()))?
+        while let Some(entry) =
+            reader.next_entry().await.map_err(|error| SyncError::IoError(error.to_string()))?
         {
             let path = entry.path();
             if path.extension().is_some_and(|extension| extension == "nt") {
@@ -170,10 +163,7 @@ impl OntologySync {
         let replay_verified =
             consequences_match(&self.ontology_path, &desired, &managed_existing).await?;
         let desired_names: BTreeSet<String> = desired.keys().cloned().collect();
-        let stale: Vec<String> = managed_existing
-            .difference(&desired_names)
-            .cloned()
-            .collect();
+        let stale: Vec<String> = managed_existing.difference(&desired_names).cloned().collect();
 
         let stage = self.ontology_path.join(".ontology-sync-stage");
         if tokio::fs::try_exists(&stage)
@@ -288,10 +278,9 @@ fn compute_diff(
         let code_version = code.get(&key);
         let rdf_version = rdf.get(&key);
         let (operation, differences) = match (code_version, rdf_version) {
-            (Some(_), None) => (
-                SyncOperation::AddToOntology,
-                vec!["Verb missing in RDF ontology".to_string()],
-            ),
+            (Some(_), None) => {
+                (SyncOperation::AddToOntology, vec!["Verb missing in RDF ontology".to_string()])
+            }
             (None, Some(_)) => (
                 SyncOperation::RemoveFromOntology,
                 vec!["Verb exists in RDF but not in Rust".to_string()],
@@ -325,13 +314,8 @@ fn compute_diff(
 }
 
 fn summarize_changes(changes: &[VerbSyncEntry]) -> SyncSummary {
-    let mut summary = SyncSummary {
-        added: 0,
-        modified: 0,
-        removed: 0,
-        unchanged: 0,
-        conformant: false,
-    };
+    let mut summary =
+        SyncSummary { added: 0, modified: 0, removed: 0, unchanged: 0, conformant: false };
     for change in changes {
         match change.operation {
             SyncOperation::AddToOntology => summary.added += 1,
@@ -350,28 +334,21 @@ fn compute_verb_differences(code: &RdfVerbDefinition, rdf: &RdfVerbDefinition) -
         differences.push(format!("name: Rust={:?}, RDF={:?}", code.name, rdf.name));
     }
     if code.description != rdf.description {
-        differences.push(format!(
-            "description: Rust={:?}, RDF={:?}",
-            code.description, rdf.description
-        ));
+        differences
+            .push(format!("description: Rust={:?}, RDF={:?}", code.description, rdf.description));
     }
     if code.noun_uri != rdf.noun_uri {
         differences.push(format!("noun_uri: Rust={:?}, RDF={:?}", code.noun_uri, rdf.noun_uri));
     }
     if code.noun_name != rdf.noun_name {
-        differences.push(format!(
-            "noun_name: Rust={:?}, RDF={:?}",
-            code.noun_name, rdf.noun_name
-        ));
+        differences.push(format!("noun_name: Rust={:?}, RDF={:?}", code.noun_name, rdf.noun_name));
     }
     if code.arguments != rdf.arguments {
         differences.push("arguments differ".to_string());
     }
     if code.return_type != rdf.return_type {
-        differences.push(format!(
-            "return_type: Rust={:?}, RDF={:?}",
-            code.return_type, rdf.return_type
-        ));
+        differences
+            .push(format!("return_type: Rust={:?}, RDF={:?}", code.return_type, rdf.return_type));
     }
     if code.trait_bounds != rdf.trait_bounds {
         differences.push(format!(
@@ -380,10 +357,7 @@ fn compute_verb_differences(code: &RdfVerbDefinition, rdf: &RdfVerbDefinition) -
         ));
     }
     if code.docstring != rdf.docstring {
-        differences.push(format!(
-            "docstring: Rust={:?}, RDF={:?}",
-            code.docstring, rdf.docstring
-        ));
+        differences.push(format!("docstring: Rust={:?}, RDF={:?}", code.docstring, rdf.docstring));
     }
     if code.is_async != rdf.is_async {
         differences.push(format!("is_async: Rust={}, RDF={}", code.is_async, rdf.is_async));
@@ -419,13 +393,8 @@ fn desired_files(result: &SyncResult) -> Result<BTreeMap<String, String>, SyncEr
     for (noun, mut verbs) in groups {
         verbs.sort_by(|left, right| left.verb_uri.cmp(&right.verb_uri));
         let name = managed_filename(noun.as_deref());
-        if files
-            .insert(name.clone(), verb_definitions_to_ntriples(&verbs))
-            .is_some()
-        {
-            return Err(SyncError::ConformanceError(format!(
-                "managed filename collision: {name}"
-            )));
+        if files.insert(name.clone(), verb_definitions_to_ntriples(&verbs)).is_some() {
+            return Err(SyncError::ConformanceError(format!("managed filename collision: {name}")));
         }
     }
     Ok(files)
@@ -436,10 +405,8 @@ async fn managed_files(directory: &Path) -> Result<BTreeSet<String>, SyncError> 
     let mut reader = tokio::fs::read_dir(directory)
         .await
         .map_err(|error| SyncError::IoError(error.to_string()))?;
-    while let Some(entry) = reader
-        .next_entry()
-        .await
-        .map_err(|error| SyncError::IoError(error.to_string()))?
+    while let Some(entry) =
+        reader.next_entry().await.map_err(|error| SyncError::IoError(error.to_string()))?
     {
         let name = entry.file_name().to_string_lossy().to_string();
         if name.ends_with("-verbs.nt") {
@@ -526,14 +493,11 @@ fn parse_literal(token: &str, line: usize) -> Result<String, SyncError> {
             break;
         }
     }
-    let closing = closing.ok_or_else(|| {
-        SyncError::ParseError(format!("unterminated literal at line {line}"))
-    })?;
+    let closing = closing
+        .ok_or_else(|| SyncError::ParseError(format!("unterminated literal at line {line}")))?;
     let suffix = token[closing + 1..].trim();
     if !(suffix.is_empty() || suffix.starts_with('@') || suffix.starts_with("^^<")) {
-        return Err(SyncError::ParseError(format!(
-            "invalid literal suffix at line {line}"
-        )));
+        return Err(SyncError::ParseError(format!("invalid literal suffix at line {line}")));
     }
     unescape_literal(&token[1..closing], line)
 }
@@ -546,9 +510,9 @@ fn unescape_literal(value: &str, line: usize) -> Result<String, SyncError> {
             output.push(character);
             continue;
         }
-        let escaped = characters.next().ok_or_else(|| {
-            SyncError::ParseError(format!("trailing escape at line {line}"))
-        })?;
+        let escaped = characters
+            .next()
+            .ok_or_else(|| SyncError::ParseError(format!("trailing escape at line {line}")))?;
         match escaped {
             '\\' => output.push('\\'),
             '"' => output.push('"'),

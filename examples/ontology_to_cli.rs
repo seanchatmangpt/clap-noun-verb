@@ -7,9 +7,8 @@
 //! workflow. This example witnesses the in-process semantic projection boundary.
 
 use clap_noun_verb::rdf_to_ggen::{
-    rdf_spec_to_verb_code, rdf_triples_to_verb_definitions,
-    sparql_results_to_verb_definitions, ArgumentType, ObjectType, RdfArgumentDefinition,
-    RdfTriple, RdfVerbDefinition,
+    rdf_spec_to_verb_code, rdf_triples_to_verb_definitions, sparql_results_to_verb_definitions,
+    ArgumentType, ObjectType, RdfArgumentDefinition, RdfTriple, RdfVerbDefinition,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

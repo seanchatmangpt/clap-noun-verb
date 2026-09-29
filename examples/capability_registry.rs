@@ -3,9 +3,7 @@
 
 //! Executable witness for evidence-derived capability standing and dependency closure.
 
-use clap_noun_verb::{
-    CapabilityPackage, CapabilityRegistry, CapabilityStanding, ProofSurface,
-};
+use clap_noun_verb::{CapabilityPackage, CapabilityRegistry, CapabilityStanding, ProofSurface};
 
 fn alive_proof(name: &str, rung: &str) -> ProofSurface {
     ProofSurface::new(name, rung, format!("receipt:{name}:{rung}"), true, true)
@@ -18,22 +16,15 @@ fn io_error(error: String) -> std::io::Error {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut core = CapabilityPackage::new("core", "Core", "26.7.62", "Core routing");
     core.record_proof(alive_proof("core-unit", "unit")).map_err(io_error)?;
-    core.record_proof(alive_proof("core-integration", "integration"))
-        .map_err(io_error)?;
+    core.record_proof(alive_proof("core-integration", "integration")).map_err(io_error)?;
     core.record_proof(alive_proof("core-replay", "replay")).map_err(io_error)?;
     assert_eq!(core.standing, CapabilityStanding::Alive);
 
     let mut cli = CapabilityPackage::new("cli", "CLI", "26.7.62", "Noun-verb interface")
         .with_default_verb("help")
         .with_dependency("core");
-    cli.record_proof(ProofSurface::new(
-        "cli-unit",
-        "unit",
-        "receipt:cli:unit",
-        true,
-        false,
-    ))
-    .map_err(io_error)?;
+    cli.record_proof(ProofSurface::new("cli-unit", "unit", "receipt:cli:unit", true, false))
+        .map_err(io_error)?;
     assert_eq!(cli.standing, CapabilityStanding::Blocked);
 
     let mut registry = CapabilityRegistry::new();

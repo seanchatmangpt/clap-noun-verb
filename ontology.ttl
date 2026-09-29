@@ -1,0 +1,24 @@
+@prefix cnv-autonomic: <https://clap-noun-verb.dev/ontology/autonomic#> .
+@prefix cnv-policies: <https://clap-noun-verb.dev/ontology/policies#> .
+@prefix cnv-telemetry: <https://clap-noun-verb.dev/ontology/telemetry#> .
+
+cnv-autonomic:ClapNounVerbAutonomicConfig
+    a cnv-autonomic:Config ;
+    cnv-autonomic:envPathVar "CLAP_NOUN_VERB_RECEIPT_PATH" ;
+    cnv-autonomic:defaultRelativePath ".clap-noun-verb/receipts.jsonl" ;
+    cnv-autonomic:fallbackFileName "clap-noun-verb-receipts.jsonl" ;
+    cnv-autonomic:delegationEnvPathVar "CLAP_NOUN_VERB_DELEGATION_PATH" ;
+    cnv-autonomic:delegationDefaultRelativePath ".clap-noun-verb/delegations.jsonl" ;
+    cnv-autonomic:delegationFallbackFileName "clap-noun-verb-delegations.jsonl" .
+
+cnv-policies:ClapNounVerbPoliciesConfig
+    a cnv-policies:Config ;
+    cnv-policies:maxSizeGb "5.0" ;
+    cnv-policies:pruneAfterDays "7" ;
+    cnv-policies:trybuildPath "tests/trybuild" ;
+    cnv-policies:requireCleanTreeDefault "true" .
+
+cnv-telemetry:ClapNounVerbTelemetryConfig
+    a cnv-telemetry:Config ;
+    cnv-telemetry:schemaVersion "1.0.0" ;
+    cnv-telemetry:cliVersion "26.8.22" .

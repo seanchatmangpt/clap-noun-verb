@@ -40,10 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         OutputFormat::from_str("pretty").map_err(std::io::Error::other)?,
         OutputFormat::JsonPretty
     );
-    assert_eq!(
-        OutputFormat::from_str("yml").map_err(std::io::Error::other)?,
-        OutputFormat::Yaml
-    );
+    assert_eq!(OutputFormat::from_str("yml").map_err(std::io::Error::other)?, OutputFormat::Yaml);
     assert!(OutputFormat::from_str("binary").is_err());
 
     println!("Output formats admitted: {:?}", OutputFormat::available_formats());

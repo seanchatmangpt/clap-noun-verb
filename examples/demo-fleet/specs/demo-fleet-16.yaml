@@ -1,0 +1,53 @@
+name: demo-fleet-16
+about: 'Demo fleet CLI variant 16: 2 noun(s) x 3 verb(s), one args'
+version: 0.1.0
+author: clap-noun-verb demo fleet
+verbs:
+- name: status
+  noun: fleet
+  doc: status for fleet (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+- name: sync
+  noun: fleet
+  doc: sync for fleet (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+- name: report
+  noun: fleet
+  doc: report for fleet (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+- name: status
+  noun: storage
+  doc: status for storage (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+- name: sync
+  noun: storage
+  doc: sync for storage (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+- name: report
+  noun: storage
+  doc: report for storage (variant 16)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true

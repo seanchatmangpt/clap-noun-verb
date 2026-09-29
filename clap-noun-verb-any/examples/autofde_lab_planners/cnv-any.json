@@ -1,0 +1,104 @@
+{
+  "name": "autofde-lab-fabric",
+  "about": "Real scikit-decide-derived planner federation: 46+ registered solvers over 25+ registered domains, wrapped as a single admitted CLI surface.",
+  "commands": [
+    {
+      "path": ["fabric", "cache-hotset"],
+      "about": "Measure whether 20% of artifacts account for 80% of reuse.",
+      "arguments": [
+      ],
+      "callable": true
+    },
+    {
+      "path": ["fabric", "cache-stats"],
+      "about": "Show cache hits, misses, writes, and namespaces.",
+      "arguments": [
+      ],
+      "callable": true
+    },
+    {
+      "path": ["fabric", "catalog"],
+      "about": "List registered domains and solvers.",
+      "arguments": [
+      ],
+      "callable": true
+    },
+    {
+      "path": ["fabric", "match"],
+      "about": "Match compatible solvers for a domain.",
+      "arguments": [
+        {
+          "id": "domain_arguments",
+          "long": "domain-arguments",
+          "short": null,
+          "required": false,
+          "positional": false,
+          "kind": "string",
+          "behavior": "value"
+        },
+        {
+          "id": "domain",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "string",
+          "behavior": "value"
+        }
+      ],
+      "callable": true
+    },
+    {
+      "path": ["fabric", "solve"],
+      "about": "Solve and emit a receipt-bearing trajectory, using any of the 46+ registered planners via --solver.",
+      "arguments": [
+        {
+          "id": "domain_arguments",
+          "long": "domain-arguments",
+          "short": null,
+          "required": false,
+          "positional": false,
+          "kind": "string",
+          "behavior": "value"
+        },
+        {
+          "id": "max_steps",
+          "long": "max-steps",
+          "short": null,
+          "required": false,
+          "positional": false,
+          "kind": "integer",
+          "behavior": "value"
+        },
+        {
+          "id": "solver",
+          "long": "solver",
+          "short": null,
+          "required": false,
+          "positional": false,
+          "kind": "string",
+          "behavior": "value"
+        },
+        {
+          "id": "solver_arguments",
+          "long": "solver-arguments",
+          "short": null,
+          "required": false,
+          "positional": false,
+          "kind": "string",
+          "behavior": "value"
+        },
+        {
+          "id": "domain",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "string",
+          "behavior": "value"
+        }
+      ],
+      "callable": true
+    }
+  ]
+}

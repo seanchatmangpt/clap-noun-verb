@@ -1,0 +1,15 @@
+{
+    "name": "calc-fixture",
+    "about": "Adds two integers",
+    "commands": [
+        {
+            "path": ["add"],
+            "about": "Add <a> and <b>",
+            "arguments": [
+                {"id": "a", "long": null, "short": null, "required": true, "positional": true, "kind": "integer", "behavior": "value"},
+                {"id": "b", "long": null, "short": null, "required": true, "positional": true, "kind": "integer", "behavior": "value"}
+            ],
+            "callable": true
+        }
+    ]
+}

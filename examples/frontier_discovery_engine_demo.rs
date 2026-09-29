@@ -32,11 +32,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(semantic[0].name, "semantic-analysis");
     assert_eq!(engine.search("code-generation")[0].route, "code generate");
 
-    let duplicate = engine.register(record(
-        "semantic-analysis",
-        &["duplicate"],
-        "semantic duplicate",
-    ));
+    let duplicate =
+        engine.register(record("semantic-analysis", &["duplicate"], "semantic duplicate"));
     assert!(duplicate.is_err(), "duplicate capability names must refuse");
     assert!(engine.search("missing").is_empty());
 

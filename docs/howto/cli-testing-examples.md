@@ -831,4 +831,4 @@ cargo test -- --nocapture
 
 - [CLI Testing Guide](./cli-testing-guide.md)
 - [How-to: Test Generated CLIs](./testing.md)
-- [Error Handling Examples](./error-handling.md)
+- [Tutorial: Error Handling](../tutorial/06-error-handling.md)

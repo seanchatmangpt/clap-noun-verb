@@ -1,6 +1,6 @@
 # clap-noun-verb Performance Guide
 
-**Version**: 26.6.14  
+**Version**: 26.9.1  
 **Last Updated**: 2026-06-14  
 **Maintainer**: Sean Chatman <seanchatmangpt@gmail.com>
 

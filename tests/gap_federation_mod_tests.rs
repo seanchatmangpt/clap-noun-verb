@@ -25,20 +25,17 @@ fn sample_descriptor() -> CapabilityDescriptor {
 
 #[test]
 fn advertiser_lifecycle_and_resolution_are_executable() {
-    let advertiser = CapabilityAdvertiser::new("node-a", "https://disco.example")
-        .expect("valid advertiser");
+    let advertiser =
+        CapabilityAdvertiser::new("node-a", "https://disco.example").expect("valid advertiser");
     advertiser.advertise_startup().expect("startup");
-    advertiser
-        .advertise_capability(&sample_descriptor())
-        .expect("capability advertisement");
+    advertiser.advertise_capability(&sample_descriptor()).expect("capability advertisement");
 
     let current = CapabilityAdvertiser::get_instance().expect("configured instance");
     current.advertise_startup().expect("idempotent startup");
 
     let resolver = RemoteResolver::new().expect("resolver");
-    let endpoint = resolver
-        .resolve_capability("node-a", "cap.echo")
-        .expect("advertised capability");
+    let endpoint =
+        resolver.resolve_capability("node-a", "cap.echo").expect("advertised capability");
     assert!(endpoint.contains("cap.echo"));
     assert!(endpoint.contains("echo_handler"));
 

@@ -1,0 +1,15 @@
+{
+    "name": "word-count-fixture",
+    "about": "Counts words in a string, with an optional --verbose flag",
+    "commands": [
+        {
+            "path": ["count"],
+            "about": "Count words in <text>",
+            "arguments": [
+                {"id": "text", "long": null, "short": null, "required": true, "positional": true, "kind": "string", "behavior": "value"},
+                {"id": "verbose", "long": "verbose", "short": null, "required": false, "positional": false, "kind": "boolean", "behavior": "set_true"}
+            ],
+            "callable": true
+        }
+    ]
+}

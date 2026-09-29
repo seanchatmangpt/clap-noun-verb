@@ -8,9 +8,9 @@
 
 | Change Type | Bump | Example |
 |-------------|------|---------|
-| Bug fix | PATCH | `26.6.14 → 26.6.15` |
-| New feature | MINOR | `26.6.14 → 26.7.0` |
-| Breaking change | MAJOR | `26.6.14 → 27.0.0` |
+| Bug fix | PATCH | `26.9.1 → 26.9.1` |
+| New feature | MINOR | `26.9.1 → 26.9.1` |
+| Breaking change | MAJOR | `26.9.1 → 27.0.0` |
 
 ---
 
@@ -18,27 +18,27 @@
 
 ### Automated (Recommended)
 ```bash
-./scripts/release-automation.sh 26.6.15
+./scripts/release-automation.sh 26.9.1
 # Guided workflow - follows all steps automatically
 ```
 
 ### Manual Step-by-Step
 ```bash
 # 1. Bump version (1 min)
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 vim CHANGELOG.md
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md
-git commit -m "chore(release): bump to 26.6.15"
+git commit -m "chore(release): bump to 26.9.1"
 
 # 2. Quality check (3 min)
-./scripts/pre-release-check.sh 26.6.15
+./scripts/pre-release-check.sh 26.9.1
 
 # 3. Publish (5 min + waiting)
 cargo make publish
 
 # 4. Tag (1 min)
-git tag v26.6.15
-git push origin v26.6.15
+git tag v26.9.1
+git push origin v26.9.1
 ```
 
 ---
@@ -78,7 +78,7 @@ git push origin v26.6.15
 ## CHANGELOG Template
 
 ```markdown
-## [26.6.15] - 2026-06-15
+## [26.9.1] - 2026-06-15
 
 ### Added
 - New feature description with example
@@ -153,10 +153,10 @@ EOF
 cargo search clap-noun-verb --limit 1
 
 # 2. Check docs.rs
-# Visit: https://docs.rs/clap-noun-verb/26.6.15/
+# Visit: https://docs.rs/clap-noun-verb/26.9.1/
 
 # 3. Check GitHub Release
-# Visit: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.6.15
+# Visit: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.9.1
 
 # 4. Monitor CI/CD
 # Visit: https://github.com/seanchatmangpt/clap-noun-verb/actions
@@ -168,11 +168,11 @@ cargo search clap-noun-verb --limit 1
 
 ```bash
 # Yank both crates
-cargo yank --vers 26.6.15 -p clap-noun-verb
-cargo yank --vers 26.6.15 -p clap-noun-verb-macros
+cargo yank --vers 26.9.1 -p clap-noun-verb
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 
 # Fix and publish new version
-./scripts/bump-version.sh 26.6.16
+./scripts/bump-version.sh 26.9.1
 cargo make publish
 ```
 
@@ -234,6 +234,6 @@ Release is successful when:
 ---
 
 **Version**: 1.0  
-**Last Updated**: 2026-06-14  
+**Last Updated**: 2026-08-20  
 **Timezone**: UTC  
 **Maintainer**: Sean Chatman

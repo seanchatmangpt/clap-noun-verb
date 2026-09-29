@@ -58,9 +58,7 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
         builder.name("revops").version("26.7.62").noun(noun!(
             "sequence",
             "Render local communication sequences",
-            [verb!("render", "Render a bounded support sequence", |_args: &VerbArgs| {
-                emit()
-            })]
+            [verb!("render", "Render a bounded support sequence", |_args: &VerbArgs| { emit() })]
         ))
     }
 }
@@ -70,10 +68,7 @@ fn main() -> Result<()> {
     assert_eq!(sequence.steps.len(), 3);
     assert!(!sequence.delivery_performed);
     assert!(sequence.steps.windows(2).all(|pair| pair[0].day < pair[1].day));
-    run_cli_with_args(
-        vec!["revops".into(), "sequence".into(), "render".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["revops".into(), "sequence".into(), "render".into()], build())?;
     println!("Sequence rendered locally; delivery_performed=false");
     Ok(())
 }

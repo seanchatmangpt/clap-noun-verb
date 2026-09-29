@@ -166,6 +166,72 @@ mod economic_simulation_tests {
     }
 
     #[test]
+    fn test_vickrey_truthfulness_returns_false_for_valuation_below_payment() {
+        // Arrange - a real auction whose real payment is 80.0
+        let mut auction = VickreyAuction::new();
+        let bids = vec![
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("Auction failed");
+        assert_eq!(outcome.payment, 80.0, "sanity check on the real payment used below");
+
+        // Act - a valuation lower than the real payment
+        let result = auction.verify_truthfulness(50.0, &outcome);
+
+        // Assert - truthfulness must correctly report a loss, not just the happy path
+        assert!(!result, "verify_truthfulness must return false when valuation < payment");
+    }
+
+    #[test]
+    fn test_vickrey_truthfulness_returns_false_for_non_finite_valuation() {
+        // Arrange - a real auction; NaN can never satisfy `valuation >= payment`
+        let mut auction = VickreyAuction::new();
+        let bids = vec![
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("Auction failed");
+
+        // Act - a NaN valuation
+        let result = auction.verify_truthfulness(f64::NAN, &outcome);
+
+        // Assert - the is_finite() guard must actually reject non-finite valuations
+        assert!(!result, "verify_truthfulness must return false for a non-finite valuation");
+    }
+
+    #[test]
+    fn test_vickrey_truthfulness_returns_true_for_valuation_exactly_equal_to_payment() {
+        // Arrange - a real auction whose real payment is 80.0. The production
+        // condition is `valuation.is_finite() && valuation >= outcome.payment`
+        // (src/frontier.rs) -- the operator is `>=`, inclusive of equality. Every
+        // other test of this function (the two hand-picked cases above, and the
+        // proptest oracle `verify_truthfulness_matches_an_independently_recomputed_check`
+        // in src/frontier.rs, whose own "expected" is the identical
+        // `valuation.is_finite() && valuation >= outcome.payment` expression drawn from
+        // continuous, independently-generated floats) only ever exercises a valuation
+        // strictly above or strictly below the payment -- landing exactly on the
+        // boundary has ~zero probability under continuous random sampling, so nothing
+        // in the suite actually exercises the `>=` operator's tie-breaking behavior.
+        // A regression that tightened `>=` to `>` would pass every existing test
+        // (including the proptest) undetected; only an exact-boundary case catches it.
+        let mut auction = VickreyAuction::new();
+        let bids = vec![
+            Bid { agent_id: AgentId(1), task_id: TaskId(1), bid_value: 100.0 },
+            Bid { agent_id: AgentId(2), task_id: TaskId(1), bid_value: 80.0 },
+        ];
+        let outcome = auction.run_auction(&bids).expect("Auction failed");
+        assert_eq!(outcome.payment, 80.0, "sanity check on the real payment used below");
+
+        // Act - a valuation exactly equal to the real payment
+        let result = auction.verify_truthfulness(80.0, &outcome);
+
+        // Assert - `>=` is inclusive: breaking exactly even is zero utility, not a
+        // loss, so this must report true, not false.
+        assert!(result, "verify_truthfulness must return true when valuation == payment exactly");
+    }
+
+    #[test]
     fn test_simulation_agent_addition() {
         // Arrange
         let mut sim = EconomicSimulation::new();
@@ -315,6 +381,11 @@ mod fractal_patterns_tests {
 
         // Assert
         assert_eq!(level3.depth(), 3);
+        assert_eq!(level3.lineage(), &["Root", "Domain", "Noun", "Verb"]);
+
+        let chain = CompositionChain::from(&level3);
+        assert_eq!(chain.entries(), level3.lineage());
+        assert_eq!(chain.entries(), &["Root", "Domain", "Noun", "Verb"]);
     }
 }
 

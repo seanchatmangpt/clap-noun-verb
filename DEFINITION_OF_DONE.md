@@ -1,6 +1,6 @@
 # Definition of Done (DoD) Checklist
 
-**Project:** clap-noun-verb v26.6.14  
+**Project:** clap-noun-verb v26.9.1  
 **Last Updated:** 2026-06-14  
 **Audience:** Development team, reviewers, release managers
 

@@ -1,0 +1,29 @@
+[package]
+name = "clap-noun-verb-deploy"
+version = "26.9.1"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT OR Apache-2.0"
+authors = ["Sean Chatman <seanchatmangpt@gmail.com>"]
+repository = "https://github.com/seanchatmangpt/clap-noun-verb"
+documentation = "https://docs.rs/clap-noun-verb-deploy"
+homepage = "https://github.com/seanchatmangpt/clap-noun-verb"
+description = "Serve clap-noun-verb CLIs through MCP, HTTP, Kubernetes, and OCI deployment surfaces"
+keywords = ["clap", "mcp", "kubernetes", "cli", "deployment"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
+
+[workspace]
+
+[features]
+default = ["mcp", "http", "kubernetes", "container"]
+mcp = []
+http = []
+kubernetes = []
+container = []
+
+[dependencies]
+clap-noun-verb = { path = "..", version = "26.9.1" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"

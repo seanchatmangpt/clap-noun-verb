@@ -25,6 +25,7 @@ fn it_compiles() {
 
     let input = HandlerInput {
         args,
+        args_multi: std::collections::HashMap::new(),
         opts: std::collections::HashMap::new(),
         context: clap_noun_verb::logic::HandlerContext {
             noun: Some("test".to_string()),

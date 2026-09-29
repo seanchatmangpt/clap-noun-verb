@@ -174,6 +174,42 @@ pub static __VERB_REGISTRY: [fn()] = [..];
 /// Global registry for registered commands
 static REGISTRY: OnceLock<Mutex<CommandRegistry>> = OnceLock::new();
 
+/// Guards evaluated before every verb dispatch (namespaced and root alike),
+/// process-wide. See [`CommandRegistry::add_guard`].
+static GLOBAL_GUARDS: OnceLock<Mutex<crate::autonomic::GuardSet>> = OnceLock::new();
+
+fn global_guards() -> &'static Mutex<crate::autonomic::GuardSet> {
+    GLOBAL_GUARDS.get_or_init(|| Mutex::new(crate::autonomic::GuardSet::new()))
+}
+
+/// Evaluate every registered global guard against `noun`/`verb`/`input`,
+/// before the handler is ever invoked. `Ok(())` admits the dispatch;
+/// `Err` carries a human-readable summary of every denial (a guard
+/// refusal never short-circuits on the first denying guard -- see
+/// [`crate::autonomic::GuardSet::evaluate`]), and is recorded as a failed
+/// [`crate::autonomic::Receipt`] the same way a handler failure is, since
+/// a refused invocation is a real outcome worth an audit trail entry.
+fn admit_or_refuse(noun: &str, verb: &str, input: &HandlerInput) -> Result<()> {
+    let args_json = serde_json::Value::Object(
+        input.args.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect(),
+    );
+    let ctx = crate::autonomic::GuardContext { noun, verb, args: &args_json };
+    let guards = global_guards().lock().unwrap_or_else(|e| e.into_inner());
+    if let Err(denials) = guards.evaluate(&ctx) {
+        drop(guards);
+        let summary = denials
+            .iter()
+            .map(|d| format!("{}: {}", d.code, d.reason))
+            .collect::<Vec<_>>()
+            .join("; ");
+        crate::autonomic::record_receipt(noun, verb, crate::autonomic::Effect::Unknown, false);
+        return Err(crate::error::NounVerbError::execution_error(format!(
+            "refused by guard(s): {summary}"
+        )));
+    }
+    Ok(())
+}
+
 /// Command registry for attribute macro discovered functions
 pub struct CommandRegistry {
     /// Registered nouns (name -> noun metadata)
@@ -185,9 +221,13 @@ pub struct CommandRegistry {
 }
 
 /// Metadata for a registered noun
+///
+/// No `name` field: the noun's name is already the key of
+/// `CommandRegistry::nouns`, and nothing here ever needed a second copy of
+/// it (removed rather than kept `#[allow(dead_code)]`, per ADL-005 --
+/// unused code is either wired into real use or deleted, not permanently
+/// suppressed).
 struct NounMetadata {
-    #[allow(dead_code)] // Reserved for future use
-    name: String,
     about: String,
     long_about: Option<String>,
 }
@@ -223,7 +263,19 @@ pub struct ArgMetadata {
     pub value_name: Option<String>,
     /// Aliases for the argument (e.g., ["verbose", "v"])
     pub aliases: Vec<String>,
-    /// Positional argument index (e.g., 0, 1, 2)
+    /// Positional argument index, already in clap's own 1-based numbering
+    /// (1 = first positional, 2 = second, ...) -- i.e. this is the exact value
+    /// passed straight through to `clap::Arg::index()` in `build_argument` below.
+    ///
+    /// This is *not* the same numbering as the public, documented
+    /// `#[arg(index = N)]` macro attribute, which uses 0 for the first
+    /// positional (see `examples/tutorial/positional.rs` and `CHANGELOG.md`).
+    /// The macro converts the user-facing 0-based `index = N` to this
+    /// 1-based, clap-ready value at parse time
+    /// (`clap-noun-verb-macros/src/lib.rs`, the `"index" =>` arm) so that this
+    /// field has one consistent meaning regardless of whether it was
+    /// populated by the macro or built by hand (as
+    /// `tests/command_chaining.rs` does via `register_verb_with_args`).
     pub positional: Option<usize>,
     /// Custom action type (e.g., Count, SetFalse)
     pub action: Option<clap::ArgAction>,
@@ -258,17 +310,31 @@ pub struct ArgMetadata {
 }
 
 /// Metadata for a registered verb
+///
+/// No `noun_name`/`verb_name` fields: both are already the keys of the
+/// nested `CommandRegistry::verbs`/`root_verbs` maps this struct lives in
+/// (removed rather than kept `#[allow(dead_code)]`, per ADL-005).
 struct VerbMetadata {
-    #[allow(dead_code)] // Reserved for future use
-    noun_name: String,
-    #[allow(dead_code)] // Reserved for future use
-    verb_name: String,
     about: String,
     args: Vec<ArgMetadata>,
     handler_fn: Box<dyn Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync>,
+    /// The declared `Effect` for this verb (`Effect::Unknown` unless the
+    /// `#[verb(..., effect = "...")]` attribute declared one -- see
+    /// `CommandRegistry::register_verb_with_args_and_effect`).
+    effect: crate::autonomic::Effect,
 }
 
 impl CommandRegistry {
+    /// Register a guard evaluated before every verb dispatch (namespaced
+    /// and root alike), process-wide -- the Autonomic Layer's
+    /// [`crate::autonomic::GuardSet`] wired into the real dispatch path,
+    /// not merely available as a standalone type. A denying guard refuses
+    /// the invocation before the handler ever runs, and the refusal is
+    /// recorded as a failed [`crate::autonomic::Receipt`].
+    pub fn add_guard(guard: Box<dyn crate::autonomic::Guard>) {
+        global_guards().lock().unwrap_or_else(|e| e.into_inner()).add(guard);
+    }
+
     /// Initialize the registry (called once during first access)
     pub fn init() -> &'static Mutex<CommandRegistry> {
         let registry = REGISTRY.get_or_init(|| {
@@ -304,11 +370,9 @@ impl CommandRegistry {
             })
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
-        reg.nouns.entry(name.to_string()).or_insert_with(|| NounMetadata {
-            name: name.to_string(),
-            about: about.to_string(),
-            long_about: None,
-        });
+        reg.nouns
+            .entry(name.to_string())
+            .or_insert_with(|| NounMetadata { about: about.to_string(), long_about: None });
     }
 
     /// Register a verb (called by macro-generated code)
@@ -323,12 +387,40 @@ impl CommandRegistry {
         Self::register_verb_with_args(noun_name, verb_name, about, Vec::new(), handler)
     }
 
-    /// Register a verb with argument metadata
+    /// Register a verb with argument metadata. Effect defaults to
+    /// [`crate::autonomic::Effect::Unknown`] -- use
+    /// [`Self::register_verb_with_args_and_effect`] to declare a real one.
     pub fn register_verb_with_args<F>(
         noun_name: &'static str,
         verb_name: &'static str,
         about: &'static str,
         args: Vec<ArgMetadata>,
+        handler: F,
+    ) where
+        F: Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync + 'static,
+    {
+        Self::register_verb_with_args_and_effect(
+            noun_name,
+            verb_name,
+            about,
+            args,
+            crate::autonomic::Effect::Unknown,
+            handler,
+        );
+    }
+
+    /// Register a verb with argument metadata and a declared
+    /// [`crate::autonomic::Effect`] -- the target of the
+    /// `#[verb(..., effect = "...")]` macro attribute. The declared effect
+    /// is used for every real [`crate::autonomic::Receipt`] recorded for
+    /// this verb, instead of the [`crate::autonomic::Effect::Unknown`]
+    /// default.
+    pub fn register_verb_with_args_and_effect<F>(
+        noun_name: &'static str,
+        verb_name: &'static str,
+        about: &'static str,
+        args: Vec<ArgMetadata>,
+        effect: crate::autonomic::Effect,
         handler: F,
     ) where
         F: Fn(HandlerInput) -> Result<HandlerOutput> + Send + Sync + 'static,
@@ -342,13 +434,8 @@ impl CommandRegistry {
         });
         let mut reg = registry.lock().unwrap_or_else(|e| e.into_inner());
 
-        let verb_metadata = VerbMetadata {
-            noun_name: noun_name.to_string(),
-            verb_name: verb_name.to_string(),
-            about: about.to_string(),
-            args,
-            handler_fn: Box::new(handler),
-        };
+        let verb_metadata =
+            VerbMetadata { about: about.to_string(), args, handler_fn: Box::new(handler), effect };
 
         if noun_name.is_empty() {
             reg.root_verbs.insert(verb_name.to_string(), verb_metadata);
@@ -414,7 +501,16 @@ impl CommandRegistry {
             )
         })?;
 
-        (verb.handler_fn)(input)
+        admit_or_refuse(noun_name, verb_name, &input)?;
+
+        let start = std::time::Instant::now();
+        let result = (verb.handler_fn)(input);
+        let duration_ms = start.elapsed().as_millis();
+        crate::ocel::record_invocation(noun_name, verb_name, result.is_ok(), duration_ms);
+        // The verb's declared Effect (Effect::Unknown unless a real
+        // `#[verb(..., effect = "...")]` attribute set one -- never guessed).
+        crate::autonomic::record_receipt(noun_name, verb_name, verb.effect, result.is_ok());
+        result
     }
 
     /// Build clap command structure from registry
@@ -556,6 +652,11 @@ impl CommandRegistry {
             Box::leak(arg_meta.name.to_uppercase().into_boxed_str());
 
         let mut arg = if let Some(index) = arg_meta.positional {
+            // `arg_meta.positional` is already clap's own 1-based index (see the
+            // field doc above) -- passed straight through here. The 0-based ->
+            // 1-based conversion for the public `#[arg(index = N)]` macro syntax
+            // happens once, at macro-parse time
+            // (`clap-noun-verb-macros/src/lib.rs`, the `"index" =>` arm), not here.
             let mut pos_arg = clap::Arg::new(arg_name).index(index);
             if arg_meta.trailing_vararg {
                 pos_arg = pos_arg.num_args(1..);
@@ -696,13 +797,22 @@ impl CommandRegistry {
         None
     }
 
-    /// Extract arguments from clap matches into a HashMap
+    /// Extract arguments from clap matches into a HashMap.
+    ///
+    /// Returns `(args, args_multi)`: `args` is the legacy scalar
+    /// `String`-valued map (comma-joined for `ArgAction::Append`, kept for
+    /// backward compatibility); `args_multi` carries the exact `Vec<String>`
+    /// of every occurrence for `ArgAction::Append` arguments, with no
+    /// lossy join/split round-trip. See [`crate::logic::HandlerInput`].
     fn extract_args(
         &self,
         verb_meta: &VerbMetadata,
         verb_matches: &clap::ArgMatches,
-    ) -> std::collections::HashMap<String, String> {
+    ) -> (std::collections::HashMap<String, String>, std::collections::HashMap<String, Vec<String>>)
+    {
         let mut args_map = std::collections::HashMap::new();
+        let mut args_multi_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
 
         for arg_meta in &verb_meta.args {
             let arg_name = &arg_meta.name;
@@ -732,7 +842,13 @@ impl CommandRegistry {
                     clap::ArgAction::Append => {
                         if let Some(values) = verb_matches.get_many::<String>(arg_name) {
                             let values_vec: Vec<String> = values.cloned().collect();
+                            // Legacy comma-joined view -- lossy whenever a real
+                            // occurrence contains a comma or significant
+                            // whitespace, kept only for backward compatibility
+                            // with code reading `args` directly. The lossless
+                            // values are in `args_multi_map` below.
                             args_map.insert(arg_name.clone(), values_vec.join(","));
+                            args_multi_map.insert(arg_name.clone(), values_vec);
                         }
                     }
                     _ => {
@@ -752,7 +868,7 @@ impl CommandRegistry {
             }
         }
 
-        args_map
+        (args_map, args_multi_map)
     }
 
     /// Run CLI with auto-discovered commands
@@ -918,10 +1034,11 @@ impl CommandRegistry {
 
         if let Some((subcommand_name, sub_matches)) = matches.subcommand() {
             if let Some(verb_meta) = self.root_verbs.get(subcommand_name) {
-                let args_map = self.extract_args(verb_meta, sub_matches);
+                let (args_map, args_multi_map) = self.extract_args(verb_meta, sub_matches);
 
                 let input = crate::logic::HandlerInput {
                     args: args_map,
+                    args_multi: args_multi_map,
                     opts: std::collections::HashMap::new(),
                     context: crate::logic::HandlerContext::new(subcommand_name),
                 };
@@ -944,18 +1061,19 @@ impl CommandRegistry {
                 Ok(output)
             } else if let Some((verb_name, verb_matches)) = sub_matches.subcommand() {
                 let noun_name = subcommand_name;
-                let args_map = if let Some(verbs) = self.verbs.get(noun_name) {
+                let (args_map, args_multi_map) = if let Some(verbs) = self.verbs.get(noun_name) {
                     if let Some(verb_meta) = verbs.get(verb_name) {
                         self.extract_args(verb_meta, verb_matches)
                     } else {
-                        std::collections::HashMap::new()
+                        (std::collections::HashMap::new(), std::collections::HashMap::new())
                     }
                 } else {
-                    std::collections::HashMap::new()
+                    (std::collections::HashMap::new(), std::collections::HashMap::new())
                 };
 
                 let input = crate::logic::HandlerInput {
                     args: args_map,
+                    args_multi: args_multi_map,
                     opts: std::collections::HashMap::new(),
                     context: crate::logic::HandlerContext::new(verb_name).with_noun(noun_name),
                 };
@@ -1032,7 +1150,17 @@ impl CommandRegistry {
             crate::error::NounVerbError::command_not_found_with_candidates(verb_name, &candidates)
         })?;
 
-        (verb.handler_fn)(input)
+        admit_or_refuse("_root", verb_name, &input)?;
+
+        let start = std::time::Instant::now();
+        let result = (verb.handler_fn)(input);
+        let duration_ms = start.elapsed().as_millis();
+        // Root verbs have no noun; use "_root" as the pseudo-noun so the OCEL
+        // "command" object id ("_root:<verb>") stays distinct from any real
+        // noun:verb pair and remains stable/idempotent across invocations.
+        crate::ocel::record_invocation("_root", verb_name, result.is_ok(), duration_ms);
+        crate::autonomic::record_receipt("_root", verb_name, verb.effect, result.is_ok());
+        result
     }
 }
 

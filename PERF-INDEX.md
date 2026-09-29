@@ -1,6 +1,6 @@
 # Performance Documentation Index
 
-**clap-noun-verb v26.6.14** — Complete performance guide and reference materials.
+**clap-noun-verb v26.9.1** — Complete performance guide and reference materials.
 
 ## Quick Links
 

@@ -40,11 +40,8 @@ fn main() -> Result<()> {
         clap_noun_verb::NounVerbError::execution_error(format!("lock poisoned: {error}"))
     })?;
 
-    let status = registry.execute_single_step(vec![
-        "witness".into(),
-        "services".into(),
-        "status".into(),
-    ])?;
+    let status =
+        registry.execute_single_step(vec!["witness".into(), "services".into(), "status".into()])?;
     assert_eq!(status.data["running"].as_bool(), Some(true));
     assert_eq!(status.data["uptime"].as_u64(), Some(3600));
 

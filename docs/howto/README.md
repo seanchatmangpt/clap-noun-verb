@@ -19,11 +19,15 @@ Use these guides when you:
 ### 🔧 Core Guides
 
 - **[Common Mistakes](common-mistakes.md)** - Top 10 errors and how to fix them
-- **[Debugging](debugging.md)** - Debugging techniques and tools
-- **[Performance Optimization](performance-optimization.md)** - Making CLIs fast
+- **[Diagnostics](diagnostics.md)** - Debugging techniques and tools
+- **[Performance Guide](PERFORMANCE_GUIDE.md)** - Making CLIs fast
 - **[Setup Help and Version](setup-help-and-version.md)** --help and --version setup
 - **[Testing](testing.md)** - Test strategies
-- **[Validation](validation.md)** - Input validation techniques
+- **[CLI Testing Guide](cli-testing-guide.md)** - Comprehensive CLI testing patterns
+
+### 🔌 Universal Adapter
+
+- **[Generate a cnv-any Manifest with ggen](generate-cnv-any-manifest.md)** - Writing an ontology for a wrapped executable, gate constraints, and troubleshooting
 
 ---
 
@@ -46,10 +50,10 @@ Each guide follows this structure:
 |------|-------|
 | **Fix common errors** | [common-mistakes.md](common-mistakes.md) |
 | **Test my CLI** | [testing.md](testing.md) |
-| **Validate input** | [validation.md](validation.md) |
-| **Debug issues** | [debugging.md](debugging.md) |
-| **Optimize performance** | [performance-optimization.md](performance-optimization.md) |
+| **Debug issues** | [diagnostics.md](diagnostics.md) |
+| **Optimize performance** | [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md) |
 | **Setup --help and --version** | [setup-help-and-version.md](setup-help-and-version.md) |
+| **Wrap a non-Rust executable** | [generate-cnv-any-manifest.md](generate-cnv-any-manifest.md) |
 
 ---
 
@@ -57,7 +61,7 @@ Each guide follows this structure:
 
 | Category | Guides | Status |
 |----------|--------|--------|
-| **Core** | 6 guides | ✅ **Available** |
+| **Core** | 11 guides | ✅ **Available** |
 
 ---
 
@@ -93,4 +97,4 @@ Have a recipe you want to share?
 
 ---
 
-**Note**: How-to guides follow Diataxis principles with validated 26.6.13 code examples.
+**Note**: How-to guides follow Diataxis principles with validated 26.9.1 code examples.

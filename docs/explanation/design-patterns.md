@@ -369,5 +369,5 @@ cnv:Quickly a cnv:Noun ; cnv:name "quickly" .  # Noun should be resource/thing
 
 **Related**:
 - [Tutorial: Adding Multiple Commands](../tutorial/02-adding-multiple.md)
-- [How-to: Validation](../howto/validation.md)
+- See the argument validation guidance in `docs/howto/` for current validator patterns
 - [Explanation: Architecture Overview](architecture.md)

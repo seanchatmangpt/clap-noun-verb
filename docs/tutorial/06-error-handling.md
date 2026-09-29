@@ -2,7 +2,7 @@
 
 **Learning Path:** Basic Error Handling → Production-Grade Errors
 **Time:** 25 minutes
-**Prerequisites:** [Tutorial 05: Async Operations](05-async-operations.md)
+**Prerequisites:** [Tutorial 04: Output Formats](04-output-formats.md)
 
 ---
 

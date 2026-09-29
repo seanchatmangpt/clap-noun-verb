@@ -203,14 +203,20 @@ fn export_data(json: bool, yaml: bool, output: Option<String>) -> Result<Output>
 
 ## Async Functions
 
-Verbs support async handlers via `tokio::main`:
+The `#[verb]` macro's generated dispatch wrapper is plain sync -- it calls
+`#fn_name(...)?` directly with no `.await`, so an `async fn` under `#[verb]`
+does not compile as a handler on its own. Async work is supported via the
+`async` feature's `src/async_verb.rs` helpers instead: call
+`clap_noun_verb::async_verb::run_async` (or `create_runtime`) from inside a
+plain sync `#[verb]` function to bridge into a `tokio::runtime::Runtime`:
 
 ```rust
 #[verb("fetch")]
-async fn fetch_data(url: String) -> Result<Data> {
-    let response = reqwest::get(&url).await?;
-    let data = response.json().await?;
-    Ok(data)
+fn fetch_data(url: String) -> Result<Data> {
+    clap_noun_verb::async_verb::run_async(async {
+        let response = reqwest::get(&url).await.map_err(/* ... */)?;
+        response.json().await.map_err(/* ... */)
+    })
 }
 ```
 

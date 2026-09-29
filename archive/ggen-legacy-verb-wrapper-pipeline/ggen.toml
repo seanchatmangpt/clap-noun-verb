@@ -1,0 +1,58 @@
+# ggen.toml — clap-noun-verb authoritative pack manifest
+#
+# Semantic authority lives in RDF. SPARQL performs admitted inference/selection.
+# Tera is the terminal projection calculus. package.toml is transport only.
+# ggen emits and verifies the receipt over the input closure and outputs.
+# The exact v26.7.62 actuator is pinned in .github/workflows/ggen-authority.yml.
+
+[project]
+name = "clap-noun-verb"
+version = "26.8.8"
+description = "Authoritative ggen pack for noun-verb CLIs: admitted RDF manufactures thin #[verb] interfaces while consumer-owned handlers retain domain behavior (A = mu(O*))."
+
+[ontology]
+source = "ontology/clap-noun-verb-ontology.ttl"
+base_iri = "http://clap-noun-verb.io/ontology#"
+
+[ontology.prefixes]
+cnv = "http://clap-noun-verb.io/ontology#"
+rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+owl = "http://www.w3.org/2002/07/owl#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
+
+[inference]
+[[inference.rules]]
+name = "attach-noun-name-to-verb"
+construct = """
+PREFIX cnv: <http://clap-noun-verb.io/ontology#>
+CONSTRUCT {
+  ?verb cnv:belongsToNoun ?noun .
+} WHERE {
+  ?noun a cnv:Noun ; cnv:hasVerbs ?verb .
+}
+"""
+
+[generation]
+output_dir = "."
+
+[[generation.rules]]
+name = "verb-wrappers"
+query = { file = "queries/verb-signatures.rq" }
+template = { file = "templates/verb.rs.tera" }
+output_file = "src/verbs/{{ verb_name }}.rs"
+mode = "Overwrite"
+skip_empty = true
+
+[[generation.rules]]
+name = "verbs-mod"
+query = { file = "queries/verbs-mod.rq" }
+template = { file = "templates/verbs-mod.rs.tera" }
+output_file = "src/verbs/mod.rs"
+mode = "Overwrite"
+skip_empty = true
+
+# External SPARQL gates are the only automatic sync validation law.
+# ASK true is a violation; SELECT rows are violations.
+[validation]
+gates = ["gates/fieldname-collision.rq"]

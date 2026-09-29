@@ -24,11 +24,7 @@ struct CustomerHealth {
     outreach_performed: bool,
 }
 
-fn diagnose(
-    customer: &'static str,
-    usage_percent: u32,
-    days_inactive: u32,
-) -> CustomerHealth {
+fn diagnose(customer: &'static str, usage_percent: u32, days_inactive: u32) -> CustomerHealth {
     let (standing, recommended_action) = if days_inactive > 7 {
         (HealthStanding::AtRisk, "review inactivity and request a check-in")
     } else if usage_percent < 50 {
@@ -47,11 +43,7 @@ fn diagnose(
 }
 
 fn receipt() -> Vec<CustomerHealth> {
-    vec![
-        diagnose("Acme Corp", 100, 8),
-        diagnose("TechStart", 95, 2),
-        diagnose("StartupXYZ", 40, 5),
-    ]
+    vec![diagnose("Acme Corp", 100, 8), diagnose("TechStart", 95, 2), diagnose("StartupXYZ", 40, 5)]
 }
 
 fn emit() -> Result<()> {
@@ -68,9 +60,7 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
         builder.name("revops").version("26.7.62").noun(noun!(
             "customer",
             "Diagnose customer-success observations",
-            [verb!("health", "Render customer health standing", |_args: &VerbArgs| {
-                emit()
-            })]
+            [verb!("health", "Render customer health standing", |_args: &VerbArgs| { emit() })]
         ))
     }
 }
@@ -81,10 +71,7 @@ fn main() -> Result<()> {
     assert_eq!(observed[1].standing, HealthStanding::Healthy);
     assert_eq!(observed[2].standing, HealthStanding::LowUsage);
     assert!(observed.iter().all(|item| !item.outreach_performed));
-    run_cli_with_args(
-        vec!["revops".into(), "customer".into(), "health".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["revops".into(), "customer".into(), "health".into()], build())?;
     println!("Customer health diagnosed; outreach_performed=false");
     Ok(())
 }
