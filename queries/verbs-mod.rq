@@ -13,5 +13,6 @@ SELECT
 WHERE {
   ?verb a cnv:Verb ;
         cnv:hasVerbName ?verbName .
-  BIND(REPLACE(?verbName, "-", "_") AS ?moduleName)
+  OPTIONAL { ?verb cnv:fieldName ?fieldName . }
+  BIND(COALESCE(?fieldName, REPLACE(?verbName, "-", "_")) AS ?moduleName)
 }
