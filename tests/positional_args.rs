@@ -103,14 +103,10 @@ fn test_positional_args_use_documented_zero_based_index() -> Result<()> {
     // Required positional only (index = 0), matching the FMEA's exact repro.
     let matches = cmd
         .clone()
-        .try_get_matches_from([
-            "clap-noun-verb",
-            "git",
-            "clone",
-            "https://example.com/repo.git",
-        ])
+        .try_get_matches_from(["clap-noun-verb", "git", "clone", "https://example.com/repo.git"])
         .expect("parsing a single positional (index = 0) must succeed");
-    let clone_matches = matches.subcommand_matches("git").unwrap().subcommand_matches("clone").unwrap();
+    let clone_matches =
+        matches.subcommand_matches("git").unwrap().subcommand_matches("clone").unwrap();
     assert_eq!(
         clone_matches.get_one::<String>("url").map(String::as_str),
         Some("https://example.com/repo.git"),
@@ -134,7 +130,8 @@ fn test_positional_args_use_documented_zero_based_index() -> Result<()> {
             "/path/to/dest",
         ])
         .expect("parsing two positionals (index = 0, index = 1) must succeed");
-    let clone_matches = matches.subcommand_matches("git").unwrap().subcommand_matches("clone").unwrap();
+    let clone_matches =
+        matches.subcommand_matches("git").unwrap().subcommand_matches("clone").unwrap();
     assert_eq!(
         clone_matches.get_one::<String>("url").map(String::as_str),
         Some("https://example.com/repo.git"),
