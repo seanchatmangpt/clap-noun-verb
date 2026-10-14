@@ -2,7 +2,7 @@
 
 **clap-noun-verb** release process definition. A release is considered "done" only when all checklist items below are complete. This document serves as both a checklist and an automation blueprint.
 
-**Version**: 26.6.14 | **Date**: 2026-06-14 | **MSRV**: Rust 1.74
+**Version**: 26.9.1 | **Date**: 2026-08-20 | **MSRV**: Rust 1.74
 
 ---
 
@@ -273,7 +273,7 @@ echo "✓ SLO checks passed"
 
 ```bash
 # Checklist
-- [ ] CHANGELOG.md has [VERSION] section (e.g., [26.6.14])
+- [ ] CHANGELOG.md has [VERSION] section (e.g., [26.9.1])
 - [ ] CHANGELOG lists all user-facing changes
 - [ ] All breaking changes documented (if MAJOR release)
 - [ ] Migration guide present (if MAJOR release)
@@ -288,7 +288,7 @@ echo "✓ SLO checks passed"
 # scripts/validate-docs.sh
 #!/bin/bash
 set -e
-VERSION="${1:-26.6.14}"
+VERSION="${1:-26.9.1}"
 
 echo "Validating documentation..."
 
@@ -415,17 +415,17 @@ echo "✓ Git status validated"
 
 ### Requirement 1: Version Bumping
 
-**Semantic Versioning**: `MAJOR.MINOR.PATCH` (26.6.14 = v26, feature 6, patch 14)
+**Semantic Versioning**: `MAJOR.MINOR.PATCH` (26.9.1 = v26, feature 6, patch 14)
 
 ```bash
 # Checklist (for each version bump)
 - [ ] Decide MAJOR/MINOR/PATCH based on changes
-- [ ] Run: ./scripts/bump-version.sh 26.6.15
+- [ ] Run: ./scripts/bump-version.sh 26.9.1
 - [ ] Verify: grep 'version = ' Cargo.toml clap-noun-verb-macros/Cargo.toml
-      All should show "26.6.15"
+      All should show "26.9.1"
 - [ ] Test compilation: cargo check
 - [ ] Commit: git add Cargo.toml clap-noun-verb-macros/Cargo.toml
-           git commit -m "chore(release): bump to 26.6.15"
+           git commit -m "chore(release): bump to 26.9.1"
 ```
 
 **Automation**:
@@ -434,7 +434,7 @@ echo "✓ Git status validated"
 #!/bin/bash
 NEW_VERSION="${1:-}"
 if [ -z "$NEW_VERSION" ]; then
-    echo "Usage: ./scripts/bump-version.sh 26.6.15"
+    echo "Usage: ./scripts/bump-version.sh 26.9.1"
     exit 1
 fi
 
@@ -466,9 +466,9 @@ fi
 
 | Change | Increment | Example |
 |--------|-----------|---------|
-| Bug fix, doc fix | PATCH | 26.6.14 → 26.6.15 |
-| New feature (backward compat) | MINOR | 26.6.14 → 26.7.0 |
-| Breaking trait/API change | MAJOR | 26.6.14 → 27.0.0 |
+| Bug fix, doc fix | PATCH | 26.9.1 → 26.9.1 |
+| New feature (backward compat) | MINOR | 26.9.1 → 26.9.1 |
+| Breaking trait/API change | MAJOR | 26.9.1 → 27.0.0 |
 
 ---
 
@@ -477,7 +477,7 @@ fi
 **Format**: Keep a Changelog (https://keepachangelog.com/)
 
 ```markdown
-## [26.6.14] - 2026-06-14
+## [26.9.1] - 2026-06-14
 
 ### Added
 - Feature X (PR #123)
@@ -511,19 +511,19 @@ If upgrading from v26.6.0:
 - [ ] Open CHANGELOG.md
 - [ ] Check if "[Unreleased]" section exists
 - [ ] Copy all content from "[Unreleased]"
-- [ ] Replace "[Unreleased]" with "[26.6.14] - 2026-06-14"
+- [ ] Replace "[Unreleased]" with "[26.9.1] - 2026-06-14"
 - [ ] Verify format matches "Keep a Changelog"
 - [ ] All user-facing changes listed
 - [ ] All breaking changes in "Removed" or "Changed"
 - [ ] Commit: git add CHANGELOG.md
-           git commit -m "docs: release 26.6.14 changelog"
+           git commit -m "docs: release 26.9.1 changelog"
 ```
 
 **Automation**:
 ```bash
 # scripts/validate-changelog.sh
 #!/bin/bash
-VERSION="${1:-26.6.14}"
+VERSION="${1:-26.9.1}"
 
 echo "Validating CHANGELOG.md..."
 
@@ -637,9 +637,9 @@ async fn show_status() -> Result<Status> { ... }
 cargo make publish-dry-run-macros
 
 # Expected output
-#   Packaging clap-noun-verb-macros v26.6.14
-#    Verifying clap-noun-verb-macros v26.6.14
-#    Compiling clap-noun-verb-macros v26.6.14
+#   Packaging clap-noun-verb-macros v26.9.1
+#    Verifying clap-noun-verb-macros v26.9.1
+#    Compiling clap-noun-verb-macros v26.9.1
 #     Finished release [optimized] target(s) in Xs
 # ✓ Dry-run successful
 
@@ -647,7 +647,7 @@ cargo make publish-dry-run-macros
 - [ ] Command exits with code 0
 - [ ] No errors about dependency versions
 - [ ] No warnings about yanked versions
-- [ ] Output shows "Uploading clap-noun-verb-macros v26.6.14"
+- [ ] Output shows "Uploading clap-noun-verb-macros v26.9.1"
 ```
 
 **Automation**:
@@ -686,7 +686,7 @@ export CARGO_REGISTRY_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 cargo make publish-macros
 
 # Expected output
-# Uploading clap-noun-verb-macros v26.6.14 to registry
+# Uploading clap-noun-verb-macros v26.9.1 to registry
 # ...
 # ✓ Published macros to crates.io
 
@@ -719,7 +719,7 @@ echo "Waiting for crates.io indexing (up to 60 seconds)..."
 
 # Retry loop until available
 for i in {1..30}; do
-    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.6.14"; then
+    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.9.1"; then
         echo "✓ Macros indexed on crates.io"
         exit 0
     fi
@@ -749,15 +749,15 @@ exit 1
 cargo make publish-dry-run
 
 # Expected output
-#   Packaging clap-noun-verb v26.6.14
-#    Verifying clap-noun-verb v26.6.14
-#    Compiling clap-noun-verb v26.6.14
+#   Packaging clap-noun-verb v26.9.1
+#    Verifying clap-noun-verb v26.9.1
+#    Compiling clap-noun-verb v26.9.1
 #     Finished release [optimized] target(s) in Xs
 # ✓ Dry-run successful
 
 # Checklist
 - [ ] Command exits with code 0
-- [ ] Verifies macros dependency (clap-noun-verb-macros v26.6.14) is available
+- [ ] Verifies macros dependency (clap-noun-verb-macros v26.9.1) is available
 - [ ] No errors about missing macros crate
 ```
 
@@ -774,13 +774,13 @@ cargo make publish-dry-run
 cargo make publish
 
 # Expected output
-# Uploading clap-noun-verb v26.6.14 to registry
+# Uploading clap-noun-verb v26.9.1 to registry
 # ...
 # ✓ Published clap-noun-verb to crates.io
 
 # Checklist
 - [ ] Command exits with code 0
-- [ ] Output shows "Uploading clap-noun-verb v26.6.14"
+- [ ] Output shows "Uploading clap-noun-verb v26.9.1"
 - [ ] Total time < 10 seconds
 ```
 
@@ -806,7 +806,7 @@ echo "Waiting for crates.io indexing (up to 60 seconds)..."
 
 # Retry loop
 for i in {1..30}; do
-    if cargo search clap-noun-verb --limit 1 | grep -q "26.6.14"; then
+    if cargo search clap-noun-verb --limit 1 | grep -q "26.9.1"; then
         echo "✓ Main crate indexed on crates.io"
         exit 0
     fi
@@ -830,12 +830,12 @@ cargo search clap-noun-verb --limit 1
 cargo search clap-noun-verb-macros --limit 1
 
 # Expected output
-# clap_noun_verb = "26.6.14"
-# clap_noun_verb_macros = "26.6.14"
+# clap_noun_verb = "26.9.1"
+# clap_noun_verb_macros = "26.9.1"
 
 # Checklist
 - [ ] Both crates show in search results
-- [ ] Versions are correct (26.6.14)
+- [ ] Versions are correct (26.9.1)
 - [ ] No "yanked: true" flag
 - [ ] Docs visible at docs.rs (may take 5-10 minutes)
 ```
@@ -844,7 +844,7 @@ cargo search clap-noun-verb-macros --limit 1
 ```bash
 # scripts/verify-published.sh
 #!/bin/bash
-VERSION="${1:-26.6.14}"
+VERSION="${1:-26.9.1}"
 
 echo "Verifying publication on crates.io..."
 
@@ -889,7 +889,7 @@ cargo make publish-all
 ./scripts/publish-step-main.sh
 
 # Step 5: Verify
-./scripts/verify-published.sh 26.6.14
+./scripts/verify-published.sh 26.9.1
 ```
 
 ---
@@ -938,7 +938,7 @@ echo "✓ Rustdoc builds successfully"
 **Format**: Include what's new, breaking changes, installation, and changelog link.
 
 ```markdown
-# v26.6.14: Graph Module & Diagnostics Release
+# v26.9.1: Graph Module & Diagnostics Release
 
 ## What's New
 
@@ -958,7 +958,7 @@ echo "✓ Rustdoc builds successfully"
 ## Installation
 
 ```bash
-cargo add clap-noun-verb@26.6.14
+cargo add clap-noun-verb@26.9.1
 ```
 
 ## Migration
@@ -970,7 +970,7 @@ This is a backward-compatible release. No action required.
 
 ```bash
 # Checklist
-- [ ] Create release notes file (release-notes-26.6.14.md)
+- [ ] Create release notes file (release-notes-26.9.1.md)
 - [ ] Include "What's New" section
 - [ ] Include "Breaking Changes" (if MAJOR, mark with ⚠️)
 - [ ] Include installation instructions
@@ -983,7 +983,7 @@ This is a backward-compatible release. No action required.
 ```bash
 # scripts/create-github-release.sh
 #!/bin/bash
-VERSION="${1:-26.6.14}"
+VERSION="${1:-26.9.1}"
 TAG="v$VERSION"
 
 if [ ! -f "release-notes-$VERSION.md" ]; then
@@ -1038,7 +1038,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap-noun-verb = "26.6.14"
+clap-noun-verb = "26.9.1"
 EOF
 
 # Test compilation
@@ -1058,7 +1058,7 @@ cargo test -- --nocapture
 ```bash
 # scripts/smoke-test-published.sh
 #!/bin/bash
-VERSION="${1:-26.6.14}"
+VERSION="${1:-26.9.1}"
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
@@ -1172,7 +1172,7 @@ echo "✓ All integration tests passed"
 
 ```bash
 # Checklist
-- [ ] Crates.io page exists: https://crates.io/crates/clap-noun-verb/26.6.14
+- [ ] Crates.io page exists: https://crates.io/crates/clap-noun-verb/26.9.1
 - [ ] Version is marked as latest (unless pre-release)
 - [ ] Yanked: false
 - [ ] Downloads counter visible
@@ -1185,7 +1185,7 @@ echo "✓ All integration tests passed"
 
 ```bash
 # Checklist
-- [ ] GitHub Release created with git tag v26.6.14
+- [ ] GitHub Release created with git tag v26.9.1
 - [ ] Release notes include "What's New"
 - [ ] Release notes link to CHANGELOG.md
 - [ ] Release marked as "latest" (unless pre-release)
@@ -1199,7 +1199,7 @@ echo "✓ All integration tests passed"
 ```bash
 # Checklist
 - [ ] Documentation page built on docs.rs
-- [ ] URL works: https://docs.rs/clap-noun-verb/26.6.14/
+- [ ] URL works: https://docs.rs/clap-noun-verb/26.9.1/
 - [ ] All modules present and searchable
 - [ ] Code examples render correctly
 - [ ] "Docs.rs badge" available for README
@@ -1245,7 +1245,7 @@ ls -lh target/release/clap-noun-verb-gen
 
 **Daily Check (first week)**:
 1. Visit GitHub Issues
-2. Search for label: `regression` or version: `26.6.14`
+2. Search for label: `regression` or version: `26.9.1`
 3. Respond to questions in Discussions
 4. Monitor crates.io download stats
 
@@ -1260,13 +1260,13 @@ ls -lh target/release/clap-noun-verb-gen
 # 2. Create fix commit
 git commit -m "fix: critical bug in CommandRegistry"
 
-# 3. Bump to v26.6.15 (PATCH)
-./scripts/bump-version.sh 26.6.15
+# 3. Bump to v26.9.1 (PATCH)
+./scripts/bump-version.sh 26.9.1
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml
-git commit -m "chore(release): bump to 26.6.15"
+git commit -m "chore(release): bump to 26.9.1"
 
 # 4. Update CHANGELOG
-# (add [26.6.15] section)
+# (add [26.9.1] section)
 git add CHANGELOG.md
 git commit --amend  # Combine with version bump
 
@@ -1279,15 +1279,15 @@ git push origin main
 ./scripts/publish-step-main.sh
 
 # 7. Tag
-git tag v26.6.15 -m "Hotfix: critical bug"
-git push origin v26.6.15
+git tag v26.9.1 -m "Hotfix: critical bug"
+git push origin v26.9.1
 
-# 8. Consider yanking v26.6.14 (if critical)
-cargo yank --vers 26.6.14 -p clap-noun-verb
+# 8. Consider yanking v26.9.1 (if critical)
+cargo yank --vers 26.9.1 -p clap-noun-verb
 
 # Checklist
 - [ ] Hot fix published to crates.io
-- [ ] GitHub Release created for v26.6.15
+- [ ] GitHub Release created for v26.9.1
 - [ ] Original version yanked (if needed)
 - [ ] Users notified (GitHub Issue, email, Twitter)
 ```
@@ -1329,7 +1329,7 @@ cargo yank --vers 26.6.14 -p clap-noun-verb
 **Release is DONE when maintainer approves and confirms**:
 
 ```
-Release v26.6.14 Sign-Off Checklist
+Release v26.9.1 Sign-Off Checklist
 ===================================
 
 [✓] All 7 pre-release gates passed
@@ -1362,7 +1362,7 @@ set -e
 
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
-    echo "Usage: ./scripts/release.sh 26.6.15"
+    echo "Usage: ./scripts/release.sh 26.9.1"
     exit 1
 fi
 
@@ -1440,13 +1440,13 @@ cargo make release-check
 cargo make publish-all
 
 # Create complete release
-./scripts/release.sh 26.6.15
+./scripts/release.sh 26.9.1
 
 # Smoke test
-./scripts/smoke-test-published.sh 26.6.15
+./scripts/smoke-test-published.sh 26.9.1
 
 # Emergency hotfix
-./scripts/hotfix.sh 26.6.15
+./scripts/hotfix.sh 26.9.1
 ```
 
 ---
@@ -1456,7 +1456,7 @@ cargo make publish-all
 **Copy this to a GitHub Issue for tracking each release**:
 
 ```markdown
-## Release v26.6.14 Checklist
+## Release v26.9.1 Checklist
 
 ### Pre-Release Validation (1 day before)
 - [ ] Gate 1: All tests pass (`cargo make test-all`)
@@ -1469,7 +1469,7 @@ cargo make publish-all
 
 ### Version & Changelog
 - [ ] Decide MAJOR/MINOR/PATCH
-- [ ] Run: `./scripts/bump-version.sh 26.6.14`
+- [ ] Run: `./scripts/bump-version.sh 26.9.1`
 - [ ] Update CHANGELOG.md
 - [ ] Create migration guide (if MAJOR)
 - [ ] Commit version bump
@@ -1478,7 +1478,7 @@ cargo make publish-all
 - [ ] `./scripts/publish-step-macros-dryrun.sh`
 - [ ] `./scripts/publish-step-macros.sh`
 - [ ] `./scripts/publish-step-main.sh`
-- [ ] `./scripts/verify-published.sh 26.6.14`
+- [ ] `./scripts/verify-published.sh 26.9.1`
 
 ### Documentation & Artifacts
 - [ ] Rustdoc builds (check docs.rs in 5-10 minutes)
@@ -1531,7 +1531,7 @@ set -e
 
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
-    echo "Usage: ./scripts/release-validate-all.sh 26.6.15"
+    echo "Usage: ./scripts/release-validate-all.sh 26.9.1"
     exit 1
 fi
 
@@ -1600,7 +1600,7 @@ set -e
 
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
-    echo "Usage: ./scripts/hotfix-release.sh 26.6.15"
+    echo "Usage: ./scripts/hotfix-release.sh 26.9.1"
     exit 1
 fi
 
@@ -1642,7 +1642,7 @@ Create this as `scripts/generate-release-checklist.sh`:
 
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
-    echo "Usage: ./scripts/generate-release-checklist.sh 26.6.15"
+    echo "Usage: ./scripts/generate-release-checklist.sh 26.9.1"
     exit 1
 fi
 
@@ -1805,7 +1805,7 @@ gh repo view seanchatmangpt/clap-noun-verb
                      │
                      ▼
         ┌─────────────────────────────┐
-        │ What changed since v26.6.13?│
+        │ What changed since v26.9.1?│
         └────────────┬────────────────┘
                      │
         ┌────────────┼────────────────┐
@@ -1818,7 +1818,7 @@ gh repo view seanchatmangpt/clap-noun-verb
        │           │                  │
        ▼           ▼                  ▼
     PATCH      MINOR              MAJOR
-   (26.6.15)  (26.7.0)           (27.0.0)
+   (26.9.1)  (26.9.1)           (27.0.0)
        │           │                  │
        └───────────┼──────────────────┘
                ┌───▼────────┐
@@ -1838,7 +1838,7 @@ gh repo view seanchatmangpt/clap-noun-verb
 ### E1. PATCH Release (Bug Fix)
 
 ```markdown
-**v26.6.15: Bug Fix Release**
+**v26.9.1: Bug Fix Release**
 
 This patch release fixes a critical issue in CommandRegistry when handling empty args.
 
@@ -1848,7 +1848,7 @@ This patch release fixes a critical issue in CommandRegistry when handling empty
 
 ### Installation
 ```bash
-cargo add clap-noun-verb@26.6.15
+cargo add clap-noun-verb@26.9.1
 ```
 
 ### Changelog
@@ -1860,7 +1860,7 @@ No action required for existing users.
 ### E2. MINOR Release (New Feature)
 
 ```markdown
-**v26.7.0: Graph Module & Diagnostics Release**
+**v26.9.1: Graph Module & Diagnostics Release**
 
 This release adds graph querying, capability packing, and system diagnostics.
 
@@ -1875,7 +1875,7 @@ This release adds graph querying, capability packing, and system diagnostics.
 
 ### Installation
 ```bash
-cargo add clap-noun-verb@26.7.0
+cargo add clap-noun-verb@26.9.1
 ```
 
 ### Migration
@@ -1926,20 +1926,20 @@ cargo add clap-noun-verb@27.0.0
 
 ```bash
 # 1. Check crates.io
-curl -s https://crates.io/api/v1/crates/clap-noun-verb/26.6.15 | jq '.crate.downloads'
+curl -s https://crates.io/api/v1/crates/clap-noun-verb/26.9.1 | jq '.crate.downloads'
 
 # 2. Check docs.rs
-open https://docs.rs/clap-noun-verb/26.6.15/
+open https://docs.rs/clap-noun-verb/26.9.1/
 
 # 3. Check GitHub Issues for "regression" label
-gh issue list --label regression --label "v26.6.15"
+gh issue list --label regression --label "v26.9.1"
 
 # 4. Check GitHub Actions
 gh run list --workflow=tests.yml -L 1
 
 # 5. Monitor downloads trend
 for i in {1..5}; do
-    echo "Hour $i: $(curl -s 'https://crates.io/api/v1/crates/clap-noun-verb/26.6.15' | jq '.crate.downloads') downloads"
+    echo "Hour $i: $(curl -s 'https://crates.io/api/v1/crates/clap-noun-verb/26.9.1' | jq '.crate.downloads') downloads"
     sleep 3600
 done
 ```
@@ -1956,4 +1956,4 @@ done
 
 ---
 
-**Last Updated**: 2026-06-14 | **Version**: 26.6.14 | **Status**: Production-Ready
+**Last Updated**: 2026-08-20 | **Version**: 26.9.1 | **Status**: Production-Ready

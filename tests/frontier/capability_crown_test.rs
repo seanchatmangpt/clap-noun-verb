@@ -81,23 +81,43 @@ fn learning_trajectory_observes_monotonic_bounded_scores() {
     assert!(trajectory.observe(1.1).is_err());
 }
 
+#[cfg(feature = "learning-trajectories")]
+#[test]
+fn learning_trajectory_is_monotonic_detects_a_real_regression() {
+    use clap_noun_verb::frontier::LearningTrajectory;
+
+    // The only prior test above for `is_monotonic` ever observes an
+    // ascending sequence and only ever asserts the `true` case. A stub
+    // that always returned `true` -- or an accidentally inverted
+    // comparison in `is_monotonic`'s own real body -- would pass every
+    // existing test in this repo and go completely undetected. This test
+    // observes a real regressing sequence and confirms `is_monotonic`
+    // correctly returns `false`.
+    let mut regressing = LearningTrajectory::default();
+    assert_eq!(regressing.observe(0.8).expect("bounded score"), 0);
+    assert_eq!(regressing.observe(0.3).expect("bounded score"), 1);
+    assert!(!regressing.is_monotonic());
+
+    // The vacuous-true boundary: `windows(2)` over 0 or 1 observations
+    // yields an empty iterator, so `.all(...)` is vacuously `true` -- a
+    // never-tried and a once-tried trajectory are both, correctly,
+    // "never regressed yet". Neither boundary is exercised anywhere else
+    // in this repo.
+    let empty = LearningTrajectory::default();
+    assert!(empty.is_monotonic());
+
+    let mut single = LearningTrajectory::default();
+    assert_eq!(single.observe(0.5).expect("bounded score"), 0);
+    assert!(single.is_monotonic());
+}
+
 #[cfg(feature = "reflexive-testing")]
 #[test]
 fn reflexive_report_refuses_success_without_replay() {
     use clap_noun_verb::frontier::ReflexiveReport;
 
-    assert!(!ReflexiveReport {
-        passed: 45,
-        failed: 0,
-        replay_verified: false,
-    }
-    .is_alive());
-    assert!(ReflexiveReport {
-        passed: 45,
-        failed: 0,
-        replay_verified: true,
-    }
-    .is_alive());
+    assert!(!ReflexiveReport { passed: 45, failed: 0, replay_verified: false }.is_alive());
+    assert!(ReflexiveReport { passed: 45, failed: 0, replay_verified: true }.is_alive());
 }
 
 #[cfg(feature = "quantum-ready")]
@@ -128,11 +148,7 @@ fn economic_simulation_allocates_to_the_highest_trust_capable_agent() {
             .expect("valid agent");
     }
     simulation
-        .add_task(Task {
-            id: TaskId(7),
-            required_capability: "compile".to_string(),
-            value: 120.0,
-        })
+        .add_task(Task { id: TaskId(7), required_capability: "compile".to_string(), value: 120.0 })
         .expect("valid task");
 
     let allocations = simulation.step().expect("bounded allocation");

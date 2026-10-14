@@ -68,14 +68,18 @@ fn test_rdf_to_ggen_round_trip() {
     // Generate code
     let code = rdf_spec_to_verb_code(&verb);
 
-    // Verify code structure
+    // Verify code structure. The generated adapter projects only parsing/routing:
+    // a noun-bearing verb renders as #[verb(name, noun)], and the function body
+    // delegates domain behavior to crate::handlers -- see module docs on
+    // rdf_to_ggen and examples/ontology_to_cli.rs, the authoritative witness for
+    // this exact contract.
     assert!(code.contains("/// Load a graph from file or stdin"));
-    assert!(code.contains("#[verb(\"load\")]"));
+    assert!(code.contains("#[verb(\"load\", \"graph\")]"));
     assert!(code.contains("pub fn graph_load("));
     assert!(code.contains("path: String,"));
     assert!(code.contains("format: Option<String>,"));
     assert!(code.contains("Result<GraphLoadedOutput>"));
-    assert!(code.contains("unimplemented!"));
+    assert!(code.contains("crate::handlers::graph_load(path, format)"));
 }
 
 // =============================================================================

@@ -104,7 +104,7 @@ name = "myapp"
 version.workspace = true  # ← Inherit from workspace
 
 [dependencies]
-clap-noun-verb = "26.6.13"
+clap-noun-verb = "26.9.1"
 ```
 
 **Verify**:
@@ -338,7 +338,7 @@ $ ./target/debug/myapp
 
 | Command | Expected | Common Issue |
 |---------|----------|--------------|
-| `myapp --version` | `myapp 1.0.0` | Shows `cli 26.6.13` (dependency version) |
+| `myapp --version` | `myapp 1.0.0` | Shows `cli 26.9.1` (dependency version) |
 | `myapp --help` | Clean help text | `ERROR: CLI execution failed: ...` |
 | `myapp sync --help` | Sync command help | Shows main help instead |
 | `myapp` (no args) | Main help | Error message |
@@ -349,7 +349,7 @@ $ ./target/debug/myapp
 
 ### Issue 1: Version Shows Dependency Version
 
-**Symptom**: `myapp --version` → `cli 26.6.13`
+**Symptom**: `myapp --version` → `cli 26.9.1`
 
 **Fix**: Use CliBuilder with explicit version:
 
@@ -457,8 +457,8 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-clap-noun-verb = "26.6.13"
-clap-noun-verb-macros = "26.6.13"
+clap-noun-verb = "26.9.1"
+clap-noun-verb-macros = "26.9.1"
 serde = { version = "1", features = ["derive"] }
 ```
 

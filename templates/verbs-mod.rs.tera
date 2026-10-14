@@ -6,7 +6,7 @@
 
 //! Rendered verb modules.
 {% if modules %}
-{%- for m in modules | split(pat=",") %}
+{%- for m in modules | split(pat=",") | sort %}
 pub mod {{ m }};
 {%- endfor %}
 {%- endif %}

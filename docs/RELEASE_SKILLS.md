@@ -2,7 +2,7 @@
 
 **clap-noun-verb** - Semantic Versioning Release Framework
 
-**Current Version**: 26.6.14 | **Last Updated**: 2026-06-14
+**Current Version**: 26.9.1 | **Last Updated**: 2026-08-20
 
 ---
 
@@ -36,22 +36,22 @@ git log origin/main..HEAD  # Should be empty
 # Review changes and Semantic Versioning rules below
 
 # 3. Bump version across all files
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 
 # 4. Update CHANGELOG.md
-vim CHANGELOG.md  # Move [Unreleased] → [26.6.15] - YYYY-MM-DD
+vim CHANGELOG.md  # Move [Unreleased] → [26.9.1] - YYYY-MM-DD
 
 # 5. Commit and verify
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md
-git commit -m "chore(release): bump to 26.6.15"
-./scripts/pre-release-check.sh 26.6.15
+git commit -m "chore(release): bump to 26.9.1"
+./scripts/pre-release-check.sh 26.9.1
 
 # 6. Publish
 cargo make publish
 
 # 7. Tag and trigger CI/CD
-git tag v26.6.15 -m "Release v26.6.15: <description>"
-git push origin v26.6.15
+git tag v26.9.1 -m "Release v26.9.1: <description>"
+git push origin v26.9.1
 
 # Total time: ~5 minutes hands-on, ~3 minutes automated
 ```
@@ -60,7 +60,7 @@ git push origin v26.6.15
 
 ## Semantic Versioning Strategy
 
-**Format**: `MAJOR.MINOR.PATCH` (e.g., `26.6.14`)
+**Format**: `MAJOR.MINOR.PATCH` (e.g., `26.9.1`)
 
 ### Version Increment Decision Tree
 
@@ -93,12 +93,12 @@ Is this a breaking change?
 
 | Change | Type | Version | Rationale |
 |--------|------|---------|-----------|
-| Add `#[arg(new_attr)]` | MINOR | 26.7.0 | New feature, backward compatible |
-| Fix panic in `registry::run()` | PATCH | 26.6.15 | Bug fix, no new features |
+| Add `#[arg(new_attr)]` | MINOR | 26.9.1 | New feature, backward compatible |
+| Fix panic in `registry::run()` | PATCH | 26.9.1 | Bug fix, no new features |
 | Redesign `HandlerInput` trait | MAJOR | 27.0.0 | Breaking change, impl updates required |
-| New `diagnostic` module | MINOR | 26.7.0 | Additive feature |
-| Update docs/examples | PATCH | 26.6.15 | Documentation only |
-| Add frontier feature `meta-framework` | MINOR | 26.7.0 | Gated behind `frontier-meta-framework` flag |
+| New `diagnostic` module | MINOR | 26.9.1 | Additive feature |
+| Update docs/examples | PATCH | 26.9.1 | Documentation only |
+| Add frontier feature `meta-framework` | MINOR | 26.9.1 | Gated behind `frontier-meta-framework` flag |
 
 ### Frontier Features
 
@@ -152,7 +152,7 @@ Frontier features (unstable, experimental):
 **Location**: `scripts/bump-version.sh`
 
 ```bash
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 ```
 
 **What it does**:
@@ -178,11 +178,11 @@ After bumping, verify version consistency:
 grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
 
 # Expected output:
-# Cargo.toml:version = "26.6.15"
+# Cargo.toml:version = "26.9.1"
 # Cargo.toml:[workspace.dependencies]
-# Cargo.toml:clap-noun-verb = { ... version = "26.6.15" }
-# Cargo.toml:clap-noun-verb-macros = { ... version = "26.6.15" }
-# clap-noun-verb-macros/Cargo.toml:version = "26.6.15"
+# Cargo.toml:clap-noun-verb = { ... version = "26.9.1" }
+# Cargo.toml:clap-noun-verb-macros = { ... version = "26.9.1" }
+# clap-noun-verb-macros/Cargo.toml:version = "26.9.1"
 ```
 
 ### Testing Version Changes
@@ -226,7 +226,7 @@ cargo doc --no-deps  # Build documentation
 ### Technical Details
 - Internal notes (not user-facing)
 
-## [26.6.14] - 2026-06-14
+## [26.9.1] - 2026-06-14
 
 ### Added
 - Feature X
@@ -256,7 +256,7 @@ Maintain an `[Unreleased]` section in CHANGELOG.md:
 
 1. Update entry header:
    ```markdown
-   ## [26.6.15] - 2026-06-14
+   ## [26.9.1] - 2026-06-14
    ```
    Replace `[Unreleased]` with `[VERSION] - YYYY-MM-DD`
 
@@ -296,7 +296,7 @@ Maintain an `[Unreleased]` section in CHANGELOG.md:
 **Option 1: Manual (recommended, full control)**
 ```bash
 # 1. Review commits since last release
-git log v26.6.13..HEAD --oneline
+git log v26.9.1..HEAD --oneline
 
 # 2. Edit CHANGELOG.md directly
 vim CHANGELOG.md
@@ -342,11 +342,11 @@ cargo make publish-dry-run-macros
 
 **Success output**:
 ```
-   Packaging clap-noun-verb-macros v26.6.15
-    Verifying clap-noun-verb-macros v26.6.15
-    Compiling clap-noun-verb-macros v26.6.15
+   Packaging clap-noun-verb-macros v26.9.1
+    Verifying clap-noun-verb-macros v26.9.1
+    Compiling clap-noun-verb-macros v26.9.1
      Finished release [optimized] target(s)
-     Uploading clap-noun-verb-macros v26.6.15
+     Uploading clap-noun-verb-macros v26.9.1
 ✓ Dry-run successful
 ```
 
@@ -385,7 +385,7 @@ chmod 600 ~/.cargo/credentials.toml
 cargo search clap-noun-verb-macros --limit 1
 
 # Look for output like:
-# clap_noun_verb_macros = "26.6.15"
+# clap_noun_verb_macros = "26.9.1"
 ```
 
 #### Step 3: Wait for Indexing
@@ -393,7 +393,7 @@ cargo search clap-noun-verb-macros --limit 1
 ```bash
 # Automated waiting loop
 for i in {1..30}; do
-    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.6.15"; then
+    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.9.1"; then
         echo "✓ Macros published"
         break
     fi
@@ -410,7 +410,7 @@ cargo make publish-dry-run
 
 **What it verifies**:
 - Main crate dependencies (including macros) are available
-- clap-noun-verb-macros v26.6.15 is published
+- clap-noun-verb-macros v26.9.1 is published
 - All dependencies are available
 
 #### Step 5: Publish Main Crate
@@ -432,12 +432,12 @@ cargo search clap-noun-verb --limit 1
 cargo search clap-noun-verb-macros --limit 1
 
 # Expected:
-# clap_noun_verb = "26.6.15"
-# clap_noun_verb_macros = "26.6.15"
+# clap_noun_verb = "26.9.1"
+# clap_noun_verb_macros = "26.9.1"
 
 # Check documentation
-# Visit: https://docs.rs/clap-noun-verb/26.6.15/
-# Visit: https://docs.rs/clap-noun-verb-macros/26.6.15/
+# Visit: https://docs.rs/clap-noun-verb/26.9.1/
+# Visit: https://docs.rs/clap-noun-verb-macros/26.9.1/
 ```
 
 ### Automated Publishing: GitHub Actions
@@ -445,8 +445,8 @@ cargo search clap-noun-verb-macros --limit 1
 **Triggered automatically on tag push**:
 
 ```bash
-git tag v26.6.15 -m "Release v26.6.15"
-git push origin v26.6.15
+git tag v26.9.1 -m "Release v26.9.1"
+git push origin v26.9.1
 ```
 
 **Pipeline runs**:
@@ -475,7 +475,7 @@ Located in `[package]` section:
 ```toml
 [package]
 name = "clap-noun-verb"
-version = "26.6.15"
+version = "26.9.1"
 edition = "2021"
 rust-version = "1.74"
 
@@ -543,8 +543,8 @@ cargo doc --all-features --no-deps
 When you push a git tag, GitHub Actions automatically creates a release:
 
 ```bash
-git tag v26.6.15 -m "Release v26.6.15"
-git push origin v26.6.15
+git tag v26.9.1 -m "Release v26.9.1"
+git push origin v26.9.1
 ```
 
 **Automatically generates**:
@@ -558,17 +558,17 @@ For custom release notes:
 
 ```bash
 # Create release with custom notes
-gh release create v26.6.15 \
-  --title "v26.6.15: Performance & Graph Improvements" \
+gh release create v26.9.1 \
+  --title "v26.9.1: Performance & Graph Improvements" \
   --notes-file release-notes.md
 
 # Create pre-release (for RCs)
-gh release create v26.6.15-rc.1 \
+gh release create v26.9.1-rc.1 \
   --prerelease \
-  --title "v26.6.15-rc.1: Release Candidate"
+  --title "v26.9.1-rc.1: Release Candidate"
 
 # Upload additional artifacts
-gh release upload v26.6.15 ./target/release/my-binary
+gh release upload v26.9.1 ./target/release/my-binary
 ```
 
 ### Release Notes Format
@@ -596,7 +596,7 @@ Structure for maximum user value:
 ## Installation
 
 ```bash
-cargo add clap-noun-verb@26.6.15
+cargo add clap-noun-verb@26.9.1
 ```
 
 ## Full Changelog
@@ -616,7 +616,7 @@ Thanks to: @user1, @user2, @user3
 - [ ] Shows installation command
 - [ ] Links to full CHANGELOG
 - [ ] Marks as pre-release (if RC/alpha/beta)
-- [ ] Tag matches version (e.g., `v26.6.15`)
+- [ ] Tag matches version (e.g., `v26.9.1`)
 - [ ] Tag matches Cargo.toml version
 
 ---
@@ -742,9 +742,9 @@ Yanking removes a published version from crates.io's default results:
 
 **Critical Security Vulnerabilities**:
 ```bash
-# If v26.6.14 has CVE
-cargo yank --vers 26.6.14 -p clap-noun-verb
-cargo yank --vers 26.6.14 -p clap-noun-verb-macros
+# If v26.9.1 has CVE
+cargo yank --vers 26.9.1 -p clap-noun-verb
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 ```
 
 **Catastrophic Regressions** (breaks core functionality):
@@ -756,7 +756,7 @@ cargo yank --vers 27.0.0 -p clap-noun-verb
 **Publish Errors** (wrong binary, missing files):
 ```bash
 # If macros were published incorrectly
-cargo yank --vers 26.6.14 -p clap-noun-verb-macros
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 ```
 
 ### How to Yank
@@ -766,29 +766,29 @@ cargo yank --vers 26.6.14 -p clap-noun-verb-macros
 cargo install cargo-edit
 
 # Yank a version
-cargo yank --vers 26.6.14 -p clap-noun-verb
-cargo yank --vers 26.6.14 -p clap-noun-verb-macros
+cargo yank --vers 26.9.1 -p clap-noun-verb
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 
 # Undo a yank (if you yanked wrong version)
-cargo yank --vers 26.6.14 -p clap-noun-verb --undo
+cargo yank --vers 26.9.1 -p clap-noun-verb --undo
 ```
 
 ### Yank Communication Template
 
 ```markdown
-## Security Alert: v26.6.14 Yanked
+## Security Alert: v26.9.1 Yanked
 
-**Affected**: clap-noun-verb v26.6.14 (released June 14, 2026)
+**Affected**: clap-noun-verb v26.9.1 (released June 14, 2026)
 
 **Issue**: [CVE-2026-12345](https://nvd.nist.gov/...) - Potential panic on untrusted input
 
 **Required Action**:
 - Upgrade immediately: `cargo update clap-noun-verb`
-- If pinned to v26.6.14, update Cargo.toml: `clap-noun-verb = "26.6.15"`
+- If pinned to v26.9.1, update Cargo.toml: `clap-noun-verb = "26.9.1"`
 
 **Status**:
-- ✓ v26.6.15 released with fix
-- ✓ v26.6.14 yanked
+- ✓ v26.9.1 released with fix
+- ✓ v26.9.1 yanked
 - ✓ Fix committed to main branch
 ```
 
@@ -803,19 +803,19 @@ git pull origin main
 git commit -m "fix: critical bug in CommandRegistry (issue #999)"
 
 # 2. Bump PATCH version
-./scripts/bump-version.sh 26.6.16
+./scripts/bump-version.sh 26.9.1
 
 # 3. Update CHANGELOG
-vim CHANGELOG.md  # Add [26.6.16] section
+vim CHANGELOG.md  # Add [26.9.1] section
 
 # 4. Verify and publish
-./scripts/pre-release-check.sh 26.6.16
+./scripts/pre-release-check.sh 26.9.1
 git push origin main
 cargo make publish
 
 # 5. Tag and trigger CI/CD
-git tag v26.6.16 -m "Emergency patch: critical bug fix"
-git push origin v26.6.16
+git tag v26.9.1 -m "Emergency patch: critical bug fix"
+git push origin v26.9.1
 
 # Total time: ~5 minutes
 ```
@@ -829,7 +829,7 @@ git push origin v26.6.16
 **Location**: `scripts/bump-version.sh`
 
 ```bash
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 ```
 
 **Features**:
@@ -841,7 +841,7 @@ git push origin v26.6.16
 
 **Output**:
 ```
-✓ Updated to version 26.6.15
+✓ Updated to version 26.9.1
 
 Verify with:
   grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
@@ -852,7 +852,7 @@ Verify with:
 **Location**: `scripts/pre-release-check.sh`
 
 ```bash
-./scripts/pre-release-check.sh 26.6.15
+./scripts/pre-release-check.sh 26.9.1
 ```
 
 **Runs 7 automated quality gates**:
@@ -879,8 +879,8 @@ Next steps:
   3. cargo make publish-dry-run
   4. cargo make publish
   5. Verify on crates.io
-  6. Create git tag: git tag v26.6.15
-  7. Push tag: git push origin v26.6.15
+  6. Create git tag: git tag v26.9.1
+  7. Push tag: git push origin v26.9.1
 ```
 
 ### 3. Makefile Release Tasks
@@ -915,7 +915,7 @@ cargo make verify-publish
 Interactive checklist for release operators:
 
 ```bash
-./scripts/release-checklist.sh 26.6.15
+./scripts/release-checklist.sh 26.9.1
 ```
 
 ---
@@ -928,7 +928,7 @@ Use this for each release:
 
 ```
 □ Review all commits since last release
-  git log v26.6.13..HEAD --oneline
+  git log v26.9.1..HEAD --oneline
 
 □ Determine MAJOR/MINOR/PATCH bump
   (Review Semantic Versioning strategy above)
@@ -946,17 +946,17 @@ Use this for each release:
 
 ```
 □ Update version across files
-  ./scripts/bump-version.sh 26.6.15
+  ./scripts/bump-version.sh 26.9.1
 
 □ Verify all versions match
   grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
 
 □ Update CHANGELOG.md
-  - Move [Unreleased] → [26.6.15] - 2026-06-15
+  - Move [Unreleased] → [26.9.1] - 2026-06-15
   - Add new [Unreleased] section
 
 □ Update README.md version examples
-  sed -i 's/"26.6.14"/"26.6.15"/g' README.md
+  sed -i 's/"26.9.1"/"26.9.1"/g' README.md
 
 □ Compile and test
   cargo check
@@ -965,14 +965,14 @@ Use this for each release:
 
 □ Commit version bump
   git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md
-  git commit -m "chore(release): bump to 26.6.15"
+  git commit -m "chore(release): bump to 26.9.1"
 ```
 
 ### Quality Gates
 
 ```
 □ Run automated quality check
-  ./scripts/pre-release-check.sh 26.6.15
+  ./scripts/pre-release-check.sh 26.9.1
 
 □ All 7 gates should pass:
   ✓ Version Consistency
@@ -1014,16 +1014,16 @@ Use this for each release:
 
 ```
 □ Create git tag
-  git tag v26.6.15 -m "Release v26.6.15"
+  git tag v26.9.1 -m "Release v26.9.1"
 
 □ Push tag (triggers GitHub Actions)
-  git push origin v26.6.15
+  git push origin v26.9.1
 
 □ Monitor GitHub Actions
   https://github.com/seanchatmangpt/clap-noun-verb/actions
 
 □ Verify GitHub Release created
-  https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.6.15
+  https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.9.1
 ```
 
 ### Post-Release Verification (next day)
@@ -1053,16 +1053,16 @@ git pull origin main
 git commit -m "fix: critical bug in CommandRegistry (issue #999)"
 
 # 2. Bump PATCH version (1 min)
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 
 # 3. Update CHANGELOG (2 min)
 vim CHANGELOG.md
-# Add: ## [26.6.15] - 2026-06-15
+# Add: ## [26.9.1] - 2026-06-15
 #      ### Fixed
 #      - Critical bug fix description
 
 # 4. Verify and commit (2 min)
-./scripts/pre-release-check.sh 26.6.15
+./scripts/pre-release-check.sh 26.9.1
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md
 git commit --amend  # Amend to include CHANGELOG
 
@@ -1071,8 +1071,8 @@ git push origin main
 cargo make publish
 
 # 6. Tag and trigger CI/CD (1 min)
-git tag v26.6.15 -m "Patch release: critical bug fix"
-git push origin v26.6.15
+git tag v26.9.1 -m "Patch release: critical bug fix"
+git push origin v26.9.1
 # GitHub Actions handles rest automatically
 ```
 
@@ -1088,11 +1088,11 @@ git checkout main
 git pull origin main
 
 # 2. Bump MINOR version
-./scripts/bump-version.sh 26.7.0
+./scripts/bump-version.sh 26.9.1
 
 # 3. Update CHANGELOG thoroughly
 vim CHANGELOG.md
-# Add: ## [26.7.0] - 2026-06-15
+# Add: ## [26.9.1] - 2026-06-15
 #      ### Added
 #      - Feature 1 with detailed description
 #      - Feature 2 with detailed description
@@ -1103,19 +1103,19 @@ vim CHANGELOG.md
 vim README.md  # Update feature list, examples
 
 # 5. Run quality gates
-./scripts/pre-release-check.sh 26.7.0
+./scripts/pre-release-check.sh 26.9.1
 
 # 6. Commit
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml CHANGELOG.md README.md
-git commit -m "chore(release): bump to 26.7.0 - new features"
+git commit -m "chore(release): bump to 26.9.1 - new features"
 
 # 7. Publish
 git push origin main
 cargo make publish
 
 # 8. Tag
-git tag v26.7.0 -m "Release v26.7.0: new features"
-git push origin v26.7.0
+git tag v26.9.1 -m "Release v26.9.1: new features"
+git push origin v26.9.1
 ```
 
 ### Task: Create MAJOR Release (Breaking Changes)
@@ -1207,12 +1207,12 @@ cargo clippy --all-features -- -D warnings
 cargo search clap-noun-verb-macros --limit 1
 
 # Expected output when indexed:
-# clap_noun_verb_macros = "26.6.15"
+# clap_noun_verb_macros = "26.9.1"
 
 # If not indexed yet, wait and retry
 # Retry loop (GitHub Actions does this automatically)
 for i in {1..30}; do
-    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.6.15"; then
+    if cargo search clap-noun-verb-macros --limit 1 | grep -q "26.9.1"; then
         echo "Indexed!"
         break
     fi
@@ -1261,7 +1261,7 @@ grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
 
 ---
 
-**Last Updated**: 2026-06-14  
+**Last Updated**: 2026-08-20  
 **Author**: Sean Chatman  
 **Document Version**: 1.0  
 **Rust MSRV**: 1.74 (main), 1.70 (macros)

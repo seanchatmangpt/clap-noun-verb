@@ -1133,6 +1133,6 @@ cargo bench -- --save-baseline main
 
 ---
 
-**Last Updated**: 2026-06-14
-**Version**: 26.6.14
+**Last Updated**: 2026-08-20
+**Version**: 26.9.1
 **Maintained by**: clap-noun-verb contributors

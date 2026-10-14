@@ -9,7 +9,12 @@
 # Use Git's credential helper for authentication
 git-fetch-with-cli = true
 
+# Resolve semver-compatible dependencies against the package's declared
+# rust-version before the Rust 1.74 verification lane consumes Cargo.lock.
+# Cargo >=1.84 honors this; older Cargo safely ignores it after resolution.
+[resolver]
+incompatible-rust-versions = "fallback"
+
 # MSRV (Minimum Supported Rust Version)
 [env]
 RUST_BACKTRACE = "1"
-

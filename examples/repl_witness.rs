@@ -14,11 +14,7 @@ fn main() {
 
     assert_eq!(
         split_shell_words("pack install \"verified package\""),
-        Some(vec![
-            "pack".to_string(),
-            "install".to_string(),
-            "verified package".to_string(),
-        ])
+        Some(vec!["pack".to_string(), "install".to_string(), "verified package".to_string(),])
     );
     assert!(split_shell_words("pack install \"unterminated").is_none());
 

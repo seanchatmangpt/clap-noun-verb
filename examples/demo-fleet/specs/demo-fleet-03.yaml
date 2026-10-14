@@ -1,0 +1,13 @@
+name: demo-fleet-03
+about: 'Demo fleet CLI variant 3: 1 noun(s) x 2 verb(s), none args'
+version: 0.1.0
+author: clap-noun-verb demo fleet
+verbs:
+- name: status
+  noun: fleet
+  doc: status for fleet (variant 3)
+  args: []
+- name: sync
+  noun: fleet
+  doc: sync for fleet (variant 3)
+  args: []

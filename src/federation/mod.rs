@@ -71,7 +71,8 @@ impl CapabilityAdvertiser {
             identity: identity.to_string(),
             discovery_url: discovery_url.trim_end_matches('/').to_string(),
         };
-        lock_federation()?.current = Some((advertiser.identity.clone(), advertiser.discovery_url.clone()));
+        lock_federation()?.current =
+            Some((advertiser.identity.clone(), advertiser.discovery_url.clone()));
         Ok(advertiser)
     }
 
@@ -102,11 +103,10 @@ impl CapabilityAdvertiser {
     /// Mark this node offline while preserving its declared capabilities.
     pub fn advertise_shutdown(&self) -> Result<()> {
         let mut state = lock_federation()?;
-        let node = state.nodes.get_mut(&self.identity).ok_or_else(|| {
-            NounVerbError::ExecutionError {
+        let node =
+            state.nodes.get_mut(&self.identity).ok_or_else(|| NounVerbError::ExecutionError {
                 message: format!("federated-network: node not registered: {}", self.identity),
-            }
-        })?;
+            })?;
         node.online = false;
         Ok(())
     }
@@ -224,14 +224,9 @@ impl RemoteResolver {
                 message: format!("federated-network: target node is offline: {target}"),
             });
         }
-        node.capabilities
-            .get(capability)
-            .cloned()
-            .ok_or_else(|| NounVerbError::ExecutionError {
-                message: format!(
-                    "federated-network: capability not advertised: {target}/{capability}"
-                ),
-            })
+        node.capabilities.get(capability).cloned().ok_or_else(|| NounVerbError::ExecutionError {
+            message: format!("federated-network: capability not advertised: {target}/{capability}"),
+        })
     }
 }
 
@@ -247,7 +242,8 @@ impl InvocationProxy {
     pub fn new(endpoint: String, timeout: std::time::Duration) -> Result<Self> {
         if endpoint.trim().is_empty() || timeout.is_zero() {
             return Err(NounVerbError::ExecutionError {
-                message: "federated-network: endpoint and non-zero timeout are required".to_string(),
+                message: "federated-network: endpoint and non-zero timeout are required"
+                    .to_string(),
             });
         }
         Ok(Self { endpoint, timeout })

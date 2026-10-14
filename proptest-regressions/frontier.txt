@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b0f3be6115afcd5efe160893ddcc10e133168a57c813700eadd5e247a599bcbb # shrinks to (triples, subject, predicate, object) = ([SemanticTriple { subject: "A", predicate: "a", object: "0" }], Some("A"), None, None)

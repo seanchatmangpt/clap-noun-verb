@@ -1,10 +1,10 @@
 # Quality Metrics & Success Criteria Framework
 
-**clap-noun-verb v26.6.14** — Comprehensive quality metrics, baselines, targets, and reporting methodology.
+**clap-noun-verb v26.9.1** — Comprehensive quality metrics, baselines, targets, and reporting methodology.
 
 **Audience**: Maintainers, contributors, community stakeholders, and external auditors ensuring accountability and continuous improvement.
 
-**Last Updated**: 2026-06-14  
+**Last Updated**: 2026-08-20  
 **Maintained by**: clap-noun-verb contributors
 
 ---
@@ -66,7 +66,7 @@ clap-noun-verb maintains a comprehensive quality framework covering technical ex
 - **Optional modules**: ≥75%
 - **Examples & integration tests**: Comprehensive coverage of all documented features
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending formal coverage report
 Known Test Suite:
@@ -113,7 +113,7 @@ open target/coverage/index.html
 - **Warnings**: 0 in production code
 - **Allowed warnings**: Only documented in lints section with rationale
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Status: ✅ 0 warnings / 0 denied violations
 Last full run: 2026-06-14
@@ -153,7 +153,7 @@ cargo clippy --fix --all-targets --all-features
 - **Maximum complexity**: ≤15 for any single function
 - **Excluded**: Test functions, macros, auto-generated code
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending detailed analysis
 Known High-Complexity Areas:
@@ -196,14 +196,14 @@ cargo metrics --json > metrics.json
 - **All public functions**: Include signature, purpose, errors, panics (if any), examples
 - **Feature-gated APIs**: Clear feature requirement in docs
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending full audit
 Known Metrics:
 - Core modules: lib.rs, cli/mod.rs, builder.rs, router.rs - documented
 - Macro crate: Full docstrings for all pub items
 - Examples: 15+ runnable examples across tutorial/howto/reference
-- Doctests: 47 passing, 0 ignored (v26.6.13 refactor)
+- Doctests: 47 passing, 0 ignored (v26.9.1 refactor)
 ```
 
 #### Measurement
@@ -253,7 +253,7 @@ cargo doc --no-deps --all-features
   
 - **All examples**: Runnable, tested, documented
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Examples: 15 across categories
 Location: examples/{tutorial,howto,reference}/
@@ -318,7 +318,7 @@ done
 - **Format**: [MADR](https://adr.github.io/) or [ADR](https://adr.github.io/) template
 - **Lifecycle**: Proposed → Accepted → Superseded/Deprecated
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: ⚠️ 0 ADRs
 Action: Create docs/adr/ directory and populate:
@@ -374,7 +374,7 @@ ls docs/adr/*.md | wc -l
 - **Glossary**: Term definitions for noun-verb, verb, registry, etc.
 - **Migration Guides**: For each major version change
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Completed:
   ✅ README.md - 2-minute quickstart
@@ -405,7 +405,7 @@ Needed:
 - **Macro expansion**: ≤100ms for typical verb definition
 - **Check**: ≤1.5s incremental
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Incremental Compile: 0.66s ✅ (67% headroom)
   Macro expansion:    20ms
@@ -423,7 +423,7 @@ Macro expansion per #[verb]: ~2-5ms
 touch src/lib.rs && time cargo build 2>&1 | tail -3
 
 # Record per release
-echo "v26.6.14,0.66" >> metrics/compile_time.csv
+echo "v26.9.1,0.66" >> metrics/compile_time.csv
 
 # SLO check
 cargo make slo-check
@@ -443,7 +443,7 @@ Response: Require optimization PR before merging feature
 - **Debug binary**: Baseline, no explicit target
 - **Stripped binary**: ≤5MB
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Release Binary (no features): 2.2MB ✅ (78% headroom)
 Debug Binary: ~8-10MB
@@ -477,9 +477,9 @@ done
 Track per release in: metrics/binary_size.csv
 Format: version,feature_set,size_bytes
 Example:
-26.6.14,default,2306867
-26.6.14,all,4520391
-26.6.14,repl,2450000
+26.9.1,default,2306867
+26.9.1,all,4520391
+26.9.1,repl,2450000
 ```
 
 ### 3. Test Execution Performance
@@ -490,7 +490,7 @@ Example:
 - **Integration tests**: <1.5s
 - **Single test**: <200ms
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Full Suite (parallel, no features): ~0.16s ✅ (84% headroom)
 Unit tests: ~0.12s
@@ -527,7 +527,7 @@ Response: Requires optimization before merge
 - **Incremental doc rebuild**: ≤5s
 - **docs.rs build**: ≤30s (external service)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Full Doc Build: 4-5s ✅ (67% headroom)
   Example builds: 2s
@@ -543,7 +543,7 @@ Incremental (after src change): 2-3s
 time cargo make doc
 
 # Track per release
-echo "v26.6.14,4.2,2.8" >> metrics/doc_build.csv
+echo "v26.9.1,4.2,2.8" >> metrics/doc_build.csv
 # Format: version,full_build_time,incremental_time
 ```
 
@@ -560,12 +560,12 @@ echo "v26.6.14,4.2,2.8" >> metrics/doc_build.csv
 - **Release window**: 1-2 days from merge to publish
 - **Announcement to production**: ≤6 hours
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Recent Release History (last 6 months):
-26.6.14 - 2026-06-14 (current)
-26.6.13 - 2026-06-13 (1 day)
-26.6.1  - 2026-06-01 (12 days)
+26.9.1 - 2026-06-14 (current)
+26.9.1 - 2026-06-13 (1 day)
+26.9.1  - 2026-06-01 (12 days)
 26.5.28 - 2026-05-28 (previous cycle)
 
 Cadence: 1-2 weeks average ✅
@@ -590,13 +590,13 @@ git log --tags --pretty=format:"%d %ai" | head -20
 - **Critical bugs requiring hotfix**: ≤1 per release
 - **Definition**: A release that corrects bugs found in previous release within 48 hours
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending baseline data
 Historical (estimated from CHANGELOG):
-- 26.6.14: No hotfix (new release)
-- 26.6.13: No hotfix
-- 26.6.1:  No hotfix
+- 26.9.1: No hotfix (new release)
+- 26.9.1: No hotfix
+- 26.9.1:  No hotfix
 - 26.5.28: No hotfix
 
 Current Ratio: 0/last-10-releases = 0% ✅
@@ -628,12 +628,12 @@ done
 - **Definition**: Bug reported within 1 week of release caused by changes in that release
 - **Resolution time**: ≤48 hours
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending baseline
 Recent History:
-- 26.6.13: 0 regression bugs
-- 26.6.1:  0 regression bugs
+- 26.9.1: 0 regression bugs
+- 26.9.1:  0 regression bugs
 
 All known issues: checked against CHANGELOG
 No open regression reports ✅
@@ -642,7 +642,7 @@ No open regression reports ✅
 #### Tracking & Prevention
 ```bash
 # Labeling system (GitHub Issues)
-# Labels: regression, release:26.6.14
+# Labels: regression, release:26.9.1
 
 # Find regression bugs
 gh issue list --label "regression" --state open
@@ -663,7 +663,7 @@ gh issue list --label "regression" --state open
 - **Minor issues (usability, performance)**: ≤5 per release
 - **Documentation issues**: ≤3 per release
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending GitHub audit
 Known Issues (as of 2026-06-14):
@@ -686,7 +686,7 @@ Action: Audit GitHub issues and populate baseline
 - **Average review time**: ≤2 days
 - **95th percentile**: ≤5 days
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending metrics collection
 Setup tracking:
@@ -718,7 +718,7 @@ gh api repos/seanchatmangpt/clap-noun-verb/pulls \
 - **Critical (crash/data loss)**: ≤24 hours
 - **Feature requests**: ≤30 days (may require discussion)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending metrics collection
 SLA Tiers:
@@ -746,7 +746,7 @@ SLA Tiers:
 - **First contribution**: ≤4 hours (with guidance)
 - **First merged PR**: ≤2 weeks (from onboarding)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Setup Status:
   ✅ CLAUDE.md - 5,000+ words of guidance
@@ -783,7 +783,7 @@ time (
 - **Average complexity**: ≤10 per function
 - **Maximum complexity**: ≤15 for any single function
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending detailed analysis
 Tracking location: metrics/complexity_analysis.json
@@ -805,7 +805,7 @@ Sample structure (to be filled):
 - **Copy-paste violations**: Zero in critical paths (CLI dispatch, error handling)
 - **Extracted common patterns**: Documented in architecture guide
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending duplicate analysis
 Tools: cargo-duplicate-code, simian, or custom script
@@ -839,11 +839,11 @@ rust-code-analysis --metrics /path/to/src -O json
 - **Known limitations**: Documented in LIMITATIONS.md
 - **Debt ratio**: <5% of codebase (loose estimate)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Explicit Debt:
-  ✅ Zero stubs (eliminated in v26.6.13 refactor)
-  ✅ Zero cheats (eliminated in v26.6.13 refactor)
+  ✅ Zero stubs (eliminated in v26.9.1 refactor)
+  ✅ Zero cheats (eliminated in v26.9.1 refactor)
   ✅ Zero assert!(true) tautologies
   
 Documented Debt:
@@ -865,7 +865,7 @@ grep -r "TODO\|FIXME" src/ clap-noun-verb-macros/src/ --include="*.rs" \
   done
 
 # Deprecation tracking
-# - All deprecated items: marked with #[deprecated(since = "26.7.0", ...)]
+# - All deprecated items: marked with #[deprecated(since = "26.9.1", ...)]
 # - Removal date: documented (typically 2-3 releases later)
 # - Migration guide: provided in CHANGELOG
 
@@ -884,7 +884,7 @@ grep -r "TODO\|FIXME" src/ clap-noun-verb-macros/src/ --include="*.rs" \
 - **External security review**: Annually (professional assessment)
 - **Penetration testing**: As needed (when adding security-critical features)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status:
   ✅ cargo audit: Runs in CI (weekly via Dependabot)
@@ -922,7 +922,7 @@ cargo audit
 - **Medium severity**: ≤2 weeks to patch
 - **Public disclosure**: Coordinated (if applicable)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status:
   - Known vulnerabilities: 0
@@ -969,7 +969,7 @@ Response timeline:
 - **Medium/Low**: Applied within 1 month
 - **Major version updates**: Evaluated within 6 weeks
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Dependencies (Cargo.toml):
   clap: 4.5 (latest: 4.5)  ✅ up-to-date
@@ -1014,7 +1014,7 @@ cargo audit
 - **Triage decision**: Within 2 days (accepted, more-info-needed, duplicate, etc.)
 - **"Needs clarification" response**: Within 5 days (or close)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status: Pending metrics collection
 Setup:
@@ -1050,7 +1050,7 @@ fi
 - **Geographic diversity**: Represented across 2+ continents
 - **Organizational diversity**: Not dominated by single company
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status:
   Primary author: @seanchatmangpt ✅
@@ -1084,7 +1084,7 @@ gh api repos/seanchatmangpt/clap-noun-verb/contributors \
 - **Tone**: Professional, welcoming, growth-focused
 - **Learning resource**: Discussions serve as documentation
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status:
   - GitHub Discussions: Enabled
@@ -1129,7 +1129,7 @@ Examples of high-quality discussions:
 - **Public projects using framework**: Documented showcase
 - **Blog posts/tutorials**: ≥2 per year (external)
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current Status (to be collected):
   - crates.io downloads: TBD
@@ -1169,7 +1169,7 @@ gh api repos/seanchatmangpt/clap-noun-verb \
 - **Alignment with stated philosophy**: 100% of code follows CLAUDE.md design
 - **Breaking changes**: Rare (<1 per year), well-documented
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current State:
   ✅ Core architecture documented: CLAUDE.md
@@ -1202,11 +1202,11 @@ Current State:
 - **Deprecation period**: ≥2 releases before removal
 - **Migration guides**: For every breaking change
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Recent History:
-  26.6.13: 0 breaking changes
-  26.6.1:  0 breaking changes (minor feature additions)
+  26.9.1: 0 breaking changes
+  26.9.1:  0 breaking changes (minor feature additions)
   26.5.28: 0 breaking changes
   v26.*:   0 breaking changes (minor version series)
   
@@ -1230,8 +1230,8 @@ Next planned: v27.0.0 (TBD, no scheduled breaking changes yet)
 6. Release notes: Prominent breaking change section
 
 Example:
-  v26.6.14: Add `#[deprecated(since = "26.7", ...)]` to old function
-  v26.7.0:  Emit warning, document migration
+  v26.9.1: Add `#[deprecated(since = "26.7", ...)]` to old function
+  v26.9.1:  Emit warning, document migration
   v27.0.0:  Remove old function, make new API required
 ```
 
@@ -1243,7 +1243,7 @@ Example:
 - **Migration guide**: Available before deprecation period
 - **User adoption**: >80% of users migrated before removal
 
-#### Baseline (v26.6.14)
+#### Baseline (v26.9.1)
 ```
 Current deprecated items: 0
 Deprecation procedure: Documented in RELEASE_MANAGEMENT.md
@@ -1253,7 +1253,7 @@ Known future deprecations (planned):
   
 Deprecation template (from code):
   #[deprecated(
-    since = "26.7.0",
+    since = "26.9.1",
     note = "Use `new_function` instead. See CHANGELOG for migration guide."
   )]
 ```
@@ -1728,6 +1728,6 @@ if __name__ == "__main__":
 **End of Document**
 
 Document Version: 1.0  
-Last Updated: 2026-06-14  
+Last Updated: 2026-08-20  
 Maintainer: clap-noun-verb team  
 Status: Published

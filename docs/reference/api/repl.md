@@ -12,7 +12,7 @@ To use the REPL mode in your project, enable the `repl` feature flag in your `Ca
 
 ```toml
 [dependencies]
-clap-noun-verb = { version = "26.6.13", features = ["repl"] }
+clap-noun-verb = { version = "26.9.1", features = ["repl"] }
 ```
 
 When this feature is disabled, `clap-noun-verb` compiles with a lightweight stub implementation of the `Repl` struct that returns an error if `run()` is called, preventing unnecessary dependencies from bloating your binary size.

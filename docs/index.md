@@ -1,8 +1,8 @@
 # clap-noun-verb Documentation Index
 
-**Version**: 26.6.13
+**Version**: 26.8.20
 **Framework**: [Diataxis](https://diataxis.fr/)
-**Last Updated**: 2026-06-13
+**Last Updated**: 2026-08-20
 
 ---
 
@@ -28,8 +28,8 @@ This documentation follows the **Diataxis framework**, organizing content into f
 - [02. Adding Multiple Commands](tutorial/02-adding-multiple.md) - Multi-command CLIs
 - [03. Testing Basics](tutorial/03-testing-basics.md) - Chicago TDD fundamentals
 - [04. Output Formats](tutorial/04-output-formats.md) - JSON, YAML, Table outputs
-- [05. Async Operations](tutorial/05-async-operations.md) - Async command handlers
 - [06. Error Handling](tutorial/06-error-handling.md) - Result<T,E> patterns
+- [07. Wrapping Any Executable with cnv-any](tutorial/07-wrapping-any-executable.md) - Manifest-as-CliSchema, ggen generation, OCEL parity
 
 ---
 
@@ -39,16 +39,16 @@ This documentation follows the **Diataxis framework**, organizing content into f
 
 ### Core Guides
 - [Common Mistakes](howto/common-mistakes.md) - Top 10 errors and how to fix them
-- [Debugging](howto/debugging.md) - Debugging techniques and tools
-- [Performance Optimization](howto/performance-optimization.md) - Making CLIs fast
+- [Performance Guide](howto/PERFORMANCE_GUIDE.md) - Making CLIs fast
+- [Performance Monitoring](howto/PERFORMANCE_MONITORING.md) - Runtime performance tracking
 - [Setup Help and Version](howto/setup-help-and-version.md) - `--help` and `--version` setup
 - [Testing](howto/testing.md) - Test strategies
-- [Validation](howto/validation.md) - Input validation techniques
 
-### Additional Modules (v26.6.13)
+### Additional Modules
 - [Graph Operations](howto/graph-operations.md) - Loading, querying, and validating RDF graphs
 - [Capability Packing](howto/capability-packing.md) - Registry-based capability management
 - [System Diagnostics](howto/diagnostics.md) - Health checks and status reporting
+- [Generate a cnv-any Manifest with ggen](howto/generate-cnv-any-manifest.md) - Wrapping non-Rust executables
 
 ### Production Patterns
 - [Configure Applications](howto/production/configuration.md) - Config management
@@ -79,6 +79,13 @@ This documentation follows the **Diataxis framework**, organizing content into f
 - [Performance SLOs](reference/performance-slos.md) - Performance targets and guarantees
 - [Schema Validation & Introspection](reference/schema-validation.md) - SHACL constraints, JSON schema introspection, and output verification hooks
 
+### Universal Adapter & Observability
+- [cnv-any](reference/cnv-any.md) - Wrapping any executable as a deployable CLI
+- [OCEL v2](reference/ocel-v2.md) - Zero-configuration OCEL 2.0 event log
+- [OCEL Fuller Capabilities](reference/ocel-fuller-capabilities.md) - `drift_report`, `prune_candidates`, `to_rdf`, `merge_documents`
+- [OCEL Feedback Loop](reference/ocel-feedback-loop.md) - Real usage evidence closing the loop back into ggen generation decisions
+- [Autonomic Layer](reference/autonomic-layer.md) - Effects, Guards, and a hash-chained Receipt ledger; ggen-generated
+
 ---
 
 ## 💡 Explanation (Understanding-Oriented)
@@ -88,6 +95,7 @@ This documentation follows the **Diataxis framework**, organizing content into f
 ### Architecture & Design
 - [Architecture Overview](explanation/architecture.md) - System architecture and component design
 - [Design Patterns](explanation/design-patterns.md) - Common patterns and best practices
+- [The Universal Adapter and the OCEL Corpus](explanation/universal-adapter-and-ocel-corpus.md) - Why cnv-any manifests reuse CliSchema and must be ggen-generated
 
 ---
 
@@ -95,10 +103,6 @@ This documentation follows the **Diataxis framework**, organizing content into f
 
 ### Quick References
 - [README.md](../README.md) - Project overview and quick start
-- [AUTONOMIC.md](../AUTONOMIC.md) - Autonomic layer overview
-- [**Future Specifications Index**](future/INDEX.md) - Aspirational roadmap notes (frontier feature *concepts*; not part of the shipped 26.6.13 surface)
-- [Autonomic CLI Layer Spec](future/autonomic_cli.md) - Self-healing commands, diagnostic reporting, and MAPE-K integration patterns
-- [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md) - Documentation verification report
 
 ### Development
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
@@ -130,8 +134,8 @@ This documentation follows the **Diataxis framework**, organizing content into f
 |----------|--------|-------|----------|
 | 🎓 Tutorial | ✅ **Complete** | 6/6 | 100% |
 | 📘 How-To | ✅ **Complete** | 11/11 | 100% |
-| 📚 Reference | ✅ **Complete** | 11/11 | 100% |
-| 💡 Explanation | ✅ **Complete** | 2/2 | 100% |
+| 📚 Reference | ✅ **Complete** | 16/16 | 100% |
+| 💡 Explanation | ✅ **Complete** | 3/3 | 100% |
 
 ---
 
@@ -144,4 +148,4 @@ This documentation follows the **Diataxis framework**, organizing content into f
 
 ---
 
-**Need help?** Check the [troubleshooting guide](howto/debugging.md) or [open an issue](https://github.com/seanchatmangpt/clap-noun-verb/issues).
+**Need help?** Check the [common mistakes guide](howto/common-mistakes.md) or [open an issue](https://github.com/seanchatmangpt/clap-noun-verb/issues).

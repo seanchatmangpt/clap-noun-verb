@@ -1,0 +1,22 @@
+{
+    "name": "greet-fixture",
+    "about": "Trivial fixture CLI wrapped by clap-noun-verb-any",
+    "commands": [
+        {
+            "path": ["greet"],
+            "about": "Print a greeting for the given name",
+            "arguments": [
+                {
+                    "id": "name",
+                    "long": null,
+                    "short": null,
+                    "required": true,
+                    "positional": true,
+                    "kind": "string",
+                    "behavior": "value"
+                }
+            ],
+            "callable": true
+        }
+    ]
+}

@@ -4,64 +4,60 @@
 
 ## HandlerInput
 
-The wrapper type that provides CLI argument access to verb handlers.
+Input to a `CommandHandler`, holding CLI arguments already validated by the
+CLI layer (`src/logic/handler.rs`).
 
 **Signature**:
 ```rust
 pub struct HandlerInput {
-    pub args: clap_noun_verb::ArgMatches,  // Re-exported from clap
-    pub context: Option<AppContext>,
+    /// Validated arguments as key-value pairs
+    pub args: std::collections::HashMap<String, String>,
+    /// Validated options as key-value pairs
+    pub opts: std::collections::HashMap<String, String>,
+    /// Context information (noun, verb names, etc.)
+    pub context: HandlerContext,
 }
-```
 
-**Usage**:
-```rust
-#[verb("process")]
-fn process(input_file: String, verbose: bool) -> Result<Output> {
-    // Macro automatically extracts `input_file` and `verbose` from CLI
-    // HandlerInput is created internally by macro
-    Ok(Output::default())
+pub struct HandlerContext {
+    pub noun: Option<String>,
+    pub verb: String,
+    pub data: std::collections::HashMap<String, String>,
 }
 ```
 
 **Internal Details**:
-- Created by `#[verb]` macro during expansion
-- Contains parsed clap `ArgMatches`
-- Holds optional application context
-- Argument values extracted via clap APIs
+- Consumed by the `CommandHandler` trait's `execute(&self, input: HandlerInput) -> Result<HandlerOutput>`
+- Arguments and options are already validated string key-value pairs, not raw clap `ArgMatches`
+- `HandlerContext::new`/`with_noun` build the context fluently
 
 ---
 
 ## HandlerOutput
 
-Represents command execution output.
+Output from a `CommandHandler` (`src/logic/handler.rs`); data is auto-serialized
+to JSON for agent/MCP consumption.
 
 **Signature**:
 ```rust
 pub struct HandlerOutput {
+    /// Result data (auto-serialized to JSON)
     pub data: serde_json::Value,
-    pub status_code: u32,
+    /// Success message (optional)
+    pub message: Option<String>,
 }
 ```
 
 **Implementation**:
 ```rust
 impl HandlerOutput {
-    pub fn from_data<T: Serialize>(data: T) -> Result<Self> {
-        Ok(HandlerOutput {
-            data: serde_json::to_value(data)?,
-            status_code: 0,
-        })
-    }
-
-    pub fn success() -> Self {
-        HandlerOutput {
-            data: json!({}),
-            status_code: 0,
-        }
-    }
+    pub fn from_data<T: serde::Serialize>(data: T) -> Result<Self> { /* ... */ }
+    pub fn with_message(mut self, message: String) -> Self { /* ... */ }
+    pub fn to_json(&self) -> Result<String> { /* ... */ }
 }
 ```
+
+There is no `status_code` field and no `success()` constructor -- success is
+implicit (an `Ok(HandlerOutput)` return); failures propagate as `Err(NounVerbError)`.
 
 **Usage**:
 ```rust
@@ -158,66 +154,91 @@ fn validate(email: String) -> Result<ValidateResult> {
 
 ## AppContext
 
-Application-level context passed to handlers.
+Type-erased, thread-safe application context (`src/context.rs`) -- not a
+plain name/version/metadata struct. Holds arbitrary `Send + Sync + 'static`
+values behind an `Arc<RwLock<ContextData>>`.
 
 **Signature**:
 ```rust
 pub struct AppContext {
-    pub name: String,
-    pub version: String,
-    pub metadata: HashMap<String, String>,
+    state: Arc<RwLock<ContextData>>, // private; no public name/version/metadata fields
+}
+
+impl AppContext {
+    pub fn insert<T: Send + Sync + 'static>(&self, value: T) -> Result<(), ContextError> { /* ... */ }
+    pub fn with<T, F, R>(&self, f: F) -> Result<R, ContextError>
+    where
+        F: FnOnce(&T) -> R,
+        T: Send + Sync + 'static,
+    { /* ... */ }
 }
 ```
 
 **Usage**:
 ```rust
-#[verb("info")]
-fn show_info() -> Result<AppInfo> {
-    // Context available via HandlerInput if set
-    Ok(AppInfo {
-        app_name: "myapp".to_string(),
-    })
-}
+let context = AppContext::default();
+context.insert(MyConfig { threshold: 42 })?;
+let value = context.with::<MyConfig, _, _>(|cfg| cfg.threshold)?;
 ```
 
 ---
 
 ## ArgMetadata
 
-Metadata about function arguments (internal use).
+Metadata about a registered `#[arg]`-declared argument (`src/cli/registry.rs`).
+The real struct has ~20 fields covering validation, clap wiring, and
+telemetry -- the ones below are the ones most commonly read; see
+`src/cli/registry.rs` for the full list (which also includes `min_value`,
+`max_value`, `min_length`, `max_length`, `env`, `multiple`, `positional`,
+`action`, `group`, `requires`, `conflicts_with`, and more).
 
-**Signature**:
+**Signature (selected fields)**:
 ```rust
 pub struct ArgMetadata {
     pub name: String,
-    pub short: Option<char>,
-    pub long: Option<String>,
-    pub value_name: Option<String>,
-    pub help: Option<String>,
-    pub group: Option<String>,
-    pub requires: Vec<String>,
-    pub conflicts_with: Vec<String>,
+    pub required: bool,
     pub is_flag: bool,
-    pub is_global: bool,
+    pub help: Option<String>,
+    pub short: Option<char>,
+    pub default_value: Option<String>,
+    pub value_name: Option<String>,
+    pub aliases: Vec<String>,
+    // ...and ~10 more validation/clap-wiring fields; see src/cli/registry.rs
 }
 ```
+
+There is no `long` or `is_global` field -- the long flag is derived from
+`name`, and there is no per-argument global-flag concept in this struct.
+
+A second, differently-shaped `ArgMetadata` also exists in
+`clap-noun-verb-macros/src/rdf_generation.rs`, used only for RDF/ontology
+projection during macro expansion -- do not confuse the two.
 
 ---
 
 ## CommandRegistry
 
-Registry of all commands available in the CLI.
+Registry of all noun commands available in the CLI. Nouns are typically registered
+automatically via the `#[verb]` macro's `linkme` distributed slice; `register_noun` /
+`register_nouns` are the manual escape hatch (see [Verb Macro](verb-macro.md)).
 
-**Signature**:
+**Signature (selected methods)**:
 ```rust
-pub struct CommandRegistry {
-    commands: HashMap<String, CommandDefinition>,
-}
+pub struct CommandRegistry { /* ... */ }
 
 impl CommandRegistry {
-    pub fn get(&self, name: &str) -> Option<&CommandDefinition> { }
-    pub fn list_all(&self) -> Vec<&CommandDefinition> { }
-    pub fn find_by_verb(&self, verb: &str) -> Vec<&CommandDefinition> { }
+    pub fn new() -> Self
+    pub fn register_noun(self, noun: impl NounCommand + 'static) -> Self
+    pub fn register_nouns<I>(self, nouns: I) -> Self
+    pub fn get_noun(&self, name: &str) -> Option<&dyn NounCommand>
+    pub fn noun_names(&self) -> Vec<&str>
+    pub fn has_noun(&self, name: &str) -> bool
+    pub fn command_structure(&self) -> HashMap<String, Vec<String>>
+    pub fn validate(&self) -> Result<()>
+    pub fn build_command(&self) -> Command
+    pub fn route(&self, matches: &ArgMatches) -> Result<()>
+    pub fn run(self) -> Result<()>
+    pub fn run_with_args(self, args: Vec<String>) -> Result<()>
 }
 ```
 
@@ -225,23 +246,6 @@ impl CommandRegistry {
 ```rust
 // Built automatically by macro registration
 // Available via clap_noun_verb::CommandRegistry
-```
-
----
-
-## CommandDefinition
-
-Definition of a single command.
-
-**Signature**:
-```rust
-pub struct CommandDefinition {
-    pub noun: String,
-    pub verb: String,
-    pub about: String,
-    pub args: Vec<ArgMetadata>,
-    pub handler: fn(HandlerInput) -> Result<HandlerOutput>,
-}
 ```
 
 ---

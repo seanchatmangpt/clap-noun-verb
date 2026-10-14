@@ -62,8 +62,13 @@ Create a new Rust project:
 
 ```bash
 cargo new myapp && cd myapp
-cargo add clap-noun-verb clap-noun-verb-macros serde
+cargo add clap-noun-verb clap-noun-verb-macros linkme serde
 ```
+
+`linkme` powers `#[verb]`'s compile-time auto-registration (the macro expands to
+`#[linkme::distributed_slice(...)]` directly in your crate, so `linkme` must be
+a direct dependency of your binary, not just a transitive one of
+`clap-noun-verb`).
 
 Add to `src/main.rs`:
 
@@ -81,19 +86,17 @@ fn add(x: i32, y: i32) -> i32 {
     x + y
 }
 
-#[verb("add")]
+#[verb("add", "calc")]
 fn cmd_add(x: i32, y: i32) -> Result<CalcResult> {
     Ok(CalcResult { result: add(x, y) })
 }
 
-#[verb("multiply")]
-fn cmd_multiply(
-    x: i32,
-    y: i32,
-    /// Profile to use [default: default]
-    #[arg(long)]
-    profile_id: Option<String>,
-) -> Result<CalcResult> {
+/// Multiply two numbers
+///
+/// # Arguments
+/// * `profile_id` - Profile to use [default: default]
+#[verb("multiply", "calc")]
+fn cmd_multiply(x: i32, y: i32, profile_id: Option<String>) -> Result<CalcResult> {
     let _profile_id = profile_id;
     Ok(CalcResult { result: x * y })
 }
@@ -106,8 +109,8 @@ fn main() -> Result<()> {
 Run it:
 
 ```bash
-cargo run -- calc add 2 3
-cargo run -- calc multiply 4 5 --profile-id premium
+cargo run -- calc add --x 2 --y 3
+cargo run -- calc multiply --x 4 --y 5 --profile-id premium
 cargo run -- --help
 ```
 

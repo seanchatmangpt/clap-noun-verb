@@ -1,0 +1,57 @@
+@prefix cnv: <https://clap-noun-verb.dev/ontology#> .
+
+cnv:CalcCli
+    a cnv:Cli ;
+    cnv:binaryName "calc" ;
+    cnv:crateName "calc" ;
+    cnv:version "0.1.0" ;
+    cnv:edition "2024" ;
+    cnv:rustVersion "1.85" ;
+    cnv:about "Trivial argparse-based Python CLI, wrapped with no runtime shim needed." ;
+    cnv:hasNoun cnv:CalcNoun .
+
+cnv:CalcNoun
+    a cnv:Noun ;
+    cnv:name "calc" ;
+    cnv:about "Arithmetic commands." ;
+    cnv:hasCommand cnv:CalcAdd, cnv:CalcMultiply .
+
+cnv:CalcAdd
+    a cnv:Command ;
+    cnv:name "add" ;
+    cnv:about "Add two integers." ;
+    cnv:belongsToNoun cnv:CalcNoun ;
+    cnv:hasBehavior cnv:CalcAddBehavior ;
+    cnv:hasArgument cnv:CalcAddA, cnv:CalcAddB .
+
+cnv:CalcAddBehavior a cnv:CustomBehavior .
+
+cnv:CalcAddA
+    a cnv:Argument ;
+    cnv:name "a" ; cnv:fieldName "a" ; cnv:about "First operand." ;
+    cnv:valueKind "i64" ; cnv:required true ; cnv:position 1 ; cnv:testValue "2" .
+
+cnv:CalcAddB
+    a cnv:Argument ;
+    cnv:name "b" ; cnv:fieldName "b" ; cnv:about "Second operand." ;
+    cnv:valueKind "i64" ; cnv:required true ; cnv:position 2 ; cnv:testValue "3" .
+
+cnv:CalcMultiply
+    a cnv:Command ;
+    cnv:name "multiply" ;
+    cnv:about "Multiply two integers." ;
+    cnv:belongsToNoun cnv:CalcNoun ;
+    cnv:hasBehavior cnv:CalcMultiplyBehavior ;
+    cnv:hasArgument cnv:CalcMultiplyA, cnv:CalcMultiplyB .
+
+cnv:CalcMultiplyBehavior a cnv:CustomBehavior .
+
+cnv:CalcMultiplyA
+    a cnv:Argument ;
+    cnv:name "a" ; cnv:fieldName "a" ; cnv:about "First operand." ;
+    cnv:valueKind "i64" ; cnv:required true ; cnv:position 1 ; cnv:testValue "4" .
+
+cnv:CalcMultiplyB
+    a cnv:Argument ;
+    cnv:name "b" ; cnv:fieldName "b" ; cnv:about "Second operand." ;
+    cnv:valueKind "i64" ; cnv:required true ; cnv:position 2 ; cnv:testValue "5" .

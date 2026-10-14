@@ -1,58 +1,33 @@
-# ggen.toml — clap-noun-verb authoritative pack manifest
-#
-# Semantic authority lives in RDF. SPARQL performs admitted inference/selection.
-# Tera is the terminal projection calculus. package.toml is transport only.
-# ggen emits and verifies the receipt over the input closure and outputs.
-# The exact v26.7.62 actuator is pinned in .github/workflows/ggen-authority.yml.
+# ggen.toml -- generates this repo's own Autonomic Layer and CI/CD
+# Policies module, per this project's no-hand-coding-clap-noun-verb-code
+# policy. src/autonomic.rs and src/policies.rs are ggen-generated from
+# ontology.ttl below; do not hand-edit either -- edit ontology.ttl and run
+# `ggen sync run`.
 
 [project]
 name = "clap-noun-verb"
-version = "26.7.62"
-description = "Authoritative ggen pack for noun-verb CLIs: admitted RDF manufactures thin #[verb] interfaces while consumer-owned handlers retain domain behavior (A = mu(O*))."
 
 [ontology]
-source = "ontology/clap-noun-verb-ontology.ttl"
-base_iri = "http://clap-noun-verb.io/ontology#"
+source = "ontology.ttl"
 
 [ontology.prefixes]
-cnv = "http://clap-noun-verb.io/ontology#"
+cnv-autonomic = "https://clap-noun-verb.dev/ontology/autonomic#"
+cnv-policies = "https://clap-noun-verb.dev/ontology/policies#"
+cnv-telemetry = "https://clap-noun-verb.dev/ontology/telemetry#"
 rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 rdfs = "http://www.w3.org/2000/01/rdf-schema#"
-owl = "http://www.w3.org/2002/07/owl#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 
-[inference]
-[[inference.rules]]
-name = "attach-noun-name-to-verb"
-construct = """
-PREFIX cnv: <http://clap-noun-verb.io/ontology#>
-CONSTRUCT {
-  ?verb cnv:belongsToNoun ?noun .
-} WHERE {
-  ?noun a cnv:Noun ; cnv:hasVerbs ?verb .
-}
-"""
+[packs]
+clap-noun-verb-autonomic-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-autonomic-pack" }
+clap-noun-verb-policies-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-policies-pack" }
+clap-noun-verb-telemetry-pack = { path = "/Users/sac/ggen-marketplace/packs/clap-noun-verb-telemetry-pack" }
 
-[generation]
-output_dir = "."
-
-[[generation.rules]]
-name = "verb-wrappers"
-query = { file = "queries/verb-signatures.rq" }
-template = { file = "templates/verb.rs.tera" }
-output_file = "src/verbs/{{ verb_name }}.rs"
-mode = "Overwrite"
-skip_empty = true
-
-[[generation.rules]]
-name = "verbs-mod"
-query = { file = "queries/verbs-mod.rq" }
-template = { file = "templates/verbs-mod.rs.tera" }
-output_file = "src/verbs/mod.rs"
-mode = "Overwrite"
-skip_empty = true
-
-# External SPARQL gates are the only automatic sync validation law.
-# ASK true is a violation; SELECT rows are violations.
-[validation]
-gates = ["gates/fieldname-collision.rq"]
+[templates]
+# No project-local templates of our own (only the composed pack's
+# template is used) -- pointed at a dedicated, otherwise-empty directory
+# rather than "." so this project's ggen sync doesn't recursively scan the
+# whole repo tree (which includes clap-noun-verb-any/playground/, a large
+# vendored Python project with its own unrelated *.tmpl files).
+dir = "ggen-templates"
+aggregate_modules = false

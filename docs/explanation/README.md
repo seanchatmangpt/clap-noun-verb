@@ -24,6 +24,10 @@ Use explanation docs when you:
 - **[Architecture Overview](architecture.md)** - System architecture and component design
 - **[Design Patterns](design-patterns.md)** - Common patterns and best practices
 
+### 🔌 Universal Adapter & Observability
+
+- **[The Universal Adapter and the OCEL Corpus](universal-adapter-and-ocel-corpus.md)** - Why manifests reuse `CliSchema`, why they must be ggen-generated, and why every wrapped target's OCEL event matches a native one
+
 ---
 
 ## Explanation Format
@@ -45,6 +49,7 @@ Each explanation follows this structure:
 |----------|-------------|
 | **How does the architecture work?** | [architecture.md](architecture.md) |
 | **What design patterns are used?** | [design-patterns.md](design-patterns.md) |
+| **Why must cnv-any manifests be ggen-generated?** | [universal-adapter-and-ocel-corpus.md](universal-adapter-and-ocel-corpus.md) |
 
 ---
 
@@ -107,4 +112,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Note**: Explanation documentation follows Diataxis principles with validated 26.6.13 design.
+**Note**: Explanation documentation follows Diataxis principles with validated 26.9.1 design.

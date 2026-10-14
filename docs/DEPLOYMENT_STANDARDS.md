@@ -1,6 +1,6 @@
 # Deployment and Release Standards for clap-noun-verb
 
-**Version**: 26.6.14 | **Last Updated**: 2026-06-14 | **Status**: Production-Ready
+**Version**: 26.9.1 | **Last Updated**: 2026-08-20 | **Status**: Production-Ready
 
 ## Table of Contents
 
@@ -31,15 +31,15 @@ START: Change is ready
   │   NO  → Continue
   │
   ├─ Does it add new features (verbs, nouns, modules)?
-  │   YES → MINOR release (e.g., 26.6.0 → 26.7.0)
+  │   YES → MINOR release (e.g., 26.6.0 → 26.9.1)
   │   NO  → Continue
   │
   ├─ Does it fix bugs or improve documentation?
-  │   YES → PATCH release (e.g., 26.6.13 → 26.6.14)
+  │   YES → PATCH release (e.g., 26.9.1 → 26.9.1)
   │   NO  → Continue
   │
   └─ Is it experimental/frontier functionality?
-      YES → PRE-RELEASE (e.g., 26.7.0-alpha.1, 26.7.0-rc.1)
+      YES → PRE-RELEASE (e.g., 26.9.1-alpha.1, 26.9.1-rc.1)
       NO  → Error: Classify the change
 ```
 
@@ -84,7 +84,7 @@ START: Change is ready
 5. Test with all feature combinations
 
 **Recent Examples**:
-- v26.6.1 (June 2026): Graph module, capability packing, diagnostics
+- v26.9.1 (June 2026): Graph module, capability packing, diagnostics
 - v5.4.0 (Jan 2026): ggen integration, frontier features
 
 ### 1.3 PATCH Release (Bug Fixes)
@@ -106,7 +106,7 @@ START: Change is ready
 
 ### 1.4 Pre-Release Versions
 
-**Format**: `MAJOR.MINOR.PATCH-<type>.<number>` (e.g., `26.7.0-alpha.1`, `26.7.0-rc.2`)
+**Format**: `MAJOR.MINOR.PATCH-<type>.<number>` (e.g., `26.9.1-alpha.1`, `26.9.1-rc.2`)
 
 **When to use**:
 - Alpha releases: Early feature preview, may have breaking changes
@@ -122,16 +122,16 @@ START: Change is ready
 **Incrementing Pre-Release**:
 ```bash
 # Alpha series
-26.7.0-alpha.1 → 26.7.0-alpha.2 → 26.7.0-alpha.3
+26.9.1-alpha.1 → 26.9.1-alpha.2 → 26.9.1-alpha.3
 
 # Beta series (after alpha is complete)
-26.7.0-beta.1 → 26.7.0-beta.2
+26.9.1-beta.1 → 26.9.1-beta.2
 
 # RC series (after beta is complete)
-26.7.0-rc.1 → 26.7.0-rc.2
+26.9.1-rc.1 → 26.9.1-rc.2
 
 # Stable (final release)
-26.7.0
+26.9.1
 ```
 
 ---
@@ -164,7 +164,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 **Example**:
 ```toml
 # In CHANGELOG.md
-## [26.7.0] - 2026-07-01
+## [26.9.1] - 2026-07-01
 
 ### Added (Frontier)
 - [FRONTIER] `#[executable-specs]` macro for specification-based testing
@@ -226,7 +226,7 @@ All notable changes to clap-noun-verb will be documented in this file.
 ### Security
 - Updated `dependency-x` to patch security issue
 
-## [26.6.14] - 2026-06-14
+## [26.9.1] - 2026-06-14
 
 ### Added
 - New graph query functionality for RDF validation
@@ -234,7 +234,7 @@ All notable changes to clap-noun-verb will be documented in this file.
 ### Fixed
 - Fixed panic in registry validation on empty verb set
 
-## [26.6.13] - 2026-06-13
+## [26.9.1] - 2026-06-13
 
 ### Changed
 - Minimalist refactor: removed non-core optional modules
@@ -407,7 +407,7 @@ Cycle 1: Announce deprecation in v26.5.0
   ├─ Document in CHANGELOG under "Deprecated"
   └─ Update docs with migration guidance
 
-Cycle 2-3: Use in v26.6.0, v26.7.0
+Cycle 2-3: Use in v26.6.0, v26.9.1
   ├─ Monitor usage via GitHub issues
   └─ Answer migration questions
 
@@ -487,7 +487,7 @@ router.route(&matches).await?
 
 **Use the automated pre-release check**:
 ```bash
-scripts/pre-release-check.sh 26.6.14
+scripts/pre-release-check.sh 26.9.1
 ```
 
 This validates:
@@ -576,7 +576,7 @@ Use the automated release script for interactive guidance:
 ./scripts/release-automation.sh
 
 # Direct mode (specify version)
-./scripts/release-automation.sh 26.6.15
+./scripts/release-automation.sh 26.9.1
 ```
 
 ### 5.4 Publishing Permissions & Tokens
@@ -610,7 +610,7 @@ After Publishing:
 ☐ Both crates indexed on crates.io (verify with cargo search)
 ☐ Documentation built on docs.rs
 ☐ GitHub Release created with release notes
-☐ GitHub tag pushed (v26.6.14)
+☐ GitHub tag pushed (v26.9.1)
 ☐ Release announcement posted (if MAJOR/MINOR)
 ☐ Dependents updated (internal projects using this crate)
 ☐ Examples repo updated with new version
@@ -621,14 +621,14 @@ After Publishing:
 **Verify crates.io**:
 ```bash
 # Check macros crate
-curl https://crates.io/api/v1/crates/clap-noun-verb-macros/26.6.14
+curl https://crates.io/api/v1/crates/clap-noun-verb-macros/26.9.1
 
 # Check main crate
-curl https://crates.io/api/v1/crates/clap-noun-verb/26.6.14
+curl https://crates.io/api/v1/crates/clap-noun-verb/26.9.1
 ```
 
 **Verify docs.rs**:
-- Navigate to https://docs.rs/clap-noun-verb/26.6.14
+- Navigate to https://docs.rs/clap-noun-verb/26.9.1
 - Check all modules are documented
 - Verify examples compile
 - Check feature gating is correct
@@ -653,9 +653,9 @@ curl https://crates.io/api/v1/crates/clap-noun-verb/downloads
 ```
 docs/
 ├── releases/
-│   ├── 26.6.14.md          # Latest
-│   ├── 26.6.13.md
-│   ├── 26.6.1.md
+│   ├── 26.9.1.md          # Latest
+│   ├── 26.9.1.md
+│   ├── 26.9.1.md
 │   └── v26-milestone.md
 ├── MIGRATION_GUIDES.md      # Breaking change migrations
 ├── DEPLOYMENT_STANDARDS.md  # This file
@@ -668,11 +668,11 @@ docs/
 
 **1. Announcement Email** (to mailing list/community channels)
 ```markdown
-Subject: clap-noun-verb v26.6.14 Released
+Subject: clap-noun-verb v26.9.1 Released
 
 Hi community,
 
-We're excited to announce clap-noun-verb v26.6.14 with the following improvements:
+We're excited to announce clap-noun-verb v26.9.1 with the following improvements:
 
 **New Features**:
 - Graph module for RDF validation (closes #123)
@@ -682,12 +682,12 @@ We're excited to announce clap-noun-verb v26.6.14 with the following improvement
 - Fixed panic in registry validation (closes #156)
 
 **Upgrade**:
-cargo add clap-noun-verb@26.6.14
+cargo add clap-noun-verb@26.9.1
 # or update Cargo.toml manually
 
 **Documentation**:
-- Release notes: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.6.14
-- Docs: https://docs.rs/clap-noun-verb/26.6.14/
+- Release notes: https://github.com/seanchatmangpt/clap-noun-verb/releases/tag/v26.9.1
+- Docs: https://docs.rs/clap-noun-verb/26.9.1/
 
 **Breaking Changes**: None in this release
 
@@ -726,12 +726,12 @@ Do NOT use for:
 **Step 1: Create Hotfix Branch**
 ```bash
 # From main (must be on current release tag)
-git checkout v26.6.14
+git checkout v26.9.1
 git checkout -b hotfix/critical-bug-description
 
 # Or from a local tag
 git tag -l              # Find the tag
-git checkout v26.6.14
+git checkout v26.9.1
 git checkout -b hotfix/critical-bug
 ```
 
@@ -744,16 +744,16 @@ git commit -m "fix: critical bug description"
 
 **Step 3: Bump Patch Version**
 ```bash
-# PATCH version only (26.6.14 → 26.6.15)
-sed -i 's/version = "26.6.14"/version = "26.6.15"/' Cargo.toml
-sed -i 's/version = "26.6.14"/version = "26.6.15"/' clap-noun-verb-macros/Cargo.toml
+# PATCH version only (26.9.1 → 26.9.1)
+sed -i 's/version = "26.9.1"/version = "26.9.1"/' Cargo.toml
+sed -i 's/version = "26.9.1"/version = "26.9.1"/' clap-noun-verb-macros/Cargo.toml
 git add Cargo.toml clap-noun-verb-macros/Cargo.toml
-git commit -m "chore(hotfix): bump to 26.6.15"
+git commit -m "chore(hotfix): bump to 26.9.1"
 ```
 
 **Step 4: Update CHANGELOG**
 ```markdown
-## [26.6.15] - 2026-06-15
+## [26.9.1] - 2026-06-15
 
 ### Fixed
 - **CRITICAL**: Fixed panic in graph query when handling cycles
@@ -779,9 +779,9 @@ cargo make publish
 
 **Step 7: Tag & Announce**
 ```bash
-git tag -a v26.6.15 -m "Hotfix: Critical bug fix"
+git tag -a v26.9.1 -m "Hotfix: Critical bug fix"
 git push origin hotfix/critical-bug
-git push origin v26.6.15
+git push origin v26.9.1
 
 # Create GitHub release with "HOTFIX" label
 # Email community immediately with CVE info if applicable
@@ -830,39 +830,39 @@ git push origin --delete hotfix/critical-bug
 ### 8.2 Yanking Procedure
 
 **Via crates.io Web UI**:
-1. Go to https://crates.io/crates/clap-noun-verb/26.6.13
+1. Go to https://crates.io/crates/clap-noun-verb/26.9.1
 2. Click "Edit metadata" (requires permissions)
 3. Check "This version has been yanked"
 4. Save
 
 **Via Cargo CLI**:
 ```bash
-cargo yank --vers 26.6.13
+cargo yank --vers 26.9.1
 
 # Undo yank if mistake
-cargo yank --vers 26.6.13 --undo
+cargo yank --vers 26.9.1 --undo
 ```
 
 **Announce Yank**:
 ```markdown
-## Version 26.6.13 Yanked
+## Version 26.9.1 Yanked
 
 **Reason**: Critical bug in CommandRegistry causes panic on empty verb set
 
-**Affected Users**: Anyone using v26.6.13
+**Affected Users**: Anyone using v26.9.1
 
 **Action Required**:
-- Upgrade to v26.6.14 immediately
+- Upgrade to v26.9.1 immediately
 - Fix includes: Proper handling of edge cases in registry
 
 **Why Yank?**: 
-- v26.6.13 cannot start a CLI with no verbs registered
-- v26.6.14 fixes the panic with graceful error handling
+- v26.9.1 cannot start a CLI with no verbs registered
+- v26.9.1 fixes the panic with graceful error handling
 - This version is unusable for most users
 
 **Migration**:
 cargo update clap-noun-verb
-# Updates to v26.6.14 automatically
+# Updates to v26.9.1 automatically
 ```
 
 ### 8.3 Alternative Version Recommendations
@@ -877,8 +877,8 @@ curl https://crates.io/api/v1/crates/clap-noun-verb/versions | \
 
 **In Release Notes**:
 ```
-If you're using v26.6.13 (YANKED):
-  Upgrade to v26.6.14 (or v26.7.0 for latest features)
+If you're using v26.9.1 (YANKED):
+  Upgrade to v26.9.1 (or v26.9.1 for latest features)
   cargo update clap-noun-verb
 ```
 
@@ -1024,7 +1024,7 @@ Documentation must build without warnings.
 
 #### Stage 7: Release Validation (60s)
 ```bash
-./scripts/pre-release-check.sh 26.6.14
+./scripts/pre-release-check.sh 26.9.1
 ```
 Only on `v*` tags (before publishing).
 
@@ -1177,7 +1177,7 @@ MAJOR RELEASE Checklist
 └─ Tests: Run all features, all platforms
 
 MINOR RELEASE Checklist
-├─ Version: 26.6.0 → 26.7.0 (increment MINOR, reset PATCH)
+├─ Version: 26.6.0 → 26.9.1 (increment MINOR, reset PATCH)
 ├─ Features: Document in CHANGELOG under ### Added
 ├─ Compat: Ensure backward compatibility
 ├─ Examples: Provide examples for new features
@@ -1185,7 +1185,7 @@ MINOR RELEASE Checklist
 └─ Timeline: ~1 week development before release
 
 PATCH RELEASE Checklist
-├─ Version: 26.6.13 → 26.6.14 (increment PATCH)
+├─ Version: 26.9.1 → 26.9.1 (increment PATCH)
 ├─ Fixes: Document in CHANGELOG under ### Fixed
 ├─ Tests: Regression tests for fixed bugs
 ├─ Timeline: Can be immediate for critical bugs
@@ -1236,14 +1236,14 @@ Security
 
 ```
 Verification
-  ☐ cargo search clap-noun-verb-macros shows 26.6.14
-  ☐ cargo search clap-noun-verb shows 26.6.14
-  ☐ https://docs.rs/clap-noun-verb/26.6.14/ builds
+  ☐ cargo search clap-noun-verb-macros shows 26.9.1
+  ☐ cargo search clap-noun-verb shows 26.9.1
+  ☐ https://docs.rs/clap-noun-verb/26.9.1/ builds
   ☐ Documentation shows all modules
   ☐ Crate size reasonable (<50MB)
 
 GitHub
-  ☐ v26.6.14 tag created
+  ☐ v26.9.1 tag created
   ☐ GitHub Release has notes
   ☐ Release marked as "Latest"
   ☐ Changelog links correct
@@ -1344,29 +1344,29 @@ T+2hr: Announce
 
 **Yank Command**:
 ```bash
-cargo yank --vers 26.6.13
+cargo yank --vers 26.9.1
 # Notifies: Cannot download this version anymore
 ```
 
 **Patch Release** (same day):
 ```bash
-# Bump to 26.6.14 with fix
-./scripts/release-automation.sh 26.6.14
+# Bump to 26.9.1 with fix
+./scripts/release-automation.sh 26.9.1
 ```
 
 **User Communication**:
 ```
-URGENT: Version 26.6.13 Yanked
+URGENT: Version 26.9.1 Yanked
 
-A critical bug in clap-noun-verb v26.6.13 can cause data loss.
+A critical bug in clap-noun-verb v26.9.1 can cause data loss.
 
 IMMEDIATE ACTION REQUIRED:
-1. Do NOT use v26.6.13
-2. Upgrade to v26.6.14 immediately
+1. Do NOT use v26.9.1
+2. Upgrade to v26.9.1 immediately
 3. Verify your data integrity
 
-Affected: Only users running v26.6.13
-Safe versions: v26.6.1-v26.6.12, v26.6.14+
+Affected: Only users running v26.9.1
+Safe versions: v26.9.1-v26.9.1, v26.9.1+
 
 For support: File issue on GitHub
 ```
@@ -1411,32 +1411,32 @@ cargo make publish
 
 ```bash
 # Step 1: Identify broken version
-VERSION="26.6.14"
+VERSION="26.9.1"
 
 # Step 2: Yank the broken version
 cargo yank --vers $VERSION
 
 # Step 3: Announce rollback
-# Email: "v26.6.14 yanked due to [issue]"
-# Recommend: "Use v26.6.13 until fix is published"
+# Email: "v26.9.1 yanked due to [issue]"
+# Recommend: "Use v26.9.1 until fix is published"
 
 # Step 4: Fix the issue
 git revert <broken-commit>
 # or create new fix commit
 
 # Step 5: Bump version and re-release
-./scripts/release-automation.sh 26.6.15
+./scripts/release-automation.sh 26.9.1
 ```
 
 **Communication Template**:
 ```
-We've yanked v26.6.14 due to [issue].
+We've yanked v26.9.1 due to [issue].
 
-If you're using v26.6.14:
-1. Downgrade: cargo update clap-noun-verb --precise 26.6.13
-2. Monitor: We're releasing v26.6.15 with the fix
+If you're using v26.9.1:
+1. Downgrade: cargo update clap-noun-verb --precise 26.9.1
+2. Monitor: We're releasing v26.9.1 with the fix
 
-If you're using v26.6.13:
+If you're using v26.9.1:
 No action needed; you're safe.
 
 We apologize for the inconvenience.
@@ -1456,8 +1456,8 @@ We apologize for the inconvenience.
 ```
 Subject: [URGENT] clap-noun-verb Security Fix / Data Loss Issue
 
-Affected Versions: v26.6.14
-Safe Versions: v26.6.13, v26.6.15+
+Affected Versions: v26.9.1
+Safe Versions: v26.9.1, v26.9.1+
 Severity: CRITICAL [Security | Data Loss]
 
 The issue:
@@ -1468,8 +1468,8 @@ Impact:
 - Risk: [potential damage]
 
 Action:
-1. Upgrade to v26.6.15 (recommended)
-2. Or downgrade to v26.6.13 (temporary)
+1. Upgrade to v26.9.1 (recommended)
+2. Or downgrade to v26.9.1 (temporary)
 
 Questions? File issue: [link]
 ```
@@ -1480,9 +1480,9 @@ Questions? File issue: [link]
 
 | Version | Release Date | Type | Major Changes |
 |---------|--------------|------|----------------|
-| 26.6.14 | 2026-06-14 | PATCH | Graph queries, capability packing |
-| 26.6.13 | 2026-06-13 | PATCH | Eliminated stubs, fixed doctests |
-| 26.6.1 | 2026-06-01 | MINOR | Graph module, diagnostics |
+| 26.9.1 | 2026-06-14 | PATCH | Graph queries, capability packing |
+| 26.9.1 | 2026-06-13 | PATCH | Eliminated stubs, fixed doctests |
+| 26.9.1 | 2026-06-01 | MINOR | Graph module, diagnostics |
 | 26.0.0 | 2025-11-15 | MAJOR | Minimalist refactor |
 | 5.5.0 | 2026-01-15 | MINOR | Agent CLI builder |
 | 5.4.0 | 2026-01-01 | MINOR | Frontier features, ggen |
@@ -1497,11 +1497,11 @@ Questions? File issue: [link]
 grep '^version' Cargo.toml
 
 # Bump versions
-sed -i 's/version = "26.6.13"/version = "26.6.14"/' Cargo.toml
-sed -i 's/version = "26.6.13"/version = "26.6.14"/' clap-noun-verb-macros/Cargo.toml
+sed -i 's/version = "26.9.1"/version = "26.9.1"/' Cargo.toml
+sed -i 's/version = "26.9.1"/version = "26.9.1"/' clap-noun-verb-macros/Cargo.toml
 
 # Pre-release checks
-./scripts/pre-release-check.sh 26.6.14
+./scripts/pre-release-check.sh 26.9.1
 
 # Dry-run publishing
 cargo make publish-dry-run-macros
@@ -1515,13 +1515,13 @@ cargo make publish
 cargo search clap-noun-verb --limit 1
 
 # Create tag
-git tag -a v26.6.14 -m "Release v26.6.14"
+git tag -a v26.9.1 -m "Release v26.9.1"
 
 # Push tag
-git push origin v26.6.14
+git push origin v26.9.1
 
 # Yank a version
-cargo yank --vers 26.6.13
+cargo yank --vers 26.9.1
 
 # Check for CVEs
 cargo audit
@@ -1577,5 +1577,5 @@ cargo make bench
 
 **For questions or process improvements**: Create an issue at https://github.com/seanchatmangpt/clap-noun-verb/issues with label `release-process`
 
-**Last updated**: 2026-06-14  
-**Next review**: 2026-08-14 (quarterly)
+**Last updated**: 2026-08-20  
+**Next review**: 2026-11-20 (quarterly)

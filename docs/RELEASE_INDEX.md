@@ -113,7 +113,7 @@ This directory contains a comprehensive release management system for clap-noun-
 
 ```bash
 ./scripts/release-automation.sh           # Interactive mode
-./scripts/release-automation.sh 26.6.15   # Release v26.6.15
+./scripts/release-automation.sh 26.9.1   # Release v26.9.1
 ```
 
 **Features**:
@@ -141,7 +141,7 @@ This directory contains a comprehensive release management system for clap-noun-
 **Best for**: Validating readiness before release
 
 ```bash
-./scripts/pre-release-check.sh 26.6.15
+./scripts/pre-release-check.sh 26.9.1
 ```
 
 **Runs 7 automated gates**:
@@ -173,7 +173,7 @@ This directory contains a comprehensive release management system for clap-noun-
 **Best for**: Atomic version updates across all files
 
 ```bash
-./scripts/bump-version.sh 26.6.15
+./scripts/bump-version.sh 26.9.1
 ```
 
 **Updates**:
@@ -185,7 +185,7 @@ This directory contains a comprehensive release management system for clap-noun-
 **Verification**:
 ```bash
 grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
-# All should show: version = "26.6.15"
+# All should show: version = "26.9.1"
 ```
 
 **Time**: <1 minute
@@ -236,8 +236,8 @@ cat docs/RELEASE_QUICK_REFERENCE.md
 Is it a breaking change?
 ├─ YES → MAJOR (27.0.0)
 ├─ NO, is it a new feature?
-│   ├─ YES → MINOR (26.7.0)
-│   └─ NO → PATCH (26.6.15)
+│   ├─ YES → MINOR (26.9.1)
+│   └─ NO → PATCH (26.9.1)
 ```
 
 ### 3. Prepare Your First Release (30 minutes)
@@ -246,7 +246,7 @@ Is it a breaking change?
 # Update CHANGELOG.md
 # Review all commits since last release
 
-git log v26.6.13..HEAD --oneline
+git log v26.9.1..HEAD --oneline
 ```
 
 ### 4. Execute Automated Workflow (15 minutes)
@@ -255,7 +255,7 @@ git log v26.6.13..HEAD --oneline
 export CARGO_REGISTRY_TOKEN="eyJhbGciOiJIUzI1NiJ9..."
 
 # Run guided automation
-./scripts/release-automation.sh 26.6.15
+./scripts/release-automation.sh 26.9.1
 ```
 
 ### 5. Verify Success (5 minutes)
@@ -264,7 +264,7 @@ export CARGO_REGISTRY_TOKEN="eyJhbGciOiJIUzI1NiJ9..."
 cargo search clap-noun-verb --limit 1
 
 # Visit docs.rs
-open https://docs.rs/clap-noun-verb/26.6.15/
+open https://docs.rs/clap-noun-verb/26.9.1/
 
 # Check GitHub Release
 open https://github.com/seanchatmangpt/clap-noun-verb/releases
@@ -277,7 +277,7 @@ open https://github.com/seanchatmangpt/clap-noun-verb/releases
 ## Release Checklist Quick Copy
 
 ```markdown
-## Release v26.6.15 Checklist
+## Release v26.9.1 Checklist
 
 ### Pre-Release (1-2 days before)
 - [ ] Review commits since last release
@@ -286,13 +286,13 @@ open https://github.com/seanchatmangpt/clap-noun-verb/releases
 - [ ] Get team approval (if MAJOR)
 
 ### Version Bumping (day of)
-- [ ] Run: ./scripts/bump-version.sh 26.6.15
+- [ ] Run: ./scripts/bump-version.sh 26.9.1
 - [ ] Update CHANGELOG.md (move [Unreleased])
 - [ ] Update README.md version examples
 - [ ] Verify: grep 'version = "' Cargo.toml clap-noun-verb-macros/Cargo.toml
 
 ### Quality Checks
-- [ ] Run: ./scripts/pre-release-check.sh 26.6.15
+- [ ] Run: ./scripts/pre-release-check.sh 26.9.1
 - [ ] All 7 gates should PASS
 
 ### Publishing
@@ -303,8 +303,8 @@ open https://github.com/seanchatmangpt/clap-noun-verb/releases
 - [ ] cargo make publish
 
 ### Post-Release
-- [ ] git tag v26.6.15
-- [ ] git push origin v26.6.15
+- [ ] git tag v26.9.1
+- [ ] git push origin v26.9.1
 - [ ] Monitor GitHub Actions
 - [ ] Verify on crates.io
 - [ ] Check docs.rs
@@ -354,21 +354,21 @@ What changed since last release?
 ├─ API removed or changed incompatibly
 │   └─ MAJOR → v27.0.0
 ├─ New feature added
-│   └─ MINOR → v26.7.0
+│   └─ MINOR → v26.9.1
 └─ Bug fix or docs
-    └─ PATCH → v26.6.15
+    └─ PATCH → v26.9.1
 ```
 
 ### "Which script should I run?"
 
 ```
-I want to release version 26.6.15...
+I want to release version 26.9.1...
 ├─ Guidance through entire workflow?
-│   └─ ./scripts/release-automation.sh 26.6.15
+│   └─ ./scripts/release-automation.sh 26.9.1
 ├─ Just validate I'm ready?
-│   └─ ./scripts/pre-release-check.sh 26.6.15
+│   └─ ./scripts/pre-release-check.sh 26.9.1
 ├─ Bump version across files?
-│   └─ ./scripts/bump-version.sh 26.6.15
+│   └─ ./scripts/bump-version.sh 26.9.1
 └─ Publish to crates.io?
     └─ cargo make publish
 ```
@@ -386,11 +386,11 @@ cargo make test --all-features
 ### Problem: Bad version released
 ```bash
 # Yank both crates
-cargo yank --vers 26.6.15 -p clap-noun-verb
-cargo yank --vers 26.6.15 -p clap-noun-verb-macros
+cargo yank --vers 26.9.1 -p clap-noun-verb
+cargo yank --vers 26.9.1 -p clap-noun-verb-macros
 
-# Fix and publish 26.6.16
-./scripts/bump-version.sh 26.6.16
+# Fix and publish 26.9.1
+./scripts/bump-version.sh 26.9.1
 cargo make publish
 ```
 
@@ -443,7 +443,7 @@ These documents are kept current with:
 - Changing crates.io policies (updates to metadata guidance)
 - Community feedback (improvements to clarity)
 
-**Last updated**: 2026-06-14
+**Last updated**: 2026-08-20
 **Maintained by**: Sean Chatman
 **Version**: 1.0
 

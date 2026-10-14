@@ -1,0 +1,70 @@
+{
+  "name": "zc",
+  "about": "Zero-config clap-noun-verb starter: rename me, then add nouns and commands.",
+  "commands": [
+    {
+      "path": ["greet", "add"],
+      "about": "Add two signed 64-bit integers through the generated expression interpreter.",
+      "arguments": [
+        {
+          "id": "left",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "integer",
+          "behavior": "value"
+        },
+        {
+          "id": "right",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "integer",
+          "behavior": "value"
+        }
+      ],
+      "callable": true
+    },
+    {
+      "path": ["greet", "hello"],
+      "about": "Return typed command inputs as a JSON object.",
+      "arguments": [
+        {
+          "id": "uppercase",
+          "long": "uppercase",
+          "short": "u",
+          "required": false,
+          "positional": false,
+          "kind": "boolean",
+          "behavior": "value"
+        },
+        {
+          "id": "name",
+          "long": null,
+          "short": null,
+          "required": true,
+          "positional": true,
+          "kind": "string",
+          "behavior": "value"
+        }
+      ],
+      "callable": true
+    },
+    {
+      "path": ["system", "ping"],
+      "about": "Return a deterministic ontology-owned liveness value.",
+      "arguments": [
+      ],
+      "callable": true
+    },
+    {
+      "path": ["system", "refuse"],
+      "about": "Exercise a typed ontology-declared refusal path.",
+      "arguments": [
+      ],
+      "callable": true
+    }
+  ]
+}

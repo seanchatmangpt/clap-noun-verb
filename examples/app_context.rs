@@ -15,10 +15,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let context = AppContext::new();
     assert!(context.is_empty()?);
 
-    let config = DatabaseConfig {
-        url: "postgres://localhost/clap_noun_verb".to_string(),
-        pool_size: 8,
-    };
+    let config =
+        DatabaseConfig { url: "postgres://localhost/clap_noun_verb".to_string(), pool_size: 8 };
     context.insert(config.clone())?;
     context.insert(String::from("production"))?;
 

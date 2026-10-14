@@ -25,18 +25,13 @@ pub use validator::ArgValidator;
 pub fn run() -> crate::error::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     #[cfg(feature = "otel")]
-    let _dispatch_span = tracing::info_span!(
-        "clap_noun_verb.dispatch",
-        argc = args.len(),
-        entrypoint = "cli::run"
-    )
-    .entered();
+    let _dispatch_span =
+        tracing::info_span!("clap_noun_verb.dispatch", argc = args.len(), entrypoint = "cli::run")
+            .entered();
 
     let registry = registry::CommandRegistry::get();
     let registry = registry.lock().map_err(|error| {
-        crate::error::NounVerbError::execution_error(format!(
-            "Failed to lock registry: {error}"
-        ))
+        crate::error::NounVerbError::execution_error(format!("Failed to lock registry: {error}"))
     })?;
     registry.run(args)
 }
