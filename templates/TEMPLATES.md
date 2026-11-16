@@ -93,7 +93,20 @@ impl Default for UsersCommand {
 | `{{ noun_name }}` | String | Parent noun | `users` |
 | `{{ verb_domain_struct }}` | String | Domain struct name | `CreateUserDomain` |
 | `{{ verb_output_struct }}` | String | Output struct name | `CreateUserOutput` |
-| `{{ verb_handler_name }}` | String | Function name for #[verb] | `create_user` |
+| `{{ verb_handler_name }}` | String | Function name for #[verb]; projected as `COALESCE(cnv:fieldName, snake(verb_name))` | `create_user` |
+
+### Ontology Projection Facts (a24bae3, 2026-09-29)
+
+The generated CLI surface is driven by ontology facts, not generator heuristics
+(`queries/verb-signatures.rq` + `templates/verb.rs.tera`):
+
+| Ontology fact | Projected behavior |
+|---|---|
+| `cnv:fieldName` | Handler and module names coalesce `cnv:fieldName` over `snake(verb_name)` |
+| `cnv:argAlias` | Rendered as `#[arg(alias = "...")]` on the argument |
+| `cnv:hasArguments` | Generated argument order follows the rdf:List order (deterministic output) |
+
+Projected fns carry `#[rustfmt::skip]` — the pack owns the wrapper's shape.
 
 ### Architecture Pattern
 

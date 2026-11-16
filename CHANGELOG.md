@@ -5,6 +5,22 @@ All notable changes to clap-noun-verb will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`cnv:argAlias` ontology fact** - `queries/verb-signatures.rq` projects the
+  per-argument alias and `templates/verb.rs.tera` renders it as
+  `#[arg(alias = "...")]` (a24bae3, 2026-09-29).
+
+### Changed
+- **Handler/module identity is ontology law** - handler and module names now
+  coalesce `cnv:fieldName` over `snake(verb_name)`; noun-collision
+  disambiguation is a consumer-ontology fact, not a generator heuristic.
+- **Deterministic generated argument order** - generated argument order follows
+  the `cnv:hasArguments` rdf:List order (zero-padded index + Tera-side sort,
+  engine-order-independent output), and projected fns carry `#[rustfmt::skip]`
+  so the pack owns the wrapper's rendered shape (a24bae3, 2026-09-29).
+
 ## [26.9.1] - 2026-08-21
 
 First announced release. Closes out the Autonomic Layer and OCEL feedback-loop
