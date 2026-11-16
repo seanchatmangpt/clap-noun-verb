@@ -1,6 +1,6 @@
 # CLI Testing & Validation Skill Guide
 
-A practical guide for testing noun-verb commands in `clap-noun-verb` v26.6.1. Focus on integration tests, feature-gated commands, error handling, and help text validation.
+A practical guide for testing noun-verb commands in `clap-noun-verb` v26.9.1. Focus on integration tests, feature-gated commands, error handling, and help text validation.
 
 ---
 

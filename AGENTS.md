@@ -30,6 +30,18 @@ The hard invariant is **zero unreceipted actuation**.
 - Authoritative project execution receipts are OCEL 2.0 and MUST be verified by
   the pinned wasm4pm boundary before standing is promoted.
 
+## CI authority boundary
+
+`.github/workflows/verify.yml` is the sole GitHub Actions verification surface.
+It is read-only with respect to repository and external system state: CI may
+observe, compile, test, manufacture bounded local evidence, verify receipts, and
+upload verifier artifacts. CI MUST NOT push repairs, publish crates, deploy,
+create releases, or otherwise perform consequential release actuation.
+
+Release DO must re-enter through the admitted ecosystem release-governance / BRCE
+boundary and emit its own consequence-bound receipt. A green CI run is admission
+evidence for release; it is not authority to actuate release.
+
 ## Capability crown
 
 The admitted feature crown contains 15 capabilities and 45 proof surfaces:
@@ -92,9 +104,9 @@ part of the command-discovery proof.
 ## ggen compatibility boundary
 
 The canonical ggen verifier for this repository is pinned by
-`.github/workflows/ggen-authority.yml`. A ggen upgrade is an admitted contract
-change: update the pin, execute the full ladder, retain negative falsifiers, and
-record the exact head in the pull-request receipt.
+`.github/workflows/verify.yml`. A ggen upgrade is an admitted contract change:
+update the pin, execute the full ladder, retain negative falsifiers, and record
+the exact head in the pull-request receipt.
 
 The root public vocabulary remains `http://clap-noun-verb.io/ontology#` until a
 separate ontology migration proves equivalence and compatibility. The capability

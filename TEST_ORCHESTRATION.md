@@ -1053,6 +1053,6 @@ View historical coverage: https://app.codecov.io/gh/seanchatmangpt/clap-noun-ver
 
 ---
 
-**Last Updated**: 2025-06-14 | **Version**: 26.6.14
+**Last Updated**: 2025-06-14 | **Version**: 26.9.1
 
 For questions or improvements, refer to the project's GitHub Issues or CLAUDE.md guidelines.

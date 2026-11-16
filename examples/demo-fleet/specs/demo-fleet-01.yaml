@@ -1,0 +1,13 @@
+name: demo-fleet-01
+about: 'Demo fleet CLI variant 1: 1 noun(s) x 1 verb(s), one args'
+version: 0.1.0
+author: clap-noun-verb demo fleet
+verbs:
+- name: status
+  noun: fleet
+  doc: status for fleet (variant 1)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true

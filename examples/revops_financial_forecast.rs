@@ -66,9 +66,7 @@ fn build() -> impl FnOnce(clap_noun_verb::CliBuilder) -> clap_noun_verb::CliBuil
         builder.name("revops").version("26.7.62").noun(noun!(
             "forecast",
             "Manufacture a bounded financial scenario",
-            [verb!("annual", "Render twelve deterministic periods", |_args: &VerbArgs| {
-                emit()
-            })]
+            [verb!("annual", "Render twelve deterministic periods", |_args: &VerbArgs| { emit() })]
         ))
     }
 }
@@ -78,10 +76,7 @@ fn main() -> Result<()> {
     assert_eq!(receipt.periods.len(), 12);
     assert!(receipt.total_profit > 0);
     assert!(receipt.periods.windows(2).all(|pair| pair[1].revenue > pair[0].revenue));
-    run_cli_with_args(
-        vec!["revops".into(), "forecast".into(), "annual".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["revops".into(), "forecast".into(), "annual".into()], build())?;
     println!("Forecast manufactured from explicit bounded assumptions");
     Ok(())
 }

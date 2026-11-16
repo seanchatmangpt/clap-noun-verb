@@ -1,6 +1,6 @@
 # CLI Testing & Validation Documentation
 
-Complete skill guide for testing noun-verb commands in **clap-noun-verb v26.6.1**.
+Complete skill guide for testing noun-verb commands in **clap-noun-verb v26.9.1**.
 
 ## 📚 Documentation Files
 
@@ -267,6 +267,6 @@ Before committing:
 
 ---
 
-**Version:** Aligned with clap-noun-verb v26.6.1
+**Version:** Aligned with clap-noun-verb v26.9.1
 **Last Updated:** 2024
 **Maintained By:** clap-noun-verb maintainers

@@ -1,0 +1,14 @@
+{
+    "name": "repeat-fixture",
+    "about": "Prints '!' repeated -c times",
+    "commands": [
+        {
+            "path": ["bang"],
+            "about": "Repeat bang <count> times",
+            "arguments": [
+                {"id": "count", "long": null, "short": "c", "required": true, "positional": false, "kind": "integer", "behavior": "value"}
+            ],
+            "callable": true
+        }
+    ]
+}

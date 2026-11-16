@@ -96,7 +96,7 @@ class GgenContractVerifierTest(unittest.TestCase):
         self.write("AGENTS.md", "law\n")
         self.write("docs/GGEN_AUTHORITY.md", "authority\n")
         self.write(
-            ".github/workflows/ggen-authority.yml",
+            ".github/workflows/verify.yml",
             f"# {MODULE.PINNED_GGEN_SHA}\n# ggen sync run\n# ggen receipt verify\n",
         )
 

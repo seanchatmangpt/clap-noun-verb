@@ -49,12 +49,49 @@ class VerifyNoWorkInProgressTests(unittest.TestCase):
         rules = {item["rule"] for item in report["violations"]}
         self.assertIn("TODO_MACRO", rules)
 
+    def test_marker_in_rust_fixture_string_is_not_refused(self) -> None:
+        marker = "un" + "implemented!" + "()"
+        (self.root / "src" / "lib.rs").write_text(
+            'pub const FIXTURE: &str = r#"fn parsed_only() { ' + marker + ' }"#;\n'
+        )
+        report = self.verify()
+        self.assertEqual(report["admission"], "ADMITTED")
+        self.assertEqual(report["violation_count"], 0)
+
+    def test_unfinished_comment_is_refused(self) -> None:
+        marker = "TO" + "DO"
+        (self.root / "src" / "lib.rs").write_text(
+            f"// {marker}: complete admitted behavior\npub fn broken() {{}}\n"
+        )
+        report = self.verify()
+        rules = {item["rule"] for item in report["violations"]}
+        self.assertIn("TODO_MARKER", rules)
+
     def test_empty_example_is_refused(self) -> None:
         empty = "fn main() " + "{" + "}"
         (self.root / "examples" / "empty.rs").write_text(empty + "\n")
         report = self.verify()
         rules = {item["rule"] for item in report["violations"]}
         self.assertIn("EMPTY_EXAMPLE_MAIN", rules)
+
+    def test_marker_inside_string_literal_is_not_refused(self) -> None:
+        # A code generator's template text, or an example error message that
+        # quotes a placeholder-text marker word as sample content, is data --
+        # not an admission of unfinished work in this repository's own source.
+        marker = "un" + "implemented!()"
+        source = f'pub fn template() -> &\'static str {{\n    r#"\n    {marker}\n    "#\n}}\n'
+        (self.root / "src" / "lib.rs").write_text(source)
+        report = self.verify()
+        self.assertEqual(report["admission"], "ADMITTED")
+        self.assertEqual(report["violation_count"], 0)
+
+    def test_marker_outside_string_literal_is_still_refused(self) -> None:
+        marker = "un" + "implemented!()"
+        (self.root / "src" / "lib.rs").write_text(f"pub fn broken() {{ {marker}; }}\n")
+        report = self.verify()
+        self.assertEqual(report["admission"], "REFUSED")
+        rules = {item["rule"] for item in report["violations"]}
+        self.assertIn("UNIMPLEMENTED_MACRO", rules)
 
     def test_disabled_workflow_is_refused(self) -> None:
         disabled = "jobs:\n  proof:\n    if: " + "false" + "\n    runs-on: ubuntu-latest\n"

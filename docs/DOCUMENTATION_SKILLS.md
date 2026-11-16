@@ -3,7 +3,7 @@
 **A practical, task-oriented guide for maintaining high-quality documentation across clap-noun-verb.**
 
 Version: 1.0  
-Last Updated: 2026-06-14  
+Last Updated: 2026-08-20  
 Status: Active
 
 ---
@@ -194,7 +194,7 @@ When releasing a new version:
 # Update CHANGELOG.md
 # Commit and tag
 
-git tag v26.6.13
+git tag v26.9.1
 git push origin main --tags
 
 # Publish (must publish macros first!)
@@ -1406,7 +1406,7 @@ cargo run --example tutorial_basic -- --help
 Update with each release:
 
 ```markdown
-## What's New in 26.7.0
+## What's New in 26.9.1
 
 - **New `#[query]` macro** - Simplified database integration
 - **Improved error messages** - Better feedback for CLI users
@@ -1431,8 +1431,8 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-clap-noun-verb = "26.7.0"
-clap-noun-verb-macros = "26.7.0"
+clap-noun-verb = "26.9.1"
+clap-noun-verb-macros = "26.9.1"
 ```
 
 Or with `cargo add`:
@@ -1684,9 +1684,9 @@ Closes #456
 
 ---
 
-docs: reference - update verb macro to 26.7.0
+docs: reference - update verb macro to 26.9.1
 
-Updated #[verb] macro reference with v26.7.0 features
+Updated #[verb] macro reference with v26.9.1 features
 and clarifications on error handling.
 
 Changes:
@@ -1811,7 +1811,7 @@ cargo doc --all-features --no-deps
 
 ---
 
-**Last Updated:** 2026-06-14
+**Last Updated:** 2026-08-20
 
 **Version:** 1.0
 

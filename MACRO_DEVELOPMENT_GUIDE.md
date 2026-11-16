@@ -1,6 +1,6 @@
 # Macro Development Skill Guide for clap-noun-verb-macros
 
-**Version**: 26.6.1  
+**Version**: 26.9.1  
 **Target Audience**: Developers extending the clap-noun-verb-macros procedural macro crate  
 **Last Updated**: 2026-06-14
 

@@ -352,12 +352,12 @@ error: Unknown argument parameter `shrt` in `#[arg]`. Did you mean `short`?
 
 To guarantee runtime safety and preserve architectural boundaries, `clap-noun-verb` executes a series of strict compile-time checks (Poka-Yoke error-proofing rules) when parsing `#[verb]` macros:
 
-### 1. Forgotten `#[verb]` Detection
-To ensure that handler functions within your modules are registered under nouns, the framework provides a compile-time assertion module helper:
-```rust
-check_verb_registration!();
-```
-Calling this macro at the module level scans public functions and yields a compile warning/error if a function returns `Result` but is missing the `#[verb]` attribute.
+### 1. Forgotten `#[verb]` Detection (unimplemented)
+`clap-noun-verb-macros/src/validation.rs` defines `check_verb_registration!()`
+as a literal no-op macro, and its generator is never invoked from anywhere in
+the macro crate -- there is currently no compile-time check that a
+`Result`-returning function is missing `#[verb]`. Treat this as an
+unimplemented placeholder, not a real diagnostic, until it's wired up.
 
 ### 2. Duplicate Verb Detection
 To prevent multiple functions from registering under the exact same noun-verb path, the macro generates a unique `const` identifier based on the noun name and verb name:

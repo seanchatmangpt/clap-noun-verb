@@ -89,8 +89,15 @@ pub fn health_check() -> crate::Result<DoctorOutput> {
 fn check_graph_accessible() -> bool {
     #[cfg(feature = "rdf-composition")]
     {
-        let _ = crate::rdf::ontology::Ontology::new();
-        true
+        let mut graph = crate::graph::Graph::new();
+        let probe = crate::graph::Triple::new(
+            "urn:clap-noun-verb:doctor",
+            "rdf:type",
+            "urn:clap-noun-verb:HealthProbe",
+        );
+        graph.add_triple(probe).is_ok()
+            && graph.validate_all().is_empty()
+            && graph.query_by_subject("doctor").len() == 1
     }
     #[cfg(not(feature = "rdf-composition"))]
     {
@@ -123,6 +130,12 @@ mod tests {
     fn test_check_registry_operational() {
         let result = check_registry_operational();
         assert!(result, "registry should initialize without error");
+    }
+
+    #[cfg(feature = "rdf-composition")]
+    #[test]
+    fn test_graph_probe_executes_real_graph_operations() {
+        assert!(check_graph_accessible());
     }
 
     #[test]

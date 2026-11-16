@@ -49,14 +49,26 @@ WHERE {
   OPTIONAL { ?verb cnv:returnType ?returnTypeRaw . }
   BIND(COALESCE(?returnTypeRaw, "()") AS ?return_type)
 
-  # handler delegate name == sanitized verb name (kebab->snake)
-  BIND(REPLACE(?verb_name, "-", "_") AS ?handler_name)
+  # handler delegate name == explicit field-name when present (noun-collision
+  # disambiguation, e.g. errc_certify), else sanitized verb name (kebab->snake)
+  OPTIONAL { ?verb cnv:fieldName ?handlerField . }
+  BIND(COALESCE(?handlerField, REPLACE(?verb_name, "-", "_")) AS ?handler_name)
 
   OPTIONAL {
-    ?verb cnv:hasArguments ?arg .
+    {
+      SELECT ?verb ?arg (COUNT(?prefix) AS ?arg_index) WHERE {
+        ?verb cnv:hasArguments ?head .
+        ?head rdf:rest* ?prefix .
+        ?prefix rdf:rest* ?cell .
+        ?cell rdf:first ?arg .
+      } GROUP BY ?verb ?arg
+      ORDER BY ?verb ?arg_index
+    }
     ?arg cnv:hasArgumentName ?flag .
 
     OPTIONAL { ?arg cnv:fieldName ?explicitField . }
+    OPTIONAL { ?arg cnv:argAlias ?argAliasRaw . }
+    BIND(COALESCE(?argAliasRaw, "") AS ?argAlias)
     BIND(REPLACE(?flag, "-", "_") AS ?snakeField)
     BIND(COALESCE(?explicitField, ?snakeField) AS ?field)
 
@@ -75,7 +87,10 @@ WHERE {
     OPTIONAL { ?arg cnv:positional ?positionalRaw . }
     BIND(IF(BOUND(?positionalRaw), STR(?positionalRaw), "") AS ?positional)
 
-    BIND(CONCAT(?field, "|", ?rust_type, "|", ?required, "|", ?about, "|", ?positional) AS ?argSpec)
+    # zero-padded arg_index first: Tera-side `| sort` yields document order
+    # regardless of GROUP_CONCAT evaluation order (engines differ).
+    BIND(CONCAT(SUBSTR("000000", 1, 6 - STRLEN(STR(?arg_index))), STR(?arg_index),
+                "|", ?field, "|", ?rust_type, "|", ?required, "|", ?about, "|", ?positional, "|", ?argAlias) AS ?argSpec)
   }
 }
 GROUP BY ?noun_name ?verb_name ?verb_about ?return_type ?handler_name

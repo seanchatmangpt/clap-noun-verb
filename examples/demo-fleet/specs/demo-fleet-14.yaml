@@ -1,0 +1,57 @@
+name: demo-fleet-14
+about: 'Demo fleet CLI variant 14: 2 noun(s) x 2 verb(s), two args'
+version: 0.1.0
+author: clap-noun-verb demo fleet
+verbs:
+- name: status
+  noun: fleet
+  doc: status for fleet (variant 14)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+  - name: verbose
+    arg_type: bool
+    doc: Verbose output
+    required: false
+    is_flag: true
+- name: sync
+  noun: fleet
+  doc: sync for fleet (variant 14)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+  - name: verbose
+    arg_type: bool
+    doc: Verbose output
+    required: false
+    is_flag: true
+- name: status
+  noun: storage
+  doc: status for storage (variant 14)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+  - name: verbose
+    arg_type: bool
+    doc: Verbose output
+    required: false
+    is_flag: true
+- name: sync
+  noun: storage
+  doc: sync for storage (variant 14)
+  args:
+  - name: target
+    arg_type: String
+    doc: Target identifier
+    required: true
+  - name: verbose
+    arg_type: bool
+    doc: Verbose output
+    required: false
+    is_flag: true

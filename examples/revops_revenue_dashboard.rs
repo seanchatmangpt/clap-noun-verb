@@ -57,10 +57,7 @@ fn main() -> Result<()> {
     assert_eq!(expected.current_mrr, 13_450);
     assert_eq!(expected.current_arr, 161_400);
     assert!(expected.net_revenue_retention_bps > 10_000);
-    run_cli_with_args(
-        vec!["revops".into(), "revenue".into(), "summary".into()],
-        build(),
-    )?;
+    run_cli_with_args(vec!["revops".into(), "revenue".into(), "summary".into()], build())?;
     println!("Revenue summary dispatched without financial actuation");
     Ok(())
 }

@@ -13,22 +13,15 @@ fn main() -> Result<()> {
     let config = TreeNode::new("config", "Manage configuration")
         .add_child(TreeNode::new("get", "Get value").with_handler(|_| Ok(())));
 
-    let tree = CommandTree::from_builder(
-        CommandTreeBuilder::new().add_root(services).add_root(config),
-    );
+    let tree =
+        CommandTree::from_builder(CommandTreeBuilder::new().add_root(services).add_root(config));
 
     assert_eq!(tree.roots().len(), 2);
     assert!(tree.root_names().contains(&"services"));
-    assert_eq!(
-        tree.find_command(&["services", "status"]).map(|node| node.name()),
-        Some("status")
-    );
+    assert_eq!(tree.find_command(&["services", "status"]).map(|node| node.name()), Some("status"));
     assert!(tree.find_command(&["services", "missing"]).is_none());
 
-    let paths = tree
-        .find_command(&["services"])
-        .map(TreeNode::command_paths)
-        .unwrap_or_default();
+    let paths = tree.find_command(&["services"]).map(TreeNode::command_paths).unwrap_or_default();
     assert_eq!(paths.len(), 2);
 
     let command = tree.build_command();

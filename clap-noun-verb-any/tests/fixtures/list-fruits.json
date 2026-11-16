@@ -1,0 +1,14 @@
+{
+    "name": "list-fruits-fixture",
+    "about": "Joins repeated --item values",
+    "commands": [
+        {
+            "path": ["list"],
+            "about": "List items",
+            "arguments": [
+                {"id": "item", "long": "item", "short": null, "required": true, "positional": false, "kind": "array", "behavior": "append"}
+            ],
+            "callable": true
+        }
+    ]
+}

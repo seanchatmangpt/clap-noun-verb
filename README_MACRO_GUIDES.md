@@ -234,8 +234,8 @@ From CLAUDE.md:
 
 ## Version Info
 
-- clap-noun-verb: 26.6.1
-- clap-noun-verb-macros: 26.6.14
+- clap-noun-verb: 26.9.1
+- clap-noun-verb-macros: 26.9.1
 - Rust edition: 2021
 - syn: 2.0
 - quote: 1.0

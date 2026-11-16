@@ -1,6 +1,6 @@
 # Performance Quick Reference
 
-**clap-noun-verb v26.6.14** — Quick commands for common performance tasks.
+**clap-noun-verb v26.9.1** — Quick commands for common performance tasks.
 
 ## SLO Status
 

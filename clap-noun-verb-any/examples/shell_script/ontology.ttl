@@ -1,0 +1,39 @@
+@prefix cnv: <https://clap-noun-verb.dev/ontology#> .
+
+# This CLI's real command surface, admitted as RDF and compiled by
+# cnv-any-manifest-pack into cnv-any.json -- never hand-typed.
+cnv:GreetCli
+    a cnv:Cli ;
+    cnv:binaryName "greet-fixture" ;
+    cnv:crateName "greet-fixture" ;
+    cnv:version "0.1.0" ;
+    cnv:edition "2024" ;
+    cnv:rustVersion "1.85" ;
+    cnv:about "Trivial shell-script cnv-any example." ;
+    cnv:hasNoun cnv:GreetRootNoun .
+
+cnv:GreetRootNoun
+    a cnv:Noun ;
+    cnv:name "cli" ;
+    cnv:about "Top-level commands (schema-pack reserves the literal noun name \"root\"; \"cli\" is this example's own convention for a single flat noun, stripped back off by the wrapped script -- see greet.sh)." ;
+    cnv:hasCommand cnv:GreetCommand .
+
+cnv:GreetCommand
+    a cnv:Command ;
+    cnv:name "greet" ;
+    cnv:about "Greet someone." ;
+    cnv:belongsToNoun cnv:GreetRootNoun ;
+    cnv:hasBehavior cnv:GreetBehavior ;
+    cnv:hasArgument cnv:GreetNameArgument .
+
+cnv:GreetBehavior a cnv:CustomBehavior .
+
+cnv:GreetNameArgument
+    a cnv:Argument ;
+    cnv:name "name" ;
+    cnv:fieldName "name" ;
+    cnv:about "Who to greet." ;
+    cnv:valueKind "string" ;
+    cnv:required true ;
+    cnv:position 1 ;
+    cnv:testValue "World" .

@@ -57,8 +57,8 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
     for (left_index, left_character) in left.iter().enumerate() {
         current[0] = left_index + 1;
         for (right_index, right_character) in right.iter().enumerate() {
-            let substitution = previous[right_index]
-                + usize::from(left_character != right_character);
+            let substitution =
+                previous[right_index] + usize::from(left_character != right_character);
             let insertion = current[right_index] + 1;
             let deletion = previous[right_index + 1] + 1;
             current[right_index + 1] = substitution.min(insertion).min(deletion);
@@ -108,9 +108,7 @@ impl NounVerbError {
                     ));
                 }
                 ActionTemplate::CommandFix { suggested_command, reason } => {
-                    rendered.push_str(&format!(
-                        "\nRecovery: run '{suggested_command}' ({reason})"
-                    ));
+                    rendered.push_str(&format!("\nRecovery: run '{suggested_command}' ({reason})"));
                 }
             }
         }
@@ -343,13 +341,13 @@ impl StructuredError {
         let kind = match error {
             NounVerbError::CommandNotFound { noun, suggestion } => {
                 details.insert("noun".to_string(), serde_json::json!(noun));
-                add_command_fix(&mut details, &mut actions, suggestion, noun, None);
+                add_command_fix(&mut details, &mut actions, suggestion, "command", noun, None);
                 ErrorKind::CommandNotFound
             }
             NounVerbError::VerbNotFound { noun, verb, suggestion } => {
                 details.insert("noun".to_string(), serde_json::json!(noun));
                 details.insert("verb".to_string(), serde_json::json!(verb));
-                add_command_fix(&mut details, &mut actions, suggestion, verb, Some(noun));
+                add_command_fix(&mut details, &mut actions, suggestion, "verb", verb, Some(noun));
                 ErrorKind::VerbNotFound
             }
             NounVerbError::InvalidStructure { message }
@@ -387,13 +385,7 @@ impl StructuredError {
             }
         };
 
-        Self {
-            kind,
-            severity,
-            message: error.to_string(),
-            details,
-            action_templates: actions,
-        }
+        Self { kind, severity, message: error.to_string(), details, action_templates: actions }
     }
 }
 
@@ -401,6 +393,7 @@ fn add_command_fix(
     details: &mut HashMap<String, serde_json::Value>,
     actions: &mut Vec<ActionTemplate>,
     suggestion: &str,
+    kind_label: &str,
     misspelled: &str,
     noun: Option<&str>,
 ) {
@@ -411,10 +404,9 @@ fn add_command_fix(
     if let Some(first) = clean_suggestion(suggestion).split(", ").next() {
         if !first.is_empty() {
             let command = noun.map_or_else(|| first.to_string(), |noun| format!("{noun} {first}"));
-            let kind = if noun.is_some() { "verb" } else { "command" };
             actions.push(ActionTemplate::CommandFix {
                 suggested_command: command,
-                reason: format!("Suggested correction for misspelled {kind} '{misspelled}'"),
+                reason: format!("Suggested correction for misspelled {kind_label} '{misspelled}'"),
             });
         }
     }

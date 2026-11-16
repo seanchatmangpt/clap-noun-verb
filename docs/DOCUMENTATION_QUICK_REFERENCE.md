@@ -428,10 +428,10 @@ cargo make doc             # Docs generate cleanly
 - **Diataxis Framework**: https://diataxis.fr/
 - **Rust Doc Comments**: https://doc.rust-lang.org/rustdoc/
 - **Example Directory**: [examples/README.md](../examples/README.md)
-- **Contributing**: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+- **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
-**Last Updated:** 2026-06-14
+**Last Updated:** 2026-08-20
 
 **See Also:** [DOCUMENTATION_GUIDE.md](DOCUMENTATION_GUIDE.md) for complete documentation

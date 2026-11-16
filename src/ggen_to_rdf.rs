@@ -30,13 +30,7 @@ pub fn parse_rust_source(source: &str) -> Result<Vec<RdfVerbDefinition>, ParseEr
     while index < lines.len() {
         let mut documentation = Vec::new();
         while index < lines.len() && lines[index].trim().starts_with("///") {
-            documentation.push(
-                lines[index]
-                    .trim()
-                    .trim_start_matches("///")
-                    .trim()
-                    .to_string(),
-            );
+            documentation.push(lines[index].trim().trim_start_matches("///").trim().to_string());
             index += 1;
         }
 
@@ -74,10 +68,8 @@ pub fn parse_rust_source(source: &str) -> Result<Vec<RdfVerbDefinition>, ParseEr
 }
 
 fn extract_verb_attribute(line: &str) -> Result<VerbAttribute, ParseError> {
-    let expression = Regex::new(
-        r#"#\[verb\(\s*\"([^\"]+)\"(?:\s*,\s*\"([^\"]+)\")?\s*\)\]"#,
-    )
-    .map_err(|_| ParseError::InvalidAttribute)?;
+    let expression = Regex::new(r#"#\[verb\(\s*\"([^\"]+)\"(?:\s*,\s*\"([^\"]+)\")?\s*\)\]"#)
+        .map_err(|_| ParseError::InvalidAttribute)?;
     let captures = expression.captures(line).ok_or(ParseError::InvalidAttribute)?;
     let verb = captures
         .get(1)
@@ -129,9 +121,7 @@ fn parse_function_signature(
 fn extract_return_type(signature: &str) -> Option<String> {
     let arrow = signature.find("->")?;
     let after_arrow = signature[arrow + 2..].trim();
-    let body = after_arrow
-        .rfind('{')
-        .map_or(after_arrow, |index| &after_arrow[..index]);
+    let body = after_arrow.rfind('{').map_or(after_arrow, |index| &after_arrow[..index]);
     let return_type = body.trim();
     (!return_type.is_empty()).then(|| return_type.to_string())
 }
@@ -190,9 +180,7 @@ fn extract_parameters(signature: &str) -> Result<Vec<RdfArgumentDefinition>, Par
         if parameter.is_empty() || parameter == "args: VerbArgs" || parameter == "self" {
             continue;
         }
-        let (name, value_type) = parameter
-            .split_once(':')
-            .ok_or(ParseError::MissingParameter)?;
+        let (name, value_type) = parameter.split_once(':').ok_or(ParseError::MissingParameter)?;
         let name = name.trim().trim_start_matches("mut ");
         let value_type = value_type.trim();
         let optional = value_type.starts_with("Option<") && value_type.ends_with('>');
@@ -313,11 +301,7 @@ fn verb_triples(verb: &RdfVerbDefinition) -> String {
         &language_literal(&verb.return_type),
     ));
     if verb.is_async {
-        output.push_str(&triple(
-            &verb.verb_uri,
-            &format!("{CNV}isAsync"),
-            &boolean_literal(true),
-        ));
+        output.push_str(&triple(&verb.verb_uri, &format!("{CNV}isAsync"), &boolean_literal(true)));
     }
 
     for argument in canonical_arguments(verb) {
@@ -342,11 +326,7 @@ fn verb_triples(verb: &RdfVerbDefinition) -> String {
 
 fn argument_triples(argument: &RdfArgumentDefinition) -> String {
     let mut output = String::new();
-    output.push_str(&triple(
-        &argument.arg_uri,
-        RDF_TYPE,
-        &format!("<{CNV}Argument>"),
-    ));
+    output.push_str(&triple(&argument.arg_uri, RDF_TYPE, &format!("<{CNV}Argument>")));
     output.push_str(&triple(
         &argument.arg_uri,
         &format!("{CNV}hasArgumentName"),
@@ -436,10 +416,7 @@ pub fn verb_definitions_to_sparql_insert(verbs: &[RdfVerbDefinition]) -> String 
             ));
         }
         if let Some(noun_uri) = &verb.noun_uri {
-            output.push_str(&format!(
-                "  <{}> cnv:belongsToNoun <{}> .\n",
-                verb.verb_uri, noun_uri
-            ));
+            output.push_str(&format!("  <{}> cnv:belongsToNoun <{}> .\n", verb.verb_uri, noun_uri));
         }
         output.push_str(&format!(
             "  <{}> cnv:returnType {}@en .\n",
@@ -447,10 +424,8 @@ pub fn verb_definitions_to_sparql_insert(verbs: &[RdfVerbDefinition]) -> String 
             literal(&verb.return_type)
         ));
         if verb.is_async {
-            output.push_str(&format!(
-                "  <{}> cnv:isAsync \"true\"^^xsd:boolean .\n",
-                verb.verb_uri
-            ));
+            output
+                .push_str(&format!("  <{}> cnv:isAsync \"true\"^^xsd:boolean .\n", verb.verb_uri));
         }
         for bound in verb.trait_bounds.iter().collect::<BTreeSet<_>>() {
             output.push_str(&format!(
@@ -645,10 +620,8 @@ pub fn graph_load(path: String, format: Option<String>) -> Result<GraphLoadedOut
         assert!(first.contains("defaultValue"));
         assert!(first.contains("shortName"));
         assert!(first.contains("longName"));
-        let allowed = first
-            .lines()
-            .filter(|line| line.contains("allowedValue"))
-            .collect::<Vec<_>>();
+        let allowed =
+            first.lines().filter(|line| line.contains("allowedValue")).collect::<Vec<_>>();
         assert_eq!(allowed.len(), 2);
         assert!(allowed[0].contains("jsonld"));
         assert!(allowed[1].contains("ttl"));

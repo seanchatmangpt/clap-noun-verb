@@ -1,7 +1,7 @@
 # Testing Requirements Matrix for clap-noun-verb
 
-**Version**: 26.6.14  
-**Last Updated**: 2026-06-14  
+**Version**: 26.9.1  
+**Last Updated**: 2026-08-20  
 **Framework**: Rust CLI framework with noun-verb patterns, proc-macros, and frontier features
 
 This document defines comprehensive testing requirements across 10 dimensions, with explicit pass/fail criteria and automation hooks.
@@ -1460,6 +1460,6 @@ cargo make publish-all
 ---
 
 **Document Version:** 1.0  
-**Last Reviewed:** 2026-06-14  
+**Last Reviewed:** 2026-08-20  
 **Maintained By:** Core Team  
 **Review Frequency:** Quarterly or after major refactoring

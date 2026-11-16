@@ -4,7 +4,6 @@
 //! Graph Load Command - Load RDF data from file
 
 use serde::{Deserialize, Serialize};
-use std::fs;
 
 /// Result from graph load operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,58 +21,6 @@ impl GraphLoadedOutput {
     pub fn new(triples_loaded: usize, source: impl Into<String>) -> Self {
         Self { triples_loaded, source: source.into(), status: "success".to_string() }
     }
-}
-
-/// Domain logic: Parse and count triples from file content
-fn parse_triples_from_content(content: &str) -> usize {
-    let mut triple_count = 0;
-    for line in content.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-
-        // N-Triples parser: split by whitespace and take first 3 tokens.
-        // Valid subject forms: IRI (<...>) or blank node (_:)
-        // Valid predicate form: IRI (<...>)
-        // Valid object forms: IRI (<...>), blank node (_:), or literal ("...)
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 3 {
-            let s_ok = parts[0].starts_with('<') || parts[0].starts_with("_:");
-            let p_ok = parts[1].starts_with('<');
-            let o_ok = parts[2].starts_with('<')
-                || parts[2].starts_with("_:")
-                || parts[2].starts_with('"');
-            if s_ok && p_ok && o_ok {
-                triple_count += 1;
-            }
-        }
-    }
-    triple_count
-}
-
-/// Domain logic: Load graph from file
-fn load_graph_impl(path: &str) -> crate::Result<(usize, String)> {
-    if !std::path::Path::new(path).exists() {
-        return Err(crate::error::NounVerbError::execution_error(format!(
-            "File not found: {}",
-            path
-        )));
-    }
-
-    let content = fs::read_to_string(path).map_err(|e| {
-        crate::error::NounVerbError::execution_error(format!("Failed to read file: {}", e))
-    })?;
-
-    let triple_count = parse_triples_from_content(&content);
-
-    if triple_count == 0 {
-        return Err(crate::error::NounVerbError::execution_error(
-            "No valid triples found in file".to_string(),
-        ));
-    }
-
-    Ok((triple_count, path.to_string()))
 }
 
 /// Load RDF graph from a Turtle file
@@ -101,14 +48,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_triples_from_content() {
-        let content = "<s1> <p1> <o1> .\n<s2> <p2> <o2> .\n# comment\n";
-        assert_eq!(parse_triples_from_content(content), 2);
-    }
-
-    #[test]
     fn test_load_nonexistent_file() {
-        let result = load_graph_impl("nonexistent.ttl");
+        let result = load_graph("nonexistent.ttl".to_string());
         assert!(result.is_err());
     }
 }

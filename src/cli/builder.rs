@@ -375,15 +375,16 @@ impl CliBuilder {
 /// This handles the lifetime issue by using Box::leak for static strings.
 /// For maximum opinionation, this is acceptable in CLI construction
 /// (happens once per run).
+/// `VerbCommand` is not `Clone`, so `SimpleNoun` cannot hold real verb
+/// instances the way `sub_nouns`/`verbs` methods below would need to
+/// return them by value; `NounCommand::verbs`/`build_command` both ignore
+/// verbs entirely (the actual live dispatch path for verbs is the
+/// `#[verb]` macro + `CommandRegistry`, not this builder's `NounCommand`
+/// trait) -- so there is no `verbs` field here to be dead code about.
 struct SimpleNoun {
     name: &'static str,
     about: &'static str,
-    #[allow(dead_code)] // Reserved for future verb integration
-    verbs: Vec<Box<dyn crate::verb::VerbCommand>>,
 }
-
-// VerbCommand is not Clone, so we need to handle this differently
-// For now, SimpleNoun won't have verbs until we implement proper verb integration
 
 impl SimpleNoun {
     fn new(name: String, about: String) -> Self {
@@ -392,7 +393,7 @@ impl SimpleNoun {
         let name_str: &'static str = Box::leak(name.into_boxed_str());
         let about_str: &'static str = Box::leak(about.into_boxed_str());
 
-        Self { name: name_str, about: about_str, verbs: Vec::new() }
+        Self { name: name_str, about: about_str }
     }
 }
 
@@ -406,8 +407,8 @@ impl NounCommand for SimpleNoun {
     }
 
     fn verbs(&self) -> Vec<Box<dyn crate::verb::VerbCommand>> {
-        // Verbs are not Clone, so we can't return them
-        // This will be fixed when we properly implement verb integration
+        // Real verb dispatch goes through the #[verb] macro + CommandRegistry,
+        // not this builder's NounCommand trait -- always empty here.
         Vec::new()
     }
 
@@ -416,11 +417,6 @@ impl NounCommand for SimpleNoun {
     }
 
     fn build_command(&self) -> Command {
-        // Verbs will be added when verb integration is complete
-        // for verb in &self.verbs {
-        //     cmd = cmd.subcommand(verb.build_command());
-        // }
-
         Command::new(self.name).about(self.about)
     }
 }

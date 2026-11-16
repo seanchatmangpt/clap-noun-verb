@@ -9,9 +9,7 @@ pub mod registry;
 
 pub use impl_generated::{GeneratedHealthChecker, GeneratedRegistry, PackageMetadata};
 pub use pack::{PackAddedOutput, PackRemovedOutput};
-pub use registry::{
-    CapabilityPackage, CapabilityRegistry, CapabilityStanding, ProofSurface,
-};
+pub use registry::{CapabilityPackage, CapabilityRegistry, CapabilityStanding, ProofSurface};
 
 #[cfg(test)]
 mod tests {

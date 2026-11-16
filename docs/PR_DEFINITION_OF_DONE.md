@@ -26,7 +26,7 @@ Code must be correct, idiomatic, and follow the project's strict quality standar
 
 ### Code Architecture
 - [ ] Follows CLAUDE.md guidelines and project conventions
-- [ ] If modifying core modules: changes align with noun-verb pattern (`src/noun.rs`, `src/verb.rs`, `src/router.rs`, `src/registry.rs`)
+- [ ] If modifying core modules: changes align with noun-verb pattern (`src/noun.rs`, `src/verb.rs`, `src/cli/router.rs`, `src/registry.rs`)
 - [ ] If modifying proc-macros: changes validated by `clap-noun-verb-macros/` crate
 - [ ] No breaking changes to public APIs without ADL (Architecture Decision Log) approval
 - [ ] Trait methods remain sync and object-safe (no `async` in trait methods)
@@ -425,6 +425,6 @@ cargo test --all-features --quiet  # Full test suite
 
 ---
 
-**Last updated**: June 2026  
+**Last updated**: August 2026  
 **Version**: 1.0  
 **Maintainers**: Sean Chatman and contributors

@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive skill guide and reference for testing noun-verb commands in **clap-noun-verb v26.6.1**, including manual testing patterns, integration test design, feature-gated command testing, error validation, help text testing, test fixtures, and regression testing.
+A comprehensive skill guide and reference for testing noun-verb commands in **clap-noun-verb v26.9.1**, including manual testing patterns, integration test design, feature-gated command testing, error validation, help text testing, test fixtures, and regression testing.
 
 ## 📄 Documentation Files
 
@@ -394,4 +394,4 @@ Before considering this skill complete, verify:
 **Code Examples:** ✓ 12 complete, runnable patterns  
 **Test Coverage:** ✓ All major CLI testing scenarios  
 **Feature Support:** ✓ Feature-gated testing included  
-**Production Ready:** ✓ Aligned with clap-noun-verb v26.6.1
+**Production Ready:** ✓ Aligned with clap-noun-verb v26.9.1

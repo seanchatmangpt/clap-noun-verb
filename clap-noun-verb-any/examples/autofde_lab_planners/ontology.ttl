@@ -1,0 +1,114 @@
+@prefix cnv: <https://clap-noun-verb.dev/ontology#> .
+
+# The real autofde_lab.fabric Typer CLI's command surface, admitted as RDF
+# and compiled by cnv-any-manifest-pack into cnv-any.json -- never hand-typed.
+# serve-mcp/serve-a2a are deliberately absent: they're long-running daemons,
+# not one-shot process invocations this executor model captures.
+cnv:AutofdeLabFabricCli
+    a cnv:Cli ;
+    cnv:binaryName "autofde-lab-fabric" ;
+    cnv:crateName "autofde-lab-fabric" ;
+    cnv:version "0.1.0" ;
+    cnv:edition "2024" ;
+    cnv:rustVersion "1.85" ;
+    cnv:about "Real scikit-decide-derived planner federation: 46+ registered solvers over 25+ registered domains, wrapped as a single admitted CLI surface." ;
+    cnv:hasNoun cnv:FabricNoun .
+
+cnv:FabricNoun
+    a cnv:Noun ;
+    cnv:name "fabric" ;
+    cnv:about "The shared scikit-decide decision fabric (autofde_lab.fabric.cli). Its own real argv has no noun prefix; the wrapped autofde-lab-fabric.sh shim strips this ggen-emitted noun token before forwarding, exactly as it already absorbs `python -m`." ;
+    cnv:hasCommand cnv:FabricCatalog, cnv:FabricMatch, cnv:FabricSolve, cnv:FabricCacheStats, cnv:FabricCacheHotset .
+
+cnv:FabricCatalog
+    a cnv:Command ;
+    cnv:name "catalog" ;
+    cnv:about "List registered domains and solvers." ;
+    cnv:belongsToNoun cnv:FabricNoun ;
+    cnv:hasBehavior cnv:FabricCatalogBehavior .
+
+cnv:FabricCatalogBehavior a cnv:CustomBehavior .
+
+cnv:FabricMatch
+    a cnv:Command ;
+    cnv:name "match" ;
+    cnv:about "Match compatible solvers for a domain." ;
+    cnv:belongsToNoun cnv:FabricNoun ;
+    cnv:hasBehavior cnv:FabricMatchBehavior ;
+    cnv:hasArgument cnv:FabricMatchDomain, cnv:FabricMatchDomainArguments .
+
+cnv:FabricMatchBehavior a cnv:CustomBehavior .
+
+cnv:FabricMatchDomain
+    a cnv:Argument ;
+    cnv:name "domain" ; cnv:fieldName "domain" ; cnv:about "Registered domain name." ;
+    cnv:valueKind "string" ; cnv:required true ; cnv:position 1 ; cnv:testValue "PDDLDomain" .
+
+cnv:FabricMatchDomainArguments
+    a cnv:Argument ;
+    cnv:name "domain-arguments" ; cnv:fieldName "domain_arguments" ;
+    cnv:about "Domain arguments as JSON." ;
+    cnv:valueKind "string" ; cnv:required false ; cnv:position 0 ;
+    cnv:longFlag "domain-arguments" ; cnv:testValue "{}" .
+
+cnv:FabricSolve
+    a cnv:Command ;
+    cnv:name "solve" ;
+    cnv:about "Solve and emit a receipt-bearing trajectory, using any of the 46+ registered planners via --solver." ;
+    cnv:belongsToNoun cnv:FabricNoun ;
+    cnv:hasBehavior cnv:FabricSolveBehavior ;
+    cnv:hasArgument cnv:FabricSolveDomain, cnv:FabricSolveSolver, cnv:FabricSolveDomainArguments,
+                    cnv:FabricSolveSolverArguments, cnv:FabricSolveMaxSteps .
+
+cnv:FabricSolveBehavior a cnv:CustomBehavior .
+
+cnv:FabricSolveDomain
+    a cnv:Argument ;
+    cnv:name "domain" ; cnv:fieldName "domain" ; cnv:about "Registered domain name." ;
+    cnv:valueKind "string" ; cnv:required true ; cnv:position 1 ; cnv:testValue "PDDLDomain" .
+
+cnv:FabricSolveSolver
+    a cnv:Argument ;
+    cnv:name "solver" ; cnv:fieldName "solver" ;
+    cnv:about "Solver; defaults to first match. Any of the 46+ registered planner names." ;
+    cnv:valueKind "string" ; cnv:required false ; cnv:position 0 ;
+    cnv:longFlag "solver" ; cnv:testValue "Astar" .
+
+cnv:FabricSolveDomainArguments
+    a cnv:Argument ;
+    cnv:name "domain-arguments" ; cnv:fieldName "domain_arguments" ;
+    cnv:about "Domain arguments as JSON." ;
+    cnv:valueKind "string" ; cnv:required false ; cnv:position 0 ;
+    cnv:longFlag "domain-arguments" ; cnv:testValue "{}" .
+
+cnv:FabricSolveSolverArguments
+    a cnv:Argument ;
+    cnv:name "solver-arguments" ; cnv:fieldName "solver_arguments" ;
+    cnv:about "Solver arguments as JSON." ;
+    cnv:valueKind "string" ; cnv:required false ; cnv:position 0 ;
+    cnv:longFlag "solver-arguments" ; cnv:testValue "{}" .
+
+cnv:FabricSolveMaxSteps
+    a cnv:Argument ;
+    cnv:name "max-steps" ; cnv:fieldName "max_steps" ;
+    cnv:about "Bounded rollout transitions." ;
+    cnv:valueKind "i64" ; cnv:required false ; cnv:position 0 ;
+    cnv:longFlag "max-steps" ; cnv:testValue "50" .
+
+cnv:FabricCacheStats
+    a cnv:Command ;
+    cnv:name "cache-stats" ;
+    cnv:about "Show cache hits, misses, writes, and namespaces." ;
+    cnv:belongsToNoun cnv:FabricNoun ;
+    cnv:hasBehavior cnv:FabricCacheStatsBehavior .
+
+cnv:FabricCacheStatsBehavior a cnv:CustomBehavior .
+
+cnv:FabricCacheHotset
+    a cnv:Command ;
+    cnv:name "cache-hotset" ;
+    cnv:about "Measure whether 20% of artifacts account for 80% of reuse." ;
+    cnv:belongsToNoun cnv:FabricNoun ;
+    cnv:hasBehavior cnv:FabricCacheHotsetBehavior .
+
+cnv:FabricCacheHotsetBehavior a cnv:CustomBehavior .

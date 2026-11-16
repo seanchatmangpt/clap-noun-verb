@@ -24,8 +24,27 @@ pub trait CommandHandler: Send + Sync {
 /// Input to a command handler (validated by CLI layer)
 #[derive(Debug, Clone)]
 pub struct HandlerInput {
-    /// Validated arguments as key-value pairs
+    /// Validated arguments as key-value pairs.
+    ///
+    /// For an `ArgAction::Append` (repeated-flag) argument -- most commonly
+    /// a bare `Vec<T>` `#[verb]` parameter -- the value stored here is a
+    /// comma-joined `String` of every occurrence, kept only for backward
+    /// compatibility with code that reads `args` directly. That join is
+    /// lossy whenever a real occurrence's value itself contains a comma or
+    /// significant whitespace. The exact, lossless values live in
+    /// [`Self::args_multi`] under the same key; the `#[verb]` macro's
+    /// generated `Vec<T>` extraction reads from `args_multi`, not this
+    /// field, for that reason.
     pub args: std::collections::HashMap<String, String>,
+    /// Lossless multi-value arguments.
+    ///
+    /// For every `ArgAction::Append` (repeated-flag) argument, this holds
+    /// the exact `Vec<String>` of every occurrence in order -- no
+    /// join/split round-trip through `args`, so a value containing a comma
+    /// or leading/trailing whitespace survives exactly. Keyed by the same
+    /// argument name as `args`. Empty (no entry) for arguments that are not
+    /// repeated-flag/`Vec<T>`.
+    pub args_multi: std::collections::HashMap<String, Vec<String>>,
     /// Validated options as key-value pairs
     pub opts: std::collections::HashMap<String, String>,
     /// Context information (noun, verb names, etc.)
